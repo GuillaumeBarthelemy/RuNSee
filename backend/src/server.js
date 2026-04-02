@@ -3,5 +3,6 @@ import app from "./app.js";
 import env from "./config/env.js";
 
 app.listen(env.appPort, env.appHost, () => {
-  console.log(`Application disponible sur ${env.publicBaseUrl}`);
+  console.log(`RuNSee backend local: ${env.localApiUrl}`);
+  console.log(`RuNSee backend public: ${env.publicApiUrl}`);
 });

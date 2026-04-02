@@ -115,7 +115,7 @@ export async function callback(req, res, next) {
       },
     });
 
-    return res.redirect(`${env.frontendUrl}?strava=connected`);
+    return res.redirect(`${env.publicAppUrl}?strava=connected`);
   } catch (error) {
     next(error);
   }

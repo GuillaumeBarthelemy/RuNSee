@@ -36,6 +36,9 @@ app.get("/health", (req, res) => {
     status: "OK",
     app: "RuNSee",
     environment: env.nodeEnv,
+    localApiUrl: env.localApiUrl,
+    publicApiUrl: env.publicApiUrl,
+    publicAppUrl: env.publicAppUrl,
     allowedOrigins: env.frontendAllowedOrigins,
   });
 });

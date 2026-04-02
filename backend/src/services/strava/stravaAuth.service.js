@@ -1,13 +1,14 @@
 import axios from "axios";
 import prisma from "../../config/prisma.js";
+import env from "../../config/env.js";
 
 export function getAuthorizationUrl() {
   const params = new URLSearchParams({
-    client_id: process.env.STRAVA_CLIENT_ID,
+    client_id: env.stravaClientId,
     response_type: "code",
-    redirect_uri: process.env.STRAVA_REDIRECT_URI,
+    redirect_uri: env.stravaRedirectUri,
     approval_prompt: "auto",
-    scope: process.env.STRAVA_SCOPE,
+    scope: env.stravaScope,
     state: "runsee-local",
   });
 
@@ -18,8 +19,8 @@ export async function exchangeCodeForToken(code) {
   const response = await axios.post(
     "https://www.strava.com/oauth/token",
     {
-      client_id: process.env.STRAVA_CLIENT_ID,
-      client_secret: process.env.STRAVA_CLIENT_SECRET,
+      client_id: env.stravaClientId,
+      client_secret: env.stravaClientSecret,
       code,
       grant_type: "authorization_code",
     },
@@ -37,8 +38,8 @@ export async function refreshAccessToken(refreshToken) {
   const response = await axios.post(
     "https://www.strava.com/oauth/token",
     {
-      client_id: process.env.STRAVA_CLIENT_ID,
-      client_secret: process.env.STRAVA_CLIENT_SECRET,
+      client_id: env.stravaClientId,
+      client_secret: env.stravaClientSecret,
       grant_type: "refresh_token",
       refresh_token: refreshToken,
     },

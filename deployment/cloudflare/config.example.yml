@@ -1,0 +1,29 @@
+# RuNSee - Cloudflare Tunnel template (recommended)
+# Model used here: 2 public hostnames, 2 local services.
+# Copy this file outside Git or to your cloudflared directory and replace placeholders.
+#
+# Manual run:
+#   %USERPROFILE%\.cloudflared\config.yml
+#
+# Windows service:
+#   C:\Windows\System32\config\systemprofile\.cloudflared\config.yml
+
+tunnel: <YOUR_TUNNEL_UUID>
+
+# Manual run example:
+# credentials-file: C:\Users\<WINDOWS_USER>\.cloudflared\<YOUR_TUNNEL_UUID>.json
+#
+# Windows service example:
+credentials-file: C:\Windows\System32\config\systemprofile\.cloudflared\<YOUR_TUNNEL_UUID>.json
+
+logfile: C:\Cloudflared\cloudflared.log
+loglevel: info
+
+ingress:
+  - hostname: runsee.<your-domain>
+    service: http://127.0.0.1:5173
+
+  - hostname: api.runsee.<your-domain>
+    service: http://127.0.0.1:3000
+
+  - service: http_status:404
