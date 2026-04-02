@@ -1,11 +1,46 @@
 import prisma from "../config/prisma.js";
 
+const INVALID_STORED_ACTIVITY_IDS = ["", "undefined", "null"];
+
 function toJsonOrNull(value) {
   return value === undefined || value === null ? null : JSON.stringify(value);
 }
 
 function parseDateOrNull(value) {
   return value ? new Date(value) : null;
+}
+
+function getRequiredStravaActivityId(activity) {
+  if (activity?.id === undefined || activity?.id === null || activity.id === "") {
+    const error = new Error("Strava activity payload is missing its id.");
+    error.code = "INVALID_STRAVA_ACTIVITY_ID";
+    throw error;
+  }
+
+  return String(activity.id);
+}
+
+function applyStoredActivityIntegrityFilters(where = {}, { requireStartDate = false } = {}) {
+  const and = Array.isArray(where.AND) ? [...where.AND] : [];
+
+  and.push({
+    stravaActivityId: {
+      notIn: INVALID_STORED_ACTIVITY_IDS,
+    },
+  });
+
+  if (requireStartDate) {
+    and.push({
+      startDate: {
+        not: null,
+      },
+    });
+  }
+
+  return {
+    ...where,
+    AND: and,
+  };
 }
 
 function buildWhereClause(filters = {}) {
@@ -39,9 +74,11 @@ function buildWhereClause(filters = {}) {
 }
 
 function mapActivityData(activity, athleteId, isDetailed = false) {
+  const stravaActivityId = getRequiredStravaActivityId(activity);
+
   return {
     athleteId,
-    stravaActivityId: String(activity.id),
+    stravaActivityId,
     resourceState: activity.resource_state ?? null,
     externalId: activity.external_id ?? null,
     uploadId: activity.upload_id ? String(activity.upload_id) : null,
@@ -108,11 +145,12 @@ function mapActivityData(activity, athleteId, isDetailed = false) {
 }
 
 export async function upsertSummaryActivity(activity, athleteId) {
+  const stravaActivityId = getRequiredStravaActivityId(activity);
   const data = mapActivityData(activity, athleteId, false);
 
   return prisma.activity.upsert({
     where: {
-      stravaActivityId: String(activity.id)
+      stravaActivityId
     },
     update: data,
     create: data
@@ -120,11 +158,12 @@ export async function upsertSummaryActivity(activity, athleteId) {
 }
 
 export async function upsertDetailedActivity(activity, athleteId) {
+  const stravaActivityId = getRequiredStravaActivityId(activity);
   const data = mapActivityData(activity, athleteId, true);
 
   return prisma.activity.upsert({
     where: {
-      stravaActivityId: String(activity.id)
+      stravaActivityId
     },
     update: data,
     create: data
@@ -142,7 +181,9 @@ export async function saveDetailedActivity(activity, athleteId) {
 }
 
 export async function listActivities(filters = {}) {
-  const where = buildWhereClause(filters);
+  const where = applyStoredActivityIntegrityFilters(buildWhereClause(filters), {
+    requireStartDate: true,
+  });
 
   return prisma.activity.findMany({
     where,
@@ -153,7 +194,9 @@ export async function listActivities(filters = {}) {
 }
 
 export async function countActivities(filters = {}) {
-  const where = buildWhereClause(filters);
+  const where = applyStoredActivityIntegrityFilters(buildWhereClause(filters), {
+    requireStartDate: true,
+  });
 
   return prisma.activity.count({
     where
@@ -170,8 +213,20 @@ export async function getStoredActivityByStravaId(stravaActivityId) {
 
 export async function getLatestStoredActivity(athleteId) {
   return prisma.activity.findFirst({
-    where: {
-      athleteId
+    where: applyStoredActivityIntegrityFilters(
+      {
+        athleteId
+      },
+      { requireStartDate: true }
+    ),
+    select: {
+      id: true,
+      athleteId: true,
+      stravaActivityId: true,
+      startDate: true,
+      name: true,
+      type: true,
+      sportType: true,
     },
     orderBy: {
       startDate: "desc"

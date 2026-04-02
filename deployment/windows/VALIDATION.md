@@ -38,11 +38,11 @@
 
 Cette partie n'est valable que quand la zone DNS Cloudflare est active.
 
-1. `nslookup runnsee.fr 1.1.1.1` ne doit plus renvoyer `NXDOMAIN`
-2. `nslookup runsee.runnsee.fr 1.1.1.1` doit resoudre
-3. `nslookup api.runsee.runnsee.fr 1.1.1.1` doit resoudre
-4. `https://runsee.runnsee.fr` doit charger le frontend
-5. `https://api.runsee.runnsee.fr/health` doit repondre
+1. `nslookup runnsee.net 1.1.1.1` ne doit plus renvoyer `NXDOMAIN`
+2. `nslookup runsee.runnsee.net 1.1.1.1` doit resoudre
+3. `nslookup api.runnsee.net 1.1.1.1` doit resoudre
+4. `https://runsee.runnsee.net` doit charger le frontend
+5. `https://api.runnsee.net/health` doit repondre
 
 ## En cas d'echec
 
@@ -50,4 +50,4 @@ Cette partie n'est valable que quand la zone DNS Cloudflare est active.
 2. lire `deployment/windows/runtime/backend.log`
 3. lire `deployment/windows/runtime/frontend.log`
 4. verifier l'etat des taches planifiees
-5. verifier si `runnsee.fr` est encore en `Invalid nameservers` dans Cloudflare
+5. verifier si `runnsee.net` est bien `Active` dans Cloudflare et si les CNAME du tunnel existent

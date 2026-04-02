@@ -198,7 +198,7 @@ powershell -ExecutionPolicy Bypass -File .\deployment\windows\scripts\install-st
 - Le script frontend relance un `build` a chaque redemarrage du service
 - Si le build frontend casse, la tache frontend continuera de reessayer apres delai
 - Si le tunnel Cloudflare est coupe ou mal configure, le local continue a tourner, mais pas l'acces public
-- Tant que la zone `runnsee.fr` reste en `Invalid nameservers`, les URLs publiques resteront en `NXDOMAIN`
+- Tant que la zone `runnsee.net` n'est pas `Active` ou que les enregistrements du tunnel ne sont pas crees, les URLs publiques resteront indisponibles
 
 ## Diagnostic rapide
 

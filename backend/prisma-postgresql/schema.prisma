@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/postgresql-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AppUser {
+  id          String             @id @default(cuid())
+  displayName String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  connections StravaConnection[]
+  syncJobs    SyncJob[]
+  syncCursors SyncCursor[]
+}
+
+model StravaConnection {
+  id                   String    @id @default(cuid())
+  appUserId            String
+  appUser              AppUser   @relation(fields: [appUserId], references: [id])
+
+  stravaAthleteId      String?   @unique
+  accessToken          String?
+  refreshToken         String?
+  accessTokenExpiresAt DateTime?
+  grantedScopes        String?
+  connectedAt          DateTime  @default(now())
+  lastTokenRefreshAt   DateTime?
+  isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  athlete              Athlete?
+}
+
+model Athlete {
+  id               String           @id @default(cuid())
+  connectionId     String           @unique
+  connection       StravaConnection @relation(fields: [connectionId], references: [id])
+
+  stravaAthleteId  String           @unique
+  username         String?
+  firstname        String?
+  lastname         String?
+  city             String?
+  state            String?
+  country          String?
+  sex              String?
+  profileMediumUrl String?
+  profileUrl       String?
+  rawJson          String?
+  lastFetchedAt    DateTime?
+
+  activities       Activity[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model Activity {
+  id                    String    @id @default(cuid())
+  athleteId             String
+  athlete               Athlete   @relation(fields: [athleteId], references: [id])
+
+  stravaActivityId      String    @unique
+  resourceState         Int?
+  externalId            String?
+  uploadId              String?
+
+  name                  String?
+  description           String?
+
+  type                  String?
+  sportType             String?
+  workoutType           Int?
+
+  startDate             DateTime?
+  startDateLocal        DateTime?
+  timezone              String?
+  utcOffset             Float?
+
+  distance              Float?
+  movingTime            Int?
+  elapsedTime           Int?
+  totalElevationGain    Float?
+
+  startLatlngJson       String?
+  endLatlngJson         String?
+
+  achievementCount      Int?
+  kudosCount            Int?
+  commentCount          Int?
+  athleteCount          Int?
+  photoCount            Int?
+  prCount               Int?
+  totalPhotoCount       Int?
+
+  trainer               Boolean?
+  commute               Boolean?
+  manual                Boolean?
+  private               Boolean?
+  flagged               Boolean?
+
+  averageSpeed          Float?
+  maxSpeed              Float?
+  averageCadence        Float?
+  averageWatts          Float?
+  weightedAverageWatts  Int?
+  kilojoules            Float?
+
+  deviceWatts           Boolean?
+  hasHeartrate          Boolean?
+  averageHeartrate      Float?
+  maxHeartrate          Float?
+  averageTemp           Int?
+  sufferScore           Int?
+  calories              Float?
+
+  mapId                 String?
+  mapSummaryPolyline    String?
+  mapPolyline           String?
+
+  gearId                String?
+
+  isDetailed            Boolean   @default(false)
+  summaryJson           String?
+  rawJson               String?
+  summaryFetchedAt      DateTime?
+  detailsFetchedAt      DateTime?
+  lastFetchedAt         DateTime?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([athleteId, startDate])
+}
+
+model SyncJob {
+  id                        String   @id @default(cuid())
+  appUserId                 String
+  appUser                   AppUser  @relation(fields: [appUserId], references: [id])
+
+  jobType                   String   @default("legacy")
+  status                    String
+  triggerSource             String   @default("ui")
+  message                   String?
+  errorDetails              String?
+
+  progressPercent           Int?
+  pagesProcessed            Int      @default(0)
+  activitiesSeen            Int      @default(0)
+  activitiesInserted        Int      @default(0)
+  activitiesUpdated         Int      @default(0)
+  activitiesFailed          Int      @default(0)
+  detailsFetched            Int      @default(0)
+
+  lastProcessedActivityDate DateTime?
+  lastProcessedActivityId   String?
+  requestedAfterEpoch       String?
+  resultJson                String?
+
+  queuedAt                  DateTime @default(now())
+  startedAt                 DateTime?
+  endedAt                   DateTime?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @default(now()) @updatedAt
+
+  @@index([status, queuedAt])
+  @@index([jobType, queuedAt])
+}
+
+model SyncCursor {
+  id          String   @id @default(cuid())
+  appUserId   String
+  appUser     AppUser  @relation(fields: [appUserId], references: [id])
+
+  cursorName  String
+  cursorValue String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([appUserId, cursorName])
+}

@@ -48,7 +48,7 @@ app.get("/db/health", async (req, res, next) => {
     await prisma.$queryRaw`SELECT 1`;
     res.json({
       status: "OK",
-      database: "SQLite",
+      database: env.databaseProvider,
       prisma: true,
     });
   } catch (error) {

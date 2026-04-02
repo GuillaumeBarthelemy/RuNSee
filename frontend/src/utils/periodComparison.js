@@ -1,206 +1,213 @@
-import { normalizeDistanceKm, normalizeDurationHours } from './activityAggregations.js';
+import {
+  buildActivityItems,
+  buildReferencePace,
+  formatPace,
+  getItemsWithinRange,
+  summarizeActivityItems,
+} from "./activityInsights.js";
+import { getAnalyticsGranularity, getComparisonRange, getPreviousYearRange } from "./analyticsPeriods.js";
 
-function toDate(value) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
+function addDays(date, days) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 }
 
-function parseDateInput(value) {
-  if (!value) return null;
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value).trim());
-  if (!match) return toDate(value);
-  const [, year, month, day] = match;
-  return new Date(Number(year), Number(month) - 1, Number(day));
+function roundValue(value, decimals = 1) {
+  return Number(Number(value || 0).toFixed(decimals));
 }
 
-function formatDateInputValue(date) {
-  if (!date) return '';
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function formatMonthInputValue(date) {
-  if (!date) return '';
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-}
-
-function atStartOfDay(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function formatMonthLabel(date) {
-  return date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
-}
-
-function metricValue(activity, metric) {
+function metricValue(item, metric) {
   switch (metric) {
-    case 'distanceKm':
-      return normalizeDistanceKm(activity.distance);
-    case 'elevationGain':
-      return Number(activity.totalElevationGain || 0);
-    case 'movingHours':
-      return normalizeDurationHours(activity.movingTime);
-    case 'count':
+    case "distanceKm":
+      return item.__distanceKm;
+    case "movingHours":
+      return item.__movingHours;
+    case "elevationGain":
+      return item.__elevationGain;
+    case "load":
+      return item.__load;
+    case "count":
       return 1;
     default:
-      return normalizeDistanceKm(activity.distance);
+      return item.__distanceKm;
   }
 }
 
-function normalizeActivities(activities) {
-  return (activities || [])
-    .map((activity) => ({ ...activity, __date: toDate(activity.startDate || activity.startDateLocal) }))
-    .filter((activity) => activity.__date)
-    .sort((a, b) => a.__date - b.__date);
+function buildPeriodSummary(items, range, allowRunOnlyMetrics) {
+  const rangeItems = getItemsWithinRange(items, range.start, range.end);
+  const summary = summarizeActivityItems(rangeItems);
+  const referencePace = allowRunOnlyMetrics
+    ? buildReferencePace(rangeItems, {
+      endDate: range.end,
+      lookbackDays: range.days,
+    })
+    : null;
+
+  return {
+    ...summary,
+    referencePaceSecondsPerKm: referencePace?.hasData ? referencePace.paceSecondsPerKm : 0,
+    referencePaceLabel: referencePace?.hasData ? formatPace(referencePace.paceSecondsPerKm) : "-",
+    referenceSampleSize: referencePace?.sampleSize || 0,
+  };
 }
 
-function getLatestDate(activities) {
-  const dates = activities.map((a) => a.__date).filter(Boolean);
-  return dates.length ? dates[dates.length - 1] : new Date();
+function buildMetricRow(label, key, currentValue, previousValue, yearValue = null) {
+  const deltaPercent = previousValue > 0
+    ? roundValue(((currentValue - previousValue) / previousValue) * 100, 1)
+    : null;
+  const yearDeltaPercent = yearValue > 0
+    ? roundValue(((currentValue - yearValue) / yearValue) * 100, 1)
+    : null;
+
+  return {
+    key,
+    label,
+    currentValue,
+    previousValue,
+    yearValue,
+    deltaPercent,
+    yearDeltaPercent,
+  };
 }
 
-function getAvailableYears(activities) {
-  const set = new Set(normalizeActivities(activities).map((a) => a.__date.getFullYear()));
-  return Array.from(set).sort((a, b) => b - a);
+function buildMetricRows(currentSummary, previousSummary, yearSummary, allowRunOnlyMetrics) {
+  const yearValue = (key) => (yearSummary ? yearSummary[key] : null);
+
+  return [
+    buildMetricRow("Distance", "distanceKm", currentSummary.distanceKm, previousSummary.distanceKm, yearValue("distanceKm")),
+    buildMetricRow("Temps", "movingHours", currentSummary.movingHours, previousSummary.movingHours, yearValue("movingHours")),
+    buildMetricRow("D+", "elevationGain", currentSummary.elevationGain, previousSummary.elevationGain, yearValue("elevationGain")),
+    buildMetricRow("Charge", "load", currentSummary.load, previousSummary.load, yearValue("load")),
+    buildMetricRow("Seances", "count", currentSummary.count, previousSummary.count, yearValue("count")),
+    buildMetricRow(
+      "Allure de reference",
+      "referencePaceSecondsPerKm",
+      allowRunOnlyMetrics ? currentSummary.referencePaceSecondsPerKm : 0,
+      allowRunOnlyMetrics ? previousSummary.referencePaceSecondsPerKm : 0,
+      allowRunOnlyMetrics && yearSummary ? yearSummary.referencePaceSecondsPerKm : null,
+    ),
+  ];
 }
 
-function buildCumulativeSeries(items, start, end, metric) {
-  const dayMap = new Map();
-  items.forEach((item) => {
-    const key = atStartOfDay(item.__date).toISOString();
-    dayMap.set(key, (dayMap.get(key) || 0) + metricValue(item, metric));
-  });
-  const points = [];
-  let cursor = atStartOfDay(start);
-  let cumulative = 0;
-  while (cursor <= end) {
-    const key = cursor.toISOString();
-    cumulative += dayMap.get(key) || 0;
-    points.push({
-      label: cursor.toLocaleDateString('fr-FR', { day: '2-digit', month: start.getFullYear() === end.getFullYear() ? 'short' : '2-digit' }),
-      value: cumulative,
-    });
-    cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
-  }
-  return points;
-}
-
-function buildRows(periods) {
-  const referenceValue = periods[0]?.value || 0;
-  const bestValue = Math.max(...periods.map((p) => p.value), 0);
-  return periods.map((period, index) => {
-    const previous = periods[index + 1] || null;
-    const deltaPrevious = previous ? period.value - previous.value : null;
-    const deltaReference = index === 0 ? null : period.value - referenceValue;
-    return {
-      ...period,
-      deltaPrevious,
-      deltaReference,
-      deltaPercent: previous && previous.value ? (deltaPrevious / previous.value) * 100 : null,
-      isReference: index === 0,
-      isBest: period.value === bestValue,
+function buildDailyCumulativeData(periods, metric, days) {
+  return Array.from({ length: days }, (_, index) => {
+    const row = {
+      label: periods[0].range.days <= 31
+        ? addDays(periods[0].range.start, index).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })
+        : `J${index + 1}`,
     };
+
+    periods.forEach((period) => {
+      const cursor = addDays(period.range.start, index);
+      const cumulative = period.items
+        .filter((item) => item.__date <= cursor)
+        .reduce((sum, item) => sum + metricValue(item, metric), 0);
+
+      row[period.key] = roundValue(cumulative, metric === "count" || metric === "elevationGain" ? 0 : 1);
+    });
+
+    return row;
   });
 }
 
-export function getComparisonControlOptions(activities = []) {
-  const latest = getLatestDate(normalizeActivities(activities));
-  return { years: getAvailableYears(activities), latestDate: latest };
+function buildWeeklyCumulativeData(periods, metric) {
+  const weeks = Math.max(1, Math.ceil(periods[0].range.days / 7));
+
+  return Array.from({ length: weeks }, (_, index) => {
+    const slotStart = addDays(periods[0].range.start, index * 7);
+    const slotEnd = addDays(slotStart, 6);
+    const row = {
+      label: `${slotStart.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}`,
+    };
+
+    periods.forEach((period) => {
+      const cursor = addDays(period.range.start, (index * 7) + 6);
+      const cappedCursor = cursor > period.range.end ? period.range.end : cursor;
+      const cumulative = period.items
+        .filter((item) => item.__date <= cappedCursor)
+        .reduce((sum, item) => sum + metricValue(item, metric), 0);
+
+      row[period.key] = roundValue(cumulative, metric === "count" || metric === "elevationGain" ? 0 : 1);
+    });
+
+    if (slotEnd >= periods[0].range.end) {
+      row.label = periods[0].range.end.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+    }
+
+    return row;
+  });
 }
 
 export function buildPeriodComparisonModel(activities = [], options = {}) {
-  const items = normalizeActivities(activities);
-  const mode = options.mode || 'yearToDate';
-  const metric = options.metric || 'distanceKm';
-  const periodsCount = Math.max(2, Math.min(4, Number(options.periods || 3)));
-  const reference = options.reference || '';
-  const colors = ['#0b5fff', '#12b76a', '#f97316', '#8b5cf6'];
-  const rowsRaw = [];
-
-  if (!items.length) {
-    return { mode, metric, rows: [], chartData: [], insight: '', controlType: mode === 'fullYears' ? 'year' : mode === 'fullMonths' ? 'month' : 'date', referenceValue: reference || '' };
+  const currentRange = options.currentRange;
+  if (!currentRange?.start || !currentRange?.end) {
+    return {
+      metrics: [],
+      periods: [],
+      chartData: [],
+      insight: "",
+      hasYearComparison: false,
+      chartMetric: options.chartMetric || "distanceKm",
+    };
   }
 
-  if (mode === 'yearToDate') {
-    const latest = getLatestDate(items);
-    const refDate = atStartOfDay(parseDateInput(reference) || latest);
-    const month = refDate.getMonth();
-    const day = refDate.getDate();
-    for (let i = 0; i < periodsCount; i += 1) {
-      const year = refDate.getFullYear() - i;
-      const start = new Date(year, 0, 1);
-      const end = new Date(year, month, Math.min(day, new Date(year, month + 1, 0).getDate()), 23, 59, 59, 999);
-      const periodItems = items.filter((a) => a.__date >= start && a.__date <= end);
-      const series = buildCumulativeSeries(periodItems, start, atStartOfDay(end), metric);
-      rowsRaw.push({
-        key: `y-${year}`,
-        label: String(year),
-        description: `${start.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })} → ${end.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}`,
-        value: Number((series[series.length - 1]?.value || 0).toFixed(metric === 'count' || metric === 'elevationGain' ? 0 : 1)),
-        series,
-        color: colors[i],
-      });
-    }
-    const maxLen = Math.max(...rowsRaw.map((r) => r.series.length), 0);
-    const chartData = Array.from({ length: maxLen }, (_, idx) => {
-      const row = { label: rowsRaw[0]?.series[idx]?.label || `J${idx + 1}` };
-      rowsRaw.forEach((period) => {
-        row[period.key] = period.series[idx]?.value ?? null;
-      });
-      return row;
-    });
-    const rows = buildRows(rowsRaw);
-    const insight = rows.length > 1
-      ? `${rows[0].label} est ${rows[0].deltaPrevious >= 0 ? 'en avance' : 'en retrait'} de ${Math.abs(rows[0].deltaPrevious || 0).toLocaleString('fr-FR', { minimumFractionDigits: metric === 'count' || metric === 'elevationGain' ? 0 : 1, maximumFractionDigits: metric === 'count' || metric === 'elevationGain' ? 0 : 1 })} ${metric === 'distanceKm' ? 'km' : metric === 'movingHours' ? 'h' : metric === 'elevationGain' ? 'm' : ''} vs ${rows[1].label} à date.`
-      : '';
-    return { mode, metric, rows, chartData, insight, referenceValue: formatDateInputValue(refDate), controlType: 'date' };
-  }
+  const items = buildActivityItems(activities);
+  const chartMetric = options.chartMetric || "distanceKm";
+  const allowRunOnlyMetrics = Boolean(options.allowRunOnlyMetrics);
+  const previousRange = getComparisonRange(currentRange);
+  const yearRange = getPreviousYearRange(currentRange);
 
-  if (mode === 'fullMonths') {
-    const latest = getLatestDate(items);
-    const [y, m] = (reference || formatMonthInputValue(latest)).split('-');
-    const ref = new Date(Number(y), Number(m) - 1, 1);
-    for (let i = 0; i < periodsCount; i += 1) {
-      const current = new Date(ref.getFullYear(), ref.getMonth() - i, 1);
-      const start = current;
-      const end = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
-      const periodItems = items.filter((a) => a.__date >= start && a.__date <= end);
-      rowsRaw.push({
-        key: `m-${i}`,
-        label: formatMonthLabel(current),
-        description: 'Mois complet',
-        value: Number(periodItems.reduce((sum, a) => sum + metricValue(a, metric), 0).toFixed(metric === 'count' || metric === 'elevationGain' ? 0 : 1)),
-        color: colors[i],
-      });
-    }
-    const rows = buildRows(rowsRaw);
-    const chartData = rows.map((row) => ({ label: row.label, value: row.value, fill: row.color }));
-    const insight = rows.length > 1 ? `${rows[0].label} ${rows[0].deltaPrevious >= 0 ? 'dépasse' : 'reste sous'} ${rows[1].label} de ${Math.abs(rows[0].deltaPrevious || 0).toLocaleString('fr-FR', { minimumFractionDigits: metric === 'count' || metric === 'elevationGain' ? 0 : 1, maximumFractionDigits: metric === 'count' || metric === 'elevationGain' ? 0 : 1 })}.` : '';
-    return { mode, metric, rows, chartData, insight, referenceValue: formatMonthInputValue(ref), controlType: 'month' };
-  }
+  const periods = [
+    {
+      key: "current",
+      label: "Periode selectionnee",
+      range: currentRange,
+      color: "#F97316",
+      items: getItemsWithinRange(items, currentRange.start, currentRange.end),
+    },
+    {
+      key: "previous",
+      label: "Periode precedente",
+      range: previousRange,
+      color: "#355886",
+      items: getItemsWithinRange(items, previousRange.start, previousRange.end),
+    },
+  ];
 
-  const years = getAvailableYears(items);
-  const refYear = Number(reference || years[0] || new Date().getFullYear());
-  for (let i = 0; i < periodsCount; i += 1) {
-    const year = refYear - i;
-    const start = new Date(year, 0, 1);
-    const end = new Date(year, 11, 31, 23, 59, 59, 999);
-    const periodItems = items.filter((a) => a.__date >= start && a.__date <= end);
-    rowsRaw.push({
-      key: `fy-${year}`,
-      label: String(year),
-      description: 'Année complète',
-      value: Number(periodItems.reduce((sum, a) => sum + metricValue(a, metric), 0).toFixed(metric === 'count' || metric === 'elevationGain' ? 0 : 1)),
-      color: colors[i],
+  const yearItems = getItemsWithinRange(items, yearRange.start, yearRange.end);
+  const hasYearComparison = yearItems.length > 0;
+
+  if (hasYearComparison) {
+    periods.push({
+      key: "year",
+      label: "Meme periode N-1",
+      range: yearRange,
+      color: "#22C55E",
+      items: yearItems,
     });
   }
-  const rows = buildRows(rowsRaw);
-  const chartData = rows.map((row) => ({ label: row.label, value: row.value, fill: row.color }));
-  const insight = rows.length > 1 ? `${rows[0].label} ${rows[0].deltaPrevious >= 0 ? 'surperforme' : 'reste sous'} ${rows[1].label} de ${Math.abs(rows[0].deltaPrevious || 0).toLocaleString('fr-FR', { minimumFractionDigits: metric === 'count' || metric === 'elevationGain' ? 0 : 1, maximumFractionDigits: metric === 'count' || metric === 'elevationGain' ? 0 : 1 })}.` : '';
-  return { mode, metric, rows, chartData, insight, referenceValue: String(refYear), controlType: 'year' };
+
+  const currentSummary = buildPeriodSummary(items, currentRange, allowRunOnlyMetrics);
+  const previousSummary = buildPeriodSummary(items, previousRange, allowRunOnlyMetrics);
+  const yearSummary = hasYearComparison ? buildPeriodSummary(items, yearRange, allowRunOnlyMetrics) : null;
+  const metrics = buildMetricRows(currentSummary, previousSummary, yearSummary, allowRunOnlyMetrics);
+  const granularity = getAnalyticsGranularity(currentRange);
+  const chartData = granularity === "daily"
+    ? buildDailyCumulativeData(periods, chartMetric, currentRange.days)
+    : buildWeeklyCumulativeData(periods, chartMetric);
+  const chartCurrent = metrics.find((metric) => metric.key === chartMetric);
+  const insight = chartCurrent?.deltaPercent === null
+    ? ""
+    : `${chartCurrent.label} ${chartCurrent.deltaPercent >= 0 ? "en hausse" : "en retrait"} de ${Math.abs(chartCurrent.deltaPercent).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} % vs periode precedente.`;
+
+  return {
+    metrics,
+    periods,
+    chartData,
+    insight,
+    hasYearComparison,
+    chartMetric,
+    currentRangeLabel: currentRange.label,
+    previousRangeLabel: previousRange.label,
+    yearRangeLabel: yearRange.label,
+  };
 }

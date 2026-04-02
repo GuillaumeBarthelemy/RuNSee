@@ -27,22 +27,51 @@ function buildPageItems(currentPage, totalPages) {
   }
 
   const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1]);
+
   if (currentPage <= 3) {
-    pages.add(2); pages.add(3); pages.add(4);
-  }
-  if (currentPage >= totalPages - 2) {
-    pages.add(totalPages - 1); pages.add(totalPages - 2); pages.add(totalPages - 3);
+    pages.add(2);
+    pages.add(3);
+    pages.add(4);
   }
 
-  const sorted = Array.from(pages).filter((page) => page >= 1 && page <= totalPages).sort((a, b) => a - b);
+  if (currentPage >= totalPages - 2) {
+    pages.add(totalPages - 1);
+    pages.add(totalPages - 2);
+    pages.add(totalPages - 3);
+  }
+
+  const sorted = Array.from(pages)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
   const result = [];
+
   for (let index = 0; index < sorted.length; index += 1) {
     const page = sorted[index];
     const previous = sorted[index - 1];
-    if (index > 0 && page - previous > 1) result.push(`ellipsis-${index}`);
+
+    if (index > 0 && page - previous > 1) {
+      result.push(`ellipsis-${index}`);
+    }
+
     result.push(page);
   }
+
   return result;
+}
+
+function persistReturnLocation(returnPath, anchorId) {
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    return;
+  }
+
+  sessionStorage.setItem("runsee-return-hash", anchorId);
+  sessionStorage.setItem(
+    "runsee-return-location",
+    JSON.stringify({
+      pathname: returnPath || "/activities",
+      hash: anchorId || "",
+    }),
+  );
 }
 
 export default function ActivitiesTable({
@@ -54,6 +83,9 @@ export default function ActivitiesTable({
   pageSize = 20,
   onPageChange = noop,
   onPageSizeChange = noop,
+  title = "Activites",
+  subtitle = "Clic sur une ligne pour ouvrir sa fiche detail puis revenir exactement au bon endroit.",
+  returnPath = "/activities",
 }) {
   const navigate = useNavigate();
   const safeActivities = useMemo(() => (Array.isArray(activities) ? activities : []), [activities]);
@@ -74,15 +106,18 @@ export default function ActivitiesTable({
 
   useEffect(() => {
     if (typeof document === "undefined") return undefined;
-    if (!currentAnchor) return;
+    if (!currentAnchor) return undefined;
     const target = document.getElementById(currentAnchor);
-    if (!target) return;
+    if (!target) return undefined;
+
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     target.classList.add("row-highlight");
+
     const timer = window.setTimeout(() => {
       target.classList.remove("row-highlight");
       onAnchorHandled?.();
     }, 1800);
+
     return () => window.clearTimeout(timer);
   }, [currentAnchor, onAnchorHandled, rows]);
 
@@ -92,25 +127,33 @@ export default function ActivitiesTable({
 
   const openDetail = (activity) => {
     if (!activity?.stravaActivityId) return;
+
     const anchorId = `activity-row-${activity.stravaActivityId}`;
-    if (typeof window !== "undefined" && window.sessionStorage) {
-      sessionStorage.setItem("runsee-return-hash", anchorId);
-    }
-    navigate(`/activities/${activity.stravaActivityId}`, { state: { returnHash: anchorId } });
+    persistReturnLocation(returnPath, anchorId);
+    navigate(`/activities/${activity.stravaActivityId}`, {
+      state: {
+        returnPath,
+        returnHash: anchorId,
+      },
+    });
   };
 
   return (
     <section className="card">
       <div className="card-header-row align-center wrap-on-mobile">
         <div>
-          <h2 className="card-title">Activités</h2>
-          <p className="card-subtitle">Clic sur une ligne pour ouvrir sa fiche détail puis revenir exactement au bon endroit.</p>
+          <h2 className="card-title">{title}</h2>
+          <p className="card-subtitle">{subtitle}</p>
         </div>
         <div className="table-toolbar">
           <div className="small-text">{startIndex}-{endIndex} / {totalRows}</div>
           <label className="inline-field">
             <span className="field-label inline-label">Lignes</span>
-            <select className="field-input field-input-small" value={safePageSize} onChange={(event) => onPageSizeChange(Number(event.target.value))}>
+            <select
+              className="field-input field-input-small"
+              value={safePageSize}
+              onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            >
               <option value={10}>10</option>
               <option value={20}>20</option>
               <option value={50}>50</option>
@@ -121,7 +164,7 @@ export default function ActivitiesTable({
       </div>
 
       {!rows.length ? (
-        <div className="empty-state">Aucune activité disponible pour les filtres sélectionnés.</div>
+        <div className="empty-state">Aucune activite disponible pour les filtres selectionnes.</div>
       ) : (
         <>
           <div className="table-wrapper">
@@ -129,7 +172,7 @@ export default function ActivitiesTable({
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Activité</th>
+                  <th>Activite</th>
                   <th>Sport</th>
                   <th>Distance</th>
                   <th>Temps</th>
@@ -142,6 +185,7 @@ export default function ActivitiesTable({
                   const key = activity?.id || activity?.stravaActivityId || activity?.name || `activity-${safePage}-${index}`;
                   const anchorId = activity?.stravaActivityId ? `activity-row-${activity.stravaActivityId}` : undefined;
                   const isClickable = Boolean(activity?.stravaActivityId);
+
                   return (
                     <tr
                       key={key}
@@ -176,14 +220,18 @@ export default function ActivitiesTable({
           </div>
 
           <div className="pagination-shell top-gap-sm">
-            <button className="button button-outline pagination-button" onClick={() => onPageChange(Math.max(1, safePage - 1))} disabled={safePage <= 1}>
-              ←
+            <button
+              className="button button-outline pagination-button"
+              onClick={() => onPageChange(Math.max(1, safePage - 1))}
+              disabled={safePage <= 1}
+            >
+              &larr;
             </button>
 
             <div className="pagination-pages">
               {pageItems.map((item) => {
                 if (String(item).startsWith("ellipsis")) {
-                  return <span className="pagination-ellipsis" key={item}>…</span>;
+                  return <span className="pagination-ellipsis" key={item}>&hellip;</span>;
                 }
 
                 return (
@@ -198,8 +246,12 @@ export default function ActivitiesTable({
               })}
             </div>
 
-            <button className="button button-outline pagination-button" onClick={() => onPageChange(Math.min(totalPages, safePage + 1))} disabled={safePage >= totalPages}>
-              →
+            <button
+              className="button button-outline pagination-button"
+              onClick={() => onPageChange(Math.min(totalPages, safePage + 1))}
+              disabled={safePage >= totalPages}
+            >
+              &rarr;
             </button>
           </div>
         </>

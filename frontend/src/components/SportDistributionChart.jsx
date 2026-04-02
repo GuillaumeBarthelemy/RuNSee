@@ -1,40 +1,52 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import InfoTooltip from "./InfoTooltip.jsx";
 
-const COLORS = ["#0b5fff", "#22c55e", "#f97316", "#8b5cf6", "#06b6d4", "#f43f5e", "#64748b", "#84cc16", "#14b8a6", "#f59e0b"];
+const COLORS = ["#F97316", "#FB923C", "#355886", "#2C4A73", "#54657D", "#7B8CA3", "#22C55E", "#F59E0B", "#EF4444"];
 
-export default function SportDistributionChart({ data = [], groupSports = true }) {
+function defaultFormatter(value, unit = "") {
+  return unit ? `${Number(value || 0).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ${unit}` : `${value}`;
+}
+
+export default function SportDistributionChart({
+  data = [],
+  title = "Repartition par sport",
+  subtitle = "Le volume est regroupe intelligemment pour une lecture synthese.",
+  info = [],
+  unit = "km",
+  valueFormatter = null,
+}) {
   const safeData = Array.isArray(data)
     ? data.filter((entry) => entry?.name && Number(entry?.value) > 0)
     : [];
+  const formatter = valueFormatter || ((value) => defaultFormatter(value, unit));
 
   return (
     <section className="card chart-card">
       <div className="card-header-row">
         <div>
-          <h2 className="card-title">Répartition par sport</h2>
-          <p className="card-subtitle">
-            {groupSports
-              ? "Les sports sont regroupés intelligemment pour une lecture synthétique."
-              : "Affichage détaillé sport par sport avec traduction en français."}
-          </p>
+          <div className="title-with-info">
+            <h2 className="card-title">{title}</h2>
+            <InfoTooltip title={title} content={info} label={`Afficher l'aide pour ${title}`} />
+          </div>
+          <p className="card-subtitle">{subtitle}</p>
         </div>
       </div>
       {safeData.length ? (
         <div className="chart-box large-chart">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={safeData} dataKey="value" nameKey="name" outerRadius={120} innerRadius={65} paddingAngle={2} label>
+              <Pie data={safeData} dataKey="value" nameKey="name" outerRadius={120} innerRadius={72} paddingAngle={2} label>
                 {safeData.map((entry, index) => (
                   <Cell key={`${entry.name}-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={(value) => [formatter(value), "Volume"]} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="empty-state">Aucune donnée disponible sur cette plage.</div>
+        <div className="empty-state">Aucune donnee disponible sur cette plage.</div>
       )}
     </section>
   );

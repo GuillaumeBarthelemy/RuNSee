@@ -2,14 +2,15 @@ import axios from "axios";
 import prisma from "../../config/prisma.js";
 import env from "../../config/env.js";
 
-export function getAuthorizationUrl() {
+export function getAuthorizationUrl(options = {}) {
+  const state = String(options.state || "runsee-local").trim() || "runsee-local";
   const params = new URLSearchParams({
     client_id: env.stravaClientId,
     response_type: "code",
     redirect_uri: env.stravaRedirectUri,
     approval_prompt: "auto",
     scope: env.stravaScope,
-    state: "runsee-local",
+    state,
   });
 
   return `https://www.strava.com/oauth/authorize?${params.toString()}`;

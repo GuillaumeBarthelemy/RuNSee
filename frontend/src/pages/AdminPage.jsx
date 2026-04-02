@@ -1,11 +1,16 @@
-import { useCallback } from "react";
-import AppNavigation from "../components/AppNavigation.jsx";
+import { useCallback, useMemo, useState } from "react";
+import AccountOverviewCard from "../components/AccountOverviewCard.jsx";
+import HeartRateSettingsCard from "../components/HeartRateSettingsCard.jsx";
 import SyncActions from "../components/SyncActions.jsx";
 import SyncStatusCard from "../components/SyncStatusCard.jsx";
 import SyncSummaryCard from "../components/SyncSummaryCard.jsx";
+import UserPreferencesCard from "../components/UserPreferencesCard.jsx";
+import useDashboardState from "../hooks/useDashboardState.js";
 import useRunSeeData from "../hooks/useRunSeeData.js";
+import { forgotPasswordUrl, stravaLoginUrl } from "../config/env.js";
+import AppShell from "../layouts/AppShell.jsx";
+import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
 import { startHistoricalSync, startIncrementalSync } from "../services/sync.service.js";
-import { stravaLoginUrl } from "../config/env.js";
 
 function extractErrorMessage(error, fallback) {
   return error?.response?.data?.userMessage || error?.response?.data?.message || error?.message || fallback;
@@ -14,14 +19,62 @@ function extractErrorMessage(error, fallback) {
 const noop = () => {};
 
 export default function AdminPage() {
-  const { athlete, summary, currentJob, error, setError, reload, isBusy } = useRunSeeData({ includeActivities: false });
+  const {
+    athlete,
+    summary,
+    currentJob,
+    error,
+    setError,
+    reload,
+    isBusy,
+  } = useRunSeeData({ includeActivities: false });
+  const { dashboardState, dashboardActions } = useDashboardState();
+  const [passwordResetNotice, setPasswordResetNotice] = useState("");
   const safeSetError = setError ?? noop;
   const safeReload = reload ?? noop;
+  const safeSetOption = dashboardActions?.setOption ?? noop;
+
+  const userPreferenceOptions = useMemo(
+    () => ({
+      userLocale: dashboardState?.options?.userLocale || "fr-FR",
+      userDistanceUnit: dashboardState?.options?.userDistanceUnit || "km",
+      userWeekStartsOn: dashboardState?.options?.userWeekStartsOn || "monday",
+    }),
+    [dashboardState?.options],
+  );
+
+  const heartRateOptions = useMemo(
+    () => ({
+      heartRateMax: dashboardState?.options?.heartRateMax || "",
+      heartRateZone1Max: dashboardState?.options?.heartRateZone1Max || "",
+      heartRateZone2Max: dashboardState?.options?.heartRateZone2Max || "",
+      heartRateZone3Max: dashboardState?.options?.heartRateZone3Max || "",
+      heartRateZone4Max: dashboardState?.options?.heartRateZone4Max || "",
+    }),
+    [dashboardState?.options],
+  );
+
+  const account = useMemo(
+    () => buildCurrentAccountModel({ athlete, options: dashboardState?.options || {}, summary }),
+    [athlete, dashboardState?.options, summary],
+  );
 
   const handleConnectStrava = useCallback(() => {
     if (typeof window !== "undefined" && stravaLoginUrl) {
       window.location.href = stravaLoginUrl;
     }
+  }, []);
+
+  const handleForgotPassword = useCallback(() => {
+    if (typeof window !== "undefined" && forgotPasswordUrl) {
+      setPasswordResetNotice("");
+      window.location.href = forgotPasswordUrl;
+      return;
+    }
+
+    setPasswordResetNotice(
+      "Le lien de reinitialisation du mot de passe n'est pas encore branche. Des qu'une page de reset existe, ce bouton pourra y pointer directement.",
+    );
   }, []);
 
   const handleStartHistorical = useCallback(async () => {
@@ -40,52 +93,48 @@ export default function AdminPage() {
       await startIncrementalSync();
       await safeReload();
     } catch (err) {
-      safeSetError(extractErrorMessage(err, "Erreur lors du lancement de la synchronisation incrémentale."));
+      safeSetError(extractErrorMessage(err, "Erreur lors du lancement de la synchronisation incrementale."));
     }
   }, [safeReload, safeSetError]);
 
   return (
-    <div className="page premium-page">
-      <div className="container">
-        <header className="topbar premium-topbar">
-          <div>
-            <div className="brand-line">
-              <span className="brand-badge">RuNSee</span>
-              <AppNavigation />
-            </div>
-            <h1 className="topbar-title">Administration</h1>
-            <p className="page-subtitle">Pilote les synchronisations, contrôle l'état local et supervise la connexion Strava.</p>
-          </div>
-        </header>
+    <AppShell
+      eyebrow="Administration"
+      title="Administration"
+      subtitle="L'essentiel pour le compte actif, Strava et les reglages utiles."
+      account={account}
+    >
+      {error ? <div className="alert alert-error section">{error}</div> : null}
+      {passwordResetNotice ? <div className="alert alert-info section">{passwordResetNotice}</div> : null}
 
-        {error ? <div className="alert alert-error section">{error}</div> : null}
+      <section className="section">
+        <AccountOverviewCard account={account} onForgotPassword={handleForgotPassword} />
+      </section>
 
-        <div className="section">
-          <SyncActions
-            onConnectStrava={handleConnectStrava}
-            onStartHistorical={handleStartHistorical}
-            onStartIncremental={handleStartIncremental}
-            isBusy={Boolean(isBusy)}
-          />
-        </div>
+      <section className="section">
+        <SyncActions
+          onConnectStrava={handleConnectStrava}
+          onStartHistorical={handleStartHistorical}
+          onStartIncremental={handleStartIncremental}
+          isBusy={Boolean(isBusy)}
+        />
+      </section>
 
-        <div className="section">
-          <SyncSummaryCard summary={summary} athlete={athlete} />
-        </div>
-
-        <div className="grid two-columns section">
-          <SyncStatusCard currentJob={currentJob} />
-          <section className="card card-accent status-side-card">
-            <h2 className="card-title">État général</h2>
-            <p className="muted">
-              {athlete
-                ? "Connexion Strava active. La base locale est prête à être synchronisée et enrichie à la demande."
-                : "Aucun athlète connecté. Lance d'abord la connexion Strava pour alimenter l'application."}
-            </p>
-            <div className="top-gap-sm small-text">La page d'administration conserve désormais le contexte du tableau de bord pendant ta navigation.</div>
-          </section>
-        </div>
+      <div className="grid two-columns section">
+        <SyncSummaryCard summary={summary} athlete={athlete} />
+        <SyncStatusCard currentJob={currentJob} />
       </div>
-    </div>
+
+      <div className="grid two-columns section">
+        <UserPreferencesCard
+          options={userPreferenceOptions}
+          onOptionChange={(name, value) => safeSetOption(name, value)}
+        />
+        <HeartRateSettingsCard
+          options={heartRateOptions}
+          onOptionChange={(name, value) => safeSetOption(name, value)}
+        />
+      </div>
+    </AppShell>
   );
 }

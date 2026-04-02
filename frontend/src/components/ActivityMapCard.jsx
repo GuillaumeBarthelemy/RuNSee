@@ -68,7 +68,7 @@ export default function ActivityMapCard({ activity = null, detailedPayload = nul
               attribution="&copy; OpenStreetMap contributors &copy; CARTO"
               url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
             />
-            <Polyline positions={points} pathOptions={{ color: "#0b5fff", weight: 5, opacity: 0.85 }} />
+            <Polyline positions={points} pathOptions={{ color: "#F97316", weight: 5, opacity: 0.85 }} />
             {start ? <Marker position={start} icon={startIcon} /> : null}
             {end ? <Marker position={end} icon={endIcon} /> : null}
           </MapContainer>

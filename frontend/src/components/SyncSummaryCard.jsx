@@ -7,48 +7,45 @@ function formatDate(value) {
 
 export default function SyncSummaryCard({ summary, athlete }) {
   const athleteName = athlete
-    ? `${athlete.firstname || ""} ${athlete.lastname || ""}`.trim() || athlete.username || "Connecté"
-    : "Non connecté";
+    ? `${athlete.firstname || ""} ${athlete.lastname || ""}`.trim() || athlete.username || "Connecte"
+    : "Non connecte";
+
+  const latestSyncDate =
+    summary?.lastIncrementalSync?.endedAt ||
+    summary?.lastHistoricalSync?.endedAt ||
+    summary?.latestActivity?.startDate ||
+    null;
 
   return (
     <section className="card glass-card">
-      <div className="card-header-row">
+      <div className="card-header-row wrap-on-mobile">
         <div>
-          <h2 className="card-title">Vue d'ensemble</h2>
-          <p className="card-subtitle">État local de la base et dernières synchronisations réussies.</p>
+          <h2 className="card-title">Connexion Strava</h2>
+          <p className="card-subtitle">Etat du compte source et des donnees importees.</p>
         </div>
       </div>
 
       <div className="grid three-columns">
         <div className="metric-card">
-          <span className="metric-label">Athlète connecté</span>
+          <span className="metric-label">Profil Strava</span>
           <div className="metric-value medium-metric">{athleteName}</div>
-          <div className="metric-secondary">{athlete?.city ? `${athlete.city}${athlete.country ? `, ${athlete.country}` : ""}` : athlete?.username || "-"}</div>
+          <div className="metric-secondary">
+            {athlete?.city ? `${athlete.city}${athlete.country ? `, ${athlete.country}` : ""}` : athlete?.username || "Aucun profil relie"}
+          </div>
         </div>
 
         <div className="metric-card">
-          <span className="metric-label">Activités locales</span>
+          <span className="metric-label">Activites locales</span>
           <div className="metric-value">{summary?.totalActivities ?? 0}</div>
-          <div className="metric-secondary">Dernière activité : {summary?.latestActivity?.name || "-"}</div>
+          <div className="metric-secondary">{summary?.latestActivity?.name || "Aucune activite importee"}</div>
         </div>
 
         <div className="metric-card">
-          <span className="metric-label">Dernière activité stockée</span>
-          <div className="metric-value medium-metric">{formatDate(summary?.latestActivity?.startDate)}</div>
-          <div className="metric-secondary">{summary?.latestActivity?.sportType || summary?.latestActivity?.type || "-"}</div>
-        </div>
-      </div>
-
-      <div className="grid two-columns top-gap-sm">
-        <div className="metric-card">
-          <span className="metric-label">Dernier historique réussi</span>
-          <div className="metric-value medium-metric">{formatDate(summary?.lastHistoricalSync?.endedAt)}</div>
-          <div className="metric-secondary">{summary?.lastHistoricalSync?.message || "-"}</div>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Dernière synchro incrémentale</span>
-          <div className="metric-value medium-metric">{formatDate(summary?.lastIncrementalSync?.endedAt)}</div>
-          <div className="metric-secondary">{summary?.lastIncrementalSync?.message || "-"}</div>
+          <span className="metric-label">Derniere mise a jour</span>
+          <div className="metric-value medium-metric">{formatDate(latestSyncDate)}</div>
+          <div className="metric-secondary">
+            {summary?.lastIncrementalSync?.message || summary?.lastHistoricalSync?.message || "Aucune synchronisation recente"}
+          </div>
         </div>
       </div>
     </section>

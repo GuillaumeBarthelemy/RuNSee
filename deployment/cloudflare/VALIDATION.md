@@ -47,12 +47,12 @@ powershell -ExecutionPolicy Bypass -File .\deployment\cloudflare\scripts\check-e
 
 ## 7. Hostname public backend accessible
 
-- Ouvrir `https://api.runsee.<votre-domaine>/health`
+- Ouvrir `https://api.<votre-domaine>/health`
 - Verifier un JSON `status: OK`
 
 ## 8. Appels API OK via hostname public
 
-- Depuis `https://runsee.<votre-domaine>`, verifier que les appels navigateur vont bien vers `https://api.runsee.<votre-domaine>`
+- Depuis `https://runsee.<votre-domaine>`, verifier que les appels navigateur vont bien vers `https://api.<votre-domaine>`
 - Verifier l'absence d'appel vers `localhost:3000`, `localhost:3001` ou un ancien port depuis le navigateur public
 
 ## 9. Dashboard OK

@@ -10,10 +10,10 @@ export default function SyncActions({
     <section className="hero-card">
       <div className="hero-card-content">
         <div>
-          <span className="eyebrow">Contrôle de synchronisation</span>
-          <h2 className="hero-title">Pilote RuNSee sans quitter le tableau de bord</h2>
+          <span className="eyebrow">Connexion et synchro</span>
+          <h2 className="hero-title">Relier ou mettre a jour la source du compte actif</h2>
           <p className="hero-text">
-            Connecte Strava, recharge l'historique local ou synchronise uniquement les nouvelles activités.
+            Connecte Strava, recharge l'historique local ou synchronise uniquement les nouvelles activites du compte en cours.
           </p>
         </div>
         <div className="actions-row hero-actions">
@@ -24,12 +24,14 @@ export default function SyncActions({
             Recharger l'historique
           </button>
           <button type="button" className="button button-dark" onClick={onStartIncremental} disabled={isBusy}>
-            Synchroniser les nouveautés
+            Synchroniser les nouveautes
           </button>
         </div>
       </div>
       <div className="hero-card-footnote">
-        {isBusy ? "Une synchronisation est déjà en cours. Les actions sont temporairement verrouillées." : "Astuce : commence par un historique complet, puis utilise l'incrémental au quotidien."}
+        {isBusy
+          ? "Une synchronisation est deja en cours. Les actions sont temporairement verrouillees."
+          : "Astuce : connectez d'abord Strava, lancez un historique complet, puis utilisez l'incremental au quotidien."}
       </div>
     </section>
   );

@@ -1,8 +1,6 @@
+import { useMemo } from "react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
   Legend,
   Line,
   LineChart,
@@ -12,39 +10,45 @@ import {
   YAxis,
 } from "recharts";
 import { formatMetricValue, getMetricConfig } from "../utils/activityAggregations.js";
-import { buildPeriodComparisonModel, getComparisonControlOptions } from "../utils/periodComparison.js";
+import { formatPace } from "../utils/activityInsights.js";
+import { buildPeriodComparisonModel } from "../utils/periodComparison.js";
+import InfoTooltip from "./InfoTooltip.jsx";
 
-const MODE_OPTIONS = [
-  { value: "yearToDate", label: "Année à date" },
-  { value: "fullMonths", label: "Mois complets" },
-  { value: "fullYears", label: "Années complètes" },
-];
-
+const AXIS_TICK = { fontSize: 12, fill: "#7B8CA3" };
 const noop = () => {};
 
-function DeltaCell({ value, metric }) {
-  if (value === null || value === undefined) return <span>—</span>;
-  const positive = value >= 0;
-  return <span className={positive ? "delta-positive" : "delta-negative"}>{positive ? "+" : ""}{formatMetricValue(value, metric)}</span>;
+function formatComparisonValue(rowKey, value) {
+  if (rowKey === "referencePaceSecondsPerKm") {
+    return value > 0 ? formatPace(value) : "-";
+  }
+
+  return formatMetricValue(value, rowKey);
 }
 
-function PercentCell({ value }) {
-  if (value === null || value === undefined) return <span>—</span>;
-  const positive = value >= 0;
-  return <span className={positive ? "delta-positive" : "delta-negative"}>{positive ? "+" : ""}{value.toFixed(1)} %</span>;
-}
+function PercentCell({ value, invert = false }) {
+  if (value === null || value === undefined) return <span className="comparison-empty-value">-</span>;
+  const positive = invert ? value <= 0 : value >= 0;
 
-function CustomTooltip({ active, payload, label, metric }) {
-  if (!active || !payload?.length) return null;
   return (
-    <div className="chart-tooltip">
+    <span className={positive ? "delta-positive" : "delta-negative"}>
+      {value > 0 ? "+" : ""}
+      {value.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %
+    </span>
+  );
+}
+
+function ComparisonTooltip({ active, payload, label, metric }) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="chart-tooltip comparison-tooltip">
       <strong>{label}</strong>
       <div className="comparison-tooltip-list">
         {payload.map((item) => (
-          <div key={item.dataKey || item.name} className="comparison-tooltip-item">
-            <span className="comparison-tooltip-dot" style={{ background: item.color || item.fill }} />
+          <div key={item.dataKey} className="comparison-tooltip-item">
+            <span className="comparison-tooltip-dot" style={{ background: item.color }} />
             <span>{item.name}</span>
-            <strong>{formatMetricValue(item.value, metric)}</strong>
+            <strong>{formatMetricValue(item.value || 0, metric)}</strong>
           </div>
         ))}
       </div>
@@ -54,157 +58,109 @@ function CustomTooltip({ active, payload, label, metric }) {
 
 export default function PeriodComparisonSection({
   activities = [],
-  mode = "yearToDate",
-  metric = "distanceKm",
-  reference = "",
-  display = "line",
-  periods = 3,
+  currentRange = null,
+  chartMetric = "distanceKm",
+  allowRunOnlyMetrics = false,
   scopeText = "",
-  onModeChange = noop,
-  onMetricChange = noop,
-  onReferenceChange = noop,
-  onDisplayChange = noop,
-  onPeriodsChange = noop,
+  info = [],
+  referencePaceInfo = [],
+  onChartMetricChange = noop,
 }) {
-  const safeActivities = Array.isArray(activities) ? activities : [];
-  const safeMode = mode || "yearToDate";
-  const safeMetric = metric || "distanceKm";
-  const safePeriods = Math.max(2, Math.min(4, Number(periods) || 3));
-  const safeDisplay = display === "bar" ? "bar" : "line";
-  const controls = getComparisonControlOptions(safeActivities);
-  const model = buildPeriodComparisonModel(safeActivities, {
-    mode: safeMode,
-    metric: safeMetric,
-    reference,
-    periods: safePeriods,
-  });
-  const metricConfig = getMetricConfig(safeMetric);
-  const effectiveDisplay = safeMode === "yearToDate" ? safeDisplay : "bar";
-  const years = Array.isArray(controls?.years) && controls.years.length ? controls.years : [new Date().getFullYear()];
-  const chartRows = Array.isArray(model?.rows) ? model.rows : [];
-  const chartData = Array.isArray(model?.chartData) ? model.chartData : [];
-  const hasData = chartRows.length > 0;
+  const model = useMemo(
+    () => buildPeriodComparisonModel(activities, {
+      currentRange,
+      chartMetric,
+      allowRunOnlyMetrics,
+    }),
+    [activities, allowRunOnlyMetrics, chartMetric, currentRange],
+  );
+
+  const chartConfig = getMetricConfig(model.chartMetric);
+  const currentLabel = model.periods[0]?.label || "Periode selectionnee";
+  const previousLabel = model.periods[1]?.label || "Periode precedente";
+  const yearLabel = model.periods[2]?.label || "Meme periode N-1";
+  const hasData = model.metrics.length > 0;
 
   return (
-    <section className="card chart-card elevate-section">
-      <div className="card-header-row wrap-on-mobile align-center">
-        <div>
-          <h2 className="card-title">Comparaison de périodes</h2>
-          <p className="card-subtitle">Lecture plus claire inspirée d'Elevate : une référence, plusieurs périodes alignées et un résumé compact.</p>
+    <section className="card chart-card comparison-card-shell">
+      <div className="card-header-row wrap-on-mobile comparison-header-row">
+        <div className="comparison-header-copy">
+          <div className="title-with-info">
+            <h2 className="card-title">Comparaison de periodes</h2>
+            <InfoTooltip title="Comparaison de periodes" content={info} label="Afficher l'aide pour la comparaison de periodes" />
+          </div>
+          <p className="card-subtitle">
+            Tableau prioritaire sur la periode selectionnee, la periode precedente equivalente et, si disponible, la meme fenetre N-1.
+          </p>
           {scopeText ? <p className="comparison-scope">{scopeText}</p> : null}
         </div>
-        <div className="chart-controls">
-          <label className="inline-field"><span className="field-label inline-label">Mode</span>
-            <select className="field-input field-input-small" value={safeMode} onChange={(event) => onModeChange(event.target.value)}>
-              {MODE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+
+        <div className="chart-controls comparison-controls">
+          <label className="inline-field">
+            <span className="field-label inline-label">Graphe cumule</span>
+            <select className="field-input field-input-small" value={chartMetric} onChange={(event) => onChartMetricChange(event.target.value)}>
+              <option value="distanceKm">Distance</option>
+              <option value="movingHours">Temps</option>
+              <option value="elevationGain">D+</option>
+              <option value="load">Charge</option>
+              <option value="count">Seances</option>
             </select>
           </label>
-          <label className="inline-field"><span className="field-label inline-label">Métrique</span>
-            <select className="field-input field-input-small" value={safeMetric} onChange={(event) => onMetricChange(event.target.value)}>
-              <option value="distanceKm">Distance (km)</option>
-              <option value="elevationGain">Dénivelé positif</option>
-              <option value="movingHours">Temps de déplacement</option>
-              <option value="count">Activités</option>
-            </select>
-          </label>
-          {safeMode === "yearToDate" ? (
-            <label className="inline-field"><span className="field-label inline-label">Affichage</span>
-              <select className="field-input field-input-small" value={effectiveDisplay} onChange={(event) => onDisplayChange(event.target.value)}>
-                <option value="line">Courbe</option>
-                <option value="bar">Barres</option>
-              </select>
-            </label>
-          ) : null}
-          <label className="inline-field"><span className="field-label inline-label">Périodes</span>
-            <select className="field-input field-input-small" value={safePeriods} onChange={(event) => onPeriodsChange(Number(event.target.value))}>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-            </select>
-          </label>
-          {model.controlType === "date" ? (
-            <label className="inline-field"><span className="field-label inline-label">Date de référence</span>
-              <input className="field-input field-input-small" type="date" value={model.referenceValue || ""} onChange={(event) => onReferenceChange(event.target.value)} />
-            </label>
-          ) : null}
-          {model.controlType === "month" ? (
-            <label className="inline-field"><span className="field-label inline-label">Mois de référence</span>
-              <input className="field-input field-input-small" type="month" value={model.referenceValue || ""} onChange={(event) => onReferenceChange(event.target.value)} />
-            </label>
-          ) : null}
-          {model.controlType === "year" ? (
-            <label className="inline-field"><span className="field-label inline-label">Année de référence</span>
-              <select className="field-input field-input-small" value={model.referenceValue || String(years[0])} onChange={(event) => onReferenceChange(event.target.value)}>
-                {years.map((year) => <option key={year} value={year}>{year}</option>)}
-              </select>
-            </label>
-          ) : null}
         </div>
       </div>
 
-      {model.insight ? <div className="alert alert-info section-sm">{model.insight}</div> : null}
+      {model.insight ? <div className="alert alert-info comparison-insight-banner">{model.insight}</div> : null}
 
       {!hasData ? (
-        <div className="empty-state">Aucune donnée exploitable pour comparer des périodes sur cette sélection.</div>
+        <div className="empty-state">Aucune donnee exploitable pour comparer des periodes sur cette selection.</div>
       ) : (
-        <div className="elevate-layout">
-          <div className="chart-box large-chart elevate-main-chart">
-            <ResponsiveContainer width="100%" height="100%">
-              {effectiveDisplay === "bar" ? (
-                <BarChart data={model.mode === "yearToDate" ? chartRows.map((row) => ({ label: row.label, value: row.value, fill: row.color })) : chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#d9e2f0" />
-                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip content={<CustomTooltip metric={safeMetric} />} />
-                  <Legend />
-                  <Bar dataKey="value" name={metricConfig.label} radius={[10, 10, 0, 0]}>
-                    {(model.mode === "yearToDate" ? chartRows : chartData).map((entry) => <Cell key={entry.label} fill={entry.color || entry.fill} />)}
-                  </Bar>
-                </BarChart>
-              ) : (
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#d9e2f0" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip content={<CustomTooltip metric={safeMetric} />} />
-                  <Legend />
-                  {chartRows.map((row) => (
-                    <Line key={row.key} type="monotone" dataKey={row.key} name={row.label} stroke={row.color} strokeWidth={3} dot={false} activeDot={{ r: 5 }} />
-                  ))}
-                </LineChart>
-              )}
-            </ResponsiveContainer>
-          </div>
+        <div className="comparison-stack">
+          <div className="comparison-panel comparison-summary-panel">
+            <div className="comparison-panel-head">
+              <div>
+                <h3 className="subcard-title">Tableau de comparaison</h3>
+                <p className="card-subtitle">
+                  Lecture directe des ecarts de volume, de charge, de structure et d'allure de reference.
+                </p>
+              </div>
+            </div>
 
-          <div className="card subcard elevate-side-table">
             <div className="table-wrapper comparison-table-shell">
-              <table className="table compact-table comparison-table comparison-table-compact">
+              <table className="table compact-table comparison-table comparison-table-summary">
                 <thead>
                   <tr>
-                    <th>Période</th>
-                    <th>Valeur</th>
-                    <th>Δ préc.</th>
-                    <th>Δ %</th>
-                    <th>Δ réf.</th>
-                    <th>Lecture</th>
+                    <th>Metrique</th>
+                    <th>{currentLabel}</th>
+                    <th>{previousLabel}</th>
+                    <th>Delta %</th>
+                    {model.hasYearComparison ? <th>{yearLabel}</th> : null}
+                    {model.hasYearComparison ? <th>Delta N-1</th> : null}
                   </tr>
                 </thead>
                 <tbody>
-                  {chartRows.map((row) => (
-                    <tr key={row.key} className={row.isBest ? "comparison-best-row" : ""}>
+                  {model.metrics.map((row) => (
+                    <tr key={row.key}>
                       <td>
                         <div className="comparison-label-cell">
-                          <strong>{row.label}</strong>
-                          <span className="small-text">{row.description}</span>
+                          <div className="title-with-info">
+                            <strong>{row.label}</strong>
+                            {row.key === "referencePaceSecondsPerKm" ? (
+                              <InfoTooltip
+                                title="Allure de reference"
+                                content={referencePaceInfo}
+                                label="Afficher l'aide pour l'allure de reference"
+                              />
+                            ) : null}
+                          </div>
                         </div>
                       </td>
-                      <td>{formatMetricValue(row.value, safeMetric)}</td>
-                      <td><DeltaCell value={row.deltaPrevious} metric={safeMetric} /></td>
-                      <td><PercentCell value={row.deltaPercent} /></td>
-                      <td><DeltaCell value={row.deltaReference} metric={safeMetric} /></td>
-                      <td>
-                        {row.isReference ? <span className="filter-chip">Référence</span> : row.isBest ? <span className="best-badge">Meilleure</span> : "—"}
-                      </td>
+                      <td>{formatComparisonValue(row.key, row.currentValue)}</td>
+                      <td>{formatComparisonValue(row.key, row.previousValue)}</td>
+                      <td><PercentCell value={row.deltaPercent} invert={row.key === "referencePaceSecondsPerKm"} /></td>
+                      {model.hasYearComparison ? <td>{formatComparisonValue(row.key, row.yearValue)}</td> : null}
+                      {model.hasYearComparison ? (
+                        <td><PercentCell value={row.yearDeltaPercent} invert={row.key === "referencePaceSecondsPerKm"} /></td>
+                      ) : null}
                     </tr>
                   ))}
                 </tbody>
@@ -212,38 +168,78 @@ export default function PeriodComparisonSection({
             </div>
 
             <div className="comparison-mobile-cards">
-              {chartRows.map((row) => (
-                <article key={row.key} className={`comparison-mobile-card ${row.isBest ? "comparison-best-row" : ""}`}>
+              {model.metrics.map((row) => (
+                <article key={row.key} className="comparison-mobile-card">
                   <div className="comparison-mobile-header">
-                    <div className="comparison-label-cell">
+                    <div className="title-with-info">
                       <strong>{row.label}</strong>
-                      <span className="small-text">{row.description}</span>
-                    </div>
-                    <div className="comparison-mobile-badge">
-                      {row.isReference ? <span className="filter-chip">Référence</span> : row.isBest ? <span className="best-badge">Meilleure</span> : null}
+                      {row.key === "referencePaceSecondsPerKm" ? (
+                        <InfoTooltip
+                          title="Allure de reference"
+                          content={referencePaceInfo}
+                          label="Afficher l'aide pour l'allure de reference"
+                        />
+                      ) : null}
                     </div>
                   </div>
 
                   <div className="comparison-mobile-grid">
                     <div className="comparison-mobile-item">
-                      <span className="comparison-mobile-label">Valeur</span>
-                      <strong>{formatMetricValue(row.value, safeMetric)}</strong>
+                      <span className="comparison-mobile-label">{currentLabel}</span>
+                      <strong>{formatComparisonValue(row.key, row.currentValue)}</strong>
                     </div>
                     <div className="comparison-mobile-item">
-                      <span className="comparison-mobile-label">Δ préc.</span>
-                      <DeltaCell value={row.deltaPrevious} metric={safeMetric} />
+                      <span className="comparison-mobile-label">{previousLabel}</span>
+                      <strong>{formatComparisonValue(row.key, row.previousValue)}</strong>
                     </div>
                     <div className="comparison-mobile-item">
-                      <span className="comparison-mobile-label">Δ %</span>
-                      <PercentCell value={row.deltaPercent} />
+                      <span className="comparison-mobile-label">Delta %</span>
+                      <PercentCell value={row.deltaPercent} invert={row.key === "referencePaceSecondsPerKm"} />
                     </div>
-                    <div className="comparison-mobile-item">
-                      <span className="comparison-mobile-label">Δ réf.</span>
-                      <DeltaCell value={row.deltaReference} metric={safeMetric} />
-                    </div>
+                    {model.hasYearComparison ? (
+                      <div className="comparison-mobile-item">
+                        <span className="comparison-mobile-label">{yearLabel}</span>
+                        <strong>{formatComparisonValue(row.key, row.yearValue)}</strong>
+                      </div>
+                    ) : null}
                   </div>
                 </article>
               ))}
+            </div>
+          </div>
+
+          <div className="comparison-panel comparison-chart-panel">
+            <div className="comparison-panel-head">
+              <div>
+                <h3 className="subcard-title">Graphe cumule</h3>
+                <p className="card-subtitle">
+                  {chartConfig.label} cumulee, alignee sur la duree de la periode selectionnee.
+                </p>
+              </div>
+            </div>
+
+            <div className="chart-box large-chart comparison-chart-shell">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={model.chartData}>
+                  <CartesianGrid strokeDasharray="4 7" vertical={false} stroke="rgba(123, 140, 163, 0.16)" />
+                  <XAxis dataKey="label" tick={AXIS_TICK} axisLine={false} tickLine={false} minTickGap={18} />
+                  <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={64} />
+                  <Tooltip content={<ComparisonTooltip metric={model.chartMetric} />} />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: 18 }} />
+                  {model.periods.map((period) => (
+                    <Line
+                      key={period.key}
+                      type="monotone"
+                      dataKey={period.key}
+                      name={period.label}
+                      stroke={period.color}
+                      strokeWidth={3}
+                      dot={false}
+                      activeDot={{ r: 5 }}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>

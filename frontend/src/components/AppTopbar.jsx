@@ -1,11 +1,12 @@
 import { NavLink } from "react-router-dom";
+import AppBrand from "./AppBrand.jsx";
 
-export default function AppTopbar({ title, subtitle, actions, badge = "RuNSee" }) {
+export default function AppTopbar({ title, subtitle, actions }) {
   return (
     <header className="topbar premium-topbar app-topbar">
       <div>
         <div className="brand-line">
-          <span className="brand-badge">{badge}</span>
+          <AppBrand />
           <nav className="topnav-links" aria-label="Navigation principale">
             <NavLink
               to="/"

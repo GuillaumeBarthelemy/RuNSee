@@ -6,9 +6,99 @@ import {
 } from "../services/strava/stravaAuth.service.js";
 import { getLoggedInAthlete } from "../services/strava/stravaAthlete.service.js";
 
+const OAUTH_STATE_KIND = "runsee-oauth";
+
+function normalizeOrigin(value) {
+  const candidate = String(value || "").trim();
+
+  if (!candidate) {
+    return "";
+  }
+
+  try {
+    const url = new URL(candidate);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return "";
+  }
+}
+
+function getAllowedFrontendOrigins() {
+  return new Set(
+    [env.localAppUrl, env.publicAppUrl, ...(env.frontendAllowedOrigins || [])]
+      .map((entry) => normalizeOrigin(entry))
+      .filter(Boolean)
+  );
+}
+
+function resolveAllowedReturnTo(value) {
+  const candidate = normalizeOrigin(value);
+
+  if (!candidate) {
+    return "";
+  }
+
+  return getAllowedFrontendOrigins().has(candidate) ? candidate : "";
+}
+
+function encodeOAuthState(returnTo) {
+  const payload = {
+    kind: OAUTH_STATE_KIND,
+    returnTo: resolveAllowedReturnTo(returnTo) || env.publicAppUrl,
+  };
+
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function decodeOAuthState(rawState) {
+  const state = String(rawState || "").trim();
+
+  if (!state || state === "runsee-local") {
+    return {
+      kind: OAUTH_STATE_KIND,
+      returnTo: env.publicAppUrl,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(Buffer.from(state, "base64url").toString("utf8"));
+
+    if (parsed?.kind !== OAUTH_STATE_KIND) {
+      return null;
+    }
+
+    return {
+      kind: OAUTH_STATE_KIND,
+      returnTo: resolveAllowedReturnTo(parsed.returnTo) || env.publicAppUrl,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getRequestedReturnTo(req) {
+  return (
+    resolveAllowedReturnTo(req.query?.returnTo) ||
+    resolveAllowedReturnTo(req.get("origin")) ||
+    resolveAllowedReturnTo(req.get("referer")) ||
+    env.publicAppUrl
+  );
+}
+
+function buildConnectedRedirectUrl(returnTo) {
+  const redirectUrl = new URL(
+    resolveAllowedReturnTo(returnTo) || env.publicAppUrl
+  );
+
+  redirectUrl.searchParams.set("strava", "connected");
+  return redirectUrl.toString();
+}
+
 export async function login(req, res, next) {
   try {
-    const url = getAuthorizationUrl();
+    const url = getAuthorizationUrl({
+      state: encodeOAuthState(getRequestedReturnTo(req)),
+    });
     return res.redirect(url);
   } catch (error) {
     next(error);
@@ -18,6 +108,7 @@ export async function login(req, res, next) {
 export async function callback(req, res, next) {
   try {
     const { code, scope, error, state } = req.query;
+    const oauthState = decodeOAuthState(state);
 
     if (error) {
       return res.status(400).json({
@@ -32,7 +123,7 @@ export async function callback(req, res, next) {
       });
     }
 
-    if (state && state !== "runsee-local") {
+    if (!oauthState) {
       return res.status(400).json({
         message: "State OAuth invalide.",
       });
@@ -115,7 +206,7 @@ export async function callback(req, res, next) {
       },
     });
 
-    return res.redirect(`${env.publicAppUrl}?strava=connected`);
+    return res.redirect(buildConnectedRedirectUrl(oauthState.returnTo));
   } catch (error) {
     next(error);
   }

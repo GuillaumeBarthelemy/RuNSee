@@ -23,7 +23,7 @@ ingress:
   - hostname: runsee.<your-domain>
     service: http://127.0.0.1:5173
 
-  - hostname: api.runsee.<your-domain>
+  - hostname: api.<your-domain>
     service: http://127.0.0.1:3000
 
   - service: http_status:404

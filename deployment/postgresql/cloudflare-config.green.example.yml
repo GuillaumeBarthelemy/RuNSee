@@ -1,0 +1,18 @@
+# Green cutover template.
+# Copy this outside Git when you are ready to switch public traffic
+# from the SQLite stack (5173/3000) to the PostgreSQL stack (5174/3001).
+
+tunnel: <YOUR_TUNNEL_UUID>
+credentials-file: C:\Windows\System32\config\systemprofile\.cloudflared\<YOUR_TUNNEL_UUID>.json
+
+logfile: C:\Cloudflared\cloudflared.log
+loglevel: info
+
+ingress:
+  - hostname: runsee.<your-domain>
+    service: http://127.0.0.1:5174
+
+  - hostname: api.<your-domain>
+    service: http://127.0.0.1:3001
+
+  - service: http_status:404

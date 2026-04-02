@@ -3,7 +3,10 @@ import {
   executeHistoricalSyncJob,
   executeIncrementalSyncJob,
 } from "./activitySync.service.js";
-import { countActivities } from "../../repositories/activity.repository.js";
+import {
+  countActivities,
+  getLatestStoredActivity,
+} from "../../repositories/activity.repository.js";
 
 const ACTIVE_JOB_STATUSES = ["queued", "running"];
 const runningJobs = new Set();
@@ -140,16 +143,10 @@ export async function getSyncSummary() {
     currentJob,
   ] = await Promise.all([
     countActivities(),
-    prisma.activity.findFirst({
-      orderBy: { startDate: "desc" },
-      select: {
-        stravaActivityId: true,
-        startDate: true,
-        name: true,
-        type: true,
-        sportType: true,
-      },
-    }),
+    prisma.athlete.findFirst({
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    }).then((athlete) => (athlete ? getLatestStoredActivity(athlete.id) : null)),
     prisma.syncJob.findFirst({
       where: {
         jobType: "historical",

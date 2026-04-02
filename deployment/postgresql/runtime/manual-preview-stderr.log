@@ -1,0 +1,6 @@
+[31merror when starting preview server:
+Error: Port 5174 is already in use
+    at httpServerStart (file:///C:/Users/barth/OneDrive/Bureau/RuNSee/frontend/node_modules/vite/dist/node/chunks/node.js:10635:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async preview (file:///C:/Users/barth/OneDrive/Bureau/RuNSee/frontend/node_modules/vite/dist/node/chunks/node.js:33530:2)
+    at async CAC.<anonymous> (file:///C:/Users/barth/OneDrive/Bureau/RuNSee/frontend/node_modules/vite/dist/node/cli.js:809:18)[39m

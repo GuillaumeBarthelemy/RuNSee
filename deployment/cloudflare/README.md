@@ -7,7 +7,7 @@ Cette configuration prepare RuNSee pour un hebergement local avec exposition via
 Architecture retenue et implemente:
 
 - `runsee.<votre-domaine>` -> frontend local
-- `api.runsee.<votre-domaine>` -> backend local
+- `api.<votre-domaine>` -> backend local
 
 Cette option est la plus simple a exploiter avec l'architecture actuelle.
 
@@ -59,7 +59,7 @@ Exemple derriere tunnel:
 FRONTEND_HOST=127.0.0.1
 FRONTEND_PORT=5173
 VITE_APP_BASE_URL=https://runsee.<votre-domaine>
-VITE_API_BASE_URL=https://api.runsee.<votre-domaine>
+VITE_API_BASE_URL=https://api.<votre-domaine>
 VITE_LOCAL_API_BASE_URL=http://localhost:3000
 ```
 
@@ -104,9 +104,9 @@ FRONTEND_PORT=5173
 LOCAL_APP_URL=http://localhost:5173
 LOCAL_API_URL=http://localhost:3000
 PUBLIC_APP_URL=https://runsee.<votre-domaine>
-PUBLIC_API_URL=https://api.runsee.<votre-domaine>
+PUBLIC_API_URL=https://api.<votre-domaine>
 FRONTEND_ALLOWED_ORIGINS=http://localhost:5173,https://runsee.<votre-domaine>
-STRAVA_REDIRECT_URI=https://api.runsee.<votre-domaine>/auth/strava/callback
+STRAVA_REDIRECT_URI=https://api.<votre-domaine>/auth/strava/callback
 ```
 
 ## Pourquoi 2 hostnames et pas un seul
@@ -136,7 +136,7 @@ Fichiers ajoutes:
 Ce template couvre le cas recommande:
 
 - `runsee.<votre-domaine>` -> `http://127.0.0.1:5173`
-- `api.runsee.<votre-domaine>` -> `http://127.0.0.1:3000`
+- `api.<votre-domaine>` -> `http://127.0.0.1:3000`
 
 ## Installation Cloudflare Tunnel sous Windows
 
@@ -218,7 +218,7 @@ Creer les deux routes DNS Cloudflare:
 
 ```powershell
 cloudflared tunnel route dns runsee-local runsee.<votre-domaine>
-cloudflared tunnel route dns runsee-local api.runsee.<votre-domaine>
+cloudflared tunnel route dns runsee-local api.<votre-domaine>
 ```
 
 Effet attendu:
@@ -238,7 +238,7 @@ Exemple:
 FRONTEND_HOST=127.0.0.1
 FRONTEND_PORT=5173
 VITE_APP_BASE_URL=https://runsee.<votre-domaine>
-VITE_API_BASE_URL=https://api.runsee.<votre-domaine>
+VITE_API_BASE_URL=https://api.<votre-domaine>
 ```
 
 Backend:
@@ -255,9 +255,9 @@ FRONTEND_PORT=5173
 LOCAL_APP_URL=http://localhost:5173
 LOCAL_API_URL=http://localhost:3000
 PUBLIC_APP_URL=https://runsee.<votre-domaine>
-PUBLIC_API_URL=https://api.runsee.<votre-domaine>
+PUBLIC_API_URL=https://api.<votre-domaine>
 FRONTEND_ALLOWED_ORIGINS=http://localhost:5173,https://runsee.<votre-domaine>
-STRAVA_REDIRECT_URI=https://api.runsee.<votre-domaine>/auth/strava/callback
+STRAVA_REDIRECT_URI=https://api.<votre-domaine>/auth/strava/callback
 ```
 
 Important:
@@ -301,7 +301,7 @@ Vous pouvez aussi tester une regle:
 
 ```powershell
 cloudflared tunnel ingress rule https://runsee.<votre-domaine>
-cloudflared tunnel ingress rule https://api.runsee.<votre-domaine>/health
+cloudflared tunnel ingress rule https://api.<votre-domaine>/health
 ```
 
 ### 9. Lancer le tunnel manuellement

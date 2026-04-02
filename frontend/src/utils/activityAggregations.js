@@ -78,10 +78,51 @@ const DISTANCE_BUCKETS = [
   { key: "30+", label: "30 km et +", min: 30, max: Infinity },
 ];
 
+const SPORT_TYPE_LABELS = {
+  run: "Course a pied",
+  trailrun: "Trail",
+  virtualrun: "Course virtuelle",
+  walk: "Marche",
+  hike: "Randonnee",
+  ride: "Velo",
+  virtualride: "Velo virtuel",
+  ebikeride: "Velo electrique",
+  handcycle: "Handbike",
+  velomobile: "Velomobile",
+  gravelride: "Gravel",
+  mountainbikeride: "VTT",
+  swim: "Natation",
+  workout: "Entrainement",
+  weighttraining: "Musculation",
+  highintensityintervaltraining: "HIIT",
+  crossfit: "CrossFit",
+  yoga: "Yoga",
+  stair_stepper: "Stepper",
+  elliptical: "Elliptique",
+  rowing: "Aviron",
+  kayaking: "Kayak",
+  canoeing: "Canoe",
+  standuppaddling: "Paddle",
+  windsurf: "Planche a voile",
+  kitesurf: "Kitesurf",
+  surfing: "Surf",
+  alpineski: "Ski alpin",
+  backcountryski: "Ski de randonnee",
+  rollerski: "Ski-roues",
+  iceskate: "Patin a glace",
+  inlineskate: "Roller",
+  nordicski: "Ski nordique",
+  snowshoe: "Raquettes",
+  rockclimbing: "Escalade",
+};
+
 const METRIC_ALIASES = {
   distance: "distanceKm",
   distanceKm: "distanceKm",
   distance_km: "distanceKm",
+  load: "load",
+  trainingLoad: "load",
+  proxyLoad: "load",
   elevation: "elevationGain",
   elevationGain: "elevationGain",
   totalElevationGain: "elevationGain",
@@ -105,6 +146,8 @@ export function getMetricConfig(metric = "distanceKm") {
   switch (normalizeMetric(metric)) {
     case "distanceKm":
       return { label: "Distance (km)", unit: "km", decimals: 1 };
+    case "load":
+      return { label: "Charge", unit: "pts", decimals: 1 };
     case "elevationGain":
       return { label: "Dénivelé positif", unit: "m", decimals: 0 };
     case "movingHours":
@@ -144,6 +187,37 @@ export function normalizeElevationMeters(value) {
   return toNumber(value);
 }
 
+export function estimateLoadValue(activity = {}) {
+  const sufferScore = toNumber(activity?.sufferScore);
+
+  if (sufferScore > 0) {
+    return sufferScore;
+  }
+
+  const distanceKm = normalizeDistanceKm(activity?.distance);
+  const elevationGain = normalizeElevationMeters(activity?.totalElevationGain);
+  return distanceKm + (elevationGain / 100);
+}
+
+function formatSportTypeFallback(value) {
+  const safeValue = String(value || "").trim();
+
+  if (!safeValue) {
+    return "Autre";
+  }
+
+  return safeValue
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function getSportTypeLabel(value) {
+  const normalizedValue = getNormalizedText(value);
+  return SPORT_TYPE_LABELS[normalizedValue] || formatSportTypeFallback(value);
+}
+
 export function getDisplaySportLabel(activity = {}, options = {}) {
   const { groupSports = true } = options;
   const safeActivity = activity || {};
@@ -154,7 +228,7 @@ export function getDisplaySportLabel(activity = {}, options = {}) {
   const elevationPerKm = distanceKm > 0 ? normalizeElevationMeters(safeActivity.totalElevationGain) / distanceKm : 0;
   const trailHint = /trail|sentier|montagne|col|crête|rando-course/.test(`${name} ${description}`);
 
-  if (!groupSports) return safeActivity.sportType || safeActivity.type || "Autre";
+  if (!groupSports) return getSportTypeLabel(safeActivity.sportType || safeActivity.type || "Autre");
   if (["trailrun"].includes(sportType)) return "Course à pied / trail";
   if (["run", "virtualrun"].includes(sportType)) {
     if (trailHint || elevationPerKm >= 15) return "Course à pied / trail";
@@ -166,7 +240,8 @@ export function getDisplaySportLabel(activity = {}, options = {}) {
   if (["workout", "weighttraining", "crossfit", "yoga", "stair_stepper", "elliptical", "highintensityintervaltraining"].includes(sportType)) return "Renforcement / fitness";
   if (["rowing", "kayaking", "canoeing", "standuppaddling", "windsurf", "kitesurf", "surfing"].includes(sportType)) return "Sports nautiques";
   if (["alpineski", "backcountryski", "iceskate", "inlineskate", "rollerski"].includes(sportType)) return "Sports de glisse";
-  return safeActivity.sportType || safeActivity.type || "Autre";
+  if (["rockclimbing"].includes(sportType)) return "Escalade";
+  return getSportTypeLabel(safeActivity.sportType || safeActivity.type || "Autre");
 }
 
 function metricValue(activity, metric) {
@@ -174,6 +249,8 @@ function metricValue(activity, metric) {
   switch (normalizeMetric(metric)) {
     case "distanceKm":
       return normalizeDistanceKm(safeActivity.distance);
+    case "load":
+      return estimateLoadValue(safeActivity);
     case "elevationGain":
       return normalizeElevationMeters(safeActivity.totalElevationGain);
     case "movingHours":
@@ -222,10 +299,19 @@ export function buildMonthlySeries(activities, options = {}) {
   const items = getActivitiesWithDates(activities);
   if (!items.length) return [];
 
-  const months = Math.max(1, Number(options.months || 6));
   const metric = normalizeMetric(options.metric || "distanceKm");
-  const endDate = startOfMonth(getLatestDate(items));
-  const startDate = addMonths(endDate, -(months - 1));
+  const explicitStart = toDate(options.startDate);
+  const explicitEnd = toDate(options.endDate);
+  const endDate = startOfMonth(explicitEnd || getLatestDate(items));
+  const startDate = explicitStart
+    ? startOfMonth(explicitStart)
+    : addMonths(endDate, -(Math.max(1, Number(options.months || 6)) - 1));
+  const months = Math.max(
+    1,
+    ((endDate.getFullYear() - startDate.getFullYear()) * 12)
+      + (endDate.getMonth() - startDate.getMonth())
+      + 1,
+  );
   const monthMap = new Map();
 
   for (const activity of items) {
@@ -256,10 +342,14 @@ export function buildWeeklySeries(activities, options = {}) {
   const items = getActivitiesWithDates(activities);
   if (!items.length) return [];
 
-  const weeks = Math.max(1, Number(options.weeks || 12));
   const metric = normalizeMetric(options.metric || "distanceKm");
-  const endDate = startOfWeek(getLatestDate(items));
-  const startDate = addDays(endDate, -((weeks - 1) * 7));
+  const explicitStart = toDate(options.startDate);
+  const explicitEnd = toDate(options.endDate);
+  const endDate = startOfWeek(explicitEnd || getLatestDate(items));
+  const startDate = explicitStart
+    ? startOfWeek(explicitStart)
+    : addDays(endDate, -((Math.max(1, Number(options.weeks || 12)) - 1) * 7));
+  const weeks = Math.max(1, Math.round((endDate - startDate) / (7 * 86400000)) + 1);
   const weekMap = new Map();
 
   for (const activity of items) {
@@ -415,6 +505,7 @@ const activityAggregations = {
   buildWeekdayDistribution,
   buildWeeklySeries,
   buildWeeklyVolume,
+  estimateLoadValue,
   filterActivities,
   formatMetricValue,
   getAvailableSportGroups,

@@ -30,7 +30,7 @@ export async function enrichActivityByStravaId(stravaActivityId) {
 
   const connection = await getActiveConnectionWithAthlete();
   const accessToken = await getValidAccessToken(connection);
-  const detailedActivity = await getActivityById(accessToken, stravaActivityId);
+  const { data: detailedActivity } = await getActivityById(accessToken, stravaActivityId);
 
   const updatedActivity = await upsertDetailedActivity(
     detailedActivity,

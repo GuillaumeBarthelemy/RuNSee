@@ -28,6 +28,20 @@ function parseOrigins(value, fallbackEntries = []) {
   return [...new Set(entries)];
 }
 
+function resolveDatabaseProvider(value) {
+  const candidate = String(value || "").trim().toLowerCase();
+
+  if (candidate.startsWith("file:")) {
+    return "sqlite";
+  }
+
+  if (candidate.startsWith("postgresql:") || candidate.startsWith("postgres:")) {
+    return "postgresql";
+  }
+
+  return "unknown";
+}
+
 const frontendPort = parseNumber(process.env.FRONTEND_PORT, 5173);
 const appPort = parseNumber(process.env.APP_PORT, 3000);
 const appHost = String(process.env.APP_HOST || "0.0.0.0").trim() || "0.0.0.0";
@@ -56,6 +70,7 @@ const frontendAllowedOrigins = parseOrigins(
   process.env.FRONTEND_ALLOWED_ORIGINS,
   [localAppUrl, publicAppUrl]
 );
+const databaseProvider = resolveDatabaseProvider(process.env.DATABASE_URL);
 
 const env = {
   nodeEnv: process.env.NODE_ENV || "development",
@@ -71,6 +86,7 @@ const env = {
   publicBaseUrl: publicApiUrl,
   frontendUrl: publicAppUrl,
   frontendAllowedOrigins,
+  databaseProvider,
 
   stravaClientId: process.env.STRAVA_CLIENT_ID || "",
   stravaClientSecret: process.env.STRAVA_CLIENT_SECRET || "",

@@ -24,6 +24,32 @@ function getBrowserOrigin() {
   return "";
 }
 
+function resolveOptionalUrl(value, baseUrl) {
+  const trimmedValue = String(value || "").trim();
+
+  if (!trimmedValue) {
+    return "";
+  }
+
+  try {
+    return new URL(trimmedValue, baseUrl || undefined).toString();
+  } catch {
+    return trimmedValue;
+  }
+}
+
+function buildLoginUrl(baseUrl, returnTo) {
+  const searchParams = new URLSearchParams();
+  const safeReturnTo = normalizeUrl(returnTo, "");
+
+  if (safeReturnTo) {
+    searchParams.set("returnTo", safeReturnTo);
+  }
+
+  const queryString = searchParams.toString();
+  return `${baseUrl}/auth/strava/login${queryString ? `?${queryString}` : ""}`;
+}
+
 const fallbackAppBaseUrl = getBrowserOrigin() || "http://localhost:5173";
 const browserHostname = getBrowserHostname();
 const localApiBaseUrl = normalizeUrl(
@@ -47,4 +73,12 @@ export const apiBaseUrl = isLocalHostname(browserHostname)
   ? localApiBaseUrl
   : configuredApiBaseUrl;
 
-export const stravaLoginUrl = `${apiBaseUrl}/auth/strava/login`;
+export const stravaLoginUrl = buildLoginUrl(
+  apiBaseUrl,
+  getBrowserOrigin() || appBaseUrl
+);
+
+export const forgotPasswordUrl = resolveOptionalUrl(
+  import.meta.env.VITE_FORGOT_PASSWORD_URL,
+  getBrowserOrigin() || appBaseUrl
+);
