@@ -1,89 +1,71 @@
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { getMetricLabel } from "../utils/activityAggregations.js";
+import { formatMetricValue, getMetricConfig } from "../utils/activityAggregations.js";
 
-const PERIOD_OPTIONS = [
-  { value: 6, label: "6 mois" },
-  { value: 12, label: "12 mois" },
-  { value: 24, label: "24 mois" },
-  { value: 36, label: "36 mois" },
-  { value: "all", label: "Tout" },
-];
-
-const METRIC_OPTIONS = [
-  { value: "distanceKm", label: "Distance (km)" },
-  { value: "elevationGain", label: "D+ (m)" },
-  { value: "movingHours", label: "Temps (h)" },
-  { value: "count", label: "Activités" },
-];
-
-function formatTooltipValue(value, name) {
-  return [value, name];
+function CustomTooltip({ active, payload, label, metric }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="chart-tooltip">
+      <strong>{label}</strong>
+      <div>{formatMetricValue(payload[0].value, metric)}</div>
+    </div>
+  );
 }
 
-export default function MonthlyVolumeChart({
-  data,
-  chartType,
-  metricKey,
-  periodMonths,
-  onChartTypeChange,
-  onMetricChange,
-  onPeriodChange,
-}) {
-  const metricLabel = getMetricLabel(metricKey);
+export default function MonthlyVolumeChart({ data, metric, display, months, onMetricChange, onDisplayChange, onMonthsChange }) {
+  const metricConfig = getMetricConfig(metric);
 
   return (
-    <section className="card chart-card chart-card-tall">
-      <div className="card-header-row align-center wrap-on-mobile">
+    <section className="card chart-card">
+      <div className="card-header-row wrap-on-mobile align-center">
         <div>
           <h2 className="card-title">Analyse mensuelle</h2>
-          <p className="card-subtitle">Tous les mois de la période sélectionnée sont visibles, même à 0.</p>
+          <p className="card-subtitle">Tous les mois de la période choisie restent visibles, même à 0.</p>
         </div>
-        <div className="chart-toolbar">
-          <label className="inline-field">
-            <span className="field-label inline-label">Affichage</span>
-            <select className="field-input field-input-small" value={chartType} onChange={(event) => onChartTypeChange(event.target.value)}>
+        <div className="chart-controls">
+          <label className="inline-field"><span className="field-label inline-label">Affichage</span>
+            <select className="field-input field-input-small" value={display} onChange={(event) => onDisplayChange(event.target.value)}>
               <option value="line">Courbe</option>
               <option value="bar">Barres</option>
             </select>
           </label>
-          <label className="inline-field">
-            <span className="field-label inline-label">Métrique</span>
-            <select className="field-input field-input-small" value={metricKey} onChange={(event) => onMetricChange(event.target.value)}>
-              {METRIC_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
+          <label className="inline-field"><span className="field-label inline-label">Métrique</span>
+            <select className="field-input field-input-small" value={metric} onChange={(event) => onMetricChange(event.target.value)}>
+              <option value="distanceKm">Distance (km)</option>
+              <option value="elevationGain">Dénivelé positif</option>
+              <option value="movingHours">Temps de déplacement</option>
+              <option value="count">Activités</option>
             </select>
           </label>
-          <label className="inline-field">
-            <span className="field-label inline-label">Période</span>
-            <select className="field-input field-input-small" value={String(periodMonths)} onChange={(event) => onPeriodChange(event.target.value === "all" ? "all" : Number(event.target.value))}>
-              {PERIOD_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
+          <label className="inline-field"><span className="field-label inline-label">Période</span>
+            <select className="field-input field-input-small" value={months} onChange={(event) => onMonthsChange(Number(event.target.value))}>
+              <option value={6}>6 mois</option>
+              <option value={12}>12 mois</option>
+              <option value={18}>18 mois</option>
+              <option value={24}>24 mois</option>
             </select>
           </label>
         </div>
       </div>
       {data?.length ? (
-        <div className="chart-box chart-box-tall">
+        <div className="chart-box chart-box-large">
           <ResponsiveContainer>
-            {chartType === "bar" ? (
+            {display === "bar" ? (
               <BarChart data={data} barCategoryGap="18%">
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#d9e2f0" />
-                <XAxis dataKey="period" interval={0} tick={{ fontSize: 11 }} height={56} angle={-25} textAnchor="end" />
-                <YAxis tick={{ fontSize: 12 }} width={70} />
-                <Tooltip formatter={formatTooltipValue} />
+                <XAxis dataKey="period" interval={0} tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip content={<CustomTooltip metric={metric} />} />
                 <Legend />
-                <Bar dataKey="value" name={metricLabel} fill="#0b5fff" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="value" name={metricConfig.label} fill="#5b7fff" radius={[8, 8, 0, 0]} />
               </BarChart>
             ) : (
               <LineChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#d9e2f0" />
-                <XAxis dataKey="period" interval={0} tick={{ fontSize: 11 }} height={56} angle={-25} textAnchor="end" />
-                <YAxis tick={{ fontSize: 12 }} width={70} />
-                <Tooltip formatter={formatTooltipValue} />
+                <XAxis dataKey="period" interval={0} tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip content={<CustomTooltip metric={metric} />} />
                 <Legend />
-                <Line type="monotone" dataKey="value" name={metricLabel} stroke="#0b5fff" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                <Line type="monotone" dataKey="value" name={metricConfig.label} stroke="#0b5fff" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
               </LineChart>
             )}
           </ResponsiveContainer>

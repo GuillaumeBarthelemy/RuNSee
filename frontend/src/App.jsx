@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import ActivityDetailPage from "./pages/ActivityDetailPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";

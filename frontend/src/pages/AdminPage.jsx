@@ -1,4 +1,5 @@
-import AppTopbar from "../components/AppTopbar.jsx";
+import { useCallback } from "react";
+import AppNavigation from "../components/AppNavigation.jsx";
 import SyncActions from "../components/SyncActions.jsx";
 import SyncStatusCard from "../components/SyncStatusCard.jsx";
 import SyncSummaryCard from "../components/SyncSummaryCard.jsx";
@@ -11,13 +12,13 @@ function extractErrorMessage(error, fallback) {
 }
 
 export default function AdminPage() {
-  const { athlete, summary, currentJob, isBusy, error, setError, reload } = useRunSeeData({ includeActivities: false });
+  const { athlete, summary, currentJob, error, setError, reload, isBusy } = useRunSeeData({ includeActivities: false });
 
-  const handleConnectStrava = () => {
+  const handleConnectStrava = useCallback(() => {
     window.location.href = stravaLoginUrl;
-  };
+  }, []);
 
-  const handleStartHistorical = async () => {
+  const handleStartHistorical = useCallback(async () => {
     setError("");
     try {
       await startHistoricalSync();
@@ -25,9 +26,9 @@ export default function AdminPage() {
     } catch (err) {
       setError(extractErrorMessage(err, "Erreur lors du lancement du rechargement historique."));
     }
-  };
+  }, [reload, setError]);
 
-  const handleStartIncremental = async () => {
+  const handleStartIncremental = useCallback(async () => {
     setError("");
     try {
       await startIncrementalSync();
@@ -35,15 +36,21 @@ export default function AdminPage() {
     } catch (err) {
       setError(extractErrorMessage(err, "Erreur lors du lancement de la synchronisation incrémentale."));
     }
-  };
+  }, [reload, setError]);
 
   return (
     <div className="page premium-page">
       <div className="container">
-        <AppTopbar
-          title="Administration et synchronisation"
-          subtitle="Pilote la connexion Strava, les rechargements et la supervision technique depuis un espace dédié, séparé des analyses métier."
-        />
+        <header className="topbar premium-topbar">
+          <div>
+            <div className="brand-line">
+              <span className="brand-badge">RuNSee</span>
+              <AppNavigation />
+            </div>
+            <h1 className="topbar-title">Administration</h1>
+            <p className="page-subtitle">Pilote les synchronisations, contrôle l'état local et supervise la connexion Strava.</p>
+          </div>
+        </header>
 
         {error ? <div className="alert alert-error section">{error}</div> : null}
 
@@ -60,33 +67,16 @@ export default function AdminPage() {
           <SyncSummaryCard summary={summary} athlete={athlete} />
         </div>
 
-        <div className="grid two-columns section admin-layout-grid">
+        <div className="grid two-columns section">
           <SyncStatusCard currentJob={currentJob} />
           <section className="card card-accent status-side-card">
             <h2 className="card-title">État général</h2>
             <p className="muted">
               {athlete
-                ? "La connexion Strava est active. Les synchronisations et le suivi des jobs sont centralisés ici pour laisser le tableau de bord concentré sur l'analyse."
-                : "Aucun athlète connecté. Commence par la connexion Strava, puis lance un historique initial avant d'utiliser l'incrémental."}
+                ? "Connexion Strava active. La base locale est prête à être synchronisée et enrichie à la demande."
+                : "Aucun athlète connecté. Lance d'abord la connexion Strava pour alimenter l'application."}
             </p>
-            <div className="top-gap-sm admin-checklist">
-              <div className="admin-check-item">
-                <strong>Connexion</strong>
-                <span>{athlete ? "Active" : "À établir"}</span>
-              </div>
-              <div className="admin-check-item">
-                <strong>Historique</strong>
-                <span>{summary?.lastHistoricalSync?.endedAt ? "Déjà exécuté" : "À lancer"}</span>
-              </div>
-              <div className="admin-check-item">
-                <strong>Incrémental</strong>
-                <span>{summary?.lastIncrementalSync?.endedAt ? "Disponible" : "Pas encore utilisé"}</span>
-              </div>
-              <div className="admin-check-item">
-                <strong>Données locales</strong>
-                <span>{summary?.totalActivities ?? 0} activité(s)</span>
-              </div>
-            </div>
+            <div className="top-gap-sm small-text">La page d'administration conserve désormais le contexte du tableau de bord pendant ta navigation.</div>
           </section>
         </div>
       </div>

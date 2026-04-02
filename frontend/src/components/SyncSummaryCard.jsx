@@ -1,5 +1,3 @@
-import { getDisplaySportLabel } from "../utils/activityAggregations.js";
-
 function formatDate(value) {
   if (!value) return "-";
   const date = new Date(value);
@@ -16,8 +14,8 @@ export default function SyncSummaryCard({ summary, athlete }) {
     <section className="card glass-card">
       <div className="card-header-row">
         <div>
-          <h2 className="card-title">Vue d'ensemble locale</h2>
-          <p className="card-subtitle">État de la base locale et dernières synchronisations réussies.</p>
+          <h2 className="card-title">Vue d'ensemble</h2>
+          <p className="card-subtitle">État local de la base et dernières synchronisations réussies.</p>
         </div>
       </div>
 
@@ -37,7 +35,7 @@ export default function SyncSummaryCard({ summary, athlete }) {
         <div className="metric-card">
           <span className="metric-label">Dernière activité stockée</span>
           <div className="metric-value medium-metric">{formatDate(summary?.latestActivity?.startDate)}</div>
-          <div className="metric-secondary">{summary?.latestActivity ? getDisplaySportLabel(summary.latestActivity) : "-"}</div>
+          <div className="metric-secondary">{summary?.latestActivity?.sportType || summary?.latestActivity?.type || "-"}</div>
         </div>
       </div>
 

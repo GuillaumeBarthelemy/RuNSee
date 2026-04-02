@@ -4,15 +4,10 @@ import { getActivities } from "../services/activity.service.js";
 import { getCurrentSyncJob, getSyncSummary } from "../services/sync.service.js";
 
 function extractErrorMessage(error, fallback) {
-  return error?.response?.data?.userMessage
-    || error?.response?.data?.message
-    || error?.message
-    || fallback;
+  return error?.response?.data?.userMessage || error?.response?.data?.message || error?.message || fallback;
 }
 
-export default function useRunSeeData(options = {}) {
-  const { includeActivities = true } = options;
-
+export default function useRunSeeData({ includeActivities = true } = {}) {
   const [athlete, setAthlete] = useState(null);
   const [summary, setSummary] = useState(null);
   const [currentJob, setCurrentJob] = useState(null);
@@ -23,49 +18,36 @@ export default function useRunSeeData(options = {}) {
   const reload = useCallback(async () => {
     try {
       setError("");
+      const requests = [getCurrentAthlete(), getSyncSummary(), getCurrentSyncJob()];
+      if (includeActivities) requests.push(getActivities());
+      const [athleteRes, summaryRes, currentJobRes, activitiesRes] = await Promise.allSettled(requests);
 
-      const requests = [
-        getCurrentAthlete(),
-        getSyncSummary(),
-        getCurrentSyncJob(),
-      ];
-
-      if (includeActivities) {
-        requests.push(getActivities());
-      }
-
-      const results = await Promise.allSettled(requests);
-
-      const [athleteRes, summaryRes, currentJobRes, activitiesRes] = results;
-
-      if (athleteRes?.status === "fulfilled") {
+      if (athleteRes.status === "fulfilled") {
         setAthlete(athleteRes.value);
-      } else if (athleteRes?.reason?.response?.status === 404) {
-        setAthlete(null);
-      } else if (athleteRes?.status === "rejected") {
+      } else if (athleteRes.reason?.response?.status !== 404) {
         throw athleteRes.reason;
+      } else {
+        setAthlete(null);
       }
 
-      if (summaryRes?.status === "fulfilled") {
+      if (summaryRes.status === "fulfilled") {
         setSummary(summaryRes.value);
-      } else if (summaryRes?.status === "rejected") {
+      } else {
         throw summaryRes.reason;
       }
 
-      if (currentJobRes?.status === "fulfilled") {
+      if (currentJobRes.status === "fulfilled") {
         setCurrentJob(currentJobRes.value);
-      } else if (currentJobRes?.status === "rejected") {
+      } else {
         throw currentJobRes.reason;
       }
 
       if (includeActivities) {
-        if (activitiesRes?.status === "fulfilled") {
+        if (activitiesRes.status === "fulfilled") {
           setActivities(Array.isArray(activitiesRes.value) ? activitiesRes.value : []);
-        } else if (activitiesRes?.status === "rejected") {
+        } else {
           throw activitiesRes.reason;
         }
-      } else {
-        setActivities([]);
       }
     } catch (err) {
       setError(extractErrorMessage(err, "Erreur de chargement des données RuNSee."));
@@ -78,20 +60,13 @@ export default function useRunSeeData(options = {}) {
     reload();
   }, [reload]);
 
-  const isBusy = useMemo(
-    () => ["queued", "running"].includes(currentJob?.status),
-    [currentJob],
-  );
+  const isBusy = useMemo(() => ["queued", "running"].includes(currentJob?.status), [currentJob]);
 
   useEffect(() => {
-    if (!isBusy) {
-      return undefined;
-    }
-
+    if (!isBusy) return undefined;
     const timer = setInterval(() => {
       reload();
     }, 3000);
-
     return () => clearInterval(timer);
   }, [isBusy, reload]);
 

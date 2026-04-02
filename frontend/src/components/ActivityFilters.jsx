@@ -1,24 +1,15 @@
-export default function ActivityFilters({
-  filters,
-  availableSports,
-  filteredCount,
-  totalCount,
-  onChange,
-  onReset,
-}) {
+export default function ActivityFilters({ filters, options, availableSports, filteredCount, totalCount, onChange, onReset, onOptionChange }) {
   return (
     <section className="card filter-card">
       <div className="card-header-row align-center wrap-on-mobile">
         <div>
           <h2 className="card-title">Filtres d'analyse</h2>
-          <p className="card-subtitle">
-            La sélection alimente la table, les KPI et les visualisations. L'état du tableau de bord est mémorisé quand tu ouvres une activité.
-          </p>
+          <p className="card-subtitle">Affinez la sélection, choisissez la logique de regroupement et conserve ta vue entre les pages.</p>
         </div>
-        <div className="filter-chip">{filteredCount} / {totalCount} activités affichées</div>
+        <div className="filter-chip">{filteredCount} / {totalCount} activités</div>
       </div>
 
-      <div className="filters-grid filters-grid-wide">
+      <div className="filters-grid">
         <label className="field field-span-2">
           <span className="field-label">Recherche</span>
           <input
@@ -31,8 +22,8 @@ export default function ActivityFilters({
         </label>
 
         <label className="field">
-          <span className="field-label">Filtre sport</span>
-          <select className="field-input" value={filters.sportValue} onChange={(event) => onChange("sportValue", event.target.value)}>
+          <span className="field-label">Sport affiché</span>
+          <select className="field-input" value={filters.sportGroup} onChange={(event) => onChange("sportGroup", event.target.value)}>
             <option value="all">Tous les sports</option>
             {availableSports.map((sport) => (
               <option key={sport} value={sport}>{sport}</option>
@@ -40,16 +31,14 @@ export default function ActivityFilters({
           </select>
         </label>
 
-        <label className="field field-toggle">
-          <span className="field-label">Regroupements intelligents</span>
+        <label className="field toggle-field">
+          <span className="field-label">Regroupement intelligent</span>
           <button
             type="button"
-            className={`toggle-switch ${filters.useGrouping ? "is-active" : ""}`}
-            onClick={() => onChange("useGrouping", !filters.useGrouping)}
-            aria-pressed={filters.useGrouping}
+            className={`toggle-pill ${options.groupSports ? "is-active" : ""}`}
+            onClick={() => onOptionChange("groupSports", !options.groupSports)}
           >
-            <span className="toggle-switch-handle" />
-            <span className="toggle-switch-label">{filters.useGrouping ? "Activés" : "Désactivés"}</span>
+            {options.groupSports ? "Activé" : "Désactivé"}
           </button>
         </label>
 
@@ -64,11 +53,8 @@ export default function ActivityFilters({
         </label>
       </div>
 
-      <div className="actions-row top-gap-sm wrap-on-mobile">
+      <div className="actions-row top-gap-sm">
         <button className="button button-outline" onClick={onReset}>Réinitialiser les filtres</button>
-        <div className="small-text">
-          Mode sport actuel : <strong>{filters.useGrouping ? "familles regroupées" : "sports détaillés"}</strong>
-        </div>
       </div>
     </section>
   );

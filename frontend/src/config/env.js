@@ -1,3 +1,4 @@
+
 function normalizeUrl(value, fallback) {
   return String(value || fallback || "")
     .trim()
@@ -6,7 +7,7 @@ function normalizeUrl(value, fallback) {
 
 export const apiBaseUrl = normalizeUrl(
   import.meta.env.VITE_API_BASE_URL,
-  "http://localhost:3000"
+  "http://localhost:3001"
 );
 
 export const stravaLoginUrl = `${apiBaseUrl}/auth/strava/login`;

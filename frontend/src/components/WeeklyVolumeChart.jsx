@@ -1,42 +1,29 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { getMetricLabel } from "../utils/activityAggregations.js";
 
-const METRIC_OPTIONS = [
-  { value: "count", label: "Activités" },
-  { value: "distanceKm", label: "Distance (km)" },
-  { value: "elevationGain", label: "D+ (m)" },
-  { value: "movingHours", label: "Temps (h)" },
-];
+function formatTooltipValue(value, name) {
+  if (name === "Distance (km)") return [`${value} km`, name];
+  return [value, name];
+}
 
-export default function WeeklyVolumeChart({ data, metricKey, onMetricChange }) {
-  const metricLabel = getMetricLabel(metricKey);
-
+export default function WeeklyVolumeChart({ data }) {
   return (
     <section className="card chart-card">
-      <div className="card-header-row align-center wrap-on-mobile">
+      <div className="card-header-row">
         <div>
-          <h2 className="card-title">Répartition par jour de semaine</h2>
-          <p className="card-subtitle">Une vue complémentaire pour repérer tes jours forts sans dupliquer le volume mensuel.</p>
+          <h2 className="card-title">Volume hebdomadaire</h2>
+          <p className="card-subtitle">Toutes les semaines de la période affichée sont conservées, même à 0.</p>
         </div>
-        <label className="inline-field">
-          <span className="field-label inline-label">Métrique</span>
-          <select className="field-input field-input-small" value={metricKey} onChange={(event) => onMetricChange(event.target.value)}>
-            {METRIC_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        </label>
       </div>
       {data?.length ? (
         <div className="chart-box">
           <ResponsiveContainer>
-            <BarChart data={data} layout="vertical" margin={{ left: 16, right: 16 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#d9e2f0" />
-              <XAxis type="number" tick={{ fontSize: 12 }} />
-              <YAxis type="category" dataKey="dayLabel" width={90} tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(value, name) => [value, name]} />
+            <BarChart data={data} barCategoryGap="18%">
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#d9e2f0" />
+              <XAxis dataKey="period" interval={0} angle={-35} textAnchor="end" height={70} tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip formatter={formatTooltipValue} />
               <Legend />
-              <Bar dataKey="value" name={metricLabel} fill="#5b7fff" radius={[0, 10, 10, 0]} />
+              <Bar dataKey="distanceKm" name="Distance (km)" fill="#5b7fff" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

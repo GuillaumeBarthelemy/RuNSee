@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import ActivityDetailCard from "../components/ActivityDetailCard.jsx";
-import AppTopbar from "../components/AppTopbar.jsx";
+import AppNavigation from "../components/AppNavigation.jsx";
 import { enrichActivity, getActivityById } from "../services/activity.service.js";
 
 function extractErrorMessage(error, fallback) {
@@ -17,9 +17,7 @@ export default function ActivityDetailPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const returnHash = useMemo(() => {
-    return location.state?.returnHash || sessionStorage.getItem("runsee-return-hash") || "";
-  }, [location.state]);
+  const returnHash = useMemo(() => location.state?.returnHash || sessionStorage.getItem("runsee-return-hash") || "", [location.state]);
 
   const loadActivity = useCallback(async () => {
     try {
@@ -56,16 +54,20 @@ export default function ActivityDetailPage() {
   return (
     <div className="page premium-page">
       <div className="container detail-container">
-        <AppTopbar
-          title="Fiche activité"
-          subtitle="Lecture locale détaillée avec enrichissement à la demande depuis Strava, puis retour direct à la ligne d'origine dans le tableau de bord."
-          actions={
-            <Link className="link-button" to={{ pathname: "/", hash: returnHash ? `#${returnHash}` : "" }}>
-              Retour au tableau de bord
-            </Link>
-          }
-          badge="Activité"
-        />
+        <div className="page-header premium-detail-header">
+          <div>
+            <div className="brand-line">
+              <span className="brand-badge">RuNSee</span>
+              <AppNavigation />
+            </div>
+            <span className="eyebrow">Fiche activité</span>
+            <h1 className="page-title">Analyse détaillée</h1>
+            <p className="page-subtitle">Carte du parcours, splits Strava et laps montre, sans perdre le contexte du tableau de bord.</p>
+          </div>
+          <Link className="link-button" to={{ pathname: "/", hash: returnHash ? `#${returnHash}` : "" }}>
+            Retour au tableau de bord
+          </Link>
+        </div>
 
         {loading ? <div className="card">Chargement de l'activité…</div> : null}
         {!loading && error ? <div className="alert alert-error section">{error}</div> : null}

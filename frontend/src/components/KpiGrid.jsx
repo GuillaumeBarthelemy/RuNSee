@@ -1,18 +1,18 @@
-function formatKm(meters) {
-  return `${(Number(meters || 0) / 1000).toFixed(1)} km`;
+function formatKm(value) {
+  return `${Number(value || 0).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
 }
 
-function formatHours(seconds) {
-  return `${(Number(seconds || 0) / 3600).toFixed(1)} h`;
+function formatHours(value) {
+  return `${Number(value || 0).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} h`;
 }
 
 export default function KpiGrid({ kpis }) {
   const items = [
-    { label: "Activités filtrées", value: kpis.totalActivities ?? 0, hint: "sur la sélection courante" },
-    { label: "Distance totale", value: formatKm(kpis.totalDistance), hint: "tous sports confondus" },
-    { label: "Temps de déplacement", value: formatHours(kpis.totalMovingTime), hint: "durée active cumulée" },
-    { label: "Dénivelé positif", value: `${Math.round(kpis.totalElevationGain || 0)} m`, hint: "sur la sélection courante" },
-    { label: "FC moyenne", value: kpis.averageHeartrate ? `${Math.round(kpis.averageHeartrate)} bpm` : "-", hint: "sur les activités mesurées" },
+    { label: 'Activités filtrées', value: kpis.totalActivities ?? 0, hint: 'sur la sélection courante' },
+    { label: 'Distance totale', value: formatKm(kpis.totalDistance), hint: 'tous sports confondus' },
+    { label: 'Temps de déplacement', value: formatHours(kpis.totalMovingTime), hint: 'durée active cumulée' },
+    { label: 'Dénivelé positif', value: `${Math.round(kpis.totalElevationGain || 0).toLocaleString('fr-FR')} m`, hint: 'sur la sélection courante' },
+    { label: 'FC moyenne', value: kpis.averageHeartrate ? `${Math.round(kpis.averageHeartrate)} bpm` : '-', hint: 'sur les activités mesurées' },
   ];
 
   return (

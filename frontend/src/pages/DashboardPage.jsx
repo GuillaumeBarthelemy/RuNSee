@@ -1,151 +1,70 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
-import SyncActions from "../components/SyncActions.jsx";
-import SyncStatusCard from "../components/SyncStatusCard.jsx";
-import SyncSummaryCard from "../components/SyncSummaryCard.jsx";
+import { useEffect, useMemo, useState } from "react";
+import AppNavigation from "../components/AppNavigation.jsx";
 import ActivitiesTable from "../components/ActivitiesTable.jsx";
-import KpiGrid from "../components/KpiGrid.jsx";
-import WeeklyVolumeChart from "../components/WeeklyVolumeChart.jsx";
-import MonthlyVolumeChart from "../components/MonthlyVolumeChart.jsx";
-import SportDistributionChart from "../components/SportDistributionChart.jsx";
 import ActivityFilters from "../components/ActivityFilters.jsx";
-import { getCurrentAthlete } from "../services/athlete.service.js";
-import { getActivities } from "../services/activity.service.js";
-import { getCurrentSyncJob, getSyncSummary, startHistoricalSync, startIncrementalSync } from "../services/sync.service.js";
-import { buildKpis, buildMonthlyVolume, buildSportDistribution, buildWeeklyVolume, filterActivities, getAvailableSportGroups } from "../utils/activityAggregations.js";
-import { stravaLoginUrl } from "../config/env.js";
-
-function extractErrorMessage(error, fallback) {
-  return error?.response?.data?.userMessage || error?.response?.data?.message || error?.message || fallback;
-}
+import DistanceDistributionChart from "../components/DistanceDistributionChart.jsx";
+import KpiGrid from "../components/KpiGrid.jsx";
+import MonthlyVolumeChart from "../components/MonthlyVolumeChart.jsx";
+import PeriodComparisonSection from "../components/PeriodComparisonSection.jsx";
+import RollingLoadChart from "../components/RollingLoadChart.jsx";
+import SportDistributionChart from "../components/SportDistributionChart.jsx";
+import WeekdayDistributionChart from "../components/WeekdayDistributionChart.jsx";
+import useDashboardState from "../hooks/useDashboardState.js";
+import useRunSeeData from "../hooks/useRunSeeData.js";
+import { buildDistanceDistribution, buildKpis, buildMonthlySeries, buildRollingLoadSeries, buildSportDistribution, buildWeekdayDistribution, filterActivities, getAvailableSportGroups } from "../utils/activityAggregations.js";
 
 export default function DashboardPage() {
-  const location = useLocation();
-  const [athlete, setAthlete] = useState(null);
-  const [summary, setSummary] = useState(null);
-  const [currentJob, setCurrentJob] = useState(null);
-  const [activities, setActivities] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { activities, error } = useRunSeeData({ includeActivities: true });
+  const { dashboardState, dashboardActions } = useDashboardState();
   const [activeAnchor, setActiveAnchor] = useState("");
-  const [filters, setFilters] = useState({
-    search: "",
-    sportGroup: "all",
-    dateFrom: "",
-    dateTo: "",
-  });
-
-  const isBusy = ["queued", "running"].includes(currentJob?.status);
-
-  const loadAll = useCallback(async () => {
-    try {
-      const [athleteRes, summaryRes, currentJobRes, activitiesRes] = await Promise.allSettled([
-        getCurrentAthlete(),
-        getSyncSummary(),
-        getCurrentSyncJob(),
-        getActivities(),
-      ]);
-
-      if (athleteRes.status === "fulfilled") {
-        setAthlete(athleteRes.value);
-      } else if (athleteRes.reason?.response?.status !== 404) {
-        throw athleteRes.reason;
-      } else {
-        setAthlete(null);
-      }
-
-      if (summaryRes.status === "fulfilled") {
-        setSummary(summaryRes.value);
-      } else {
-        throw summaryRes.reason;
-      }
-
-      if (currentJobRes.status === "fulfilled") {
-        setCurrentJob(currentJobRes.value);
-      } else {
-        throw currentJobRes.reason;
-      }
-
-      if (activitiesRes.status === "fulfilled") {
-        setActivities(Array.isArray(activitiesRes.value) ? activitiesRes.value : []);
-      } else {
-        throw activitiesRes.reason;
-      }
-    } catch (err) {
-      setError(extractErrorMessage(err, "Erreur de chargement du tableau de bord."));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
-    loadAll();
-  }, [loadAll]);
-
-  useEffect(() => {
-    if (!isBusy) return undefined;
-    const timer = setInterval(() => {
-      loadAll();
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [isBusy, loadAll]);
-
-  useEffect(() => {
-    const hashFromUrl = location.hash ? location.hash.replace("#", "") : "";
+    const hashFromUrl = window.location.hash ? window.location.hash.replace("#", "") : "";
     const hashFromStorage = sessionStorage.getItem("runsee-return-hash") || "";
     const nextAnchor = hashFromUrl || hashFromStorage;
     if (nextAnchor) {
       setActiveAnchor(nextAnchor);
       sessionStorage.removeItem("runsee-return-hash");
     }
-  }, [location.hash]);
-
-  const handleConnectStrava = useCallback(() => {
-    window.location.href = stravaLoginUrl;
   }, []);
 
-  const handleStartHistorical = useCallback(async () => {
-    setError("");
-    try {
-      await startHistoricalSync();
-      await loadAll();
-    } catch (err) {
-      setError(extractErrorMessage(err, "Erreur lors du lancement du rechargement historique."));
+  const availableSports = useMemo(
+    () => getAvailableSportGroups(activities, { groupSports: dashboardState.options.groupSports }),
+    [activities, dashboardState.options.groupSports],
+  );
+
+  useEffect(() => {
+    if (dashboardState.filters.sportGroup === "all") return;
+    if (!availableSports.includes(dashboardState.filters.sportGroup)) {
+      dashboardActions.setFilter("sportGroup", "all");
     }
-  }, [loadAll]);
+  }, [availableSports, dashboardState.filters.sportGroup, dashboardActions]);
 
-  const handleStartIncremental = useCallback(async () => {
-    setError("");
-    try {
-      await startIncrementalSync();
-      await loadAll();
-    } catch (err) {
-      setError(extractErrorMessage(err, "Erreur lors du lancement de la synchronisation incrémentale."));
-    }
-  }, [loadAll]);
+  const filteredActivities = useMemo(
+    () => filterActivities(activities, dashboardState.filters, { groupSports: dashboardState.options.groupSports }),
+    [activities, dashboardState.filters, dashboardState.options.groupSports],
+  );
 
-  const handleFilterChange = useCallback((name, value) => {
-    setFilters((current) => ({
-      ...current,
-      [name]: value,
-    }));
-  }, []);
+  const comparisonActivities = useMemo(
+    () => filterActivities(activities, { ...dashboardState.filters, dateFrom: "", dateTo: "" }, { groupSports: dashboardState.options.groupSports }),
+    [activities, dashboardState.filters, dashboardState.options.groupSports],
+  );
 
-  const handleResetFilters = useCallback(() => {
-    setFilters({
-      search: "",
-      sportGroup: "all",
-      dateFrom: "",
-      dateTo: "",
-    });
-  }, []);
-
-  const availableSports = useMemo(() => getAvailableSportGroups(activities), [activities]);
-  const filteredActivities = useMemo(() => filterActivities(activities, filters), [activities, filters]);
   const kpis = useMemo(() => buildKpis(filteredActivities), [filteredActivities]);
-  const weeklyVolume = useMemo(() => buildWeeklyVolume(filteredActivities, filters), [filteredActivities, filters]);
-  const monthlyVolume = useMemo(() => buildMonthlyVolume(filteredActivities, filters), [filteredActivities, filters]);
-  const sportDistribution = useMemo(() => buildSportDistribution(filteredActivities), [filteredActivities]);
+  const monthlyVolume = useMemo(
+    () => buildMonthlySeries(filteredActivities, { metric: dashboardState.options.monthlyMetric, months: dashboardState.options.monthlyMonths }),
+    [filteredActivities, dashboardState.options.monthlyMetric, dashboardState.options.monthlyMonths],
+  );
+  const weekdayDistribution = useMemo(
+    () => buildWeekdayDistribution(filteredActivities, { metric: dashboardState.options.weekdayMetric }),
+    [filteredActivities, dashboardState.options.weekdayMetric],
+  );
+  const sportDistribution = useMemo(
+    () => buildSportDistribution(filteredActivities, { groupSports: dashboardState.options.groupSports }),
+    [filteredActivities, dashboardState.options.groupSports],
+  );
+  const rollingLoad = useMemo(() => buildRollingLoadSeries(filteredActivities, { metric: 'distanceKm', days: 120 }), [filteredActivities]);
+  const distanceDistribution = useMemo(() => buildDistanceDistribution(filteredActivities), [filteredActivities]);
 
   return (
     <div className="page premium-page">
@@ -154,71 +73,86 @@ export default function DashboardPage() {
           <div>
             <div className="brand-line">
               <span className="brand-badge">RuNSee</span>
-              <span className="brand-caption">Vision locale de tes activités Strava</span>
+              <AppNavigation />
             </div>
-            <h1 className="topbar-title">Tableau de bord premium</h1>
-            <p className="page-subtitle">Synchronise, explore et analyse tes activités avec une interface pensée pour le suivi quotidien.</p>
+            <h1 className="topbar-title">Tableau de bord analytique</h1>
+            <p className="page-subtitle">Analyse tes activités locales, compare tes années à date comme dans Elevate et garde ton contexte de navigation entre les pages.</p>
           </div>
         </header>
 
         {error ? <div className="alert alert-error section">{error}</div> : null}
 
         <div className="section">
-          <SyncActions
-            onConnectStrava={handleConnectStrava}
-            onStartHistorical={handleStartHistorical}
-            onStartIncremental={handleStartIncremental}
-            isBusy={isBusy}
-          />
-        </div>
-
-        <div className="section">
           <ActivityFilters
-            filters={filters}
+            filters={dashboardState.filters}
+            options={dashboardState.options}
             availableSports={availableSports}
             filteredCount={filteredActivities.length}
             totalCount={activities.length}
-            onChange={handleFilterChange}
-            onReset={handleResetFilters}
+            onChange={dashboardActions.setFilter}
+            onReset={dashboardActions.resetFilters}
+            onOptionChange={dashboardActions.setOption}
+          />
+        </div>
+
+        <div className="section"><KpiGrid kpis={kpis} /></div>
+
+        <div className="section">
+          <PeriodComparisonSection
+            activities={comparisonActivities}
+            mode={dashboardState.options.comparisonMode}
+            metric={dashboardState.options.comparisonMetric}
+            reference={dashboardState.options.comparisonReference}
+            display={dashboardState.options.comparisonDisplay}
+            periods={dashboardState.options.comparisonPeriods}
+            onModeChange={(value) => dashboardActions.setOption("comparisonMode", value)}
+            onMetricChange={(value) => dashboardActions.setOption("comparisonMetric", value)}
+            onReferenceChange={(value) => dashboardActions.setOption("comparisonReference", value)}
+            onDisplayChange={(value) => dashboardActions.setOption("comparisonDisplay", value)}
+            onPeriodsChange={(value) => dashboardActions.setOption("comparisonPeriods", value)}
           />
         </div>
 
         <div className="section">
-          <SyncSummaryCard summary={summary} athlete={athlete} />
+          <MonthlyVolumeChart
+            data={monthlyVolume}
+            metric={dashboardState.options.monthlyMetric}
+            display={dashboardState.options.monthlyDisplay}
+            months={dashboardState.options.monthlyMonths}
+            onMetricChange={(value) => dashboardActions.setOption("monthlyMetric", value)}
+            onDisplayChange={(value) => dashboardActions.setOption("monthlyDisplay", value)}
+            onMonthsChange={(value) => dashboardActions.setOption("monthlyMonths", value)}
+          />
         </div>
 
         <div className="grid two-columns section">
-          <SyncStatusCard currentJob={currentJob} />
-          <section className="card card-accent status-side-card">
-            <h2 className="card-title">État général</h2>
-            <p className="muted">
-              {isLoading
-                ? "Chargement en cours…"
-                : athlete
-                  ? "Connexion Strava active. Les données locales sont prêtes à être filtrées, analysées et ré-explorées activité par activité."
-                  : "Aucun athlète connecté. Lance d'abord la connexion Strava pour alimenter la base locale."}
-            </p>
-            <div className="top-gap-sm small-text">
-              Les graphiques, KPI et la table se recalculent automatiquement sur la sélection courante.
-            </div>
-          </section>
-        </div>
-
-        <div className="section">
-          <KpiGrid kpis={kpis} />
+          <RollingLoadChart data={rollingLoad} metric="distanceKm" />
+          <WeekdayDistributionChart
+            data={weekdayDistribution}
+            metric={dashboardState.options.weekdayMetric}
+            onMetricChange={(value) => dashboardActions.setOption("weekdayMetric", value)}
+          />
         </div>
 
         <div className="grid two-columns section">
-          <WeeklyVolumeChart data={weeklyVolume} />
-          <MonthlyVolumeChart data={monthlyVolume} />
+          <DistanceDistributionChart data={distanceDistribution} />
+          <SportDistributionChart data={sportDistribution} groupSports={dashboardState.options.groupSports} />
         </div>
 
         <div className="section">
-          <SportDistributionChart data={sportDistribution} />
-        </div>
-
-        <div className="section">
-          <ActivitiesTable activities={filteredActivities} currentAnchor={activeAnchor} onAnchorHandled={() => setActiveAnchor("")} />
+          <ActivitiesTable
+            activities={filteredActivities}
+            groupSports={dashboardState.options.groupSports}
+            currentAnchor={activeAnchor}
+            onAnchorHandled={() => setActiveAnchor("")}
+            currentPage={dashboardState.table.currentPage}
+            pageSize={dashboardState.table.pageSize}
+            onPageChange={(value) => dashboardActions.setTable("currentPage", value)}
+            onPageSizeChange={(value) => {
+              dashboardActions.setTable("pageSize", value);
+              dashboardActions.setTable("currentPage", 1);
+            }}
+          />
         </div>
       </div>
     </div>
