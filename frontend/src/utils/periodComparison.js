@@ -1,7 +1,32 @@
+import { normalizeDistanceKm, normalizeDurationHours } from './activityAggregations.js';
+
 function toDate(value) {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function parseDateInput(value) {
+  if (!value) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value).trim());
+  if (!match) return toDate(value);
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+function formatDateInputValue(date) {
+  if (!date) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatMonthInputValue(date) {
+  if (!date) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
 }
 
 function atStartOfDay(date) {
@@ -15,15 +40,15 @@ function formatMonthLabel(date) {
 function metricValue(activity, metric) {
   switch (metric) {
     case 'distanceKm':
-      return Number(activity.distance || 0) / 1000;
+      return normalizeDistanceKm(activity.distance);
     case 'elevationGain':
       return Number(activity.totalElevationGain || 0);
     case 'movingHours':
-      return Number(activity.movingTime || 0) / 3600;
+      return normalizeDurationHours(activity.movingTime);
     case 'count':
       return 1;
     default:
-      return Number(activity.distance || 0) / 1000;
+      return normalizeDistanceKm(activity.distance);
   }
 }
 
@@ -103,7 +128,7 @@ export function buildPeriodComparisonModel(activities = [], options = {}) {
 
   if (mode === 'yearToDate') {
     const latest = getLatestDate(items);
-    const refDate = atStartOfDay(toDate(reference) || latest);
+    const refDate = atStartOfDay(parseDateInput(reference) || latest);
     const month = refDate.getMonth();
     const day = refDate.getDate();
     for (let i = 0; i < periodsCount; i += 1) {
@@ -133,12 +158,12 @@ export function buildPeriodComparisonModel(activities = [], options = {}) {
     const insight = rows.length > 1
       ? `${rows[0].label} est ${rows[0].deltaPrevious >= 0 ? 'en avance' : 'en retrait'} de ${Math.abs(rows[0].deltaPrevious || 0).toLocaleString('fr-FR', { minimumFractionDigits: metric === 'count' || metric === 'elevationGain' ? 0 : 1, maximumFractionDigits: metric === 'count' || metric === 'elevationGain' ? 0 : 1 })} ${metric === 'distanceKm' ? 'km' : metric === 'movingHours' ? 'h' : metric === 'elevationGain' ? 'm' : ''} vs ${rows[1].label} à date.`
       : '';
-    return { mode, metric, rows, chartData, insight, referenceValue: refDate.toISOString().slice(0, 10), controlType: 'date' };
+    return { mode, metric, rows, chartData, insight, referenceValue: formatDateInputValue(refDate), controlType: 'date' };
   }
 
   if (mode === 'fullMonths') {
     const latest = getLatestDate(items);
-    const [y, m] = (reference || latest.toISOString().slice(0, 7)).split('-');
+    const [y, m] = (reference || formatMonthInputValue(latest)).split('-');
     const ref = new Date(Number(y), Number(m) - 1, 1);
     for (let i = 0; i < periodsCount; i += 1) {
       const current = new Date(ref.getFullYear(), ref.getMonth() - i, 1);
@@ -156,7 +181,7 @@ export function buildPeriodComparisonModel(activities = [], options = {}) {
     const rows = buildRows(rowsRaw);
     const chartData = rows.map((row) => ({ label: row.label, value: row.value, fill: row.color }));
     const insight = rows.length > 1 ? `${rows[0].label} ${rows[0].deltaPrevious >= 0 ? 'dépasse' : 'reste sous'} ${rows[1].label} de ${Math.abs(rows[0].deltaPrevious || 0).toLocaleString('fr-FR', { minimumFractionDigits: metric === 'count' || metric === 'elevationGain' ? 0 : 1, maximumFractionDigits: metric === 'count' || metric === 'elevationGain' ? 0 : 1 })}.` : '';
-    return { mode, metric, rows, chartData, insight, referenceValue: `${y}-${m}`, controlType: 'month' };
+    return { mode, metric, rows, chartData, insight, referenceValue: formatMonthInputValue(ref), controlType: 'month' };
   }
 
   const years = getAvailableYears(items);

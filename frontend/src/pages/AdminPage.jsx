@@ -11,32 +11,38 @@ function extractErrorMessage(error, fallback) {
   return error?.response?.data?.userMessage || error?.response?.data?.message || error?.message || fallback;
 }
 
+const noop = () => {};
+
 export default function AdminPage() {
   const { athlete, summary, currentJob, error, setError, reload, isBusy } = useRunSeeData({ includeActivities: false });
+  const safeSetError = setError ?? noop;
+  const safeReload = reload ?? noop;
 
   const handleConnectStrava = useCallback(() => {
-    window.location.href = stravaLoginUrl;
+    if (typeof window !== "undefined" && stravaLoginUrl) {
+      window.location.href = stravaLoginUrl;
+    }
   }, []);
 
   const handleStartHistorical = useCallback(async () => {
-    setError("");
+    safeSetError("");
     try {
       await startHistoricalSync();
-      await reload();
+      await safeReload();
     } catch (err) {
-      setError(extractErrorMessage(err, "Erreur lors du lancement du rechargement historique."));
+      safeSetError(extractErrorMessage(err, "Erreur lors du lancement du rechargement historique."));
     }
-  }, [reload, setError]);
+  }, [safeReload, safeSetError]);
 
   const handleStartIncremental = useCallback(async () => {
-    setError("");
+    safeSetError("");
     try {
       await startIncrementalSync();
-      await reload();
+      await safeReload();
     } catch (err) {
-      setError(extractErrorMessage(err, "Erreur lors du lancement de la synchronisation incrémentale."));
+      safeSetError(extractErrorMessage(err, "Erreur lors du lancement de la synchronisation incrémentale."));
     }
-  }, [reload, setError]);
+  }, [safeReload, safeSetError]);
 
   return (
     <div className="page premium-page">
@@ -59,7 +65,7 @@ export default function AdminPage() {
             onConnectStrava={handleConnectStrava}
             onStartHistorical={handleStartHistorical}
             onStartIncremental={handleStartIncremental}
-            isBusy={isBusy}
+            isBusy={Boolean(isBusy)}
           />
         </div>
 

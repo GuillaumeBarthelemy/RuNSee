@@ -2,8 +2,12 @@ import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDisplaySportLabel } from "../utils/activityAggregations.js";
 
+const ALLOWED_PAGE_SIZES = [10, 20, 50, 100];
+const noop = () => {};
+
 function formatDistance(distance) {
-  return distance ? (distance / 1000).toFixed(2) : "0.00";
+  const numeric = Number(distance);
+  return Number.isFinite(numeric) && numeric > 0 ? (numeric / 1000).toFixed(2) : "0.00";
 }
 
 function formatMinutes(seconds) {
@@ -41,23 +45,35 @@ function buildPageItems(currentPage, totalPages) {
   return result;
 }
 
-export default function ActivitiesTable({ activities, groupSports, currentAnchor, onAnchorHandled, currentPage, pageSize, onPageChange, onPageSizeChange }) {
+export default function ActivitiesTable({
+  activities = [],
+  groupSports = true,
+  currentAnchor = "",
+  onAnchorHandled = noop,
+  currentPage = 1,
+  pageSize = 20,
+  onPageChange = noop,
+  onPageSizeChange = noop,
+}) {
   const navigate = useNavigate();
-  const totalRows = Array.isArray(activities) ? activities.length : 0;
-  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-  const safePage = Math.min(currentPage, totalPages);
+  const safeActivities = useMemo(() => (Array.isArray(activities) ? activities : []), [activities]);
+  const safePageSize = ALLOWED_PAGE_SIZES.includes(Number(pageSize)) ? Number(pageSize) : 20;
+  const normalizedPage = Math.max(1, Number(currentPage) || 1);
+  const totalRows = safeActivities.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / safePageSize));
+  const safePage = Math.min(normalizedPage, totalPages);
 
   const rows = useMemo(() => {
-    if (!Array.isArray(activities)) return [];
-    const start = (safePage - 1) * pageSize;
-    return activities.slice(start, start + pageSize);
-  }, [activities, safePage, pageSize]);
+    const start = (safePage - 1) * safePageSize;
+    return safeActivities.slice(start, start + safePageSize);
+  }, [safeActivities, safePage, safePageSize]);
 
   useEffect(() => {
-    if (safePage !== currentPage) onPageChange(safePage);
-  }, [safePage, currentPage, onPageChange]);
+    if (safePage !== normalizedPage) onPageChange(safePage);
+  }, [safePage, normalizedPage, onPageChange]);
 
   useEffect(() => {
+    if (typeof document === "undefined") return undefined;
     if (!currentAnchor) return;
     const target = document.getElementById(currentAnchor);
     if (!target) return;
@@ -70,13 +86,16 @@ export default function ActivitiesTable({ activities, groupSports, currentAnchor
     return () => window.clearTimeout(timer);
   }, [currentAnchor, onAnchorHandled, rows]);
 
-  const startIndex = totalRows === 0 ? 0 : (safePage - 1) * pageSize + 1;
-  const endIndex = Math.min(totalRows, safePage * pageSize);
+  const startIndex = totalRows === 0 ? 0 : (safePage - 1) * safePageSize + 1;
+  const endIndex = Math.min(totalRows, safePage * safePageSize);
   const pageItems = useMemo(() => buildPageItems(safePage, totalPages), [safePage, totalPages]);
 
   const openDetail = (activity) => {
+    if (!activity?.stravaActivityId) return;
     const anchorId = `activity-row-${activity.stravaActivityId}`;
-    sessionStorage.setItem("runsee-return-hash", anchorId);
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      sessionStorage.setItem("runsee-return-hash", anchorId);
+    }
     navigate(`/activities/${activity.stravaActivityId}`, { state: { returnHash: anchorId } });
   };
 
@@ -91,7 +110,7 @@ export default function ActivitiesTable({ activities, groupSports, currentAnchor
           <div className="small-text">{startIndex}-{endIndex} / {totalRows}</div>
           <label className="inline-field">
             <span className="field-label inline-label">Lignes</span>
-            <select className="field-input field-input-small" value={pageSize} onChange={(event) => onPageSizeChange(Number(event.target.value))}>
+            <select className="field-input field-input-small" value={safePageSize} onChange={(event) => onPageSizeChange(Number(event.target.value))}>
               <option value={10}>10</option>
               <option value={20}>20</option>
               <option value={50}>50</option>
@@ -119,27 +138,29 @@ export default function ActivitiesTable({ activities, groupSports, currentAnchor
                 </tr>
               </thead>
               <tbody>
-                {rows.map((activity) => {
-                  const anchorId = `activity-row-${activity.stravaActivityId}`;
+                {rows.map((activity, index) => {
+                  const key = activity?.id || activity?.stravaActivityId || activity?.name || `activity-${safePage}-${index}`;
+                  const anchorId = activity?.stravaActivityId ? `activity-row-${activity.stravaActivityId}` : undefined;
+                  const isClickable = Boolean(activity?.stravaActivityId);
                   return (
                     <tr
-                      key={activity.id || activity.stravaActivityId}
+                      key={key}
                       id={anchorId}
-                      className="clickable-row"
+                      className={isClickable ? "clickable-row" : ""}
                       onClick={() => openDetail(activity)}
                       onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
+                        if (isClickable && (event.key === "Enter" || event.key === " ")) {
                           event.preventDefault();
                           openDetail(activity);
                         }
                       }}
-                      tabIndex={0}
+                      tabIndex={isClickable ? 0 : -1}
                     >
                       <td>{formatDate(activity.startDate || activity.startDateLocal)}</td>
                       <td>
                         <div className="activity-name-cell">
                           <strong>{activity.name || "-"}</strong>
-                          <span className="small-text">#{activity.stravaActivityId}</span>
+                          <span className="small-text">{activity?.stravaActivityId ? `#${activity.stravaActivityId}` : "-"}</span>
                         </div>
                       </td>
                       <td>{getDisplaySportLabel(activity, { groupSports })}</td>

@@ -5,7 +5,9 @@ function formatTooltipValue(value, name) {
   return [value, name];
 }
 
-export default function WeeklyVolumeChart({ data }) {
+export default function WeeklyVolumeChart({ data = [] }) {
+  const safeData = Array.isArray(data) ? data : [];
+
   return (
     <section className="card chart-card">
       <div className="card-header-row">
@@ -14,10 +16,10 @@ export default function WeeklyVolumeChart({ data }) {
           <p className="card-subtitle">Toutes les semaines de la période affichée sont conservées, même à 0.</p>
         </div>
       </div>
-      {data?.length ? (
+      {safeData.length ? (
         <div className="chart-box">
-          <ResponsiveContainer>
-            <BarChart data={data} barCategoryGap="18%">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={safeData} barCategoryGap="18%">
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#d9e2f0" />
               <XAxis dataKey="period" interval={0} angle={-35} textAnchor="end" height={70} tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 12 }} />

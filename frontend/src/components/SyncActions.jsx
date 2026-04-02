@@ -1,4 +1,11 @@
-export default function SyncActions({ onConnectStrava, onStartHistorical, onStartIncremental, isBusy }) {
+const noop = () => {};
+
+export default function SyncActions({
+  onConnectStrava = noop,
+  onStartHistorical = noop,
+  onStartIncremental = noop,
+  isBusy = false,
+}) {
   return (
     <section className="hero-card">
       <div className="hero-card-content">
@@ -10,13 +17,13 @@ export default function SyncActions({ onConnectStrava, onStartHistorical, onStar
           </p>
         </div>
         <div className="actions-row hero-actions">
-          <button className="button button-primary" onClick={onConnectStrava}>
+          <button type="button" className="button button-primary" onClick={onConnectStrava}>
             Connecter Strava
           </button>
-          <button className="button button-glass" onClick={onStartHistorical} disabled={isBusy}>
+          <button type="button" className="button button-glass" onClick={onStartHistorical} disabled={isBusy}>
             Recharger l'historique
           </button>
-          <button className="button button-dark" onClick={onStartIncremental} disabled={isBusy}>
+          <button type="button" className="button button-dark" onClick={onStartIncremental} disabled={isBusy}>
             Synchroniser les nouveautés
           </button>
         </div>

@@ -1,4 +1,30 @@
-export default function ActivityFilters({ filters, options, availableSports, filteredCount, totalCount, onChange, onReset, onOptionChange }) {
+const DEFAULT_FILTERS = {
+  search: "",
+  sportGroup: "all",
+  dateFrom: "",
+  dateTo: "",
+};
+
+const DEFAULT_OPTIONS = {
+  groupSports: true,
+};
+
+const noop = () => {};
+
+export default function ActivityFilters({
+  filters = DEFAULT_FILTERS,
+  options = DEFAULT_OPTIONS,
+  availableSports = [],
+  filteredCount = 0,
+  totalCount = 0,
+  onChange = noop,
+  onReset = noop,
+  onOptionChange = noop,
+}) {
+  const safeFilters = { ...DEFAULT_FILTERS, ...(filters || {}) };
+  const safeOptions = { ...DEFAULT_OPTIONS, ...(options || {}) };
+  const sports = Array.isArray(availableSports) ? availableSports : [];
+
   return (
     <section className="card filter-card">
       <div className="card-header-row align-center wrap-on-mobile">
@@ -15,17 +41,17 @@ export default function ActivityFilters({ filters, options, availableSports, fil
           <input
             className="field-input"
             type="text"
-            value={filters.search}
-            placeholder="Nom, description, sport…"
+            value={safeFilters.search}
+            placeholder="Nom, description, sport..."
             onChange={(event) => onChange("search", event.target.value)}
           />
         </label>
 
         <label className="field">
           <span className="field-label">Sport affiché</span>
-          <select className="field-input" value={filters.sportGroup} onChange={(event) => onChange("sportGroup", event.target.value)}>
+          <select className="field-input" value={safeFilters.sportGroup} onChange={(event) => onChange("sportGroup", event.target.value)}>
             <option value="all">Tous les sports</option>
-            {availableSports.map((sport) => (
+            {sports.map((sport) => (
               <option key={sport} value={sport}>{sport}</option>
             ))}
           </select>
@@ -35,26 +61,26 @@ export default function ActivityFilters({ filters, options, availableSports, fil
           <span className="field-label">Regroupement intelligent</span>
           <button
             type="button"
-            className={`toggle-pill ${options.groupSports ? "is-active" : ""}`}
-            onClick={() => onOptionChange("groupSports", !options.groupSports)}
+            className={`toggle-pill ${safeOptions.groupSports ? "is-active" : ""}`}
+            onClick={() => onOptionChange("groupSports", !safeOptions.groupSports)}
           >
-            {options.groupSports ? "Activé" : "Désactivé"}
+            {safeOptions.groupSports ? "Activé" : "Désactivé"}
           </button>
         </label>
 
         <label className="field">
           <span className="field-label">Date de début</span>
-          <input className="field-input" type="date" value={filters.dateFrom} onChange={(event) => onChange("dateFrom", event.target.value)} />
+          <input className="field-input" type="date" value={safeFilters.dateFrom} onChange={(event) => onChange("dateFrom", event.target.value)} />
         </label>
 
         <label className="field">
           <span className="field-label">Date de fin</span>
-          <input className="field-input" type="date" value={filters.dateTo} onChange={(event) => onChange("dateTo", event.target.value)} />
+          <input className="field-input" type="date" value={safeFilters.dateTo} onChange={(event) => onChange("dateTo", event.target.value)} />
         </label>
       </div>
 
       <div className="actions-row top-gap-sm">
-        <button className="button button-outline" onClick={onReset}>Réinitialiser les filtres</button>
+        <button type="button" className="button button-outline" onClick={onReset}>Réinitialiser les filtres</button>
       </div>
     </section>
   );

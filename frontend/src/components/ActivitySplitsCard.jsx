@@ -1,45 +1,53 @@
 function formatDistance(meters) {
-  if (meters === null || meters === undefined) return "-";
-  return `${(meters / 1000).toFixed(2)} km`;
+  const numeric = Number(meters);
+  if (!Number.isFinite(numeric)) return "-";
+  return `${(numeric / 1000).toFixed(2)} km`;
 }
 
 function formatElevation(value) {
-  if (value === null || value === undefined) return "-";
-  return `${Math.round(value)} m`;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return `${Math.round(numeric)} m`;
 }
 
 function formatHeartRate(value) {
-  if (value === null || value === undefined) return "-";
-  return `${Math.round(value)} bpm`;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return "-";
+  return `${Math.round(numeric)} bpm`;
 }
 
 function formatPace(split) {
-  const distance = Number(split.distance || 0);
-  const seconds = Number(split.moving_time ?? split.elapsed_time ?? 0);
+  const distance = Number(split?.distance || 0);
+  const seconds = Number(split?.moving_time ?? split?.elapsed_time ?? 0);
   if (!distance || !seconds) return "-";
   const pacePerKm = seconds / (distance / 1000);
   const min = Math.floor(pacePerKm / 60);
   const sec = Math.round(pacePerKm % 60);
-  return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}/km`;
+  const normalizedSeconds = sec === 60 ? 0 : sec;
+  const normalizedMinutes = sec === 60 ? min + 1 : min;
+  return `${String(normalizedMinutes).padStart(2, "0")}:${String(normalizedSeconds).padStart(2, "0")}/km`;
 }
 
 function buildSplitRows(splits = []) {
-  return splits.map((split, index) => ({
-    key: split.id || `${index + 1}`,
-    label: split.split || split.name || `${index + 1}`,
-    distance: formatDistance(split.distance),
+  const safeSplits = Array.isArray(splits) ? splits : [];
+  return safeSplits.map((split, index) => ({
+    key: split?.id || `${index + 1}`,
+    label: split?.split || split?.name || `${index + 1}`,
+    distance: formatDistance(split?.distance),
     pace: formatPace(split),
-    elevation: formatElevation(split.elevation_difference ?? split.total_elevation_gain),
-    heartRate: formatHeartRate(split.average_heartrate),
+    elevation: formatElevation(split?.elevation_difference ?? split?.total_elevation_gain),
+    heartRate: formatHeartRate(split?.average_heartrate),
   }));
 }
 
-function SplitTable({ title, subtitle, rows, emptyMessage }) {
+function SplitTable({ title, subtitle, rows = [], emptyMessage }) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+
   return (
     <div className="subcard">
       <h3 className="subcard-title">{title}</h3>
       <p className="card-subtitle">{subtitle}</p>
-      {!rows.length ? (
+      {!safeRows.length ? (
         <div className="empty-state compact-empty">{emptyMessage}</div>
       ) : (
         <div className="table-wrapper top-gap-sm">
@@ -54,7 +62,7 @@ function SplitTable({ title, subtitle, rows, emptyMessage }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {safeRows.map((row) => (
                 <tr key={row.key}>
                   <td>{row.label}</td>
                   <td>{row.distance}</td>
@@ -71,7 +79,7 @@ function SplitTable({ title, subtitle, rows, emptyMessage }) {
   );
 }
 
-export default function ActivitySplitsCard({ detailedPayload }) {
+export default function ActivitySplitsCard({ detailedPayload = null }) {
   const metricSplits = Array.isArray(detailedPayload?.splits_metric)
     ? detailedPayload.splits_metric
     : Array.isArray(detailedPayload?.splits_standard)

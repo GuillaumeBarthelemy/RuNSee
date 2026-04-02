@@ -2,7 +2,11 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recha
 
 const COLORS = ["#0b5fff", "#22c55e", "#f97316", "#8b5cf6", "#06b6d4", "#f43f5e", "#64748b", "#84cc16", "#14b8a6", "#f59e0b"];
 
-export default function SportDistributionChart({ data, groupSports }) {
+export default function SportDistributionChart({ data = [], groupSports = true }) {
+  const safeData = Array.isArray(data)
+    ? data.filter((entry) => entry?.name && Number(entry?.value) > 0)
+    : [];
+
   return (
     <section className="card chart-card">
       <div className="card-header-row">
@@ -15,12 +19,12 @@ export default function SportDistributionChart({ data, groupSports }) {
           </p>
         </div>
       </div>
-      {data?.length ? (
+      {safeData.length ? (
         <div className="chart-box large-chart">
-          <ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data} dataKey="value" nameKey="name" outerRadius={120} innerRadius={65} paddingAngle={2} label>
-                {data.map((entry, index) => (
+              <Pie data={safeData} dataKey="value" nameKey="name" outerRadius={120} innerRadius={65} paddingAngle={2} label>
+                {safeData.map((entry, index) => (
                   <Cell key={`${entry.name}-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>

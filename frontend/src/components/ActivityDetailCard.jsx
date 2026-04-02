@@ -2,45 +2,56 @@ import ActivityMapCard from "./ActivityMapCard.jsx";
 import ActivitySplitsCard from "./ActivitySplitsCard.jsx";
 import { getDisplaySportLabel } from "../utils/activityAggregations.js";
 
+const noop = () => {};
+
 function formatDate(value) {
   if (!value) return "-";
-  return new Date(value).toLocaleString("fr-FR", {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("fr-FR", {
     dateStyle: "full",
     timeStyle: "short",
   });
 }
 
 function formatDistance(meters) {
-  if (meters === null || meters === undefined) return "-";
-  return `${(meters / 1000).toFixed(2)} km`;
+  const numeric = Number(meters);
+  if (!Number.isFinite(numeric)) return "-";
+  return `${(numeric / 1000).toFixed(2)} km`;
 }
 
 function formatDuration(seconds) {
-  if (seconds === null || seconds === undefined) return "-";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
+  const numeric = Number(seconds);
+  if (!Number.isFinite(numeric)) return "-";
+  const h = Math.floor(numeric / 3600);
+  const m = Math.floor((numeric % 3600) / 60);
+  const s = numeric % 60;
   if (h > 0) return `${h} h ${String(m).padStart(2, "0")} min ${String(s).padStart(2, "0")} s`;
   return `${m} min ${String(s).padStart(2, "0")} s`;
 }
 
 function formatSpeed(speed) {
-  if (speed === null || speed === undefined) return "-";
-  return `${(speed * 3.6).toFixed(2)} km/h`;
+  const numeric = Number(speed);
+  if (!Number.isFinite(numeric)) return "-";
+  return `${(numeric * 3.6).toFixed(2)} km/h`;
 }
 
 function formatHeartRate(value) {
-  if (value === null || value === undefined) return "-";
-  return `${Math.round(value)} bpm`;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return "-";
+  return `${Math.round(numeric)} bpm`;
 }
 
 function formatElevation(value) {
-  if (value === null || value === undefined) return "-";
-  return `${Math.round(value)} m`;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return `${Math.round(numeric)} m`;
 }
 
 function parseJsonSafe(value) {
   if (!value) return null;
+  if (typeof value === "object") return value;
+  if (typeof value !== "string") return null;
   try {
     return JSON.parse(value);
   } catch {
@@ -48,38 +59,39 @@ function parseJsonSafe(value) {
   }
 }
 
-export default function ActivityDetailCard({ activity, onEnrich, isEnriching = false }) {
-  const detailedPayload = parseJsonSafe(activity?.rawJson);
+export default function ActivityDetailCard({ activity = null, onEnrich = noop, isEnriching = false }) {
+  const safeActivity = activity || {};
+  const detailedPayload = parseJsonSafe(safeActivity.rawJson);
   const hasDetailedPayload = Boolean(detailedPayload);
 
   return (
     <section className="card detail-shell">
       <div className="card-header-row wrap-on-mobile">
         <div>
-          <div className="detail-chip">{getDisplaySportLabel(activity, { groupSports: false })}</div>
-          <h2 className="card-title detail-title">{activity?.name || "Activité"}</h2>
-          <p className="card-subtitle">{formatDate(activity?.startDateLocal || activity?.startDate)}</p>
+          <div className="detail-chip">{getDisplaySportLabel(safeActivity, { groupSports: false })}</div>
+          <h2 className="card-title detail-title">{safeActivity.name || "Activité"}</h2>
+          <p className="card-subtitle">{formatDate(safeActivity.startDateLocal || safeActivity.startDate)}</p>
         </div>
-        <button className="button button-dark" onClick={onEnrich} disabled={isEnriching}>
-          {isEnriching ? "Enrichissement en cours…" : "Enrichir depuis Strava"}
+        <button type="button" className="button button-dark" onClick={onEnrich} disabled={isEnriching}>
+          {isEnriching ? "Enrichissement en cours..." : "Enrichir depuis Strava"}
         </button>
       </div>
 
       <div className="grid kpi-grid top-gap-sm">
-        <div className="metric-card premium-metric"><span className="metric-label">Distance</span><div className="metric-value">{formatDistance(activity?.distance)}</div></div>
-        <div className="metric-card premium-metric"><span className="metric-label">Temps en mouvement</span><div className="metric-value medium-metric">{formatDuration(activity?.movingTime)}</div></div>
-        <div className="metric-card premium-metric"><span className="metric-label">Temps écoulé</span><div className="metric-value medium-metric">{formatDuration(activity?.elapsedTime)}</div></div>
-        <div className="metric-card premium-metric"><span className="metric-label">Dénivelé positif</span><div className="metric-value">{formatElevation(activity?.totalElevationGain)}</div></div>
-        <div className="metric-card premium-metric"><span className="metric-label">Vitesse moyenne</span><div className="metric-value medium-metric">{formatSpeed(activity?.averageSpeed)}</div></div>
-        <div className="metric-card premium-metric"><span className="metric-label">FC moyenne</span><div className="metric-value medium-metric">{formatHeartRate(activity?.averageHeartrate)}</div></div>
+        <div className="metric-card premium-metric"><span className="metric-label">Distance</span><div className="metric-value">{formatDistance(safeActivity.distance)}</div></div>
+        <div className="metric-card premium-metric"><span className="metric-label">Temps en mouvement</span><div className="metric-value medium-metric">{formatDuration(safeActivity.movingTime)}</div></div>
+        <div className="metric-card premium-metric"><span className="metric-label">Temps écoulé</span><div className="metric-value medium-metric">{formatDuration(safeActivity.elapsedTime)}</div></div>
+        <div className="metric-card premium-metric"><span className="metric-label">Dénivelé positif</span><div className="metric-value">{formatElevation(safeActivity.totalElevationGain)}</div></div>
+        <div className="metric-card premium-metric"><span className="metric-label">Vitesse moyenne</span><div className="metric-value medium-metric">{formatSpeed(safeActivity.averageSpeed)}</div></div>
+        <div className="metric-card premium-metric"><span className="metric-label">FC moyenne</span><div className="metric-value medium-metric">{formatHeartRate(safeActivity.averageHeartrate)}</div></div>
       </div>
 
       <div className="top-gap-sm">
         <h3 className="subcard-title">Description</h3>
-        <p className="muted">{activity?.description || "Aucune description disponible."}</p>
+        <p className="muted">{safeActivity.description || "Aucune description disponible."}</p>
       </div>
 
-      <ActivityMapCard activity={activity} detailedPayload={detailedPayload} />
+      <ActivityMapCard activity={safeActivity} detailedPayload={detailedPayload} />
       <ActivitySplitsCard detailedPayload={detailedPayload} />
 
       {!hasDetailedPayload ? (

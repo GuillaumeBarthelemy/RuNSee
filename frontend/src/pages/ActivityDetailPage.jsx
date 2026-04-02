@@ -8,6 +8,11 @@ function extractErrorMessage(error, fallback) {
   return error?.response?.data?.details || error?.response?.data?.message || error?.message || fallback;
 }
 
+function getStoredReturnHash() {
+  if (typeof window === "undefined" || !window.sessionStorage) return "";
+  return sessionStorage.getItem("runsee-return-hash") || "";
+}
+
 export default function ActivityDetailPage() {
   const { stravaActivityId } = useParams();
   const location = useLocation();
@@ -17,15 +22,23 @@ export default function ActivityDetailPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const returnHash = useMemo(() => location.state?.returnHash || sessionStorage.getItem("runsee-return-hash") || "", [location.state]);
+  const returnHash = useMemo(() => location.state?.returnHash || getStoredReturnHash(), [location.state]);
 
   const loadActivity = useCallback(async () => {
+    if (!stravaActivityId) {
+      setActivity(null);
+      setError("Identifiant d'activité manquant.");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
       const data = await getActivityById(stravaActivityId);
-      setActivity(data);
+      setActivity(data ?? null);
     } catch (err) {
+      setActivity(null);
       setError(extractErrorMessage(err, "Impossible de charger la fiche activité."));
     } finally {
       setLoading(false);
@@ -33,12 +46,14 @@ export default function ActivityDetailPage() {
   }, [stravaActivityId]);
 
   const handleEnrich = useCallback(async () => {
+    if (!stravaActivityId) return;
+
     try {
       setIsEnriching(true);
       setError("");
       setSuccessMessage("");
       const response = await enrichActivity(stravaActivityId);
-      setActivity(response.activity || response);
+      setActivity(response?.activity || response || null);
       setSuccessMessage("Activité enrichie avec succès depuis Strava.");
     } catch (err) {
       setError(extractErrorMessage(err, "Erreur lors de l'enrichissement de l'activité."));
@@ -69,10 +84,11 @@ export default function ActivityDetailPage() {
           </Link>
         </div>
 
-        {loading ? <div className="card">Chargement de l'activité…</div> : null}
+        {loading ? <div className="card">Chargement de l'activité...</div> : null}
         {!loading && error ? <div className="alert alert-error section">{error}</div> : null}
         {!loading && successMessage ? <div className="alert alert-success section">{successMessage}</div> : null}
         {!loading && activity ? <ActivityDetailCard activity={activity} onEnrich={handleEnrich} isEnriching={isEnriching} /> : null}
+        {!loading && !activity && !error ? <div className="card">Aucune activité disponible pour cet identifiant.</div> : null}
       </div>
     </div>
   );

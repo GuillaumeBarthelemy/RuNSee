@@ -1,5 +1,5 @@
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { formatMetricValue, getMetricConfig } from '../utils/activityAggregations.js';
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { formatMetricValue, getMetricConfig } from "../utils/activityAggregations.js";
 
 function CustomTooltip({ active, payload, label, metric }) {
   if (!active || !payload?.length) return null;
@@ -13,8 +13,11 @@ function CustomTooltip({ active, payload, label, metric }) {
   );
 }
 
-export default function RollingLoadChart({ data, metric = 'distanceKm' }) {
-  const config = getMetricConfig(metric);
+export default function RollingLoadChart({ data = [], metric = "distanceKm" }) {
+  const safeData = Array.isArray(data) ? data : [];
+  const safeMetric = metric || "distanceKm";
+  const config = getMetricConfig(safeMetric);
+
   return (
     <section className="card chart-card">
       <div className="card-header-row">
@@ -23,14 +26,14 @@ export default function RollingLoadChart({ data, metric = 'distanceKm' }) {
           <p className="card-subtitle">Visualise la dynamique récente et la progression de ta charge d'entraînement.</p>
         </div>
       </div>
-      {data?.length ? (
+      {safeData.length ? (
         <div className="chart-box chart-box-large">
-          <ResponsiveContainer>
-            <LineChart data={data}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={safeData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#d9e2f0" />
               <XAxis dataKey="label" minTickGap={24} tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip content={<CustomTooltip metric={metric} />} />
+              <Tooltip content={<CustomTooltip metric={safeMetric} />} />
               <Legend />
               <Line type="monotone" dataKey="load7" name={`Charge 7 j · ${config.label}`} stroke="#0b5fff" strokeWidth={3} dot={false} />
               <Line type="monotone" dataKey="load28" name={`Charge 28 j · ${config.label}`} stroke="#12b76a" strokeWidth={3} dot={false} />
