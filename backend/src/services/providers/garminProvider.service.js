@@ -14,6 +14,7 @@ import {
 } from "./providerSessionCrypto.service.js";
 
 const GARMIN_PROVIDER_CODE = EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL;
+const GARMIN_RATE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
 
 function buildHttpError(message, userMessage, httpStatus = 400) {
   const error = new Error(message);
@@ -66,6 +67,27 @@ function buildGarminErrorMessage(result = {}) {
   return normalizeString(result.message) || "Connexion Garmin impossible.";
 }
 
+function getRateLimitRemainingMinutes(connection) {
+  if (connection?.lastErrorCode !== "GARMINCONNECT_RATE_LIMITED" || !connection?.lastErrorAt) {
+    return 0;
+  }
+
+  const elapsedMs = Date.now() - new Date(connection.lastErrorAt).getTime();
+  const remainingMs = GARMIN_RATE_LIMIT_COOLDOWN_MS - elapsedMs;
+
+  return remainingMs > 0 ? Math.ceil(remainingMs / 60000) : 0;
+}
+
+function resolveGarminErrorStatus(result = {}) {
+  const errorCode = buildGarminErrorCode(result);
+
+  if (errorCode === "GARMINCONNECT_RATE_LIMITED") {
+    return 429;
+  }
+
+  return result?.retryable ? 502 : 400;
+}
+
 export async function getGarminConnectionStatus(appUserId) {
   const connection = await findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE);
   return buildPublicConnectionResult(connection);
@@ -97,6 +119,19 @@ export async function connectGarminForUser(appUserId, payload = {}) {
       "La securisation des sessions Garmin n'est pas configuree cote serveur.",
       503,
     );
+  }
+
+  const existingConnection = await findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE);
+  const rateLimitRemainingMinutes = getRateLimitRemainingMinutes(existingConnection);
+
+  if (rateLimitRemainingMinutes > 0) {
+    const error = buildHttpError(
+      "Garmin rate limit cooldown is active.",
+      `Garmin limite temporairement les connexions. Attends environ ${rateLimitRemainingMinutes} min avant de reessayer.`,
+      429,
+    );
+    error.connection = buildExternalProviderConnectionSummary(existingConnection);
+    throw error;
   }
 
   await upsertExternalProviderConnectionState({
@@ -160,7 +195,7 @@ export async function connectGarminForUser(appUserId, payload = {}) {
     const error = buildHttpError(
       `Garmin connection failed: ${buildGarminErrorCode(result)}.`,
       buildGarminErrorMessage(result),
-      result?.retryable ? 502 : 400,
+      resolveGarminErrorStatus(result),
     );
     error.connection = buildExternalProviderConnectionSummary(connection);
     throw error;

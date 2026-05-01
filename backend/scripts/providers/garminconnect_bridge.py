@@ -45,6 +45,55 @@ def build_error(code: str, message: object, *, retryable: bool = False) -> dict:
     }
 
 
+def get_http_status_from_exception(exc: Exception) -> int | None:
+    nested_error = getattr(exc, "error", None)
+    response = getattr(nested_error, "response", None)
+    status_code = getattr(response, "status_code", None)
+
+    if isinstance(status_code, int):
+        return status_code
+
+    message = str(exc)
+    if "429" in message or "Too Many Requests" in message:
+        return 429
+    if "401" in message:
+        return 401
+    if "403" in message:
+        return 403
+
+    return None
+
+
+def build_garth_error(exc: Exception) -> dict:
+    status_code = get_http_status_from_exception(exc)
+
+    if status_code == 429:
+        return build_error(
+            "GARMINCONNECT_RATE_LIMITED",
+            "Garmin limite temporairement les tentatives de connexion. Attends 30 a 60 minutes avant de reessayer.",
+            retryable=True,
+        )
+
+    if status_code in (401, 403):
+        return build_error(
+            "GARMINCONNECT_AUTHENTICATION_FAILED",
+            "Garmin a refuse la connexion. Verifie tes identifiants ou reessaie plus tard.",
+        )
+
+    if status_code and status_code >= 500:
+        return build_error(
+            "GARMINCONNECT_UNAVAILABLE",
+            "Garmin est temporairement indisponible. Reessaie plus tard.",
+            retryable=True,
+        )
+
+    return build_error(
+        "GARMINCONNECT_UNEXPECTED_ERROR",
+        "La connexion Garmin a echoue avant la creation de session. Reessaie plus tard.",
+        retryable=True,
+    )
+
+
 def list_tokenstore_files(tokenstore_dir: Path) -> list[dict]:
     files = []
 
@@ -99,6 +148,7 @@ def login_with_tokens(request: dict) -> dict:
             GarminConnectConnectionError,
             GarminConnectTooManyRequestsError,
         )
+        from garth.exc import GarthException, GarthHTTPError  # pylint: disable=import-outside-toplevel
     except Exception as exc:  # pragma: no cover - depends on runtime image
         return build_error(
             "GARMINCONNECT_DEPENDENCY_MISSING",
@@ -187,6 +237,17 @@ def login_with_tokens(request: dict) -> dict:
             return build_error("GARMINCONNECT_AUTHENTICATION_FAILED", exc)
         except GarminConnectConnectionError as exc:
             return build_error("GARMINCONNECT_CONNECTION_FAILED", exc, retryable=True)
+        except GarthHTTPError as exc:
+            return build_garth_error(exc)
+        except GarthException as exc:
+            if "MFA" in str(exc) and not mfa_code:
+                return {
+                    "status": "mfa_required",
+                    "code": "GARMINCONNECT_MFA_REQUIRED",
+                    "message": "Garmin demande un code de validation.",
+                }
+
+            return build_garth_error(exc)
         except Exception as exc:
             if "MFA" in str(exc) and not mfa_code:
                 return {
@@ -198,7 +259,11 @@ def login_with_tokens(request: dict) -> dict:
             if os.environ.get("RUNSEE_GARMIN_BRIDGE_DEBUG") == "1":
                 return build_error("GARMINCONNECT_UNEXPECTED_ERROR", traceback.format_exc())
 
-            return build_error("GARMINCONNECT_UNEXPECTED_ERROR", exc, retryable=True)
+            return build_error(
+                "GARMINCONNECT_UNEXPECTED_ERROR",
+                "La connexion Garmin a echoue avant la creation de session. Reessaie plus tard.",
+                retryable=True,
+            )
 
 
 def main() -> None:
