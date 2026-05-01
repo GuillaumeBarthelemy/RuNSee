@@ -128,6 +128,48 @@ Cron toutes les 10 minutes :
 */10 * * * * /srv/runsee/repo/deployment/linux/scripts/healthcheck.sh >> /srv/runsee/backups/health-cron.log 2>&1
 ```
 
+## CI/CD GitHub Actions
+
+Le workflow `.github/workflows/deploy-vm.yml` deploie automatiquement `main` vers la VM apres validation :
+
+- `frontend npm ci`
+- `frontend npm run lint -- --max-warnings 0`
+- `frontend npm run build`
+- `backend npm ci`
+- `backend npm run prisma:pg:validate`
+
+Le deploiement se fait ensuite par SSH sur la VM, depuis `/srv/runsee/repo`, avec le script :
+
+```bash
+/srv/runsee/repo/deployment/linux/scripts/deploy-vm.sh <commit>
+```
+
+Le script :
+
+- refuse de deployer si le repo VM contient des changements non commit.
+- checkout le commit exact valide par GitHub Actions.
+- reconstruit `backend` et `frontend`.
+- redemarre la stack Docker Compose.
+- verifie PostgreSQL, backend, frontend, cloudflared et les endpoints publics.
+
+Secrets GitHub Actions requis :
+
+```text
+RUNSEE_VM_HOST=82.165.109.160
+RUNSEE_VM_USER=runsee
+RUNSEE_VM_SSH_KEY=<cle privee SSH dediee au deploy>
+RUNSEE_VM_PORT=22
+```
+
+La cle publique associee a `RUNSEE_VM_SSH_KEY` doit etre ajoutee dans :
+
+```bash
+/home/runsee/.ssh/authorized_keys
+```
+
+Les secrets applicatifs restent sur la VM dans `/srv/runsee/env` et `/srv/runsee/cloudflared`.
+Ils ne doivent pas etre stockes dans GitHub Actions.
+
 ## Points de vigilance
 
 - Les cles de chiffrement Strava doivent etre identiques a la prod Windows.
