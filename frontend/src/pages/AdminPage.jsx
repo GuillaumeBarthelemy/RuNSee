@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
+import GarminExperimentalCard from "../components/GarminExperimentalCard.jsx";
 import PhysiologicalProfileCard from "../components/PhysiologicalProfileCard.jsx";
 import RaceObjectivesCard from "../components/RaceObjectivesCard.jsx";
 import StravaAppSettingsCard from "../components/StravaAppSettingsCard.jsx";
@@ -316,7 +317,7 @@ export default function AdminPage() {
     <AppShell
       eyebrow="Reglages"
       title="Reglages"
-      subtitle="Ajuste ton profil, tes objectifs, tes preferences et ta synchronisation Strava."
+      subtitle="Ajuste ton profil, tes objectifs, tes preferences et tes sources de donnees."
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {infoNotice ? <div className="alert alert-info section">{infoNotice}</div> : null}
@@ -359,6 +360,10 @@ export default function AdminPage() {
           onRestore={handleRestoreTrainingAnalyticsSettings}
           showPhysiologyPanel={false}
         />
+      </section>
+
+      <section className="section">
+        <GarminExperimentalCard />
       </section>
 
       <section className="section admin-strava-section">
