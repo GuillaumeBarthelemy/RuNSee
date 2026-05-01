@@ -152,14 +152,21 @@ Le script :
 - redemarre la stack Docker Compose.
 - verifie PostgreSQL, backend, frontend, cloudflared et les endpoints publics.
 
-Secrets GitHub Actions requis :
+Variables GitHub Actions recommandees :
 
 ```text
 RUNSEE_VM_HOST=82.165.109.160
 RUNSEE_VM_USER=runsee
-RUNSEE_VM_SSH_KEY=<cle privee SSH dediee au deploy>
 RUNSEE_VM_PORT=22
 ```
+
+Secret GitHub Actions requis :
+
+```text
+RUNSEE_VM_SSH_KEY=<cle privee SSH dediee au deploy>
+```
+
+Ne stocke jamais `RUNSEE_VM_SSH_KEY` dans les variables GitHub : la cle privee doit rester dans les secrets.
 
 La cle publique associee a `RUNSEE_VM_SSH_KEY` doit etre ajoutee dans :
 

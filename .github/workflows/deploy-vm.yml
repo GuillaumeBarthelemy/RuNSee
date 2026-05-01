@@ -52,10 +52,10 @@ jobs:
     needs: validate
     if: github.ref == 'refs/heads/main'
     env:
-      SSH_HOST: ${{ secrets.RUNSEE_VM_HOST }}
-      SSH_USER: ${{ secrets.RUNSEE_VM_USER }}
+      SSH_HOST: ${{ vars.RUNSEE_VM_HOST || secrets.RUNSEE_VM_HOST }}
+      SSH_USER: ${{ vars.RUNSEE_VM_USER || secrets.RUNSEE_VM_USER }}
       SSH_KEY: ${{ secrets.RUNSEE_VM_SSH_KEY }}
-      SSH_PORT: ${{ secrets.RUNSEE_VM_PORT || '22' }}
+      SSH_PORT: ${{ vars.RUNSEE_VM_PORT || secrets.RUNSEE_VM_PORT || '22' }}
       REMOTE_PATH: /srv/runsee/repo
     steps:
       - name: Check deployment secrets
