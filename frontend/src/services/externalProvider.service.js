@@ -14,3 +14,8 @@ export async function disconnectGarmin() {
   const response = await api.post("/providers/garmin/disconnect", {});
   return response.data;
 }
+
+export async function startGarminRecoveryBackfill() {
+  const response = await api.post("/providers/garmin/recovery/backfill", {});
+  return response.data;
+}

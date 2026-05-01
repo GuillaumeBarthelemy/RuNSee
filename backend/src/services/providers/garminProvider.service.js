@@ -9,6 +9,10 @@ import {
 } from "./externalProviderConnection.service.js";
 import { loginGarminconnect } from "./garminconnectBridge.service.js";
 import {
+  buildGarminConnectionWithRecoveryStatus,
+  getGarminRecoveryBackfillStatus,
+} from "./garminRecoveryBackfill.service.js";
+import {
   decryptProviderSessionPayload,
   encryptProviderSessionPayload,
   isProviderSessionStorageReady,
@@ -129,7 +133,7 @@ function resolveGarminErrorStatus(result = {}) {
 
 export async function getGarminConnectionStatus(appUserId) {
   const connection = await findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE);
-  return buildPublicConnectionResult(connection);
+  return buildGarminConnectionWithRecoveryStatus(appUserId, connection);
 }
 
 export async function connectGarminForUser(appUserId, payload = {}) {
@@ -224,6 +228,7 @@ export async function connectGarminForUser(appUserId, payload = {}) {
     });
 
     return buildPublicConnectionResult(connection, {
+      recoveryBackfill: await getGarminRecoveryBackfillStatus(appUserId),
       mfaRequired: true,
       message: "Garmin demande un code de validation. Garde le mot de passe saisi et ajoute le code recu.",
     });
@@ -269,8 +274,9 @@ export async function connectGarminForUser(appUserId, payload = {}) {
   });
 
   return buildPublicConnectionResult(connection, {
+    recoveryBackfill: await getGarminRecoveryBackfillStatus(appUserId),
     mfaRequired: false,
-    message: "Garmin est connecte. Les donnees de recuperation pourront etre synchronisees au lot suivant.",
+    message: "Garmin est connecte. Tu peux lancer la recuperation progressive depuis l'administration.",
   });
 }
 
@@ -290,6 +296,7 @@ export async function disconnectGarminForUser(appUserId) {
   });
 
   return buildPublicConnectionResult(connection, {
+    recoveryBackfill: await getGarminRecoveryBackfillStatus(appUserId),
     message: "Garmin est deconnecte. Les sessions stockees ont ete supprimees.",
   });
 }

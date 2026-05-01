@@ -18,6 +18,7 @@ import {
   connectGarmin,
   disconnectGarmin,
   getGarminConnectionStatus,
+  startGarminRecoveryBackfill,
 } from "../services/externalProvider.service.js";
 import { saveTrainingAnalyticsSettings } from "../services/trainingAnalyticsSettings.service.js";
 import { startDetailBackfill, startHistoricalSync, startIncrementalSync } from "../services/sync.service.js";
@@ -54,7 +55,9 @@ export default function AdminPage() {
   const [infoNotice, setInfoNotice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGarminSubmitting, setIsGarminSubmitting] = useState(false);
+  const [isGarminBackfillSubmitting, setIsGarminBackfillSubmitting] = useState(false);
   const [garminConnection, setGarminConnection] = useState(null);
+  const [garminRecoveryBackfill, setGarminRecoveryBackfill] = useState(null);
   const [trainingSettingsOverride, setTrainingSettingsOverride] = useState(null);
   const [trainingSettingsHistoryOverride, setTrainingSettingsHistoryOverride] = useState(null);
   const safeSetError = setError ?? noop;
@@ -96,8 +99,10 @@ export default function AdminPage() {
     try {
       const result = await getGarminConnectionStatus();
       setGarminConnection(result?.connection || null);
+      setGarminRecoveryBackfill(result?.recoveryBackfill || null);
     } catch {
       setGarminConnection(null);
+      setGarminRecoveryBackfill(null);
     }
   }, []);
 
@@ -135,6 +140,22 @@ export default function AdminPage() {
   useEffect(() => {
     loadGarminConnection().catch(() => {});
   }, [loadGarminConnection]);
+
+  useEffect(() => {
+    const isRecoveryRunning = Boolean(
+      garminRecoveryBackfill?.isRunning || garminConnection?.status === "syncing",
+    );
+
+    if (!isRecoveryRunning) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      loadGarminConnection().catch(() => {});
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [garminConnection?.status, garminRecoveryBackfill?.isRunning, loadGarminConnection]);
 
   useEffect(() => {
     const authStatus = String(searchParams.get("auth") || "").trim();
@@ -300,6 +321,9 @@ export default function AdminPage() {
     try {
       const result = await connectGarmin(payload);
       setGarminConnection(result?.connection || null);
+      if (result?.recoveryBackfill) {
+        setGarminRecoveryBackfill(result.recoveryBackfill);
+      }
       setActionNotice(result?.message || "Connexion Garmin mise a jour.");
       return result;
     } catch (error) {
@@ -334,6 +358,7 @@ export default function AdminPage() {
     try {
       const result = await disconnectGarmin();
       setGarminConnection(result?.connection || null);
+      setGarminRecoveryBackfill(result?.recoveryBackfill || null);
       setActionNotice(result?.message || "Garmin est deconnecte.");
     } catch (error) {
       safeSetError(extractErrorMessage(error, "Erreur lors de la deconnexion Garmin."));
@@ -341,6 +366,31 @@ export default function AdminPage() {
       setIsGarminSubmitting(false);
     }
   }, [safeSetError]);
+
+  const handleStartGarminRecoveryBackfill = useCallback(async () => {
+    safeSetError("");
+    setInfoNotice("");
+    setActionNotice("");
+    setIsGarminBackfillSubmitting(true);
+
+    try {
+      const result = await startGarminRecoveryBackfill();
+      setGarminConnection(result?.connection || null);
+      setGarminRecoveryBackfill(result?.recoveryBackfill || null);
+      setActionNotice(result?.message || "Recuperation Garmin lancee.");
+    } catch (error) {
+      const connection = error?.response?.data?.connection;
+      if (connection) {
+        setGarminConnection(connection);
+      } else {
+        await loadGarminConnection();
+      }
+
+      safeSetError(extractErrorMessage(error, "Erreur lors de la recuperation Garmin."));
+    } finally {
+      setIsGarminBackfillSubmitting(false);
+    }
+  }, [loadGarminConnection, safeSetError]);
 
   const handleSaveTrainingAnalyticsSettings = useCallback(async (payload) => {
     safeSetError("");
@@ -438,10 +488,13 @@ export default function AdminPage() {
         <GarminExperimentalCard
           status={garminConnection?.status || "disconnected"}
           connection={garminConnection}
+          recoveryBackfill={garminRecoveryBackfill}
           canConnect
           isPending={isGarminSubmitting}
+          isBackfillPending={isGarminBackfillSubmitting}
           onConnect={handleConnectGarmin}
           onDisconnect={handleDisconnectGarmin}
+          onStartRecoveryBackfill={handleStartGarminRecoveryBackfill}
         />
       </section>
 

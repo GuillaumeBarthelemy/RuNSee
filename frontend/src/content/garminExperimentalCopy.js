@@ -94,7 +94,7 @@ export const GARMIN_EXPERIMENTAL_COPY = {
   reconnectAction: "Reconnecter Garmin",
   disconnectAction: "Deconnecter Garmin",
   connectedCaption:
-    "Session Garmin chiffree cote serveur. Les donnees de recuperation seront synchronisees dans le lot suivant.",
+    "Session Garmin chiffree cote serveur. Tu peux lancer la recuperation progressive de l'historique.",
   credentialsCaption:
     "Renseigne tes identifiants Garmin. Le code de validation apparaitra seulement si Garmin le demande.",
   mfaCaption:
@@ -105,6 +105,16 @@ export const GARMIN_EXPERIMENTAL_COPY = {
     "Garmin demande maintenant une validation. Renseigne le code recu par email ou via ton compte Garmin.",
   rateLimitCaption:
     "Garmin limite temporairement les connexions. Attends la fin du delai indique avant une nouvelle tentative.",
+  recoveryTitle: "Historique recuperation",
+  recoveryCaption:
+    "RunNSee recupere sommeil, HRV, FC repos, stress et Body Battery sur 180 jours, par petits lots pour eviter de saturer Garmin.",
+  recoveryStartAction: "Lancer la recuperation",
+  recoveryRunningAction: "Recuperation en cours",
+  recoveryCompleteAction: "Historique complet",
+  recoveryContinueAction: "Reprendre la recuperation",
+  recoveryProgressLabel: "jours analyses",
+  recoveryRemainingLabel: "jours restants",
+  recoveryNextDateLabel: "prochain jour a recuperer",
   tooltip: [
     {
       label: "Pourquoi",

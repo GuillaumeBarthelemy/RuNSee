@@ -45,7 +45,10 @@ export function buildExternalProviderConnectionSummary(connection) {
     id: connection.id,
     providerCode: connection.providerCode,
     status: connection.status || EXTERNAL_PROVIDER_STATUSES.DISCONNECTED,
-    connected: connection.status === EXTERNAL_PROVIDER_STATUSES.CONNECTED,
+    connected: [
+      EXTERNAL_PROVIDER_STATUSES.CONNECTED,
+      EXTERNAL_PROVIDER_STATUSES.SYNCING,
+    ].includes(connection.status),
     consentAccepted: Boolean(connection.consentAcceptedAt),
     displayName: connection.displayName || "",
     accountIdentifier: connection.accountIdentifier || "",

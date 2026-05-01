@@ -146,6 +146,18 @@ const env = {
     90000,
     parseNumber(process.env.GARMINCONNECT_BRIDGE_TIMEOUT_MS, 90000),
   ),
+  garminconnectRecoveryWindowDays: Math.max(
+    30,
+    parseNumber(process.env.GARMINCONNECT_RECOVERY_WINDOW_DAYS, 180),
+  ),
+  garminconnectRecoveryBatchDays: Math.min(
+    7,
+    Math.max(1, parseNumber(process.env.GARMINCONNECT_RECOVERY_BATCH_DAYS, 3)),
+  ),
+  garminconnectRecoveryBatchDelayMs: Math.max(
+    5000,
+    parseNumber(process.env.GARMINCONNECT_RECOVERY_BATCH_DELAY_MS, 12000),
+  ),
   stravaApprovalPrompt:
     String(process.env.STRAVA_APPROVAL_PROMPT || "force").trim() || "force",
   stravaScope:

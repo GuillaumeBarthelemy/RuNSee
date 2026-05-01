@@ -16,6 +16,7 @@ export const EXTERNAL_PROVIDER_STATUSES = Object.freeze({
 });
 
 export const EXTERNAL_PROVIDER_DATA_TYPES = Object.freeze({
+  DAILY_SUMMARY: "daily_summary",
   SLEEP: "sleep",
   HRV: "hrv",
   RESTING_HEART_RATE: "resting_heart_rate",

@@ -11,9 +11,12 @@ function GarminExperimentalCard({
   status = "unavailable",
   canConnect = false,
   connection = null,
+  recoveryBackfill = null,
   isPending = false,
+  isBackfillPending = false,
   onConnect = noop,
   onDisconnect = noop,
+  onStartRecoveryBackfill = noop,
 }) {
   const resolvedStatusCode = connection?.status || status;
   const resolvedStatus = getGarminExperimentalStatus(resolvedStatusCode);
@@ -24,6 +27,12 @@ function GarminExperimentalCard({
   const isConnected = Boolean(connection?.connected);
   const isMfaRequired = resolvedStatusCode === "mfa_required";
   const isRateLimited = connection?.lastErrorCode === "GARMINCONNECT_RATE_LIMITED";
+  const recoveryProgress = Math.max(
+    0,
+    Math.min(100, Number(recoveryBackfill?.progressPercent || 0)),
+  );
+  const isRecoveryRunning = Boolean(recoveryBackfill?.isRunning || resolvedStatusCode === "syncing");
+  const isRecoveryComplete = Boolean(recoveryBackfill?.isComplete);
   const hasBaseCredentials = Boolean(email.trim() && password && consentAccepted);
   const canSubmit = Boolean(
     canConnect
@@ -49,6 +58,24 @@ function GarminExperimentalCard({
       ? GARMIN_EXPERIMENTAL_COPY.mfaSubmitAction
       : GARMIN_EXPERIMENTAL_COPY.connectAction;
   }, [canConnect, isConnected, isMfaRequired]);
+  const recoveryButtonLabel = useMemo(() => {
+    if (isRecoveryRunning || isBackfillPending) {
+      return GARMIN_EXPERIMENTAL_COPY.recoveryRunningAction;
+    }
+
+    if (isRecoveryComplete) {
+      return GARMIN_EXPERIMENTAL_COPY.recoveryCompleteAction;
+    }
+
+    return Number(recoveryBackfill?.syncedDays || 0) > 0
+      ? GARMIN_EXPERIMENTAL_COPY.recoveryContinueAction
+      : GARMIN_EXPERIMENTAL_COPY.recoveryStartAction;
+  }, [
+    isBackfillPending,
+    isRecoveryComplete,
+    isRecoveryRunning,
+    recoveryBackfill?.syncedDays,
+  ]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -233,6 +260,54 @@ function GarminExperimentalCard({
           ) : null}
         </div>
       </form>
+
+      {isConnected ? (
+        <div className="garmin-recovery-panel top-gap-md">
+          <div className="card-header-row wrap-on-mobile compact-header">
+            <div>
+              <h3 className="subcard-title">{GARMIN_EXPERIMENTAL_COPY.recoveryTitle}</h3>
+              <p className="small-text">{GARMIN_EXPERIMENTAL_COPY.recoveryCaption}</p>
+            </div>
+            <button
+              type="button"
+              className="button button-outline"
+              onClick={() => onStartRecoveryBackfill()}
+              disabled={isBackfillPending || isRecoveryRunning || isRecoveryComplete}
+            >
+              {recoveryButtonLabel}
+            </button>
+          </div>
+
+          <div className="progress-shell garmin-recovery-progress" aria-hidden="true">
+            <span
+              className="progress-bar-fill"
+              style={{ width: `${recoveryProgress}%` }}
+            />
+          </div>
+
+          <div className="garmin-recovery-stats">
+            <span>
+              <strong>{Number(recoveryBackfill?.syncedDays || 0)}</strong>
+              {" / "}
+              {Number(recoveryBackfill?.windowDays || 180)}
+              {" "}
+              {GARMIN_EXPERIMENTAL_COPY.recoveryProgressLabel}
+            </span>
+            <span>
+              <strong>{Number(recoveryBackfill?.remainingDays || 0)}</strong>
+              {" "}
+              {GARMIN_EXPERIMENTAL_COPY.recoveryRemainingLabel}
+            </span>
+            {recoveryBackfill?.nextPendingDate ? (
+              <span>
+                {GARMIN_EXPERIMENTAL_COPY.recoveryNextDateLabel}
+                {" : "}
+                <strong>{recoveryBackfill.nextPendingDate}</strong>
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

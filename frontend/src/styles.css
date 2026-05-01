@@ -5102,6 +5102,40 @@ body.modal-open {
   margin-top: 3px;
 }
 
+.garmin-recovery-panel {
+  padding: 16px;
+  border: 1px solid rgba(53, 88, 134, 0.14);
+  border-radius: 18px;
+  background: rgba(246, 248, 252, 0.72);
+}
+
+.garmin-recovery-progress {
+  margin-top: 14px;
+}
+
+.garmin-recovery-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.garmin-recovery-stats span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border: 1px solid rgba(53, 88, 134, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.garmin-recovery-stats strong {
+  color: var(--color-text-primary);
+}
+
 @media (max-width: 1080px) {
   .garmin-experimental-grid {
     grid-template-columns: 1fr;

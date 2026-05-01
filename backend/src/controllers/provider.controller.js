@@ -4,6 +4,7 @@ import {
   disconnectGarminForUser,
   getGarminConnectionStatus,
 } from "../services/providers/garminProvider.service.js";
+import { startGarminRecoveryBackfillForUser } from "../services/providers/garminRecoveryBackfill.service.js";
 
 export async function getGarminConnectionStatusController(req, res, next) {
   try {
@@ -31,6 +32,17 @@ export async function disconnectGarminController(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
     const result = await disconnectGarminForUser(user.id);
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function startGarminRecoveryBackfillController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await startGarminRecoveryBackfillForUser(user.id);
 
     return res.json(result);
   } catch (error) {

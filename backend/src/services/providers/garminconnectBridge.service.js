@@ -132,3 +132,11 @@ export async function loginGarminconnect({ email, password, mfaCode, mfaChalleng
     mfaChallenge,
   });
 }
+
+export async function fetchGarminRecoveryDays({ session, dates = [] }) {
+  return runGarminconnectBridge({
+    operation: "fetch_recovery_days",
+    session,
+    dates,
+  });
+}
