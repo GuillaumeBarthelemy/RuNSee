@@ -123,11 +123,12 @@ export function runGarminconnectBridge(payload = {}) {
   });
 }
 
-export async function loginGarminconnect({ email, password, mfaCode }) {
+export async function loginGarminconnect({ email, password, mfaCode, mfaChallenge }) {
   return runGarminconnectBridge({
     operation: "login",
     email,
     password,
     mfaCode,
+    mfaChallenge,
   });
 }

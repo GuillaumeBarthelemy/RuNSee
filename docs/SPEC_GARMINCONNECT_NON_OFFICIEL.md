@@ -346,6 +346,7 @@ Point observe pendant les tests locaux :
 - Garmin peut retourner un ou plusieurs `429` transitoires pendant la phase de login mobile avant de demander le code MFA.
 - Ces `429` ne doivent pas toujours etre interpretes comme un blocage terminal.
 - Le connecteur doit patienter et relancer prudemment la tentative de decouverte MFA avant d'afficher une erreur definitive.
+- Le challenge MFA doit etre conserve temporairement et chiffre cote serveur pour reprendre la validation du code, sans relancer un login complet.
 - Si les `429` persistent apres les tentatives controlees, RunNSee passe alors en rate limit explicite avec backoff.
 
 ## 9. Synthese decisionnelle enrichie

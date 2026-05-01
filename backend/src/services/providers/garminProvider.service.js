@@ -9,6 +9,7 @@ import {
 } from "./externalProviderConnection.service.js";
 import { loginGarminconnect } from "./garminconnectBridge.service.js";
 import {
+  decryptProviderSessionPayload,
   encryptProviderSessionPayload,
   isProviderSessionStorageReady,
 } from "./providerSessionCrypto.service.js";
@@ -78,6 +79,44 @@ function getRateLimitRemainingMinutes(connection) {
   return remainingMs > 0 ? Math.ceil(remainingMs / 60000) : 0;
 }
 
+function canResumeMfaChallenge(connection, mfaCode) {
+  return Boolean(
+    mfaCode
+      && connection?.status === EXTERNAL_PROVIDER_STATUSES.MFA_REQUIRED
+      && connection?.encryptedSession,
+  );
+}
+
+function buildMfaChallengeFromConnection(connection) {
+  if (!connection?.encryptedSession) {
+    return null;
+  }
+
+  try {
+    const sessionPayload = decryptProviderSessionPayload(connection.encryptedSession, { parseJson: true });
+
+    if (sessionPayload?.schema === "garminconnect-mfa-challenge-v1") {
+      return sessionPayload;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function shouldKeepMfaChallenge(existingConnection, result = {}) {
+  if (existingConnection?.status !== EXTERNAL_PROVIDER_STATUSES.MFA_REQUIRED) {
+    return false;
+  }
+
+  return [
+    "GARMINCONNECT_RATE_LIMITED",
+    "GARMINCONNECT_AUTHENTICATION_FAILED",
+    "GARMINCONNECT_CONNECTION_FAILED",
+  ].includes(buildGarminErrorCode(result));
+}
+
 function resolveGarminErrorStatus(result = {}) {
   const errorCode = buildGarminErrorCode(result);
 
@@ -123,8 +162,13 @@ export async function connectGarminForUser(appUserId, payload = {}) {
 
   const existingConnection = await findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE);
   const rateLimitRemainingMinutes = getRateLimitRemainingMinutes(existingConnection);
+  const canAttemptMfaResume = canResumeMfaChallenge(existingConnection, mfaCode);
+  const mfaChallenge = canAttemptMfaResume
+    ? buildMfaChallengeFromConnection(existingConnection)
+    : null;
+  const shouldResumeMfa = Boolean(mfaChallenge);
 
-  if (rateLimitRemainingMinutes > 0) {
+  if (rateLimitRemainingMinutes > 0 && !shouldResumeMfa) {
     const error = buildHttpError(
       "Garmin rate limit cooldown is active.",
       `Garmin limite temporairement les connexions. Attends environ ${rateLimitRemainingMinutes} min avant de reessayer.`,
@@ -138,6 +182,7 @@ export async function connectGarminForUser(appUserId, payload = {}) {
     appUserId,
     providerCode: GARMIN_PROVIDER_CODE,
     status: EXTERNAL_PROVIDER_STATUSES.CONNECTING,
+    encryptedSession: shouldResumeMfa ? undefined : null,
     consentAcceptedAt: new Date(),
     lastErrorCode: null,
     lastErrorMessage: null,
@@ -147,7 +192,7 @@ export async function connectGarminForUser(appUserId, payload = {}) {
   let result = null;
 
   try {
-    result = await loginGarminconnect({ email, password, mfaCode });
+    result = await loginGarminconnect({ email, password, mfaCode, mfaChallenge });
   } catch (error) {
     await upsertExternalProviderConnectionState({
       appUserId,
@@ -169,6 +214,9 @@ export async function connectGarminForUser(appUserId, payload = {}) {
       appUserId,
       providerCode: GARMIN_PROVIDER_CODE,
       status: EXTERNAL_PROVIDER_STATUSES.MFA_REQUIRED,
+      encryptedSession: result?.challenge
+        ? encryptProviderSessionPayload(result.challenge)
+        : undefined,
       consentAcceptedAt: new Date(),
       lastErrorCode: null,
       lastErrorMessage: null,
@@ -182,10 +230,13 @@ export async function connectGarminForUser(appUserId, payload = {}) {
   }
 
   if (normalizedStatus !== EXTERNAL_PROVIDER_STATUSES.CONNECTED) {
+    const keepMfaChallenge = shouldKeepMfaChallenge(existingConnection, result);
     const connection = await upsertExternalProviderConnectionState({
       appUserId,
       providerCode: GARMIN_PROVIDER_CODE,
-      status: EXTERNAL_PROVIDER_STATUSES.ERROR,
+      status: keepMfaChallenge
+        ? EXTERNAL_PROVIDER_STATUSES.MFA_REQUIRED
+        : EXTERNAL_PROVIDER_STATUSES.ERROR,
       consentAcceptedAt: new Date(),
       lastErrorCode: buildGarminErrorCode(result),
       lastErrorMessage: buildGarminErrorMessage(result),

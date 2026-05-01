@@ -14,7 +14,7 @@ import sys
 import tempfile
 import time
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -44,6 +44,10 @@ def build_error(code: str, message: object, *, retryable: bool = False) -> dict:
         "message": sanitize_message(message),
         "retryable": retryable,
     }
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def get_http_status_from_exception(exc: Exception) -> int | None:
@@ -117,6 +121,67 @@ def list_tokenstore_files(tokenstore_dir: Path) -> list[dict]:
     return files
 
 
+def build_mfa_challenge(client_state: dict) -> dict:
+    try:
+        from requests.utils import dict_from_cookiejar  # pylint: disable=import-outside-toplevel
+    except Exception:
+        dict_from_cookiejar = None
+
+    client = client_state.get("client")
+    cookies = {}
+
+    if dict_from_cookiejar and client is not None:
+        cookies = dict_from_cookiejar(client.sess.cookies)
+
+    created_at = utc_now()
+
+    return {
+        "schema": "garminconnect-mfa-challenge-v1",
+        "createdAt": created_at.isoformat(),
+        "expiresAt": (created_at + timedelta(minutes=10)).isoformat(),
+        "domain": getattr(client, "domain", "garmin.com") if client is not None else "garmin.com",
+        "cookies": cookies,
+        "loginParams": client_state.get("login_params") or {},
+        "mfaMethod": client_state.get("mfa_method") or "email",
+    }
+
+
+def restore_mfa_challenge(api, challenge: dict) -> dict:
+    try:
+        from requests.utils import cookiejar_from_dict  # pylint: disable=import-outside-toplevel
+    except Exception as exc:
+        raise ValueError("MFA challenge cookies cannot be restored.") from exc
+
+    if not isinstance(challenge, dict):
+        raise ValueError("MFA challenge is missing.")
+
+    if challenge.get("schema") != "garminconnect-mfa-challenge-v1":
+        raise ValueError("MFA challenge schema is unsupported.")
+
+    expires_at = str(challenge.get("expiresAt") or "")
+
+    if expires_at:
+        parsed_expires_at = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+
+        if parsed_expires_at < utc_now():
+            raise ValueError("MFA challenge expired.")
+
+    domain = str(challenge.get("domain") or "garmin.com")
+
+    if hasattr(api.garth, "configure"):
+        api.garth.configure(domain=domain)
+    else:
+        api.garth.domain = domain
+
+    api.garth.sess.cookies.update(cookiejar_from_dict(challenge.get("cookies") or {}))
+
+    return {
+        "client": api.garth,
+        "login_params": challenge.get("loginParams") or {},
+        "mfa_method": challenge.get("mfaMethod") or "email",
+    }
+
+
 def extract_profile(api) -> dict:
     profile = {}
 
@@ -145,6 +210,40 @@ def extract_profile(api) -> dict:
     return profile
 
 
+def export_connected_session(api, tokenstore_path: Path) -> dict:
+    if hasattr(api.garth, "dump"):
+        api.garth.dump(str(tokenstore_path))
+    else:
+        return build_error(
+            "GARMINCONNECT_SESSION_EXPORT_UNAVAILABLE",
+            "La session Garmin ne peut pas etre exportee avec cette version du connecteur.",
+        )
+
+    try:
+        api.display_name = api.garth.profile["displayName"]
+        api.full_name = api.garth.profile["fullName"]
+    except Exception:
+        pass
+
+    token_files = list_tokenstore_files(tokenstore_path)
+
+    if not token_files:
+        return build_error(
+            "GARMINCONNECT_EMPTY_SESSION",
+            "Garmin a accepte la connexion mais aucun token exploitable n'a ete produit.",
+        )
+
+    return {
+        "status": "connected",
+        "session": {
+            "schema": "garminconnect-tokenstore-v1",
+            "createdAt": utc_now().isoformat(),
+            "files": token_files,
+        },
+        "profile": extract_profile(api),
+    }
+
+
 def login_with_tokens(request: dict) -> dict:
     try:
         from garminconnect import (  # pylint: disable=import-outside-toplevel
@@ -163,6 +262,7 @@ def login_with_tokens(request: dict) -> dict:
     email = str(request.get("email") or "").strip()
     password = str(request.get("password") or "")
     mfa_code = str(request.get("mfaCode") or "").strip()
+    mfa_challenge = request.get("mfaChallenge")
 
     if not email or not password:
         return build_error(
@@ -191,22 +291,41 @@ def login_with_tokens(request: dict) -> dict:
                         time.sleep(auth_retry_delays_seconds[attempt_index - 1])
 
                     try:
-                        return api.garth.login(email, password, prompt_mfa=prompt_mfa)
+                        if mfa_code:
+                            return api.garth.login(email, password, prompt_mfa=prompt_mfa)
+
+                        return api.garth.login(
+                            email,
+                            password,
+                            prompt_mfa=None,
+                            return_on_mfa=True,
+                        )
                     except GarminConnectTooManyRequestsError:
-                        if mfa_code or attempt_index >= len(auth_retry_delays_seconds):
+                        if attempt_index >= len(auth_retry_delays_seconds):
                             raise
                     except GarthHTTPError as exc:
                         if (
-                            mfa_code
-                            or not is_rate_limit_exception(exc)
+                            not is_rate_limit_exception(exc)
                             or attempt_index >= len(auth_retry_delays_seconds)
                         ):
                             raise
 
                 return None
 
+            if mfa_code and isinstance(mfa_challenge, dict):
+                try:
+                    client_state = restore_mfa_challenge(api, mfa_challenge)
+                    api.garth.resume_login(client_state, mfa_code)
+                except ValueError:
+                    return build_error(
+                        "GARMINCONNECT_MFA_CHALLENGE_EXPIRED",
+                        "La validation Garmin a expire. Relance une connexion Garmin complete.",
+                    )
+
+                return export_connected_session(api, tokenstore_path)
+
             try:
-                login_with_transient_rate_limit_retries()
+                login_result = login_with_transient_rate_limit_retries()
             except MfaRequired:
                 return {
                     "status": "mfa_required",
@@ -214,37 +333,19 @@ def login_with_tokens(request: dict) -> dict:
                     "message": "Garmin demande un code de validation.",
                 }
 
-            if hasattr(api.garth, "dump"):
-                api.garth.dump(str(tokenstore_path))
-            else:
-                return build_error(
-                    "GARMINCONNECT_SESSION_EXPORT_UNAVAILABLE",
-                    "La session Garmin ne peut pas etre exportee avec cette version du connecteur.",
-                )
+            if (
+                isinstance(login_result, tuple)
+                and len(login_result) == 2
+                and login_result[0] == "needs_mfa"
+            ):
+                return {
+                    "status": "mfa_required",
+                    "code": "GARMINCONNECT_MFA_REQUIRED",
+                    "message": "Garmin demande un code de validation.",
+                    "challenge": build_mfa_challenge(login_result[1]),
+                }
 
-            try:
-                api.display_name = api.garth.profile["displayName"]
-                api.full_name = api.garth.profile["fullName"]
-            except Exception:
-                pass
-
-            token_files = list_tokenstore_files(tokenstore_path)
-
-            if not token_files:
-                return build_error(
-                    "GARMINCONNECT_EMPTY_SESSION",
-                    "Garmin a accepte la connexion mais aucun token exploitable n'a ete produit.",
-                )
-
-            return {
-                "status": "connected",
-                "session": {
-                    "schema": "garminconnect-tokenstore-v1",
-                    "createdAt": datetime.now(timezone.utc).isoformat(),
-                    "files": token_files,
-                },
-                "profile": extract_profile(api),
-            }
+            return export_connected_session(api, tokenstore_path)
         except AssertionError:
             if not mfa_code:
                 return {
