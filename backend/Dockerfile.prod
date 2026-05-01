@@ -21,9 +21,15 @@ FROM node:20-alpine AS runtime
 
 WORKDIR /app
 
-RUN apk add --no-cache curl tini
+COPY requirements-garmin.txt ./requirements-garmin.txt
+
+RUN apk add --no-cache curl tini python3 py3-pip py3-virtualenv \
+  && python3 -m venv /opt/runsee-python \
+  && /opt/runsee-python/bin/pip install --no-cache-dir --upgrade pip \
+  && /opt/runsee-python/bin/pip install --no-cache-dir -r ./requirements-garmin.txt
 
 ENV NODE_ENV=production
+ENV GARMINCONNECT_PYTHON_BIN=/opt/runsee-python/bin/python
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/generated ./generated

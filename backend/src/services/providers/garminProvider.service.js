@@ -1,0 +1,209 @@
+import {
+  EXTERNAL_PROVIDER_CODES,
+  EXTERNAL_PROVIDER_STATUSES,
+} from "./externalProvider.constants.js";
+import {
+  buildExternalProviderConnectionSummary,
+  findExternalProviderConnectionForUser,
+  upsertExternalProviderConnectionState,
+} from "./externalProviderConnection.service.js";
+import { loginGarminconnect } from "./garminconnectBridge.service.js";
+import {
+  encryptProviderSessionPayload,
+  isProviderSessionStorageReady,
+} from "./providerSessionCrypto.service.js";
+
+const GARMIN_PROVIDER_CODE = EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL;
+
+function buildHttpError(message, userMessage, httpStatus = 400) {
+  const error = new Error(message);
+  error.httpStatus = httpStatus;
+  error.userMessage = userMessage;
+  return error;
+}
+
+function normalizeString(value) {
+  return String(value || "").trim();
+}
+
+function normalizeGarminStatus(status) {
+  const candidate = normalizeString(status).toLowerCase();
+
+  if (candidate === "mfa_required") {
+    return EXTERNAL_PROVIDER_STATUSES.MFA_REQUIRED;
+  }
+
+  if (candidate === "connected") {
+    return EXTERNAL_PROVIDER_STATUSES.CONNECTED;
+  }
+
+  return EXTERNAL_PROVIDER_STATUSES.ERROR;
+}
+
+function buildPublicConnectionResult(connection, extras = {}) {
+  return {
+    connection: buildExternalProviderConnectionSummary(connection),
+    ...extras,
+  };
+}
+
+function extractGarminProfile(result = {}, email = "") {
+  const profile = result?.profile && typeof result.profile === "object" ? result.profile : {};
+  const accountIdentifier = normalizeString(profile.accountIdentifier) || normalizeString(email);
+  const displayName = normalizeString(profile.displayName) || accountIdentifier;
+
+  return {
+    accountIdentifier,
+    displayName,
+  };
+}
+
+function buildGarminErrorCode(result = {}) {
+  return normalizeString(result.code) || "GARMINCONNECT_ERROR";
+}
+
+function buildGarminErrorMessage(result = {}) {
+  return normalizeString(result.message) || "Connexion Garmin impossible.";
+}
+
+export async function getGarminConnectionStatus(appUserId) {
+  const connection = await findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE);
+  return buildPublicConnectionResult(connection);
+}
+
+export async function connectGarminForUser(appUserId, payload = {}) {
+  const email = normalizeString(payload.email);
+  const password = String(payload.password || "");
+  const mfaCode = normalizeString(payload.mfaCode);
+  const consentAccepted = Boolean(payload.consentAccepted);
+
+  if (!consentAccepted) {
+    throw buildHttpError(
+      "Garmin experimental consent is required.",
+      "Valide le consentement experimental Garmin avant de continuer.",
+    );
+  }
+
+  if (!email || !password) {
+    throw buildHttpError(
+      "Garmin credentials are required.",
+      "Renseigne ton email et ton mot de passe Garmin pour lancer la connexion.",
+    );
+  }
+
+  if (!isProviderSessionStorageReady()) {
+    throw buildHttpError(
+      "External-provider session encryption is not configured.",
+      "La securisation des sessions Garmin n'est pas configuree cote serveur.",
+      503,
+    );
+  }
+
+  await upsertExternalProviderConnectionState({
+    appUserId,
+    providerCode: GARMIN_PROVIDER_CODE,
+    status: EXTERNAL_PROVIDER_STATUSES.CONNECTING,
+    consentAcceptedAt: new Date(),
+    lastErrorCode: null,
+    lastErrorMessage: null,
+    lastErrorAt: null,
+  });
+
+  let result = null;
+
+  try {
+    result = await loginGarminconnect({ email, password, mfaCode });
+  } catch (error) {
+    await upsertExternalProviderConnectionState({
+      appUserId,
+      providerCode: GARMIN_PROVIDER_CODE,
+      status: EXTERNAL_PROVIDER_STATUSES.ERROR,
+      consentAcceptedAt: new Date(),
+      lastErrorCode: "GARMINCONNECT_BRIDGE_ERROR",
+      lastErrorMessage: error.userMessage || "Connexion Garmin impossible.",
+      lastErrorAt: new Date(),
+    });
+
+    throw error;
+  }
+
+  const normalizedStatus = normalizeGarminStatus(result?.status);
+
+  if (normalizedStatus === EXTERNAL_PROVIDER_STATUSES.MFA_REQUIRED) {
+    const connection = await upsertExternalProviderConnectionState({
+      appUserId,
+      providerCode: GARMIN_PROVIDER_CODE,
+      status: EXTERNAL_PROVIDER_STATUSES.MFA_REQUIRED,
+      consentAcceptedAt: new Date(),
+      lastErrorCode: null,
+      lastErrorMessage: null,
+      lastErrorAt: null,
+    });
+
+    return buildPublicConnectionResult(connection, {
+      mfaRequired: true,
+      message: "Garmin demande un code de validation. Garde le mot de passe saisi et ajoute le code recu.",
+    });
+  }
+
+  if (normalizedStatus !== EXTERNAL_PROVIDER_STATUSES.CONNECTED) {
+    const connection = await upsertExternalProviderConnectionState({
+      appUserId,
+      providerCode: GARMIN_PROVIDER_CODE,
+      status: EXTERNAL_PROVIDER_STATUSES.ERROR,
+      consentAcceptedAt: new Date(),
+      lastErrorCode: buildGarminErrorCode(result),
+      lastErrorMessage: buildGarminErrorMessage(result),
+      lastErrorAt: new Date(),
+    });
+
+    const error = buildHttpError(
+      `Garmin connection failed: ${buildGarminErrorCode(result)}.`,
+      buildGarminErrorMessage(result),
+      result?.retryable ? 502 : 400,
+    );
+    error.connection = buildExternalProviderConnectionSummary(connection);
+    throw error;
+  }
+
+  const profile = extractGarminProfile(result, email);
+  const connection = await upsertExternalProviderConnectionState({
+    appUserId,
+    providerCode: GARMIN_PROVIDER_CODE,
+    status: EXTERNAL_PROVIDER_STATUSES.CONNECTED,
+    encryptedSession: encryptProviderSessionPayload(result.session),
+    displayName: profile.displayName,
+    accountIdentifier: profile.accountIdentifier,
+    consentAcceptedAt: new Date(),
+    connectedAt: new Date(),
+    disconnectedAt: null,
+    lastErrorCode: null,
+    lastErrorMessage: null,
+    lastErrorAt: null,
+  });
+
+  return buildPublicConnectionResult(connection, {
+    mfaRequired: false,
+    message: "Garmin est connecte. Les donnees de recuperation pourront etre synchronisees au lot suivant.",
+  });
+}
+
+export async function disconnectGarminForUser(appUserId) {
+  const connection = await upsertExternalProviderConnectionState({
+    appUserId,
+    providerCode: GARMIN_PROVIDER_CODE,
+    status: EXTERNAL_PROVIDER_STATUSES.DISCONNECTED,
+    encryptedSession: null,
+    displayName: null,
+    accountIdentifier: null,
+    connectedAt: null,
+    disconnectedAt: new Date(),
+    lastErrorCode: null,
+    lastErrorMessage: null,
+    lastErrorAt: null,
+  });
+
+  return buildPublicConnectionResult(connection, {
+    message: "Garmin est deconnecte. Les sessions stockees ont ete supprimees.",
+  });
+}

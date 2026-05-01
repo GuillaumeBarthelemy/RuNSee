@@ -14,6 +14,11 @@ import useRaceObjectives from "../hooks/useRaceObjectives.js";
 import useRunSeeData from "../hooks/useRunSeeData.js";
 import { getStravaLoginUrl } from "../config/env.js";
 import AppShell from "../layouts/AppShell.jsx";
+import {
+  connectGarmin,
+  disconnectGarmin,
+  getGarminConnectionStatus,
+} from "../services/externalProvider.service.js";
 import { saveTrainingAnalyticsSettings } from "../services/trainingAnalyticsSettings.service.js";
 import { startDetailBackfill, startHistoricalSync, startIncrementalSync } from "../services/sync.service.js";
 
@@ -48,6 +53,8 @@ export default function AdminPage() {
   const [actionNotice, setActionNotice] = useState("");
   const [infoNotice, setInfoNotice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGarminSubmitting, setIsGarminSubmitting] = useState(false);
+  const [garminConnection, setGarminConnection] = useState(null);
   const [trainingSettingsOverride, setTrainingSettingsOverride] = useState(null);
   const [trainingSettingsHistoryOverride, setTrainingSettingsHistoryOverride] = useState(null);
   const safeSetError = setError ?? noop;
@@ -83,6 +90,16 @@ export default function AdminPage() {
   const missingDetailCount = Number(summary?.pendingDetailEnrichment || 0);
   const displayedTrainingAnalyticsSettings = trainingSettingsOverride || trainingAnalyticsSettings;
   const displayedTrainingAnalyticsSettingsHistory = trainingSettingsHistoryOverride || trainingAnalyticsSettingsHistory;
+  const isFormSubmitting = Boolean(isSubmitting || isGarminSubmitting);
+
+  const loadGarminConnection = useCallback(async () => {
+    try {
+      const result = await getGarminConnectionStatus();
+      setGarminConnection(result?.connection || null);
+    } catch {
+      setGarminConnection(null);
+    }
+  }, []);
 
   const handleConnectStrava = useCallback(() => {
     if (!stravaApp?.personalAppConfigured && !stravaApp?.sharedAppAvailable) {
@@ -114,6 +131,10 @@ export default function AdminPage() {
     nextSearchParams.delete("strava");
     setSearchParams(nextSearchParams, { replace: true });
   }, [refreshUser, safeReload, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    loadGarminConnection().catch(() => {});
+  }, [loadGarminConnection]);
 
   useEffect(() => {
     const authStatus = String(searchParams.get("auth") || "").trim();
@@ -270,6 +291,57 @@ export default function AdminPage() {
     }
   }, [safeReload, safeSetError]);
 
+  const handleConnectGarmin = useCallback(async (payload) => {
+    safeSetError("");
+    setInfoNotice("");
+    setActionNotice("");
+    setIsGarminSubmitting(true);
+
+    try {
+      const result = await connectGarmin(payload);
+      setGarminConnection(result?.connection || null);
+      setActionNotice(result?.message || "Connexion Garmin mise a jour.");
+      return result;
+    } catch (error) {
+      const connection = error?.response?.data?.connection;
+      if (connection) {
+        setGarminConnection(connection);
+      } else {
+        await loadGarminConnection();
+      }
+
+      safeSetError(extractErrorMessage(error, "Erreur lors de la connexion Garmin."));
+      return null;
+    } finally {
+      setIsGarminSubmitting(false);
+    }
+  }, [loadGarminConnection, safeSetError]);
+
+  const handleDisconnectGarmin = useCallback(async () => {
+    const shouldDisconnect =
+      typeof window === "undefined" ||
+      window.confirm("Deconnecter Garmin supprimera la session stockee pour ce compte. Continuer ?");
+
+    if (!shouldDisconnect) {
+      return;
+    }
+
+    safeSetError("");
+    setInfoNotice("");
+    setActionNotice("");
+    setIsGarminSubmitting(true);
+
+    try {
+      const result = await disconnectGarmin();
+      setGarminConnection(result?.connection || null);
+      setActionNotice(result?.message || "Garmin est deconnecte.");
+    } catch (error) {
+      safeSetError(extractErrorMessage(error, "Erreur lors de la deconnexion Garmin."));
+    } finally {
+      setIsGarminSubmitting(false);
+    }
+  }, [safeSetError]);
+
   const handleSaveTrainingAnalyticsSettings = useCallback(async (payload) => {
     safeSetError("");
     setInfoNotice("");
@@ -327,7 +399,7 @@ export default function AdminPage() {
       <section className="section">
         <PhysiologicalProfileCard
           settings={displayedTrainingAnalyticsSettings}
-          isPending={Boolean(isSubmitting)}
+          isPending={isFormSubmitting}
           onSave={handleSaveTrainingAnalyticsSettings}
         />
       </section>
@@ -355,7 +427,7 @@ export default function AdminPage() {
         <TrainingAnalyticsSettingsCard
           settings={displayedTrainingAnalyticsSettings}
           history={displayedTrainingAnalyticsSettingsHistory}
-          isPending={Boolean(isSubmitting)}
+          isPending={isFormSubmitting}
           onSave={handleSaveTrainingAnalyticsSettings}
           onRestore={handleRestoreTrainingAnalyticsSettings}
           showPhysiologyPanel={false}
@@ -363,7 +435,14 @@ export default function AdminPage() {
       </section>
 
       <section className="section">
-        <GarminExperimentalCard />
+        <GarminExperimentalCard
+          status={garminConnection?.status || "disconnected"}
+          connection={garminConnection}
+          canConnect
+          isPending={isGarminSubmitting}
+          onConnect={handleConnectGarmin}
+          onDisconnect={handleDisconnectGarmin}
+        />
       </section>
 
       <section className="section admin-strava-section">
@@ -377,7 +456,7 @@ export default function AdminPage() {
         <div className="admin-strava-grid">
           <StravaAppSettingsCard
             stravaApp={stravaApp}
-            isPending={Boolean(isSubmitting)}
+            isPending={isFormSubmitting}
             onSave={handleSaveStravaApp}
             onDelete={handleDeleteStravaApp}
             onDisconnectStrava={handleDisconnectStrava}
@@ -388,7 +467,7 @@ export default function AdminPage() {
             onStartHistorical={handleStartHistorical}
             onStartIncremental={handleStartIncremental}
             onStartDetailBackfill={handleStartDetailBackfill}
-            isBusy={Boolean(isBusy || isSubmitting)}
+            isBusy={Boolean(isBusy || isFormSubmitting)}
             isStravaConnected={isStravaConnected}
             hasImportedActivities={hasImportedActivities}
             missingDetailCount={missingDetailCount}

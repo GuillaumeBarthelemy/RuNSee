@@ -1,0 +1,39 @@
+import { getRequiredAuthUser } from "../middleware/auth.middleware.js";
+import {
+  connectGarminForUser,
+  disconnectGarminForUser,
+  getGarminConnectionStatus,
+} from "../services/providers/garminProvider.service.js";
+
+export async function getGarminConnectionStatusController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await getGarminConnectionStatus(user.id);
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function connectGarminController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await connectGarminForUser(user.id, req.body || {});
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function disconnectGarminController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await disconnectGarminForUser(user.id);
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}

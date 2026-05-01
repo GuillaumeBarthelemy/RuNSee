@@ -140,6 +140,12 @@ const env = {
       process.env.RUNSEE_STRAVA_APP_ENCRYPTION_KEY ||
       ""
     ).trim(),
+  garminconnectPythonBin:
+    String(process.env.GARMINCONNECT_PYTHON_BIN || "python3").trim() || "python3",
+  garminconnectBridgeTimeoutMs: Math.max(
+    15000,
+    parseNumber(process.env.GARMINCONNECT_BRIDGE_TIMEOUT_MS, 60000),
+  ),
   stravaApprovalPrompt:
     String(process.env.STRAVA_APPROVAL_PROMPT || "force").trim() || "force",
   stravaScope:

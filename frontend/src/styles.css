@@ -5076,6 +5076,26 @@ body.modal-open {
   margin-top: 12px;
 }
 
+.garmin-connect-form {
+  padding: 16px;
+  border: 1px solid rgba(53, 88, 134, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.garmin-consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.garmin-consent-row input {
+  margin-top: 3px;
+}
+
 @media (max-width: 1080px) {
   .garmin-experimental-grid {
     grid-template-columns: 1fr;

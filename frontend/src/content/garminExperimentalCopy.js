@@ -9,10 +9,25 @@ export const GARMIN_EXPERIMENTAL_STATUS = {
     className: "status-idle",
     helper: "Aucune session Garmin n'est associee a ce compte RunNSee.",
   },
+  consent_required: {
+    label: "Consentement requis",
+    className: "status-queued",
+    helper: "Tu dois valider le caractere experimental avant de connecter Garmin.",
+  },
   consentRequired: {
     label: "Consentement requis",
     className: "status-queued",
     helper: "Tu dois valider le caractere experimental avant de connecter Garmin.",
+  },
+  connecting: {
+    label: "Connexion en cours",
+    className: "status-running",
+    helper: "RunNSee verifie la connexion Garmin sans conserver ton mot de passe.",
+  },
+  mfa_required: {
+    label: "Code requis",
+    className: "status-queued",
+    helper: "Garmin demande une validation supplementaire pour terminer la connexion.",
   },
   mfaRequired: {
     label: "Code requis",
@@ -69,6 +84,20 @@ export const GARMIN_EXPERIMENTAL_COPY = {
     "Conserver Strava comme source principale des activites.",
     "Utiliser Garmin seulement pour enrichir les activites Strava deja reconnues.",
   ],
+  formTitle: "Connexion Garmin",
+  consentCheckbox: "J'accepte d'utiliser ce connecteur Garmin experimental et non officiel.",
+  emailLabel: "Email Garmin",
+  passwordLabel: "Mot de passe Garmin",
+  mfaLabel: "Code Garmin",
+  connectAction: "Connecter Garmin",
+  reconnectAction: "Reconnecter Garmin",
+  disconnectAction: "Deconnecter Garmin",
+  connectedCaption:
+    "Session Garmin chiffree cote serveur. Les donnees de recuperation seront synchronisees dans le lot suivant.",
+  credentialsCaption:
+    "Renseigne tes identifiants Garmin pour creer une session chiffree. Le mot de passe est oublie apres la tentative.",
+  mfaCaption:
+    "Garmin demande un code. Garde ton mot de passe dans le formulaire, renseigne le code puis relance la connexion.",
   tooltip: [
     {
       label: "Pourquoi",

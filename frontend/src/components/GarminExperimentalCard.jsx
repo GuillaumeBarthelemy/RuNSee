@@ -1,17 +1,63 @@
-import { memo } from "react";
+import { memo, useMemo, useState } from "react";
 import InfoTooltip from "./InfoTooltip.jsx";
 import {
   GARMIN_EXPERIMENTAL_COPY,
   getGarminExperimentalStatus,
 } from "../content/garminExperimentalCopy.js";
 
+const noop = () => {};
+
 function GarminExperimentalCard({
   status = "unavailable",
   canConnect = false,
-  onConnect = null,
+  connection = null,
+  isPending = false,
+  onConnect = noop,
+  onDisconnect = noop,
 }) {
-  const resolvedStatus = getGarminExperimentalStatus(status);
-  const connectButtonLabel = canConnect ? "Connecter Garmin" : GARMIN_EXPERIMENTAL_COPY.connectionUnavailableAction;
+  const resolvedStatusCode = connection?.status || status;
+  const resolvedStatus = getGarminExperimentalStatus(resolvedStatusCode);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [consentAccepted, setConsentAccepted] = useState(false);
+  const isConnected = Boolean(connection?.connected);
+  const isMfaRequired = resolvedStatusCode === "mfa_required";
+  const canSubmit = Boolean(canConnect && !isPending && email.trim() && password && consentAccepted);
+  const formCaption = isConnected
+    ? GARMIN_EXPERIMENTAL_COPY.connectedCaption
+    : isMfaRequired
+      ? GARMIN_EXPERIMENTAL_COPY.mfaCaption
+      : GARMIN_EXPERIMENTAL_COPY.credentialsCaption;
+  const connectButtonLabel = useMemo(() => {
+    if (!canConnect) {
+      return GARMIN_EXPERIMENTAL_COPY.connectionUnavailableAction;
+    }
+
+    return isConnected
+      ? GARMIN_EXPERIMENTAL_COPY.reconnectAction
+      : GARMIN_EXPERIMENTAL_COPY.connectAction;
+  }, [canConnect, isConnected]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!canSubmit || typeof onConnect !== "function") {
+      return;
+    }
+
+    const result = await onConnect({
+      email,
+      password,
+      mfaCode,
+      consentAccepted,
+    });
+
+    if (result?.connection?.connected) {
+      setPassword("");
+      setMfaCode("");
+    }
+  }
 
   return (
     <section className="card garmin-experimental-card">
@@ -32,6 +78,14 @@ function GarminExperimentalCard({
 
       <p className="garmin-experimental-notice">{GARMIN_EXPERIMENTAL_COPY.notice}</p>
       <p className="small-text">{resolvedStatus.helper}</p>
+      {connection?.accountIdentifier ? (
+        <p className="small-text">
+          Compte Garmin associe : <strong>{connection.accountIdentifier}</strong>
+        </p>
+      ) : null}
+      {connection?.lastErrorMessage ? (
+        <p className="alert alert-warning top-gap-sm">{connection.lastErrorMessage}</p>
+      ) : null}
 
       <div className="garmin-experimental-grid top-gap-sm">
         <div className="garmin-experimental-panel">
@@ -62,16 +116,86 @@ function GarminExperimentalCard({
         </div>
       </div>
 
-      <div className="actions-row top-gap-sm">
-        <button
-          type="button"
-          className="button button-outline"
-          onClick={canConnect && typeof onConnect === "function" ? onConnect : undefined}
-          disabled={!canConnect}
-        >
-          {connectButtonLabel}
-        </button>
-      </div>
+      <form className="garmin-connect-form top-gap-md" onSubmit={handleSubmit}>
+        <div className="card-header-row wrap-on-mobile compact-header">
+          <div>
+            <h3 className="subcard-title">{GARMIN_EXPERIMENTAL_COPY.formTitle}</h3>
+            <p className="small-text">{formCaption}</p>
+          </div>
+        </div>
+
+        <label className="garmin-consent-row">
+          <input
+            type="checkbox"
+            checked={consentAccepted}
+            onChange={(event) => setConsentAccepted(event.target.checked)}
+            disabled={isPending}
+          />
+          <span>{GARMIN_EXPERIMENTAL_COPY.consentCheckbox}</span>
+        </label>
+
+        <div className="grid three-columns top-gap-sm">
+          <label className="field">
+            <span className="field-label">{GARMIN_EXPERIMENTAL_COPY.emailLabel}</span>
+            <input
+              type="email"
+              className="field-input"
+              autoComplete="username"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              disabled={isPending || !canConnect}
+              placeholder="nom@exemple.fr"
+            />
+          </label>
+
+          <label className="field">
+            <span className="field-label">{GARMIN_EXPERIMENTAL_COPY.passwordLabel}</span>
+            <input
+              type="password"
+              className="field-input"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              disabled={isPending || !canConnect}
+              placeholder="Non stocke"
+            />
+          </label>
+
+          <label className="field">
+            <span className="field-label">{GARMIN_EXPERIMENTAL_COPY.mfaLabel}</span>
+            <input
+              type="text"
+              className="field-input"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={mfaCode}
+              onChange={(event) => setMfaCode(event.target.value)}
+              disabled={isPending || !canConnect}
+              placeholder={isMfaRequired ? "Code requis" : "Si demande"}
+            />
+          </label>
+        </div>
+
+        <div className="actions-row top-gap-sm">
+          <button
+            type="submit"
+            className="button button-primary"
+            disabled={!canSubmit}
+          >
+            {isPending ? "Connexion..." : connectButtonLabel}
+          </button>
+          {isConnected ? (
+            <button
+              type="button"
+              className="button button-outline"
+              onClick={() => onDisconnect()}
+              disabled={isPending}
+            >
+              {GARMIN_EXPERIMENTAL_COPY.disconnectAction}
+            </button>
+          ) : null}
+        </div>
+      </form>
     </section>
   );
 }

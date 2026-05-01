@@ -7,6 +7,7 @@ import activityRoutes from "./routes/activity.routes.js";
 import syncRoutes from "./routes/sync.routes.js";
 import trainingAnalyticsSettingsRoutes from "./routes/trainingAnalyticsSettings.routes.js";
 import raceObjectiveRoutes from "./routes/raceObjective.routes.js";
+import providerRoutes from "./routes/provider.routes.js";
 import env from "./config/env.js";
 import { loadAuthSession } from "./middleware/auth.middleware.js";
 
@@ -81,6 +82,7 @@ app.use("/activities", activityRoutes);
 app.use("/sync", syncRoutes);
 app.use("/settings", trainingAnalyticsSettingsRoutes);
 app.use("/settings", raceObjectiveRoutes);
+app.use("/providers", providerRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
@@ -90,6 +92,7 @@ app.use((err, req, res, next) => {
   res.status(status).json({
     message: err.userMessage || "Internal server error",
     details: err.message,
+    ...(err.connection ? { connection: err.connection } : {}),
   });
 });
 
