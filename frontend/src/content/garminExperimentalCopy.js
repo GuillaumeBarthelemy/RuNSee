@@ -90,14 +90,21 @@ export const GARMIN_EXPERIMENTAL_COPY = {
   passwordLabel: "Mot de passe Garmin",
   mfaLabel: "Code Garmin",
   connectAction: "Connecter Garmin",
+  mfaSubmitAction: "Valider le code Garmin",
   reconnectAction: "Reconnecter Garmin",
   disconnectAction: "Deconnecter Garmin",
   connectedCaption:
     "Session Garmin chiffree cote serveur. Les donnees de recuperation seront synchronisees dans le lot suivant.",
   credentialsCaption:
-    "Renseigne tes identifiants Garmin pour creer une session chiffree. Le mot de passe est oublie apres la tentative.",
+    "Renseigne tes identifiants Garmin. Le code de validation apparaitra seulement si Garmin le demande.",
   mfaCaption:
-    "Garmin demande un code. Garde ton mot de passe dans le formulaire, renseigne le code puis relance la connexion.",
+    "Garmin demande un code. Garde ton mot de passe dans le formulaire, renseigne le code recu puis valide.",
+  pendingCaption:
+    "RunNSee interroge Garmin. Patiente jusqu'au retour de Garmin avant de relancer une tentative.",
+  mfaPromptCaption:
+    "Garmin demande maintenant une validation. Renseigne le code recu par email ou via ton compte Garmin.",
+  rateLimitCaption:
+    "Garmin limite temporairement les connexions. Attends la fin du delai indique avant une nouvelle tentative.",
   tooltip: [
     {
       label: "Pourquoi",

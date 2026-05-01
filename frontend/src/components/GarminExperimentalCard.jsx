@@ -23,7 +23,14 @@ function GarminExperimentalCard({
   const [consentAccepted, setConsentAccepted] = useState(false);
   const isConnected = Boolean(connection?.connected);
   const isMfaRequired = resolvedStatusCode === "mfa_required";
-  const canSubmit = Boolean(canConnect && !isPending && email.trim() && password && consentAccepted);
+  const isRateLimited = connection?.lastErrorCode === "GARMINCONNECT_RATE_LIMITED";
+  const hasBaseCredentials = Boolean(email.trim() && password && consentAccepted);
+  const canSubmit = Boolean(
+    canConnect
+      && !isPending
+      && hasBaseCredentials
+      && (!isMfaRequired || mfaCode.trim()),
+  );
   const formCaption = isConnected
     ? GARMIN_EXPERIMENTAL_COPY.connectedCaption
     : isMfaRequired
@@ -34,10 +41,14 @@ function GarminExperimentalCard({
       return GARMIN_EXPERIMENTAL_COPY.connectionUnavailableAction;
     }
 
-    return isConnected
-      ? GARMIN_EXPERIMENTAL_COPY.reconnectAction
+    if (isConnected) {
+      return GARMIN_EXPERIMENTAL_COPY.reconnectAction;
+    }
+
+    return isMfaRequired
+      ? GARMIN_EXPERIMENTAL_COPY.mfaSubmitAction
       : GARMIN_EXPERIMENTAL_COPY.connectAction;
-  }, [canConnect, isConnected]);
+  }, [canConnect, isConnected, isMfaRequired]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -46,10 +57,16 @@ function GarminExperimentalCard({
       return;
     }
 
+    const submittedMfaCode = isMfaRequired ? mfaCode : "";
+
+    if (!isMfaRequired && mfaCode) {
+      setMfaCode("");
+    }
+
     const result = await onConnect({
       email,
       password,
-      mfaCode,
+      mfaCode: submittedMfaCode,
       consentAccepted,
     });
 
@@ -134,7 +151,25 @@ function GarminExperimentalCard({
           <span>{GARMIN_EXPERIMENTAL_COPY.consentCheckbox}</span>
         </label>
 
-        <div className="grid three-columns top-gap-sm">
+        {isPending ? (
+          <p className="alert alert-info top-gap-sm">
+            {GARMIN_EXPERIMENTAL_COPY.pendingCaption}
+          </p>
+        ) : null}
+
+        {isMfaRequired ? (
+          <p className="alert alert-info top-gap-sm">
+            {GARMIN_EXPERIMENTAL_COPY.mfaPromptCaption}
+          </p>
+        ) : null}
+
+        {isRateLimited ? (
+          <p className="alert alert-info top-gap-sm">
+            {GARMIN_EXPERIMENTAL_COPY.rateLimitCaption}
+          </p>
+        ) : null}
+
+        <div className={`grid ${isMfaRequired ? "three-columns" : "two-columns"} top-gap-sm`}>
           <label className="field">
             <span className="field-label">{GARMIN_EXPERIMENTAL_COPY.emailLabel}</span>
             <input
@@ -161,19 +196,21 @@ function GarminExperimentalCard({
             />
           </label>
 
-          <label className="field">
-            <span className="field-label">{GARMIN_EXPERIMENTAL_COPY.mfaLabel}</span>
-            <input
-              type="text"
-              className="field-input"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              value={mfaCode}
-              onChange={(event) => setMfaCode(event.target.value)}
-              disabled={isPending || !canConnect}
-              placeholder={isMfaRequired ? "Code requis" : "Si demande"}
-            />
-          </label>
+          {isMfaRequired ? (
+            <label className="field">
+              <span className="field-label">{GARMIN_EXPERIMENTAL_COPY.mfaLabel}</span>
+              <input
+                type="text"
+                className="field-input"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={mfaCode}
+                onChange={(event) => setMfaCode(event.target.value)}
+                disabled={isPending || !canConnect}
+                placeholder="Code recu"
+              />
+            </label>
+          ) : null}
         </div>
 
         <div className="actions-row top-gap-sm">

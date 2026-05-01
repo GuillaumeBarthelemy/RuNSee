@@ -2448,6 +2448,12 @@ select {
   color: var(--color-success);
 }
 
+.alert-warning {
+  border-color: rgba(249, 115, 22, 0.32);
+  background: rgba(249, 115, 22, 0.08);
+  color: var(--color-text-primary);
+}
+
 .alert-info {
   border-color: rgba(249, 115, 22, 0.28);
   background: rgba(249, 115, 22, 0.08);

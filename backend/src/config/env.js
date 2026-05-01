@@ -143,8 +143,8 @@ const env = {
   garminconnectPythonBin:
     String(process.env.GARMINCONNECT_PYTHON_BIN || "python3").trim() || "python3",
   garminconnectBridgeTimeoutMs: Math.max(
-    15000,
-    parseNumber(process.env.GARMINCONNECT_BRIDGE_TIMEOUT_MS, 60000),
+    90000,
+    parseNumber(process.env.GARMINCONNECT_BRIDGE_TIMEOUT_MS, 90000),
   ),
   stravaApprovalPrompt:
     String(process.env.STRAVA_APPROVAL_PROMPT || "force").trim() || "force",

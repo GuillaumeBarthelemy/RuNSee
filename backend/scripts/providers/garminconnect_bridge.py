@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
@@ -94,6 +95,10 @@ def build_garth_error(exc: Exception) -> dict:
     )
 
 
+def is_rate_limit_exception(exc: Exception) -> bool:
+    return get_http_status_from_exception(exc) == 429
+
+
 def list_tokenstore_files(tokenstore_dir: Path) -> list[dict]:
     files = []
 
@@ -170,6 +175,7 @@ def login_with_tokens(request: dict) -> dict:
 
         try:
             api = Garmin(email=email, password=password)
+            auth_retry_delays_seconds = (8, 15)
 
             class MfaRequired(Exception):
                 pass
@@ -179,8 +185,28 @@ def login_with_tokens(request: dict) -> dict:
                     raise MfaRequired()
                 return mfa_code
 
+            def login_with_transient_rate_limit_retries():
+                for attempt_index in range(len(auth_retry_delays_seconds) + 1):
+                    if attempt_index > 0:
+                        time.sleep(auth_retry_delays_seconds[attempt_index - 1])
+
+                    try:
+                        return api.garth.login(email, password, prompt_mfa=prompt_mfa)
+                    except GarminConnectTooManyRequestsError:
+                        if mfa_code or attempt_index >= len(auth_retry_delays_seconds):
+                            raise
+                    except GarthHTTPError as exc:
+                        if (
+                            mfa_code
+                            or not is_rate_limit_exception(exc)
+                            or attempt_index >= len(auth_retry_delays_seconds)
+                        ):
+                            raise
+
+                return None
+
             try:
-                api.garth.login(email, password, prompt_mfa=prompt_mfa)
+                login_with_transient_rate_limit_retries()
             except MfaRequired:
                 return {
                     "status": "mfa_required",
@@ -231,12 +257,23 @@ def login_with_tokens(request: dict) -> dict:
                 "GARMINCONNECT_AUTHENTICATION_FAILED",
                 "Garmin a refuse la connexion ou le code de validation.",
             )
-        except GarminConnectTooManyRequestsError as exc:
-            return build_error("GARMINCONNECT_RATE_LIMITED", exc, retryable=True)
-        except GarminConnectAuthenticationError as exc:
-            return build_error("GARMINCONNECT_AUTHENTICATION_FAILED", exc)
-        except GarminConnectConnectionError as exc:
-            return build_error("GARMINCONNECT_CONNECTION_FAILED", exc, retryable=True)
+        except GarminConnectTooManyRequestsError:
+            return build_error(
+                "GARMINCONNECT_RATE_LIMITED",
+                "Garmin limite temporairement les tentatives de connexion. Attends 30 a 60 minutes avant de reessayer.",
+                retryable=True,
+            )
+        except GarminConnectAuthenticationError:
+            return build_error(
+                "GARMINCONNECT_AUTHENTICATION_FAILED",
+                "Garmin a refuse la connexion. Verifie tes identifiants ou le code de validation.",
+            )
+        except GarminConnectConnectionError:
+            return build_error(
+                "GARMINCONNECT_CONNECTION_FAILED",
+                "Garmin est temporairement indisponible ou ne repond pas correctement. Reessaie plus tard.",
+                retryable=True,
+            )
         except GarthHTTPError as exc:
             return build_garth_error(exc)
         except GarthException as exc:

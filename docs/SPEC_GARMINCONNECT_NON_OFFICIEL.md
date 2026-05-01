@@ -24,8 +24,8 @@ Objectif produit :
 | Mot de passe Garmin | Jamais stocke |
 | Tokens / sessions | Stockage chiffre obligatoire |
 | Donnees prioritaires | Sommeil, HRV, frequence cardiaque de repos, stress, Body Battery |
-| Backfill initial | 180 jours |
-| Activites Garmin | Enrichissement des activites Strava existantes uniquement |
+| Backfill initial | 180 jours pour les signaux de recuperation uniquement |
+| Activites Garmin | Enrichissement cible des activites Strava existantes uniquement |
 | Source principale activite | Strava reste prioritaire |
 | API officielle Garmin | Cible future a preparer architecturalement |
 
@@ -260,11 +260,11 @@ Regles :
 4. L'utilisateur accepte le consentement.
 5. Il saisit ses identifiants Garmin.
 6. RunNSee tente la connexion via `garminconnect`.
-7. Si Garmin demande un code MFA, RunNSee affiche l'etape MFA.
+7. RunNSee n'affiche l'etape MFA que si Garmin demande explicitement un code.
 8. RunNSee obtient une session ou des tokens.
 9. RunNSee chiffre et stocke uniquement la session/tokens.
 10. Le mot de passe est oublie immediatement.
-11. Le backfill 180 jours demarre en arriere-plan.
+11. La recuperation 180 jours demarre progressivement en arriere-plan, sans extraction massive d'activites.
 
 ### 7.2 Etats de connexion
 
@@ -290,7 +290,7 @@ Regles :
 
 ## 8. Synchronisation des donnees Garmin
 
-### 8.1 Backfill initial 180 jours
+### 8.1 Recuperation initiale 180 jours
 
 Objectif : recuperer un historique suffisant pour construire des baselines personnelles fiables.
 
@@ -302,15 +302,17 @@ Ordre de recuperation recommande :
 4. Stress.
 5. Body Battery.
 6. Training Readiness / Training Status si disponible.
-7. Donnees d'activite pour enrichissement.
 
 Regles :
 
 - Decouper par fenetres courtes.
+- Prioriser les donnees quotidiennes de recuperation, moins couteuses que les activites detaillees.
+- Ne pas lancer de backfill massif sur les activites Garmin.
 - Sauvegarder l'avancement.
 - Reprendre en cas d'interruption.
 - Ne pas retraiter inutilement les jours deja synchronises.
 - Marquer les jours sans donnee comme absents, pas comme zeros.
+- Appliquer un backoff explicite en cas de rate limit Garmin.
 
 ### 8.2 Synchronisation quotidienne
 
@@ -338,6 +340,13 @@ Etats a afficher :
 | Donnee absente | Marquer absent, ne pas echouer globalement |
 | Endpoint indisponible | Erreur temporaire |
 | Payload inattendu | Stocker erreur sanitisee, ne pas casser analytics |
+
+Point observe pendant les tests locaux :
+
+- Garmin peut retourner un ou plusieurs `429` transitoires pendant la phase de login mobile avant de demander le code MFA.
+- Ces `429` ne doivent pas toujours etre interpretes comme un blocage terminal.
+- Le connecteur doit patienter et relancer prudemment la tentative de decouverte MFA avant d'afficher une erreur definitive.
+- Si les `429` persistent apres les tentatives controlees, RunNSee passe alors en rate limit explicite avec backoff.
 
 ## 9. Synthese decisionnelle enrichie
 
@@ -569,7 +578,7 @@ Critere d'acceptation :
 
 Objectif :
 
-- Recuperer les donnees P0 sur 180 jours.
+- Recuperer progressivement les donnees P0 de recuperation sur 180 jours.
 
 Livrables attendus :
 
@@ -580,7 +589,7 @@ Livrables attendus :
 
 Critere d'acceptation :
 
-- Un utilisateur peut lancer un backfill 180 jours sans bloquer l'application.
+- Un utilisateur peut lancer une recuperation 180 jours sans bloquer l'application ni saturer Garmin.
 
 ### Lot 5 - Sync quotidienne
 
@@ -637,12 +646,13 @@ Critere d'acceptation :
 
 Objectif :
 
-- Utiliser Garmin pour enrichir les activites Strava existantes.
+- Utiliser Garmin pour enrichir de facon ciblee les activites Strava existantes.
 
 Livrables attendus :
 
 - matching prudent ;
 - enrichissement splits / zones / cadence / puissance ;
+- extraction limitee aux activites recentes ou demandees explicitement ;
 - statut d'enrichissement ;
 - absence de doublons.
 
@@ -698,8 +708,8 @@ Critere d'acceptation :
 
 ### 15.2 Synchronisation
 
-- Backfill 180 jours complet.
-- Backfill interrompu puis repris.
+- Recuperation progressive 180 jours complete pour les signaux de recuperation.
+- Recuperation interrompue puis reprise.
 - Donnees absentes sur certains jours.
 - Rate limit Garmin.
 - Sync quotidienne.
@@ -726,6 +736,7 @@ Critere d'acceptation :
 
 - Matching Garmin/Strava fiable.
 - Refus d'enrichissement en cas d'ambiguite.
+- Pas de backfill massif des activites Garmin.
 - Pas de doublon visible.
 - Source Garmin visible pour les donnees enrichies.
 
