@@ -1,0 +1,82 @@
+name: Maintenance Reset Garmin Provider
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type RESET_GARMIN to reset the Garmin experimental connection state"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runsee-production-maintenance
+  cancel-in-progress: false
+
+jobs:
+  reset-garmin:
+    name: Reset Garmin experimental state
+    runs-on: ubuntu-latest
+    environment: RUNSEE_VM_HOST
+    env:
+      SSH_HOST: ${{ vars.RUNSEE_VM_HOST || secrets.RUNSEE_VM_HOST }}
+      SSH_USER: ${{ vars.RUNSEE_VM_USER || secrets.RUNSEE_VM_USER }}
+      SSH_KEY: ${{ secrets.RUNSEE_VM_SSH_KEY }}
+      SSH_PORT: ${{ vars.RUNSEE_VM_PORT || secrets.RUNSEE_VM_PORT || '22' }}
+      REMOTE_PATH: /srv/runsee/repo
+      COMPOSE_FILE: deployment/linux/docker-compose.prod.yml
+      BACKEND_ENV: /srv/runsee/env/runsee-backend-prod.env
+      FRONTEND_ENV: /srv/runsee/env/runsee-frontend-prod.env
+    steps:
+      - name: Validate confirmation
+        run: |
+          test "${{ inputs.confirm }}" = "RESET_GARMIN" || (echo "Invalid confirmation" && exit 1)
+
+      - name: Check deployment secrets
+        run: |
+          test -n "${SSH_HOST}" || (echo "RUNSEE_VM_HOST is missing" && exit 1)
+          test -n "${SSH_USER}" || (echo "RUNSEE_VM_USER is missing" && exit 1)
+          test -n "${SSH_KEY}" || (echo "RUNSEE_VM_SSH_KEY is missing" && exit 1)
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${SSH_KEY}" | tr -d '\r' > ~/.ssh/runsee_vm
+          chmod 600 ~/.ssh/runsee_vm
+          ssh-keyscan -p "${SSH_PORT}" "${SSH_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Reset Garmin provider connection
+        run: |
+          ssh -i ~/.ssh/runsee_vm -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+            "set -Eeuo pipefail; cd '${REMOTE_PATH}'; docker compose --env-file '${BACKEND_ENV}' --env-file '${FRONTEND_ENV}' -f '${COMPOSE_FILE}' exec -T postgres psql -v ON_ERROR_STOP=1 -U runsee_app -d runsee_prod" <<'SQL'
+          BEGIN;
+          SELECT 'before' AS step,
+                 COUNT(*) AS provider_rows,
+                 COUNT(*) FILTER (WHERE status = 'mfa_required') AS mfa_rows,
+                 COUNT(*) FILTER (WHERE "lastErrorCode" IS NOT NULL) AS error_rows
+          FROM "ExternalProviderConnection"
+          WHERE "providerCode" = 'garminconnect_unofficial';
+
+          UPDATE "ExternalProviderConnection"
+          SET status = 'disconnected',
+              "displayName" = NULL,
+              "accountIdentifier" = NULL,
+              "encryptedSession" = NULL,
+              "connectedAt" = NULL,
+              "disconnectedAt" = NOW(),
+              "lastErrorCode" = NULL,
+              "lastErrorMessage" = NULL,
+              "lastErrorAt" = NULL
+          WHERE "providerCode" = 'garminconnect_unofficial';
+
+          SELECT 'after' AS step,
+                 COUNT(*) AS provider_rows,
+                 COUNT(*) FILTER (WHERE status = 'disconnected') AS disconnected_rows,
+                 COUNT(*) FILTER (WHERE "encryptedSession" IS NOT NULL) AS session_rows,
+                 COUNT(*) FILTER (WHERE "lastErrorCode" IS NOT NULL) AS error_rows
+          FROM "ExternalProviderConnection"
+          WHERE "providerCode" = 'garminconnect_unofficial';
+          COMMIT;
+          SQL
