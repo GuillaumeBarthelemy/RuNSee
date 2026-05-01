@@ -26,6 +26,18 @@ function average(values = []) {
   return safeValues.reduce((sum, value) => sum + Number(value), 0) / safeValues.length;
 }
 
+function sum(values = []) {
+  return values.reduce((total, value) => total + toNumber(value), 0);
+}
+
+function formatCompactRange(startDate, endDate) {
+  if (!startDate || !endDate) {
+    return "";
+  }
+
+  return `${startDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })} - ${endDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}`;
+}
+
 function buildStateTone(level) {
   switch (level) {
     case "positive":
@@ -117,26 +129,76 @@ function resolveChargeTrendLabel(loadDeltaPercent, loadDeltaValue) {
 
 function buildRecentLoadPattern(loadModel = {}) {
   const chartData = Array.isArray(loadModel?.chartData) ? loadModel.chartData : [];
-  const loadValues = chartData
-    .map((point) => toNumber(point?.load))
-    .filter((value) => Number.isFinite(value));
-  const recentLoads = loadValues.slice(-7).filter((value) => value > 0);
-  const previousLoads = loadValues.slice(-14, -7).filter((value) => value > 0);
-  const averageRecentLoad = average(recentLoads);
-  const averagePreviousLoad = average(previousLoads);
-  const maxRecentLoad = recentLoads.length ? Math.max(...recentLoads) : 0;
+  const loadValues = chartData.map((point) => toNumber(point?.load));
+  const recentDays = loadValues.slice(-7);
+  const previousDays = loadValues.slice(-14, -7);
+  const contextDays = loadValues.slice(-28);
+  const previousContextDays = loadValues.slice(-56, -28);
+  const activeRecentDays = recentDays.filter((value) => value > 0);
+  const averageRecentLoad = recentDays.length ? sum(recentDays) / recentDays.length : 0;
+  const averagePreviousLoad = previousDays.length ? sum(previousDays) / previousDays.length : 0;
+  const averageContextLoad = contextDays.length ? sum(contextDays) / contextDays.length : 0;
+  const maxRecentLoad = recentDays.length ? Math.max(...recentDays) : 0;
   const recentDeltaPercent = averagePreviousLoad > 0
     ? ((averageRecentLoad - averagePreviousLoad) / averagePreviousLoad) * 100
     : null;
+  const recentVsContextPercent = averageContextLoad > 0
+    ? ((averageRecentLoad - averageContextLoad) / averageContextLoad) * 100
+    : null;
 
   return {
-    activeDays: recentLoads.length,
+    activeDays: activeRecentDays.length,
     averageRecentLoad,
     averagePreviousLoad,
+    averageContextLoad,
     maxRecentLoad,
+    recentLoad: roundValue(sum(recentDays), 1),
+    previousLoad: roundValue(sum(previousDays), 1),
+    contextLoad: roundValue(sum(contextDays), 1),
+    previousContextLoad: roundValue(sum(previousContextDays), 1),
     recentDeltaPercent,
+    recentVsContextPercent,
     hasRecentSpike: averageRecentLoad > 0 && maxRecentLoad >= Math.max(averageRecentLoad * 1.8, averageRecentLoad + 25),
   };
+}
+
+function buildDecisionHorizonMeta(loadModel = {}, contextLoadModel = {}) {
+  const contextChartData = Array.isArray(contextLoadModel?.chartData) ? contextLoadModel.chartData : [];
+  const contextDays = contextChartData.slice(-28);
+  const contextStart = contextDays[0]?.date || null;
+  const contextEnd = contextDays[contextDays.length - 1]?.date || null;
+  const decisionRange = loadModel?.range?.label || "7 jours";
+  const contextRange = formatCompactRange(contextStart, contextEnd);
+
+  return {
+    decisionRange,
+    contextRange,
+    label: contextRange
+      ? `Decision : ${decisionRange} · contexte : ${contextRange} · socle : 6 sem.`
+      : `Decision : ${decisionRange} · contexte : 4 a 6 sem.`,
+  };
+}
+
+function buildDecisionInsight(form = {}, fatigue = {}, charge = {}, pattern = {}) {
+  const contextDelta = pattern.recentVsContextPercent;
+
+  if (fatigue.tone === "negative") {
+    return "Fatigue recente au-dessus du socle : priorite a l'absorption du bloc.";
+  }
+
+  if (pattern.hasRecentSpike) {
+    return "Pic recent detecte : la decision reste prudente meme si le socle est correct.";
+  }
+
+  if (Number.isFinite(contextDelta) && contextDelta >= 20) {
+    return "Les 7 derniers jours sont plus denses que la tendance du mois.";
+  }
+
+  if (Number.isFinite(contextDelta) && contextDelta <= -20) {
+    return "Les 7 derniers jours sont plus legers que la tendance du mois.";
+  }
+
+  return `${form.detail} ${fatigue.detail} ${charge.detail}`.trim();
 }
 
 function buildDecisionRecommendation(summary = {}, form = {}, fatigue = {}, charge = {}, pattern = {}) {
@@ -154,8 +216,9 @@ function buildDecisionRecommendation(summary = {}, form = {}, fatigue = {}, char
     || (atlCtlRatio !== null && atlCtlRatio >= 0.96);
   const loadRisingFast = charge.tone === "warning"
     || loadDeltaPercent >= 15
-    || toNumber(pattern.recentDeltaPercent) >= 25;
-  const loadDroppingFast = loadDeltaPercent <= -15;
+    || toNumber(pattern.recentDeltaPercent) >= 25
+    || toNumber(pattern.recentVsContextPercent) >= 25;
+  const loadDroppingFast = loadDeltaPercent <= -15 && toNumber(pattern.recentVsContextPercent) <= -10;
   const recentSpike = Boolean(pattern.hasRecentSpike);
 
   if (load <= 0) {
@@ -220,9 +283,9 @@ function buildDecisionRecommendation(summary = {}, form = {}, fatigue = {}, char
   };
 }
 
-export function buildDashboardDecisionSummary(loadModel = {}) {
+export function buildDashboardDecisionSummary(loadModel = {}, contextLoadModel = loadModel) {
   const summary = loadModel?.summary;
-  const rangeLabel = loadModel?.range?.label || "selection courante";
+  const horizonMeta = buildDecisionHorizonMeta(loadModel, contextLoadModel);
 
   if (!summary) {
     return {
@@ -230,7 +293,8 @@ export function buildDashboardDecisionSummary(loadModel = {}) {
       fatigue: { label: "Indeterminee", detail: "Pas assez de donnees pour conclure.", tone: "neutral" },
       charge: { label: "A lire", detail: "Le bloc recent manque encore d'historique.", tone: "neutral" },
       recommendation: { label: "Accumuler quelques seances avant de piloter la charge.", tone: "neutral" },
-      rangeLabel,
+      rangeLabel: horizonMeta.decisionRange,
+      horizonLabel: horizonMeta.label,
       insight: "Les indicateurs de forme se stabilisent apres quelques jours de pratique tracee.",
     };
   }
@@ -238,7 +302,7 @@ export function buildDashboardDecisionSummary(loadModel = {}) {
   const form = resolveLoadStateLabel(summary.tsb);
   const fatigue = resolveFatigueLabel(summary.ctl, summary.atl, summary.tsb);
   const charge = resolveChargeTrendLabel(summary.loadDeltaPercent, summary.loadDeltaValue);
-  const recentLoadPattern = buildRecentLoadPattern(loadModel);
+  const recentLoadPattern = buildRecentLoadPattern(contextLoadModel);
   const recommendation = buildDecisionRecommendation(summary, form, fatigue, charge, recentLoadPattern);
 
   return {
@@ -246,8 +310,9 @@ export function buildDashboardDecisionSummary(loadModel = {}) {
     fatigue,
     charge,
     recommendation,
-    rangeLabel,
-    insight: `${form.detail} ${fatigue.detail}`.trim(),
+    rangeLabel: horizonMeta.decisionRange,
+    horizonLabel: horizonMeta.label,
+    insight: buildDecisionInsight(form, fatigue, charge, recentLoadPattern),
   };
 }
 

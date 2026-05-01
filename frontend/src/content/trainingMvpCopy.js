@@ -127,7 +127,7 @@ export const TRAINING_MVP_SECTION_INFO = {
   decisionSummary: buildInfoBlocks({
     role: "Te donner en quelques secondes une lecture de ta forme, de ta fatigue et d'une recommandation court terme.",
     calculation:
-      "Le bloc croise ton TSB, le ratio ATL / CTL, ta tendance de charge et tes pics recents. La recommandation reste volontairement prudente : une fatigue aigue elevee ou une charge qui monte vite bloque le feu vert qualite.",
+      "Le bloc croise trois horizons : les 7 derniers jours pour la decision immediate, les 28 derniers jours pour la tendance de charge, et le couple CTL 42 j / ATL 7 j pour situer le socle et la fatigue.",
     interpretation:
       "L'objectif est de t'aider a decider de ta prochaine seance sans remplacer tes sensations, ta planification ni les signaux de recuperation non presents dans RunNSee (sommeil, HRV, stress).",
     action:

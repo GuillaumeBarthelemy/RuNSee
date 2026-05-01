@@ -27,7 +27,7 @@ export default function DashboardDecisionSummaryCard({
             <InfoTooltip title={title} content={info} label={`Afficher l'aide pour ${title}`} />
           </div>
           <p className="card-subtitle">{subtitle}</p>
-          {safeModel.rangeLabel ? <p className="small-text">Lecture sur {safeModel.rangeLabel}.</p> : null}
+          {safeModel.horizonLabel ? <p className="small-text">{safeModel.horizonLabel}</p> : null}
         </div>
         {safeModel.insight ? (
           <div className="decision-summary-note">

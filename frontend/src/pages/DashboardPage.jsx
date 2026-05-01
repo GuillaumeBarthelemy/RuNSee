@@ -141,8 +141,8 @@ export default function DashboardPage() {
   );
 
   const dashboardDecisionModel = useMemo(
-    () => buildDashboardDecisionSummary(trainingLoadModel),
-    [trainingLoadModel],
+    () => buildDashboardDecisionSummary(trainingLoadModel, trendLoadModel),
+    [trainingLoadModel, trendLoadModel],
   );
 
   const loadVarianceModel = useMemo(
