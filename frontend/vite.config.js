@@ -31,6 +31,31 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes("node_modules")) {
+              return undefined;
+            }
+
+            if (id.includes("recharts")) {
+              return "charts";
+            }
+
+            if (id.includes("leaflet") || id.includes("react-leaflet")) {
+              return "maps";
+            }
+
+            if (id.includes("react-router-dom") || id.includes("react-dom") || id.includes("react")) {
+              return "vendor";
+            }
+
+            return "vendor";
+          },
+        },
+      },
+    },
     server: {
       host: frontendHost,
       port: frontendPort,

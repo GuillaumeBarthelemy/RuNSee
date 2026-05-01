@@ -31,7 +31,7 @@ export default function ActivityFilters({
         <div>
           <h2 className="card-title">Filtres d'analyse</h2>
           <p className="card-subtitle">
-            Affinez la selection, choisissez la logique de regroupement et conservez votre vue entre les pages.
+            Affine ta selection, choisis la logique de regroupement et garde ta vue entre les pages.
           </p>
         </div>
         <div className="filter-chip filter-summary-chip">{filteredCount} / {totalCount} activites</div>

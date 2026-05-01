@@ -1,44 +1,25 @@
-import prisma from "../config/prisma.js";
 import { getValidAccessToken } from "./strava/stravaAuth.service.js";
 import { getActivityById } from "./strava/stravaActivity.service.js";
 import { upsertDetailedActivity } from "../repositories/activity.repository.js";
+import { findStoredConnectionForActivity } from "./strava/stravaConnection.service.js";
 
-async function getActiveConnectionWithAthlete() {
-  const connection = await prisma.stravaConnection.findFirst({
-    where: { isActive: true },
-    include: { athlete: true },
-    orderBy: { connectedAt: "desc" }
-  });
+export async function enrichActivityByStravaId(appUserId, stravaActivityId) {
+  const storedEntry = await findStoredConnectionForActivity(appUserId, stravaActivityId);
 
-  if (!connection || !connection.athlete) {
-    throw new Error("No active Strava connection with athlete found.");
-  }
-
-  return connection;
-}
-
-export async function enrichActivityByStravaId(stravaActivityId) {
-  const existingActivity = await prisma.activity.findUnique({
-    where: {
-      stravaActivityId: String(stravaActivityId)
-    }
-  });
-
-  if (!existingActivity) {
+  if (!storedEntry?.activity || !storedEntry.connection) {
     throw new Error("Activity not found in local database.");
   }
 
-  const connection = await getActiveConnectionWithAthlete();
-  const accessToken = await getValidAccessToken(connection);
+  const accessToken = await getValidAccessToken(storedEntry.connection);
   const { data: detailedActivity } = await getActivityById(accessToken, stravaActivityId);
 
   const updatedActivity = await upsertDetailedActivity(
     detailedActivity,
-    connection.athlete.id
+    storedEntry.activity.athleteId
   );
 
   return {
     message: "Activity enriched successfully.",
-    activity: updatedActivity
+    activity: updatedActivity.activity,
   };
 }

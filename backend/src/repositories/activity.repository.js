@@ -50,6 +50,18 @@ function buildWhereClause(filters = {}) {
     where.athleteId = filters.athleteId;
   }
 
+  if (filters.appUserId) {
+    where.athlete = {
+      is: {
+        connection: {
+          is: {
+            appUserId: filters.appUserId,
+          },
+        },
+      },
+    };
+  }
+
   if (filters.type) {
     where.type = filters.type;
   }
@@ -138,36 +150,112 @@ function mapActivityData(activity, athleteId, isDetailed = false) {
 
     gearId: activity.gear_id ?? null,
 
-    summaryJson: isDetailed ? null : JSON.stringify(activity),
-    rawJson: isDetailed ? JSON.stringify(activity) : null,
     lastFetchedAt: new Date()
+  };
+}
+
+function buildSummaryActivityCreateData(activity, athleteId) {
+  return {
+    ...mapActivityData(activity, athleteId, false),
+    isDetailed: false,
+    summaryJson: JSON.stringify(activity),
+    rawJson: null,
+    mapPolyline: null,
+    summaryFetchedAt: new Date(),
+    detailsFetchedAt: null,
+  };
+}
+
+function buildSummaryActivityUpdateData(activity, athleteId, existingActivity = null) {
+  return {
+    ...mapActivityData(activity, athleteId, false),
+    isDetailed: Boolean(existingActivity?.isDetailed || existingActivity?.rawJson),
+    summaryJson: JSON.stringify(activity),
+    rawJson: existingActivity?.rawJson ?? null,
+    mapPolyline: existingActivity?.mapPolyline ?? null,
+    summaryFetchedAt: new Date(),
+    detailsFetchedAt: existingActivity?.detailsFetchedAt ?? null,
+  };
+}
+
+function buildDetailedActivityCreateData(activity, athleteId) {
+  return {
+    ...mapActivityData(activity, athleteId, true),
+    isDetailed: true,
+    summaryJson: JSON.stringify(activity),
+    rawJson: JSON.stringify(activity),
+    summaryFetchedAt: new Date(),
+    detailsFetchedAt: new Date(),
+  };
+}
+
+function buildDetailedActivityUpdateData(activity, athleteId, existingActivity = null) {
+  return {
+    ...mapActivityData(activity, athleteId, true),
+    isDetailed: true,
+    summaryJson: existingActivity?.summaryJson ?? JSON.stringify(activity),
+    rawJson: JSON.stringify(activity),
+    summaryFetchedAt: existingActivity?.summaryFetchedAt ?? new Date(),
+    detailsFetchedAt: new Date(),
   };
 }
 
 export async function upsertSummaryActivity(activity, athleteId) {
   const stravaActivityId = getRequiredStravaActivityId(activity);
-  const data = mapActivityData(activity, athleteId, false);
-
-  return prisma.activity.upsert({
+  const existingActivity = await prisma.activity.findUnique({
     where: {
       stravaActivityId
     },
-    update: data,
-    create: data
+    select: {
+      id: true,
+      isDetailed: true,
+      rawJson: true,
+      mapPolyline: true,
+      detailsFetchedAt: true,
+    }
   });
+  const createData = buildSummaryActivityCreateData(activity, athleteId);
+  const updateData = buildSummaryActivityUpdateData(activity, athleteId, existingActivity);
+  const savedActivity = await prisma.activity.upsert({
+    where: {
+      stravaActivityId
+    },
+    update: updateData,
+    create: createData
+  });
+
+  return {
+    operation: existingActivity ? "updated" : "created",
+    activity: savedActivity,
+  };
 }
 
 export async function upsertDetailedActivity(activity, athleteId) {
   const stravaActivityId = getRequiredStravaActivityId(activity);
-  const data = mapActivityData(activity, athleteId, true);
-
-  return prisma.activity.upsert({
+  const existingActivity = await prisma.activity.findUnique({
     where: {
       stravaActivityId
     },
-    update: data,
-    create: data
+    select: {
+      id: true,
+      summaryJson: true,
+      summaryFetchedAt: true,
+    }
   });
+  const createData = buildDetailedActivityCreateData(activity, athleteId);
+  const updateData = buildDetailedActivityUpdateData(activity, athleteId, existingActivity);
+  const savedActivity = await prisma.activity.upsert({
+    where: {
+      stravaActivityId
+    },
+    update: updateData,
+    create: createData
+  });
+
+  return {
+    operation: existingActivity ? "updated" : "created",
+    activity: savedActivity,
+  };
 }
 
 // Alias de compatibilité
@@ -203,11 +291,88 @@ export async function countActivities(filters = {}) {
   });
 }
 
+export async function countDetailedActivities(filters = {}) {
+  const where = applyStoredActivityIntegrityFilters(buildWhereClause(filters), {
+    requireStartDate: true,
+  });
+
+  return prisma.activity.count({
+    where: {
+      ...where,
+      rawJson: {
+        not: null,
+      },
+    },
+  });
+}
+
+export async function listActivitiesMissingDetails(filters = {}, options = {}) {
+  const where = applyStoredActivityIntegrityFilters(buildWhereClause(filters), {
+    requireStartDate: true,
+  });
+  const limit = Math.max(1, Number(options.limit || 25));
+  const excludeStravaActivityIds = Array.isArray(options.excludeStravaActivityIds)
+    ? options.excludeStravaActivityIds
+      .map((value) => String(value || "").trim())
+      .filter((value) => value && !INVALID_STORED_ACTIVITY_IDS.includes(value))
+    : [];
+
+  return prisma.activity.findMany({
+    where: {
+      ...where,
+      rawJson: null,
+      ...(excludeStravaActivityIds.length
+        ? {
+            stravaActivityId: {
+              notIn: excludeStravaActivityIds,
+            },
+          }
+        : {}),
+    },
+    select: {
+      id: true,
+      athleteId: true,
+      stravaActivityId: true,
+      startDate: true,
+      startDateLocal: true,
+      name: true,
+      type: true,
+      sportType: true,
+    },
+    orderBy: [
+      {
+        startDate: "desc",
+      },
+      {
+        stravaActivityId: "desc",
+      },
+    ],
+    take: limit,
+  });
+}
+
 export async function getStoredActivityByStravaId(stravaActivityId) {
   return prisma.activity.findUnique({
     where: {
       stravaActivityId: String(stravaActivityId)
     }
+  });
+}
+
+export async function getStoredActivityByStravaIdForUser(appUserId, stravaActivityId) {
+  return prisma.activity.findFirst({
+    where: applyStoredActivityIntegrityFilters({
+      stravaActivityId: String(stravaActivityId),
+      athlete: {
+        is: {
+          connection: {
+            is: {
+              appUserId,
+            },
+          },
+        },
+      },
+    }),
   });
 }
 
@@ -231,5 +396,25 @@ export async function getLatestStoredActivity(athleteId) {
     orderBy: {
       startDate: "desc"
     }
+  });
+}
+
+export async function getLatestStoredActivityForUser(appUserId) {
+  return prisma.activity.findFirst({
+    where: applyStoredActivityIntegrityFilters(buildWhereClause({ appUserId }), {
+      requireStartDate: true,
+    }),
+    select: {
+      id: true,
+      athleteId: true,
+      stravaActivityId: true,
+      startDate: true,
+      name: true,
+      type: true,
+      sportType: true,
+    },
+    orderBy: {
+      startDate: "desc",
+    },
   });
 }

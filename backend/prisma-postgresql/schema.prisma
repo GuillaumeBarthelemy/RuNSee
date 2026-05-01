@@ -8,20 +8,106 @@ datasource db {
 }
 
 model AppUser {
-  id          String             @id @default(cuid())
-  displayName String
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id              String             @id @default(cuid())
+  email           String?
+  emailNormalized String?            @unique
+  passwordHash    String?
+  displayName     String
+  role            String             @default("user")
+  status          String             @default("active")
+  lastLoginAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
+  aiAssistantConfig UserAiAssistantConfig?
   connections StravaConnection[]
+  stravaApp   UserStravaApp?
   syncJobs    SyncJob[]
   syncCursors SyncCursor[]
+  sessions    UserSession[]
+  trainingAnalyticsSettings UserTrainingAnalyticsSettings[]
+  raceObjectives UserRaceObjective[]
+}
+
+model UserRaceObjective {
+  id                     String    @id @default(cuid())
+  appUserId              String
+  appUser                AppUser   @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  name                   String
+  raceDate               DateTime
+  distanceMeters         Int
+  targetPaceSecondsPerKm Int?
+  notes                  String?
+  isActive               Boolean   @default(true)
+  archivedAt             DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@index([appUserId, isActive])
+  @@index([appUserId, raceDate])
+}
+
+model UserTrainingAnalyticsSettings {
+  id                           String   @id @default(cuid())
+  appUserId                    String
+  appUser                      AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  effectiveFrom                DateTime @default(now())
+  archivedAt                   DateTime?
+  isActive                     Boolean  @default(true)
+  heartRateMax                 Int?
+  restingHeartrate             Int?
+  biologicalSex                String?
+  heartRateZone1Max            Int?
+  heartRateZone2Max            Int?
+  heartRateZone3Max            Int?
+  heartRateZone4Max            Int?
+  intensitySourcePriority      String   @default("heart_rate")
+  efficiencyMinDurationMinutes Int      @default(20)
+  efficiencyMaxElevationPerKm  Int      @default(25)
+  efficiencyExcludeTrail       Boolean  @default(true)
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+
+  @@index([appUserId, isActive])
+  @@index([appUserId, archivedAt])
+  @@index([appUserId, effectiveFrom])
+}
+
+model UserAiAssistantConfig {
+  id              String   @id @default(cuid())
+  appUserId       String   @unique
+  appUser         AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  provider        String   @default("openai")
+  model           String   @default("gpt-4.1-mini")
+  apiKeyEncrypted String
+  systemPrompt    String?
+  enabled         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model UserSession {
+  id         String   @id @default(cuid())
+  appUserId  String
+  appUser    AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  lastSeenAt DateTime?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([appUserId, expiresAt])
 }
 
 model StravaConnection {
   id                   String    @id @default(cuid())
   appUserId            String
   appUser              AppUser   @relation(fields: [appUserId], references: [id])
+  userStravaAppId      String?
+  userStravaApp        UserStravaApp? @relation(fields: [userStravaAppId], references: [id], onDelete: SetNull)
 
   stravaAthleteId      String?   @unique
   accessToken          String?
@@ -35,6 +121,18 @@ model StravaConnection {
   updatedAt            DateTime  @updatedAt
 
   athlete              Athlete?
+}
+
+model UserStravaApp {
+  id                    String             @id @default(cuid())
+  appUserId             String             @unique
+  appUser               AppUser            @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  clientId              String
+  clientSecretEncrypted String
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  connections           StravaConnection[]
 }
 
 model Athlete {
@@ -132,6 +230,10 @@ model Activity {
   summaryFetchedAt      DateTime?
   detailsFetchedAt      DateTime?
   lastFetchedAt         DateTime?
+
+  // Effort percu manuel (Borg CR-10) + horodatage de saisie. Sert au sRPE Foster.
+  userRpe               Int?
+  userRpeUpdatedAt      DateTime?
 
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt

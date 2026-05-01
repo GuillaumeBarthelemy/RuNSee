@@ -1,4 +1,4 @@
-export default function AppShell({ eyebrow, title, subtitle, actions = null, account = null, children }) {
+export default function AppShell({ eyebrow, title, subtitle, actions = null, children }) {
   return (
     <>
       <header className="app-header">

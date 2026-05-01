@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -8,99 +9,117 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatPace } from "../utils/activityInsights.js";
+import useChartViewport from "../hooks/useChartViewport.js";
+import { buildTemporalAxisConfig } from "../utils/chartAxis.js";
+import { formatEfficiencyValue } from "../utils/trainingMetrics.js";
 import InfoTooltip from "./InfoTooltip.jsx";
 
 const GRID_STROKE = "rgba(123, 140, 163, 0.16)";
-const AXIS_TICK = { fontSize: 12, fill: "#7B8CA3" };
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
+  const entry = payload[0]?.payload || {};
+  const efficiencyEntry = payload.find((item) => item.dataKey === "efficiency");
 
   return (
     <div className="chart-tooltip">
-      <strong>{label}</strong>
-      {payload.map((item) => (
-        <div key={item.dataKey}>
-          {item.name} : {item.dataKey === "averagePaceSecondsPerKm"
-            ? formatPace(item.value)
-            : `${Math.round(Number(item.value || 0))} bpm`}
+      <strong>{entry.fullLabel || label}</strong>
+      {efficiencyEntry ? (
+        <div>
+          {efficiencyEntry.name} : {formatEfficiencyValue(efficiencyEntry.value)}
         </div>
-      ))}
+      ) : null}
+      {Number(entry?.activityCount || 0) > 0 ? (
+        <div>{entry.activityCount} activite(s) comparables</div>
+      ) : (
+        <div>Aucune activite comparable</div>
+      )}
     </div>
   );
 }
 
-export default function PerformanceTrendChart({ data = [], info = [] }) {
+function PerformanceTrendChart({
+  data = [],
+  info = [],
+  title = "Efficience allure / FC",
+  subtitle = "Lecture temporelle de la relation entre vitesse et frequence cardiaque sur les sorties comparables.",
+  granularity = "weekly",
+  insight = "",
+  detail = "",
+}) {
+  const { containerRef, chartWidth, axisTick, isCompact, showLegend } = useChartViewport();
   const safeData = Array.isArray(data) ? data : [];
-  const hasPace = safeData.some((entry) => Number(entry?.averagePaceSecondsPerKm) > 0);
-  const hasHeartrate = safeData.some((entry) => Number(entry?.averageHeartrate) > 0);
+  const hasEfficiency = safeData.some((entry) => Number(entry?.efficiency) > 0);
+  const axisConfig = buildTemporalAxisConfig({
+    data: safeData,
+    width: chartWidth,
+    granularity,
+    dateKey: "periodDate",
+    fallbackKey: "label",
+  });
+  const yAxisWidth = chartWidth > 0 && chartWidth < 520 ? 48 : chartWidth > 0 && chartWidth < 860 ? 56 : 68;
 
   return (
     <section className="card chart-card">
       <div className="card-header-row">
         <div>
           <div className="title-with-info">
-            <h2 className="card-title">Allure et FC dans le temps</h2>
-            <InfoTooltip title="Allure et FC dans le temps" content={info} label="Afficher l'aide pour l'allure et la FC dans le temps" />
+            <h2 className="card-title">{title}</h2>
+            <InfoTooltip title={title} content={info} label={`Afficher l'aide pour ${title}`} />
           </div>
-          <p className="card-subtitle">Lecture simple de l'evolution hebdomadaire de l'allure moyenne et de la frequence cardiaque.</p>
+          {subtitle ? <p className="card-subtitle">{subtitle}</p> : null}
+          {insight ? <div className="chart-insight">{insight}</div> : null}
+          {detail ? <p className="small-text chart-legend-note">{detail}</p> : null}
         </div>
       </div>
-      {safeData.length && (hasPace || hasHeartrate) ? (
-        <div className="chart-box chart-box-large">
+      {safeData.length && hasEfficiency ? (
+        <div className="chart-box chart-box-large" ref={containerRef}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={safeData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-              <XAxis dataKey="period" minTickGap={18} tick={AXIS_TICK} axisLine={false} tickLine={false} />
-              <YAxis
-                yAxisId="pace"
-                tick={AXIS_TICK}
+              <XAxis
+                dataKey={axisConfig.dataKey}
+                ticks={axisConfig.ticks}
+                tickFormatter={axisConfig.tickFormatter}
+                interval={axisConfig.interval}
+                angle={axisConfig.angle}
+                textAnchor={axisConfig.textAnchor}
+                height={axisConfig.height}
+                minTickGap={axisConfig.minTickGap}
+                tickMargin={axisConfig.tickMargin}
+                tick={axisTick}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(value) => formatPace(value)}
-                domain={["dataMin - 20", "dataMax + 20"]}
+                allowDuplicatedCategory={false}
               />
               <YAxis
-                yAxisId="hr"
-                orientation="right"
-                tick={AXIS_TICK}
+                tick={axisTick}
                 axisLine={false}
                 tickLine={false}
-                domain={["dataMin - 5", "dataMax + 5"]}
+                tickFormatter={(value) => formatEfficiencyValue(value)}
+                width={yAxisWidth}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              {hasPace ? (
-                <Line
-                  yAxisId="pace"
-                  type="monotone"
-                  dataKey="averagePaceSecondsPerKm"
-                  name="Allure moyenne"
-                  stroke="#F97316"
-                  strokeWidth={2.5}
-                  dot={false}
-                  activeDot={{ r: 4, fill: "#FB923C", stroke: "#F97316" }}
-                />
-              ) : null}
-              {hasHeartrate ? (
-                <Line
-                  yAxisId="hr"
-                  type="monotone"
-                  dataKey="averageHeartrate"
-                  name="FC moyenne"
-                  stroke="#355886"
-                  strokeWidth={2.5}
-                  dot={false}
-                  activeDot={{ r: 4, fill: "#355886", stroke: "#223A5E" }}
-                />
-              ) : null}
+              {showLegend ? <Legend /> : null}
+              <Line
+                type="monotone"
+                dataKey="efficiency"
+                name="Efficience allure / FC"
+                stroke="#355886"
+                strokeWidth={isCompact ? 2.25 : 2.5}
+                dot={false}
+                activeDot={{ r: 4, fill: "#355886", stroke: "#223A5E" }}
+                isAnimationActive={false}
+                connectNulls
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="empty-state">Pas assez de donnees pour suivre l'allure ou la FC sur la periode.</div>
+        <div className="empty-state">Pas assez de sorties course comparables pour suivre l'efficience sur la periode.</div>
       )}
     </section>
   );
 }
+
+export default memo(PerformanceTrendChart);

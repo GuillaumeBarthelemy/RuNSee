@@ -1,2 +1,4 @@
 *.zip
 deployment/windows/runtime/
+deployment/postgresql/runtime/
+deployment/postgresql/backups/

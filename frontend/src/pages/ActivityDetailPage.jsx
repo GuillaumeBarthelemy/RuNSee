@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import ActivityDetailCard from "../components/ActivityDetailCard.jsx";
-import useDashboardState from "../hooks/useDashboardState.js";
 import useRunSeeData from "../hooks/useRunSeeData.js";
 import AppShell from "../layouts/AppShell.jsx";
 import { enrichActivity, getActivityById } from "../services/activity.service.js";
-import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
 
 function extractErrorMessage(error, fallback) {
   return error?.response?.data?.details || error?.response?.data?.message || error?.message || fallback;
@@ -48,14 +46,13 @@ function getReturnLabel(pathname) {
     return "Retour aux analyses";
   }
 
-  return "Retour au tableau de bord";
+  return "Retour a Aujourd'hui";
 }
 
 export default function ActivityDetailPage() {
   const { stravaActivityId } = useParams();
   const location = useLocation();
-  const { athlete } = useRunSeeData({ includeActivities: false });
-  const { dashboardState } = useDashboardState();
+  const { trainingAnalyticsSettings } = useRunSeeData({ includeActivities: false });
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEnriching, setIsEnriching] = useState(false);
@@ -66,10 +63,6 @@ export default function ActivityDetailPage() {
   const returnPath = location.state?.returnPath || storedReturnLocation.pathname || "/";
   const returnHash = location.state?.returnHash || storedReturnLocation.hash || "";
   const returnLabel = getReturnLabel(returnPath);
-  const account = useMemo(
-    () => buildCurrentAccountModel({ athlete, options: dashboardState?.options || {} }),
-    [athlete, dashboardState?.options],
-  );
 
   const loadActivity = useCallback(async () => {
     if (!stravaActivityId) {
@@ -93,14 +86,17 @@ export default function ActivityDetailPage() {
   }, [stravaActivityId]);
 
   const handleEnrich = useCallback(async () => {
-    if (!stravaActivityId) return;
+    if (!stravaActivityId) {
+      return;
+    }
 
     try {
       setIsEnriching(true);
       setError("");
       setSuccessMessage("");
       const response = await enrichActivity(stravaActivityId);
-      setActivity(response?.activity || response || null);
+      const nextActivity = response?.activity?.activity || response?.activity || response || null;
+      setActivity(nextActivity);
       setSuccessMessage("Activite enrichie avec succes depuis Strava.");
     } catch (err) {
       setError(extractErrorMessage(err, "Erreur lors de l'enrichissement de l'activite."));
@@ -117,8 +113,7 @@ export default function ActivityDetailPage() {
     <AppShell
       eyebrow="Activite"
       title="Analyse detaillee"
-      subtitle="Carte du parcours, splits Strava et laps montre, sans perdre le contexte de navigation."
-      account={account}
+      subtitle="Carte, splits, charge de seance et efficience allure / FC sans perdre le contexte de navigation."
       actions={(
         <Link className="link-button" to={{ pathname: returnPath, hash: returnHash ? `#${returnHash}` : "" }}>
           {returnLabel}
@@ -129,7 +124,13 @@ export default function ActivityDetailPage() {
       {!loading && error ? <div className="alert alert-error section">{error}</div> : null}
       {!loading && successMessage ? <div className="alert alert-success section">{successMessage}</div> : null}
       {!loading && activity ? (
-        <ActivityDetailCard activity={activity} onEnrich={handleEnrich} isEnriching={isEnriching} />
+        <ActivityDetailCard
+          activity={activity}
+          trainingAnalyticsSettings={trainingAnalyticsSettings}
+          onEnrich={handleEnrich}
+          isEnriching={isEnriching}
+          onActivityUpdated={setActivity}
+        />
       ) : null}
       {!loading && !activity && !error ? (
         <div className="card">Aucune activite disponible pour cet identifiant.</div>

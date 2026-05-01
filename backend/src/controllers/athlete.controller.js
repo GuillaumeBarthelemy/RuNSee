@@ -1,20 +1,25 @@
 import prisma from "../config/prisma.js";
+import { getRequiredAuthUser } from "../middleware/auth.middleware.js";
 import { getValidAccessToken } from "../services/strava/stravaAuth.service.js";
 import { getLoggedInAthlete } from "../services/strava/stravaAthlete.service.js";
+import { findActiveConnectionForUser } from "../services/strava/stravaConnection.service.js";
+
+async function getCurrentConnectionWithAthlete(appUserId) {
+  return findActiveConnectionForUser(appUserId, { includeAthlete: true });
+}
 
 export async function getCurrentAthlete(req, res, next) {
   try {
-    const athlete = await prisma.athlete.findFirst({
-      orderBy: { createdAt: "desc" },
-    });
+    const user = getRequiredAuthUser(req);
+    const connection = await getCurrentConnectionWithAthlete(user.id);
 
-    if (!athlete) {
+    if (!connection?.athlete) {
       return res.status(404).json({
-        message: "Aucun athlète Strava connecté.",
+        message: "Aucun athlete Strava connecte pour ce compte.",
       });
     }
 
-    return res.json(athlete);
+    return res.json(connection.athlete);
   } catch (error) {
     next(error);
   }
@@ -22,14 +27,12 @@ export async function getCurrentAthlete(req, res, next) {
 
 export async function refreshCurrentAthlete(req, res, next) {
   try {
-    const connection = await prisma.stravaConnection.findFirst({
-      where: { isActive: true },
-      orderBy: { connectedAt: "desc" },
-    });
+    const user = getRequiredAuthUser(req);
+    const connection = await getCurrentConnectionWithAthlete(user.id);
 
     if (!connection) {
       return res.status(404).json({
-        message: "Aucune connexion Strava active.",
+        message: "Aucune connexion Strava active pour ce compte.",
       });
     }
 

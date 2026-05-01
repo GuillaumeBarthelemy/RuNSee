@@ -1,21 +1,21 @@
+import { getRequiredAuthUser } from "../middleware/auth.middleware.js";
 import {
-  createSyncJob,
-  startSyncJobInBackground,
   getCurrentSyncJob,
   getSyncJobById,
   listSyncJobs,
   getSyncSummary,
+  queueSyncJobForUser,
 } from "../services/sync/syncJob.service.js";
 
 export async function queueHistoricalSync(req, res, next) {
   try {
-    const job = await createSyncJob("historical", "ui");
-    startSyncJobInBackground(job.id);
+    const user = getRequiredAuthUser(req);
+    const job = await queueSyncJobForUser(user.id, "historical", "ui");
 
     return res.status(202).json({
       jobId: job.id,
       status: job.status,
-      message: "Import historique lancé en arrière-plan.",
+      message: "Import historique lance en arriere-plan.",
     });
   } catch (error) {
     next(error);
@@ -24,13 +24,28 @@ export async function queueHistoricalSync(req, res, next) {
 
 export async function queueIncrementalSync(req, res, next) {
   try {
-    const job = await createSyncJob("incremental", "ui");
-    startSyncJobInBackground(job.id);
+    const user = getRequiredAuthUser(req);
+    const job = await queueSyncJobForUser(user.id, "incremental", "ui");
 
     return res.status(202).json({
       jobId: job.id,
       status: job.status,
-      message: "Synchronisation incrémentale lancée en arrière-plan.",
+      message: "Synchronisation incrementale lancee en arriere-plan.",
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function queueDetailBackfill(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const job = await queueSyncJobForUser(user.id, "detail_backfill", "ui");
+
+    return res.status(202).json({
+      jobId: job.id,
+      status: job.status,
+      message: "Enrichissement detaille historique lance en arriere-plan.",
     });
   } catch (error) {
     next(error);
@@ -39,7 +54,8 @@ export async function queueIncrementalSync(req, res, next) {
 
 export async function getCurrentJob(req, res, next) {
   try {
-    const job = await getCurrentSyncJob();
+    const user = getRequiredAuthUser(req);
+    const job = await getCurrentSyncJob(user.id);
 
     if (!job) {
       return res.status(404).json({
@@ -55,8 +71,9 @@ export async function getCurrentJob(req, res, next) {
 
 export async function getJobById(req, res, next) {
   try {
+    const user = getRequiredAuthUser(req);
     const { jobId } = req.params;
-    const job = await getSyncJobById(jobId);
+    const job = await getSyncJobById(user.id, jobId);
 
     if (!job) {
       return res.status(404).json({
@@ -72,8 +89,9 @@ export async function getJobById(req, res, next) {
 
 export async function getJobs(req, res, next) {
   try {
+    const user = getRequiredAuthUser(req);
     const limit = Number(req.query.limit || 20);
-    const jobs = await listSyncJobs(limit);
+    const jobs = await listSyncJobs(user.id, limit);
 
     return res.json(jobs);
   } catch (error) {
@@ -83,7 +101,8 @@ export async function getJobs(req, res, next) {
 
 export async function getSummary(req, res, next) {
   try {
-    const summary = await getSyncSummary();
+    const user = getRequiredAuthUser(req);
+    const summary = await getSyncSummary(user.id);
     return res.json(summary);
   } catch (error) {
     next(error);

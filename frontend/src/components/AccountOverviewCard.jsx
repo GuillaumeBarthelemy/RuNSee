@@ -2,8 +2,15 @@ import { formatAccountDate } from "../utils/accountPresentation.js";
 
 const noop = () => {};
 
-export default function AccountOverviewCard({ account, onForgotPassword = noop }) {
+export default function AccountOverviewCard({
+  account,
+  onForgotPassword = noop,
+  onDisconnectStrava = noop,
+  onLogout = noop,
+  isPending = false,
+}) {
   const safeAccount = account || {};
+  const stravaConnected = Boolean(safeAccount.stravaConnected);
 
   return (
     <section className="card card-accent" id="mon-compte">
@@ -63,8 +70,19 @@ export default function AccountOverviewCard({ account, onForgotPassword = noop }
       </div>
 
       <div className="actions-row top-gap-sm">
-        <button type="button" className="button button-outline" onClick={onForgotPassword}>
-          Mot de passe oublie
+        <button type="button" className="button button-outline" onClick={onForgotPassword} disabled={isPending}>
+          Changer le mot de passe
+        </button>
+        <button
+          type="button"
+          className="button button-outline"
+          onClick={onDisconnectStrava}
+          disabled={isPending || !stravaConnected}
+        >
+          Delier Strava
+        </button>
+        <button type="button" className="button button-dark" onClick={onLogout} disabled={isPending}>
+          Se deconnecter
         </button>
       </div>
     </section>

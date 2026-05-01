@@ -1,4 +1,5 @@
 const DEFAULT_PRESET = "90d";
+const SUPPORTED_PRESETS = new Set(["7d", "90d", "6m", "12m", "all"]);
 
 function toDate(value) {
   if (!value) return null;
@@ -35,24 +36,42 @@ export function parseDateInputValue(value) {
   return parsed ? startOfDay(parsed) : null;
 }
 
-function buildPresetRange(preset, endDate) {
+export function getFirstActivityDate(activities = []) {
+  if (!Array.isArray(activities) || !activities.length) {
+    return null;
+  }
+
+  return activities.reduce((earliest, activity) => {
+    const activityDate = toDate(activity?.startDateLocal || activity?.startDate);
+    if (!activityDate) {
+      return earliest;
+    }
+
+    if (!earliest || activityDate < earliest) {
+      return activityDate;
+    }
+
+    return earliest;
+  }, null);
+}
+
+function buildPresetRange(preset, endDate, firstActivityDate = null) {
   const end = startOfDay(endDate);
+  const firstActivity = toDate(firstActivityDate);
 
   switch (preset) {
     case "7d":
       return { start: addDays(end, -6), end };
-    case "30d":
-      return { start: addDays(end, -29), end };
     case "90d":
       return { start: addDays(end, -89), end };
     case "6m":
       return { start: addDays(shiftMonths(end, -6), 1), end };
     case "12m":
       return { start: addDays(shiftMonths(end, -12), 1), end };
-    case "ytd":
-      return { start: new Date(end.getFullYear(), 0, 1), end };
+    case "all":
+      return { start: firstActivity ? startOfDay(firstActivity) : addDays(end, -729), end };
     default:
-      return buildPresetRange(DEFAULT_PRESET, end);
+      return buildPresetRange(DEFAULT_PRESET, end, firstActivity);
   }
 }
 
@@ -76,16 +95,14 @@ export function getAnalyticsPresetLabel(preset) {
   switch (preset) {
     case "7d":
       return "7 j";
-    case "30d":
-      return "30 j";
     case "90d":
       return "90 j";
     case "6m":
       return "6 mois";
     case "12m":
       return "12 mois";
-    case "ytd":
-      return "Annee en cours";
+    case "all":
+      return "Tout l'historique";
     case "custom":
       return "Personnalisee";
     default:
@@ -99,6 +116,7 @@ export function buildAnalyticsDateRange(options = {}) {
     customDateFrom = "",
     customDateTo = "",
     now = new Date(),
+    firstActivityDate = null,
   } = options;
 
   if (preset === "custom") {
@@ -121,10 +139,11 @@ export function buildAnalyticsDateRange(options = {}) {
     }
   }
 
-  const fallbackRange = buildPresetRange(preset, now);
+  const resolvedPreset = SUPPORTED_PRESETS.has(preset) ? preset : DEFAULT_PRESET;
+  const fallbackRange = buildPresetRange(resolvedPreset, now, firstActivityDate);
 
   return {
-    preset: preset === "custom" ? DEFAULT_PRESET : preset,
+    preset: preset === "custom" ? DEFAULT_PRESET : resolvedPreset,
     start: fallbackRange.start,
     end: fallbackRange.end,
     days: Math.max(1, Math.round((fallbackRange.end - fallbackRange.start) / 86400000) + 1),
@@ -172,11 +191,9 @@ export function getAnalyticsGranularity(range) {
 
 export const ANALYTICS_PERIOD_PRESETS = [
   { value: "7d", label: "7 j" },
-  { value: "30d", label: "30 j" },
   { value: "90d", label: "90 j" },
   { value: "6m", label: "6 mois" },
   { value: "12m", label: "12 mois" },
-  { value: "ytd", label: "Annee en cours" },
+  { value: "all", label: "Tout l'historique" },
   { value: "custom", label: "Personnalisee" },
 ];
-

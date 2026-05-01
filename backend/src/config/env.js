@@ -3,6 +3,24 @@ function parseNumber(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function parseBoolean(value, fallback = false) {
+  const candidate = String(value || "").trim().toLowerCase();
+
+  if (!candidate) {
+    return fallback;
+  }
+
+  if (["1", "true", "yes", "on"].includes(candidate)) {
+    return true;
+  }
+
+  if (["0", "false", "no", "off"].includes(candidate)) {
+    return false;
+  }
+
+  return fallback;
+}
+
 function normalizeUrl(value, fallback) {
   const candidate = String(value || fallback || "")
     .trim()
@@ -71,6 +89,18 @@ const frontendAllowedOrigins = parseOrigins(
   [localAppUrl, publicAppUrl]
 );
 const databaseProvider = resolveDatabaseProvider(process.env.DATABASE_URL);
+const sessionCookieName = String(
+  process.env.SESSION_COOKIE_NAME || "runsee_session"
+).trim() || "runsee_session";
+const sessionTtlDays = Math.max(
+  1,
+  parseNumber(process.env.SESSION_TTL_DAYS, 30)
+);
+const isSecureCookies =
+  process.env.SESSION_COOKIE_SECURE === "true" ||
+  publicApiUrl.startsWith("https://") ||
+  publicAppUrl.startsWith("https://") ||
+  (process.env.NODE_ENV || "development") === "production";
 
 const env = {
   nodeEnv: process.env.NODE_ENV || "development",
@@ -87,12 +117,45 @@ const env = {
   frontendUrl: publicAppUrl,
   frontendAllowedOrigins,
   databaseProvider,
+  sessionCookieName,
+  sessionTtlDays,
+  isSecureCookies,
 
   stravaClientId: process.env.STRAVA_CLIENT_ID || "",
   stravaClientSecret: process.env.STRAVA_CLIENT_SECRET || "",
   stravaRedirectUri: normalizeUrl(process.env.STRAVA_REDIRECT_URI, ""),
+  stravaAppEncryptionKey:
+    String(process.env.RUNSEE_STRAVA_APP_ENCRYPTION_KEY || "").trim(),
+  stravaTokenEncryptionKey:
+    String(
+      process.env.RUNSEE_STRAVA_TOKEN_ENCRYPTION_KEY ||
+      process.env.RUNSEE_STRAVA_APP_ENCRYPTION_KEY ||
+      ""
+    ).trim(),
+  stravaApprovalPrompt:
+    String(process.env.STRAVA_APPROVAL_PROMPT || "force").trim() || "force",
   stravaScope:
     process.env.STRAVA_SCOPE || "read,profile:read_all,activity:read_all",
+  aiAssistantEncryptionKey:
+    String(process.env.RUNSEE_AI_ASSISTANT_ENCRYPTION_KEY || "").trim(),
+  openaiResponsesBaseUrl: normalizeUrl(
+    process.env.OPENAI_RESPONSES_BASE_URL,
+    "https://api.openai.com/v1"
+  ),
+  openaiDefaultModel:
+    String(process.env.OPENAI_DEFAULT_MODEL || "gpt-4.1-mini").trim() || "gpt-4.1-mini",
+  autoIncrementalSyncEnabled: parseBoolean(
+    process.env.AUTO_INCREMENTAL_SYNC_ENABLED,
+    true,
+  ),
+  autoIncrementalSyncIntervalMinutes: Math.max(
+    5,
+    parseNumber(process.env.AUTO_INCREMENTAL_SYNC_INTERVAL_MINUTES, 60),
+  ),
+  autoIncrementalSyncStartupDelaySeconds: Math.max(
+    0,
+    parseNumber(process.env.AUTO_INCREMENTAL_SYNC_STARTUP_DELAY_SECONDS, 60),
+  ),
 };
 
 export default env;

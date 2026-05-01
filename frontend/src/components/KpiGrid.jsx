@@ -20,14 +20,20 @@ function buildDefaultItems(kpis = {}) {
   ];
 }
 
-export default function KpiGrid({ kpis = {}, items = null, className = "kpi-grid" }) {
+export default function KpiGrid({
+  kpis = {},
+  items = null,
+  className = "kpi-grid",
+  showHints = true,
+  showMeta = true,
+}) {
   const safeItems = Array.isArray(items) && items.length ? items : buildDefaultItems(kpis);
 
   return (
     <section className={`grid ${className}`.trim()}>
       {safeItems.map((item) => (
         <div
-          className={`metric-card premium-metric ${item.compact ? "compact-metric" : ""}`.trim()}
+          className={`metric-card premium-metric ${item.compact ? "compact-metric" : ""} ${item.cardClassName || ""}`.trim()}
           key={item.label}
         >
           <div className="metric-label-row">
@@ -46,7 +52,8 @@ export default function KpiGrid({ kpis = {}, items = null, className = "kpi-grid
               {item.trend}
             </div>
           ) : null}
-          {item.hint ? <div className="metric-secondary">{item.hint}</div> : null}
+          {showHints && item.hint ? <div className="metric-secondary">{item.hint}</div> : null}
+          {showMeta && item.meta ? <div className="metric-meta">{item.meta}</div> : null}
         </div>
       ))}
     </section>

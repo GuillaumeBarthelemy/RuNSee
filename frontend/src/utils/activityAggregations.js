@@ -1,3 +1,6 @@
+import { startOfWeek as resolveWeekStart } from "./weekStart.js";
+import { estimateLoadValue as estimateTrainingLoadValue } from "./loadEstimation.js";
+
 function toNumber(value) {
   return Number.isFinite(Number(value)) ? Number(value) : 0;
 }
@@ -16,17 +19,20 @@ function startOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
+function endOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
 function addMonths(date, months) {
   return new Date(date.getFullYear(), date.getMonth() + months, 1);
 }
 
-function startOfWeek(date) {
-  const dayOffset = (date.getDay() + 6) % 7;
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() - dayOffset);
-}
-
 function addDays(date, days) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function formatMonthLabel(date) {
@@ -36,6 +42,14 @@ function formatMonthLabel(date) {
 function formatWeekLabel(date) {
   const end = addDays(date, 6);
   return `${date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })} - ${end.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}`;
+}
+
+function formatCoverageLabel(start, end) {
+  if (!(start instanceof Date) || Number.isNaN(start.getTime()) || !(end instanceof Date) || Number.isNaN(end.getTime())) {
+    return "";
+  }
+
+  return `${start.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })} - ${end.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}`;
 }
 
 function formatDayKey(date) {
@@ -49,6 +63,198 @@ function formatMonthKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
+}
+
+function formatDayMonthLabel(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+}
+
+function normalizeGroupingMode(value) {
+  return value === "calendar" ? "calendar" : "rolling";
+}
+
+function getEndOfWeek(date, weekStartsOn = "monday") {
+  return addDays(resolveWeekStart(date, weekStartsOn), 6);
+}
+
+function shiftMonthClamped(date, months) {
+  const source = startOfDay(date);
+  const targetMonthStart = new Date(source.getFullYear(), source.getMonth() + months, 1);
+  const targetMonthEnd = endOfMonth(targetMonthStart);
+  const targetDay = Math.min(source.getDate(), targetMonthEnd.getDate());
+
+  return new Date(targetMonthStart.getFullYear(), targetMonthStart.getMonth(), targetDay);
+}
+
+export function buildWeeklyBuckets(options = {}) {
+  const weeks = Math.max(1, Number(options.weeks || 12));
+  const weekStartsOn = options.weekStartsOn || "monday";
+  const grouping = normalizeGroupingMode(options.grouping || options.viewMode);
+  const explicitStart = options.startDate ? startOfDay(toDate(options.startDate)) : null;
+  const explicitEnd = options.endDate ? startOfDay(toDate(options.endDate)) : null;
+  const referenceEnd = explicitEnd || startOfDay(new Date());
+
+  if (!(referenceEnd instanceof Date) || Number.isNaN(referenceEnd.getTime())) {
+    return [];
+  }
+
+  if (grouping === "calendar") {
+    const endWeekStart = resolveWeekStart(referenceEnd, weekStartsOn);
+    const startWeekStart = explicitStart
+      ? resolveWeekStart(explicitStart, weekStartsOn)
+      : addDays(endWeekStart, -((weeks - 1) * 7));
+    const weekCount = explicitStart
+      ? Math.max(1, Math.round((endWeekStart - startWeekStart) / (7 * 86400000)) + 1)
+      : weeks;
+
+    return Array.from({ length: weekCount }, (_, index) => {
+      const periodStart = addDays(startWeekStart, index * 7);
+      const periodEnd = getEndOfWeek(periodStart, weekStartsOn);
+      const coverageStart = explicitStart && explicitStart > periodStart && explicitStart <= periodEnd
+        ? explicitStart
+        : periodStart;
+      const coverageEnd = referenceEnd < periodEnd ? referenceEnd : periodEnd;
+      const isPartial = coverageStart.getTime() !== periodStart.getTime() || coverageEnd.getTime() !== periodEnd.getTime();
+
+      return {
+        grouping,
+        periodStart,
+        periodEnd,
+        coverageStart,
+        coverageEnd,
+        periodDate: formatDayKey(periodStart),
+        period: formatWeekLabel(periodStart),
+        shortLabel: formatDayMonthLabel(periodStart),
+        coverageLabel: isPartial ? formatCoverageLabel(coverageStart, coverageEnd) : "",
+        isPartial,
+      };
+    });
+  }
+
+  const buckets = [];
+  let currentEnd = referenceEnd;
+
+  while (currentEnd) {
+    const periodStart = addDays(currentEnd, -6);
+    const coverageStart = explicitStart && explicitStart > periodStart ? explicitStart : periodStart;
+    const coverageEnd = currentEnd;
+    const isPartial = coverageStart.getTime() !== periodStart.getTime();
+
+    buckets.push({
+      grouping,
+      periodStart,
+      periodEnd: currentEnd,
+      coverageStart,
+      coverageEnd,
+      periodDate: formatDayKey(currentEnd),
+      period: formatCoverageLabel(coverageStart, coverageEnd),
+      shortLabel: formatDayMonthLabel(currentEnd),
+      coverageLabel: formatCoverageLabel(coverageStart, coverageEnd),
+      isPartial,
+    });
+
+    if (!explicitStart && buckets.length >= weeks) {
+      break;
+    }
+
+    if (explicitStart && periodStart <= explicitStart) {
+      break;
+    }
+
+    currentEnd = addDays(periodStart, -1);
+  }
+
+  return buckets.reverse();
+}
+
+export function buildMonthlyBuckets(options = {}) {
+  const months = Math.max(1, Number(options.months || 6));
+  const grouping = normalizeGroupingMode(options.grouping || options.viewMode);
+  const explicitStart = options.startDate ? startOfDay(toDate(options.startDate)) : null;
+  const explicitEnd = options.endDate ? startOfDay(toDate(options.endDate)) : null;
+  const referenceEnd = explicitEnd || startOfDay(new Date());
+
+  if (!(referenceEnd instanceof Date) || Number.isNaN(referenceEnd.getTime())) {
+    return [];
+  }
+
+  if (grouping === "calendar") {
+    const endMonthStart = startOfMonth(referenceEnd);
+    const startMonthStart = explicitStart
+      ? startOfMonth(explicitStart)
+      : addMonths(endMonthStart, -(months - 1));
+    const monthCount = explicitStart
+      ? Math.max(
+        1,
+        ((endMonthStart.getFullYear() - startMonthStart.getFullYear()) * 12)
+          + (endMonthStart.getMonth() - startMonthStart.getMonth())
+          + 1,
+      )
+      : months;
+
+    return Array.from({ length: monthCount }, (_, index) => {
+      const periodStart = addMonths(startMonthStart, index);
+      const periodEnd = endOfMonth(periodStart);
+      const coverageStart = explicitStart && explicitStart > periodStart && explicitStart <= periodEnd
+        ? explicitStart
+        : periodStart;
+      const coverageEnd = referenceEnd < periodEnd ? referenceEnd : periodEnd;
+      const isPartial = coverageStart.getTime() !== periodStart.getTime() || coverageEnd.getTime() !== periodEnd.getTime();
+
+      return {
+        grouping,
+        periodStart,
+        periodEnd,
+        coverageStart,
+        coverageEnd,
+        periodDate: formatMonthKey(periodStart),
+        period: formatMonthLabel(periodStart),
+        shortLabel: periodStart.toLocaleDateString("fr-FR", { month: "short" }),
+        coverageLabel: isPartial ? formatCoverageLabel(coverageStart, coverageEnd) : "",
+        isPartial,
+      };
+    });
+  }
+
+  const buckets = [];
+  let currentEnd = referenceEnd;
+
+  while (currentEnd) {
+    const previousAlignedEnd = shiftMonthClamped(currentEnd, -1);
+    const periodStart = addDays(previousAlignedEnd, 1);
+    const coverageStart = explicitStart && explicitStart > periodStart ? explicitStart : periodStart;
+    const coverageEnd = currentEnd;
+    const isPartial = coverageStart.getTime() !== periodStart.getTime();
+
+    buckets.push({
+      grouping,
+      periodStart,
+      periodEnd: currentEnd,
+      coverageStart,
+      coverageEnd,
+      periodDate: formatDayKey(currentEnd),
+      period: formatCoverageLabel(coverageStart, coverageEnd),
+      shortLabel: formatDayMonthLabel(currentEnd),
+      coverageLabel: formatCoverageLabel(coverageStart, coverageEnd),
+      isPartial,
+    });
+
+    if (!explicitStart && buckets.length >= months) {
+      break;
+    }
+
+    if (explicitStart && periodStart <= explicitStart) {
+      break;
+    }
+
+    currentEnd = addDays(periodStart, -1);
+  }
+
+  return buckets.reverse();
 }
 
 function getRoundedMetricValue(value, metric) {
@@ -115,6 +321,8 @@ const SPORT_TYPE_LABELS = {
   snowshoe: "Raquettes",
   rockclimbing: "Escalade",
 };
+
+export const RUN_SPORT_GROUP_LABEL = "Course à pied / trail";
 
 const METRIC_ALIASES = {
   distance: "distanceKm",
@@ -187,16 +395,8 @@ export function normalizeElevationMeters(value) {
   return toNumber(value);
 }
 
-export function estimateLoadValue(activity = {}) {
-  const sufferScore = toNumber(activity?.sufferScore);
-
-  if (sufferScore > 0) {
-    return sufferScore;
-  }
-
-  const distanceKm = normalizeDistanceKm(activity?.distance);
-  const elevationGain = normalizeElevationMeters(activity?.totalElevationGain);
-  return distanceKm + (elevationGain / 100);
+export function estimateLoadValue(activity = {}, settings = {}) {
+  return estimateTrainingLoadValue(activity, settings);
 }
 
 function formatSportTypeFallback(value) {
@@ -229,10 +429,10 @@ export function getDisplaySportLabel(activity = {}, options = {}) {
   const trailHint = /trail|sentier|montagne|col|crête|rando-course/.test(`${name} ${description}`);
 
   if (!groupSports) return getSportTypeLabel(safeActivity.sportType || safeActivity.type || "Autre");
-  if (["trailrun"].includes(sportType)) return "Course à pied / trail";
+  if (["trailrun"].includes(sportType)) return RUN_SPORT_GROUP_LABEL;
   if (["run", "virtualrun"].includes(sportType)) {
-    if (trailHint || elevationPerKm >= 15) return "Course à pied / trail";
-    return "Course à pied / trail";
+    if (trailHint || elevationPerKm >= 15) return RUN_SPORT_GROUP_LABEL;
+    return RUN_SPORT_GROUP_LABEL;
   }
   if (["walk", "hike", "nordicski", "snowshoe"].includes(sportType)) return "Marche / randonnée";
   if (["ride", "virtualride", "ebikeride", "handcycle", "velomobile", "gravelride", "mountainbikeride"].includes(sportType)) return "Vélo";
@@ -244,13 +444,13 @@ export function getDisplaySportLabel(activity = {}, options = {}) {
   return getSportTypeLabel(safeActivity.sportType || safeActivity.type || "Autre");
 }
 
-function metricValue(activity, metric) {
+function metricValue(activity, metric, options = {}) {
   const safeActivity = activity || {};
   switch (normalizeMetric(metric)) {
     case "distanceKm":
       return normalizeDistanceKm(safeActivity.distance);
     case "load":
-      return estimateLoadValue(safeActivity);
+      return estimateLoadValue(safeActivity, options.settings || options.trainingAnalyticsSettings || {});
     case "elevationGain":
       return normalizeElevationMeters(safeActivity.totalElevationGain);
     case "movingHours":
@@ -300,34 +500,36 @@ export function buildMonthlySeries(activities, options = {}) {
   if (!items.length) return [];
 
   const metric = normalizeMetric(options.metric || "distanceKm");
-  const explicitStart = toDate(options.startDate);
-  const explicitEnd = toDate(options.endDate);
-  const endDate = startOfMonth(explicitEnd || getLatestDate(items));
-  const startDate = explicitStart
-    ? startOfMonth(explicitStart)
-    : addMonths(endDate, -(Math.max(1, Number(options.months || 6)) - 1));
-  const months = Math.max(
-    1,
-    ((endDate.getFullYear() - startDate.getFullYear()) * 12)
-      + (endDate.getMonth() - startDate.getMonth())
-      + 1,
-  );
-  const monthMap = new Map();
+  const buckets = buildMonthlyBuckets({
+    startDate: options.startDate,
+    endDate: options.endDate || getLatestDate(items),
+    months: options.months,
+    grouping: options.grouping || options.viewMode,
+  });
 
-  for (const activity of items) {
-    const month = startOfMonth(activity.__date);
-    if (month < startDate || month > endDate) continue;
-    const key = formatMonthKey(month);
-    monthMap.set(key, (monthMap.get(key) || 0) + metricValue(activity, metric));
-  }
+  return buckets.map((bucket) => {
+    const total = items.reduce((sum, activity) => {
+      const activityDate = startOfDay(activity.__date);
 
-  return Array.from({ length: months }, (_, index) => {
-    const current = addMonths(startDate, index);
-    const key = formatMonthKey(current);
-    const value = getRoundedMetricValue(monthMap.get(key) || 0, metric);
+      if (activityDate < bucket.coverageStart || activityDate > bucket.coverageEnd) {
+        return sum;
+      }
+
+      return sum + metricValue(activity, metric, options);
+    }, 0);
+    const value = getRoundedMetricValue(total, metric);
+
     return {
-      period: formatMonthLabel(current),
-      periodDate: key,
+      period: bucket.period,
+      shortLabel: bucket.shortLabel,
+      periodDate: bucket.periodDate,
+      periodStart: bucket.periodStart,
+      periodEnd: bucket.periodEnd,
+      coverageStart: bucket.coverageStart,
+      coverageEnd: bucket.coverageEnd,
+      coverageLabel: bucket.coverageLabel,
+      isPartial: bucket.isPartial,
+      grouping: bucket.grouping,
       value,
       [metric]: value,
     };
@@ -343,29 +545,37 @@ export function buildWeeklySeries(activities, options = {}) {
   if (!items.length) return [];
 
   const metric = normalizeMetric(options.metric || "distanceKm");
-  const explicitStart = toDate(options.startDate);
-  const explicitEnd = toDate(options.endDate);
-  const endDate = startOfWeek(explicitEnd || getLatestDate(items));
-  const startDate = explicitStart
-    ? startOfWeek(explicitStart)
-    : addDays(endDate, -((Math.max(1, Number(options.weeks || 12)) - 1) * 7));
-  const weeks = Math.max(1, Math.round((endDate - startDate) / (7 * 86400000)) + 1);
-  const weekMap = new Map();
+  const buckets = buildWeeklyBuckets({
+    startDate: options.startDate,
+    endDate: options.endDate || getLatestDate(items),
+    weeks: options.weeks,
+    weekStartsOn: options.weekStartsOn,
+    grouping: options.grouping || options.viewMode,
+  });
 
-  for (const activity of items) {
-    const weekStart = startOfWeek(activity.__date);
-    if (weekStart < startDate || weekStart > endDate) continue;
-    const key = formatDayKey(weekStart);
-    weekMap.set(key, (weekMap.get(key) || 0) + metricValue(activity, metric));
-  }
+  return buckets.map((bucket) => {
+    const total = items.reduce((sum, activity) => {
+      const activityDate = startOfDay(activity.__date);
 
-  return Array.from({ length: weeks }, (_, index) => {
-    const current = addDays(startDate, index * 7);
-    const key = formatDayKey(current);
-    const value = getRoundedMetricValue(weekMap.get(key) || 0, metric);
+      if (activityDate < bucket.coverageStart || activityDate > bucket.coverageEnd) {
+        return sum;
+      }
+
+      return sum + metricValue(activity, metric, options);
+    }, 0);
+    const value = getRoundedMetricValue(total, metric);
+
     return {
-      period: formatWeekLabel(current),
-      periodDate: key,
+      period: bucket.period,
+      shortLabel: bucket.shortLabel,
+      periodDate: bucket.periodDate,
+      weekStart: bucket.periodStart,
+      weekEnd: bucket.periodEnd,
+      coverageStart: bucket.coverageStart,
+      coverageEnd: bucket.coverageEnd,
+      coverageLabel: bucket.coverageLabel,
+      isPartial: bucket.isPartial,
+      grouping: bucket.grouping,
       value,
       [metric]: value,
       distanceKm: metric === "distanceKm" ? value : undefined,
@@ -384,7 +594,7 @@ export function buildWeekdayDistribution(activities, options = {}) {
 
   for (const activity of items) {
     const dayIndex = (activity.__date.getDay() + 6) % 7;
-    buckets[dayIndex].value += metricValue(activity, metric);
+    buckets[dayIndex].value += metricValue(activity, metric, options);
   }
 
   return buckets.map((bucket) => ({
@@ -420,7 +630,7 @@ export function buildRollingLoadSeries(activities, options = {}) {
 
   for (const item of items) {
     const key = formatDayKey(item.__date);
-    dailyMap.set(key, (dailyMap.get(key) || 0) + metricValue(item, metric));
+    dailyMap.set(key, (dailyMap.get(key) || 0) + metricValue(item, metric, options));
   }
 
   return Array.from({ length: days }, (_, index) => {

@@ -14,3 +14,8 @@ export async function enrichActivity(stravaActivityId) {
   const response = await api.post(`/activities/${stravaActivityId}/enrich`);
   return response.data;
 }
+
+export async function updateActivityRpe(stravaActivityId, userRpe) {
+  const response = await api.patch(`/activities/${stravaActivityId}/rpe`, { userRpe });
+  return response.data;
+}

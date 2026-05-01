@@ -1,155 +1,54 @@
 import { useMemo } from "react";
-import AnalyticsFiltersBar from "../components/AnalyticsFiltersBar.jsx";
-import AppShell from "../layouts/AppShell.jsx";
-import KpiGrid from "../components/KpiGrid.jsx";
-import WeeklyVolumeChart from "../components/WeeklyVolumeChart.jsx";
-import PerformanceTrendChart from "../components/PerformanceTrendChart.jsx";
+import DashboardDecisionSummaryCard from "../components/DashboardDecisionSummaryCard.jsx";
 import RecentActivitiesCard from "../components/RecentActivitiesCard.jsx";
+import TodayAlertBanner from "../components/TodayAlertBanner.jsx";
+import TodayFormCards from "../components/TodayFormCards.jsx";
+import TodayHeader from "../components/TodayHeader.jsx";
+import TodaySecondaryRow from "../components/TodaySecondaryRow.jsx";
+import TodaySnapshotToday from "../components/TodaySnapshotToday.jsx";
+import TodayVolumeStrip from "../components/TodayVolumeStrip.jsx";
+import { TRAINING_MVP_SECTION_INFO } from "../content/trainingMvpCopy.js";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
-import { filterActivities } from "../utils/activityAggregations.js";
+import useRaceObjectives from "../hooks/useRaceObjectives.js";
+import AppShell from "../layouts/AppShell.jsx";
+import { startIncrementalSync } from "../services/sync.service.js";
+import { filterActivities, getAvailableSportGroups, RUN_SPORT_GROUP_LABEL } from "../utils/activityAggregations.js";
+import { buildActivityItems, buildBestEffortRecords, buildRegularitySummary } from "../utils/activityInsights.js";
 import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
-import { buildDashboardSnapshot, formatPace } from "../utils/activityInsights.js";
-import { buildAnalyticsDateRange, getAnalyticsPresetLabel } from "../utils/analyticsPeriods.js";
+import { buildAnalyticsDateRange } from "../utils/analyticsPeriods.js";
+import { buildLoadDynamicsProfile } from "../utils/loadDynamics.js";
+import { buildVdotProfile } from "../utils/runningPerformance.js";
+import { buildTodayAlerts } from "../utils/todayAlerts.js";
+import {
+  buildConsolidatedIntensityDistributionModel,
+  buildEfficiencyHistoryModel,
+  buildTrainingLoadStateModel,
+} from "../utils/trainingMetrics.js";
+import { buildIntensityPolarizationProfile, buildLoadVarianceProfile } from "../utils/trainingIntelligence.js";
+import {
+  buildDashboardDecisionSummary,
+  decorateRecentActivities,
+} from "../utils/performanceNarratives.js";
 
-function buildTooltip({ role, calculation, interpretation, extra = "" }) {
-  return [
-    { label: "En bref", text: role },
-    { label: "Calcul", text: calculation },
-    { label: "Lecture", text: extra ? `${interpretation} ${extra}` : interpretation },
-  ].filter(Boolean);
+const TODAY_PERIOD_PRESET = "7d";
+const TODAY_VOLUME_VIEW_MODE = "rolling";
+
+function toDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-const DASHBOARD_SECTION_INFO = {
-  filters: buildTooltip({
-    role: "Piloter tout le tableau de bord avec une seule periode et un seul perimetre sport.",
-    calculation:
-      "Tous les KPI et graphiques du tableau de bord sont recalcules sur la meme selection de dates, de sports et de recherche.",
-    interpretation:
-      "Vous comparez ainsi des blocs vraiment alignes entre eux.",
-  }),
-  weeklyVolume: buildTooltip({
-    role: "Lire le volume semaine par semaine sur des semaines calendaires.",
-    calculation:
-      "Chaque barre correspond a une semaine du lundi au dimanche. Le tableau de bord s'appuie sur le perimetre sport/recherche actif, puis regroupe les activites par semaine. La ligne pointillee est une moyenne glissante sur 4 semaines.",
-    interpretation:
-      "Les barres montrent les pics de volume. La ligne aide a lire la tendance de fond sans se laisser tromper par une seule grosse semaine.",
-  }),
-  performanceTrend: buildTooltip({
-    role: "Suivre l'evolution de l'allure moyenne et de la FC moyenne dans le temps.",
-    calculation:
-      "Chaque point resume une semaine. L'allure est ponderee par le temps de deplacement. La FC moyenne est ponderee par le temps des activites qui ont une mesure cardio.",
-    interpretation:
-      "Utile pour voir si votre vitesse repere change et si l'effort cardio evolue en meme temps.",
-    extra: "L'allure n'est visible que sur les activites qui ont une allure exploitable.",
-  }),
-};
-
-const DASHBOARD_KPI_INFO = {
-  distanceWeek: buildTooltip({
-    role: "Mesurer la distance de la semaine la plus recente affichee.",
-    calculation:
-      "On additionne les kilometres de la semaine la plus recente du tableau de bord, du lundi au dimanche. Si la semaine n'est pas terminee, la valeur est une semaine en cours a date.",
-    interpretation:
-      "Permet de voir tout de suite si le volume monte, baisse ou reste stable.",
-  }),
-  timeWeek: buildTooltip({
-    role: "Mesurer le temps de deplacement de la semaine la plus recente affichee.",
-    calculation:
-      "On additionne le temps de deplacement de la semaine la plus recente, du lundi au dimanche. Si la semaine n'est pas terminee, la valeur est une semaine en cours a date.",
-    interpretation:
-      "Tres utile quand l'allure varie beaucoup d'une seance a l'autre.",
-  }),
-  elevationWeek: buildTooltip({
-    role: "Mesurer le denivele positif de la semaine la plus recente affichee.",
-    calculation:
-      "On additionne le D+ de la semaine la plus recente, du lundi au dimanche. Si la semaine n'est pas terminee, la valeur est une semaine en cours a date.",
-    interpretation:
-      "Aide a distinguer une semaine vraiment vallonnee d'une semaine plus roulante.",
-  }),
-  sessionsWeek: buildTooltip({
-    role: "Mesurer le nombre de seances de la semaine la plus recente affichee.",
-    calculation:
-      "On compte les activites de la semaine la plus recente, du lundi au dimanche. Si la semaine n'est pas terminee, la valeur est une semaine en cours a date.",
-    interpretation:
-      "Plus le chiffre monte, plus la pratique recente est dense.",
-  }),
-  paceWeek: buildTooltip({
-    role: "Donner une allure moyenne repere sur la semaine la plus recente.",
-    calculation:
-      "On calcule une allure moyenne ponderee par le temps sur les activites qui ont une allure exploitable dans la semaine la plus recente.",
-    interpretation:
-      "A lire comme un repere global, pas comme un record de performance.",
-    extra: "Surtout utile sur un perimetre course / trail.",
-  }),
-  loadWeek: buildTooltip({
-    role: "Mesurer la charge de la semaine la plus recente affichee.",
-    calculation:
-      "On additionne la charge des seances de la semaine. Si un suffer score existe, on l'utilise. Sinon, on prend un proxy simple base sur distance + D+/100.",
-    interpretation:
-      "Permet de voir vite si la semaine recente a ete plus lourde ou plus legere.",
-  }),
-  loadVariation: buildTooltip({
-    role: "Comparer la charge recente a la semaine precedente.",
-    calculation:
-      "Formule simple : variation % = (charge semaine actuelle - charge semaine precedente) / charge semaine precedente.",
-    interpretation:
-      "Une hausse rapide peut signaler un bloc de charge. Une baisse nette peut signaler une semaine plus legere.",
-  }),
-  fitness: buildTooltip({
-    role: "Mesurer la base de travail construite sur plusieurs semaines.",
-    calculation:
-      "On prend une moyenne de charge sur 4 semaines pour lisser les variations de court terme.",
-    interpretation:
-      "Plus la valeur est haute, plus votre base d'entrainement recente est solide.",
-  }),
-  fatigue: buildTooltip({
-    role: "Mesurer la charge tres recente.",
-    calculation:
-      "On regarde la charge accumulee sur les 7 derniers jours, quel que soit le passage entre deux semaines calendaires.",
-    interpretation:
-      "Plus la valeur est haute, plus la sollicitation recente est forte.",
-  }),
-  freshness: buildTooltip({
-    role: "Lire l'equilibre entre base et fatigue recente.",
-    calculation:
-      "Formule simple : forme = fitness - fatigue.",
-    interpretation:
-      "Au-dessus de zero, vous etes plutot frais. En dessous de zero, la fatigue recente prend davantage de place.",
-  }),
-};
-
-function formatDelta(value, suffix = "") {
-  const numeric = Number(value || 0);
-  const sign = numeric > 0 ? "+" : "";
-  return `${sign}${numeric.toLocaleString("fr-FR", {
-    minimumFractionDigits: suffix === "%" ? 1 : 0,
-    maximumFractionDigits: suffix === "%" ? 1 : 1,
-  })}${suffix ? ` ${suffix}` : ""}`.trim();
+function addDays(value, amount) {
+  const date = toDate(value) || new Date();
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount);
 }
 
-function formatDistance(value) {
-  return `${Number(value || 0).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
-}
-
-function formatHours(value) {
-  return `${Number(value || 0).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} h`;
-}
-
-function formatElevation(value) {
-  return `${Math.round(Number(value || 0)).toLocaleString("fr-FR")} m`;
-}
-
-function getTrendTone(direction, overload) {
-  if (overload) return "warning";
-  if (direction === "up") return "positive";
-  if (direction === "down") return "negative";
-  return "neutral";
-}
-
-function getDirectionLabel(direction) {
-  if (direction === "up") return "Charge en hausse";
-  if (direction === "down") return "Charge en baisse";
-  return "Charge stable";
+function getActivityDate(activity = {}) {
+  return toDate(activity.startDateLocal || activity.startDate || activity.date);
 }
 
 export default function DashboardPage() {
@@ -158,266 +57,322 @@ export default function DashboardPage() {
     error,
     isLoading,
     safeActivities,
-    filters,
     options,
-    availableSports,
-    setFilter,
-    resetFilters,
+    trainingAnalyticsSettings,
     setOption,
-  } = useActivityViewModel({ includeActivities: true });
+    reload,
+  } = useActivityViewModel({
+    includeActivities: true,
+  });
+  const { activeRace } = useRaceObjectives();
 
   const account = useMemo(
     () => buildCurrentAccountModel({ athlete, options }),
     [athlete, options],
   );
 
-  const dashboardRange = useMemo(
-    () => buildAnalyticsDateRange({
-      preset: options.dashboardPeriodPreset,
-      customDateFrom: options.dashboardCustomDateFrom,
-      customDateTo: options.dashboardCustomDateTo,
-    }),
-    [options.dashboardCustomDateFrom, options.dashboardCustomDateTo, options.dashboardPeriodPreset],
+  const todayRange = buildAnalyticsDateRange({ preset: TODAY_PERIOD_PRESET });
+  const todayAvailableSports = useMemo(
+    () => getAvailableSportGroups(safeActivities, { groupSports: true }),
+    [safeActivities],
   );
+  const requestedTodaySportGroup = options.todaySportGroup || RUN_SPORT_GROUP_LABEL;
+  const todaySportGroup = requestedTodaySportGroup === "all" || todayAvailableSports.includes(requestedTodaySportGroup)
+    ? requestedTodaySportGroup
+    : "all";
 
   const dashboardFilters = useMemo(
     () => ({
-      ...filters,
-      dateFrom: dashboardRange.dateFrom,
-      dateTo: dashboardRange.dateTo,
+      search: "",
+      sportGroup: todaySportGroup,
+      dateFrom: todayRange.dateFrom,
+      dateTo: todayRange.dateTo,
     }),
-    [dashboardRange.dateFrom, dashboardRange.dateTo, filters],
+    [todayRange.dateFrom, todayRange.dateTo, todaySportGroup],
   );
 
   const dashboardActivities = useMemo(
-    () => filterActivities(safeActivities, dashboardFilters, { groupSports: options.groupSports }),
-    [dashboardFilters, options.groupSports, safeActivities],
+    () => filterActivities(safeActivities, dashboardFilters, { groupSports: true }),
+    [dashboardFilters, safeActivities],
+  );
+
+  const todayPeriodActivities = useMemo(
+    () => filterActivities(
+      safeActivities,
+      { search: "", sportGroup: "all", dateFrom: todayRange.dateFrom, dateTo: todayRange.dateTo },
+      { groupSports: true },
+    ),
+    [safeActivities, todayRange.dateFrom, todayRange.dateTo],
   );
 
   const dashboardScopeActivities = useMemo(
     () =>
       filterActivities(
         safeActivities,
-        { ...filters, dateFrom: "", dateTo: "" },
-        { groupSports: options.groupSports },
+        { search: "", sportGroup: todaySportGroup, dateFrom: "", dateTo: "" },
+        { groupSports: true },
       ),
-    [filters, options.groupSports, safeActivities],
+    [safeActivities, todaySportGroup],
   );
 
-  const snapshot = useMemo(
-    () => buildDashboardSnapshot(dashboardScopeActivities, {
-      weeks: Math.max(4, Math.ceil(dashboardRange.days / 7)),
-      recentLimit: 6,
-      startDate: dashboardRange.start,
-      endDate: dashboardRange.end,
+  const trendStartDate = useMemo(() => addDays(todayRange.end, -55), [todayRange.end]);
+  const recentIntensityStartDate = useMemo(() => addDays(todayRange.end, -6), [todayRange.end]);
+
+  const trainingLoadModel = useMemo(
+    () => buildTrainingLoadStateModel(dashboardScopeActivities, {
+      startDate: todayRange.start,
+      endDate: todayRange.end,
+      granularity: "daily",
+      weekStartsOn: options.userWeekStartsOn,
+      settings: trainingAnalyticsSettings,
     }),
-    [dashboardRange.days, dashboardRange.end, dashboardRange.start, dashboardScopeActivities],
+    [dashboardScopeActivities, options.userWeekStartsOn, todayRange.end, todayRange.start, trainingAnalyticsSettings],
   );
 
-  const currentWeek = snapshot.currentWeek || {};
-  const previousWeek = snapshot.previousWeek || {};
-  const loadSummary = snapshot.loadSummary || {};
-  const scopeLabel = filters.sportGroup === "all" ? "toutes les activites" : filters.sportGroup;
-  const searchNote = filters.search ? ` Recherche active : "${filters.search}".` : "";
-  const scopeNote = `Perimetre actuel : ${scopeLabel}.${searchNote} Tableau de bord aligne sur ${getAnalyticsPresetLabel(options.dashboardPeriodPreset)}.`;
-  const currentWeekIsPartial = Boolean(currentWeek?.weekEnd && dashboardRange.end < currentWeek.weekEnd);
-  const currentWeekHint = currentWeek.label
-    ? (currentWeekIsPartial ? `${currentWeek.label} · a date` : currentWeek.label)
-    : "Semaine courante";
+  const trendLoadModel = useMemo(
+    () => buildTrainingLoadStateModel(dashboardScopeActivities, {
+      startDate: trendStartDate,
+      endDate: todayRange.end,
+      granularity: "daily",
+      weekStartsOn: options.userWeekStartsOn,
+      settings: trainingAnalyticsSettings,
+    }),
+    [dashboardScopeActivities, options.userWeekStartsOn, todayRange.end, trainingAnalyticsSettings, trendStartDate],
+  );
 
-  const mainKpis = [
-    {
-      label: "Distance semaine",
-      value: formatDistance(currentWeek.distanceKm),
-      trend: `vs sem. prec. ${formatDelta((currentWeek.distanceKm || 0) - (previousWeek.distanceKm || 0), "km")}`,
-      trendTone: (currentWeek.distanceKm || 0) >= (previousWeek.distanceKm || 0) ? "positive" : "negative",
-      hint: currentWeekHint,
-      info: DASHBOARD_KPI_INFO.distanceWeek,
-    },
-    {
-      label: "Temps semaine",
-      value: formatHours(currentWeek.movingHours),
-      trend: `vs sem. prec. ${formatDelta((currentWeek.movingHours || 0) - (previousWeek.movingHours || 0), "h")}`,
-      trendTone: (currentWeek.movingHours || 0) >= (previousWeek.movingHours || 0) ? "positive" : "negative",
-      hint: "Volume deplacement",
-      info: DASHBOARD_KPI_INFO.timeWeek,
-    },
-    {
-      label: "D+ semaine",
-      value: formatElevation(currentWeek.elevationGain),
-      trend: `vs sem. prec. ${formatDelta((currentWeek.elevationGain || 0) - (previousWeek.elevationGain || 0), "m")}`,
-      trendTone: (currentWeek.elevationGain || 0) >= (previousWeek.elevationGain || 0) ? "positive" : "negative",
-      hint: "Charge terrain",
-      info: DASHBOARD_KPI_INFO.elevationWeek,
-    },
-    {
-      label: "Seances",
-      value: currentWeek.count || 0,
-      trend: `vs sem. prec. ${formatDelta((currentWeek.count || 0) - (previousWeek.count || 0))}`,
-      trendTone: (currentWeek.count || 0) >= (previousWeek.count || 0) ? "positive" : "negative",
-      hint: "Nombre d'activites",
-      info: DASHBOARD_KPI_INFO.sessionsWeek,
-    },
-    {
-      label: "Allure moyenne",
-      value: formatPace(currentWeek.averagePaceSecondsPerKm),
-      trend: previousWeek.averagePaceSecondsPerKm
-        ? `sem. prec. ${formatPace(previousWeek.averagePaceSecondsPerKm)}`
-        : "Pas de reference",
-      trendTone: currentWeek.averagePaceSecondsPerKm > 0
-        && previousWeek.averagePaceSecondsPerKm > 0
-        && currentWeek.averagePaceSecondsPerKm <= previousWeek.averagePaceSecondsPerKm
-        ? "positive"
-        : "neutral",
-      hint: "Allure ponderee",
-      info: DASHBOARD_KPI_INFO.paceWeek,
-    },
-  ];
+  const dashboardDecisionModel = useMemo(
+    () => buildDashboardDecisionSummary(trainingLoadModel),
+    [trainingLoadModel],
+  );
 
-  const loadKpis = [
-    {
-      label: "Charge semaine",
-      value: `${Number(loadSummary.currentWeekLoad || 0).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pts`,
-      trend: loadSummary.previousWeekLoad
-        ? `sem. prec. ${Number(loadSummary.previousWeekLoad).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pts`
-        : "Pas de reference",
-      trendTone: getTrendTone(loadSummary.direction, loadSummary.overload),
-      hint: "Proxy suffer score ou distance + D+/100",
-      info: DASHBOARD_KPI_INFO.loadWeek,
-    },
-    {
-      label: "Variation charge",
-      value: Number.isFinite(loadSummary.deltaPercent)
-        ? `${loadSummary.deltaPercent > 0 ? "+" : ""}${loadSummary.deltaPercent.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`
-        : "-",
-      trend: getDirectionLabel(loadSummary.direction),
-      trendTone: getTrendTone(loadSummary.direction, loadSummary.overload),
-      hint: loadSummary.overload ? "Alerte surcharge > +20%" : "Variation vs semaine precedente",
-      info: DASHBOARD_KPI_INFO.loadVariation,
-    },
-    {
-      label: "Fitness 4 sem.",
-      value: `${Number(loadSummary.fitness || 0).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pts`,
-      hint: "Moyenne charge 4 semaines",
-      compact: true,
-      info: DASHBOARD_KPI_INFO.fitness,
-    },
-    {
-      label: "Fatigue 7 j",
-      value: `${Number(loadSummary.fatigue || 0).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pts`,
-      hint: "Charge recente",
-      compact: true,
-      info: DASHBOARD_KPI_INFO.fatigue,
-    },
-    {
-      label: "Forme",
-      value: `${Number(loadSummary.freshness || 0).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pts`,
-      trend: loadSummary.freshness >= 0 ? "Frais" : "Charge residuelle",
-      trendTone: loadSummary.freshness >= 0 ? "positive" : "negative",
-      hint: "Fitness - fatigue",
-      compact: true,
-      info: DASHBOARD_KPI_INFO.freshness,
-    },
-  ];
+  const loadVarianceModel = useMemo(
+    () => buildLoadVarianceProfile(dashboardScopeActivities, {
+      endDate: todayRange.end,
+      settings: trainingAnalyticsSettings,
+    }),
+    [dashboardScopeActivities, todayRange.end, trainingAnalyticsSettings],
+  );
 
-  const handleDashboardPresetChange = (preset) => {
-    if (preset === "custom") {
-      setOption("dashboardPeriodPreset", "custom");
-      if (!options.dashboardCustomDateFrom) {
-        setOption("dashboardCustomDateFrom", dashboardRange.dateFrom);
-      }
-      if (!options.dashboardCustomDateTo) {
-        setOption("dashboardCustomDateTo", dashboardRange.dateTo);
-      }
-      return;
-    }
+  const weeklySummary = useMemo(
+    () => buildRegularitySummary(dashboardScopeActivities, {
+      weeks: 4,
+      endDate: todayRange.end,
+      weekStartsOn: options.userWeekStartsOn,
+      viewMode: TODAY_VOLUME_VIEW_MODE,
+      settings: trainingAnalyticsSettings,
+    }),
+    [
+      dashboardScopeActivities,
+      options.userWeekStartsOn,
+      todayRange.end,
+      trainingAnalyticsSettings,
+    ],
+  );
 
-    setOption("dashboardPeriodPreset", preset);
+  const efficiencyModel = useMemo(
+    () => buildEfficiencyHistoryModel(dashboardScopeActivities, {
+      startDate: trendStartDate,
+      endDate: todayRange.end,
+      granularity: "weekly",
+      weekStartsOn: options.userWeekStartsOn,
+      settings: trainingAnalyticsSettings,
+    }),
+    [dashboardScopeActivities, options.userWeekStartsOn, todayRange.end, trainingAnalyticsSettings, trendStartDate],
+  );
+
+  const loadDynamicsProfile = useMemo(
+    () => buildLoadDynamicsProfile({
+      loadModel: trendLoadModel,
+      efficiencyModel,
+    }),
+    [efficiencyModel, trendLoadModel],
+  );
+
+  const intensityDistributionModel = useMemo(
+    () => buildConsolidatedIntensityDistributionModel(dashboardScopeActivities, {
+      startDate: recentIntensityStartDate,
+      endDate: todayRange.end,
+      settings: trainingAnalyticsSettings,
+    }),
+    [dashboardScopeActivities, recentIntensityStartDate, todayRange.end, trainingAnalyticsSettings],
+  );
+
+  const polarizationModel = useMemo(
+    () => buildIntensityPolarizationProfile(intensityDistributionModel, "duration"),
+    [intensityDistributionModel],
+  );
+
+  const bestEffortRecords = useMemo(
+    () => buildBestEffortRecords(buildActivityItems(dashboardScopeActivities, { settings: trainingAnalyticsSettings })),
+    [dashboardScopeActivities, trainingAnalyticsSettings],
+  );
+
+  const vdotProfile = useMemo(
+    () => buildVdotProfile({ records: bestEffortRecords, referenceDate: todayRange.end }),
+    [bestEffortRecords, todayRange.end],
+  );
+
+  const vdotProfilePrevious = useMemo(() => {
+    const previousReferenceDate = addDays(todayRange.end, -28);
+    const previousRecords = bestEffortRecords.map((record) => {
+      const activityDate = getActivityDate(record?.activity);
+      return activityDate && activityDate <= previousReferenceDate ? record : { ...record, isAvailable: false };
+    });
+
+    return buildVdotProfile({ records: previousRecords, referenceDate: previousReferenceDate });
+  }, [bestEffortRecords, todayRange.end]);
+
+  const recentActivities = useMemo(
+    () => decorateRecentActivities(
+      [...dashboardActivities]
+        .sort((left, right) => {
+          const leftDate = toDate(left?.startDateLocal || left?.startDate)?.getTime() || 0;
+          const rightDate = toDate(right?.startDateLocal || right?.startDate)?.getTime() || 0;
+          return rightDate - leftDate;
+        })
+        .slice(0, 6),
+      {
+        scopeActivities: dashboardScopeActivities,
+        settings: trainingAnalyticsSettings,
+        endDate: todayRange.end,
+      },
+    ),
+    [dashboardActivities, dashboardScopeActivities, todayRange.end, trainingAnalyticsSettings],
+  );
+
+  const broaderRecentActivities = useMemo(
+    () => decorateRecentActivities(
+      [...dashboardScopeActivities]
+        .sort((left, right) => {
+          const leftDate = toDate(left?.startDateLocal || left?.startDate)?.getTime() || 0;
+          const rightDate = toDate(right?.startDateLocal || right?.startDate)?.getTime() || 0;
+          return rightDate - leftDate;
+        })
+        .slice(0, 80),
+      {
+        scopeActivities: dashboardScopeActivities,
+        settings: trainingAnalyticsSettings,
+        endDate: todayRange.end,
+      },
+    ),
+    [dashboardScopeActivities, todayRange.end, trainingAnalyticsSettings],
+  );
+
+  const todayAlerts = useMemo(
+    () => buildTodayAlerts({
+      loadModel: trendLoadModel,
+      loadDynamicsProfile,
+      loadVarianceModel,
+      polarizationModel,
+      vdotProfile,
+      vdotProfilePrevious,
+      recentActivities: broaderRecentActivities,
+      allActivities: dashboardScopeActivities,
+      bestEffortRecords,
+      weeklySummary,
+      trainingAnalyticsSettings,
+      activeRace,
+      referenceDate: todayRange.end,
+    }),
+    [
+      activeRace,
+      bestEffortRecords,
+      broaderRecentActivities,
+      dashboardScopeActivities,
+      loadDynamicsProfile,
+      loadVarianceModel,
+      polarizationModel,
+      todayRange.end,
+      trainingAnalyticsSettings,
+      trendLoadModel,
+      vdotProfile,
+      vdotProfilePrevious,
+      weeklySummary,
+    ],
+  );
+
+  const handleTodaySportChange = (value) => {
+    setOption("todaySportGroup", value || RUN_SPORT_GROUP_LABEL);
   };
 
-  const handleDashboardCustomDateChange = (name, value) => {
-    setOption("dashboardPeriodPreset", "custom");
-    const targetName = name === "analyticsCustomDateFrom" ? "dashboardCustomDateFrom" : "dashboardCustomDateTo";
-    setOption(targetName, value);
-  };
-
-  const handleResetDashboard = () => {
-    resetFilters();
-    setOption("groupSports", true);
-    setOption("dashboardPeriodPreset", "30d");
-    setOption("dashboardCustomDateFrom", "");
-    setOption("dashboardCustomDateTo", "");
+  const handleSyncStrava = async () => {
+    await startIncrementalSync();
+    await reload?.();
   };
 
   return (
     <AppShell
-      eyebrow="Tableau de bord"
-      title="Tableau de bord"
-      subtitle={`Vue de pilotage rapide sur ${scopeLabel}, filtree sur ${getAnalyticsPresetLabel(options.dashboardPeriodPreset)}.${searchNote}`}
+      eyebrow="Aujourd'hui"
+      title="Pilotage du jour"
+      subtitle={`Lecture fixe sur 7 jours glissants, avec perimetre sport ajustable.`}
       account={account}
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {isLoading && !dashboardActivities.length ? <div className="card section">Chargement des activites...</div> : null}
 
-      <div className="section">
-        <AnalyticsFiltersBar
-          title="Filtres d'analyse"
-          subtitle="Le tableau de bord reprend le meme pilotage de periode et de perimetre que l'onglet Analyses, avec un demarrage rapide sur 30 jours."
-          infoTitle="Filtres d'analyse"
-          infoContent={DASHBOARD_SECTION_INFO.filters}
-          resetLabel="Reinitialiser le tableau de bord"
-          preset={options.dashboardPeriodPreset}
-          rangeLabel={dashboardRange.label}
-          customDateFrom={options.dashboardCustomDateFrom}
-          customDateTo={options.dashboardCustomDateTo}
-          customDateFromOptionName="dashboardCustomDateFrom"
-          customDateToOptionName="dashboardCustomDateTo"
-          search={filters.search}
-          sportGroup={filters.sportGroup}
-          groupSports={options.groupSports}
-          availableSports={availableSports}
-          filteredCount={dashboardActivities.length}
-          totalCount={dashboardScopeActivities.length}
-          onPresetChange={handleDashboardPresetChange}
-          onCustomDateChange={handleDashboardCustomDateChange}
-          onSearchChange={(value) => setFilter("search", value)}
-          onSportChange={(value) => setFilter("sportGroup", value)}
-          onGroupSportsChange={(value) => setOption("groupSports", value)}
-          onReset={handleResetDashboard}
-          scopeNote={scopeNote}
-        />
-      </div>
+      <div className="dashboard-page-stack">
+        <div className="section">
+          <TodayHeader
+            athlete={athlete}
+            activeRace={activeRace}
+            date={todayRange.end}
+            rangeLabel={todayRange.label}
+            sportGroup={todaySportGroup}
+            availableSports={todayAvailableSports}
+            activityCount={dashboardActivities.length}
+            totalCount={todayPeriodActivities.length}
+            onSportChange={handleTodaySportChange}
+          />
+        </div>
 
-      <div className="section">
-        <KpiGrid items={mainKpis} />
-      </div>
-
-      <div className="section">
-        <KpiGrid items={loadKpis} />
-      </div>
-
-      <div className="grid two-columns section">
-        <WeeklyVolumeChart
-          data={snapshot.weeklySeries}
-          title="Volume hebdomadaire"
-          subtitle="Volume par semaine calendaire sur le perimetre actif, avec tendance glissante sur 4 semaines."
-          info={DASHBOARD_SECTION_INFO.weeklyVolume}
-          dataKey="distanceKm"
-          name="Distance (km)"
-          unit="km"
+        <TodayAlertBanner
+          alerts={todayAlerts}
+          onSyncStrava={handleSyncStrava}
         />
-        <PerformanceTrendChart
-          data={snapshot.weeklySeries}
-          info={DASHBOARD_SECTION_INFO.performanceTrend}
-        />
-      </div>
 
-      <div className="section">
-        <RecentActivitiesCard
-          activities={snapshot.recentActivities}
-          returnPath="/"
-          subtitle="Les dernieres seances de la selection courante pour relire rapidement le contexte recent."
-        />
+        <div className="section">
+          <DashboardDecisionSummaryCard
+            model={dashboardDecisionModel}
+            info={TRAINING_MVP_SECTION_INFO.decisionSummary}
+          />
+        </div>
+
+        <div className="section">
+          <TodayFormCards
+            loadModel={trainingLoadModel}
+            trendLoadModel={trendLoadModel}
+          />
+        </div>
+
+        <div className="section">
+          <TodayVolumeStrip weeklySummary={weeklySummary} />
+        </div>
+
+        <div className="section">
+          <TodaySecondaryRow
+            weeklySummary={weeklySummary}
+            loadVarianceModel={loadVarianceModel}
+          />
+        </div>
+
+        <div className="section">
+          <TodaySnapshotToday
+            activities={broaderRecentActivities}
+            referenceDate={todayRange.end}
+            trainingAnalyticsSettings={trainingAnalyticsSettings}
+          />
+        </div>
+
+        <div className="section">
+          <RecentActivitiesCard
+            activities={recentActivities}
+            limit={3}
+            returnPath="/"
+            title="Activites recentes"
+            subtitle="Les dernieres seances utiles a relire avant de decider la suite du bloc : type estime, charge, dominante d'intensite et contexte rapide."
+            info={TRAINING_MVP_SECTION_INFO.recentActivities}
+          />
+        </div>
       </div>
     </AppShell>
   );

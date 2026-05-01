@@ -1,30 +1,30 @@
-import { useEffect, useMemo, useState } from "react";
-import ActivityFilters from "../components/ActivityFilters.jsx";
+import { useEffect, useState } from "react";
+import AnalyticsFiltersBar from "../components/AnalyticsFiltersBar.jsx";
 import ActivitiesTable from "../components/ActivitiesTable.jsx";
+import { SHARED_FILTER_COPY } from "../content/analyticsCopy.js";
 import AppShell from "../layouts/AppShell.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
-import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
+import { filterActivities } from "../utils/activityAggregations.js";
+import { getAnalyticsPresetLabel } from "../utils/analyticsPeriods.js";
 
 export default function ActivitiesPage() {
   const {
-    athlete,
     error,
     isLoading,
     safeActivities,
-    filteredActivities,
     filters,
+    filteredActivities,
     options,
+    sharedRange,
     table,
     availableSports,
     setFilter,
     resetFilters,
     setOption,
     setTable,
-  } = useActivityViewModel({ includeActivities: true });
-  const account = useMemo(
-    () => buildCurrentAccountModel({ athlete, options }),
-    [athlete, options],
-  );
+  } = useActivityViewModel({
+    includeActivities: true,
+  });
   const [activeAnchor, setActiveAnchor] = useState(() => {
     if (typeof window === "undefined") return "";
     return window.location.hash
@@ -37,26 +37,76 @@ export default function ActivitiesPage() {
     sessionStorage.removeItem("runsee-return-hash");
   }, []);
 
+  const activityScopeActivities = filterActivities(
+    safeActivities,
+    { ...filters, dateFrom: "", dateTo: "" },
+    { groupSports: options.groupSports },
+  );
+
+  const scopeLabel = filters.sportGroup === "all" ? "tous les sports" : filters.sportGroup;
+  const searchNote = filters.search ? ` Recherche active : "${filters.search}".` : "";
+  const scopeNote = `Perimetre actuel : ${scopeLabel}.${searchNote} Filtres partages sur ${getAnalyticsPresetLabel(options.sharedPeriodPreset)}.`;
+
+  const handleSharedPresetChange = (preset) => {
+    if (preset === "custom") {
+      setOption("sharedPeriodPreset", "custom");
+      if (!options.sharedCustomDateFrom) {
+        setOption("sharedCustomDateFrom", sharedRange.dateFrom);
+      }
+      if (!options.sharedCustomDateTo) {
+        setOption("sharedCustomDateTo", sharedRange.dateTo);
+      }
+      return;
+    }
+
+    setOption("sharedPeriodPreset", preset);
+  };
+
+  const handleSharedCustomDateChange = (name, value) => {
+    setOption("sharedPeriodPreset", "custom");
+    setOption(name, value);
+  };
+
+  const handleResetSharedFilters = () => {
+    resetFilters();
+    setOption("groupSports", true);
+    setOption("sharedPeriodPreset", "90d");
+    setOption("sharedCustomDateFrom", "");
+    setOption("sharedCustomDateTo", "");
+  };
+
   return (
     <AppShell
       eyebrow="Activites"
       title="Bibliotheque d'activites"
-      subtitle="Liste exploitable, filtres persistants et acces direct a la fiche detail."
-      account={account}
+      subtitle={`Liste exploitable, filtres partages et acces direct a la fiche detail sur ${getAnalyticsPresetLabel(options.sharedPeriodPreset)}.`}
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {isLoading && !safeActivities.length ? <div className="card section">Chargement des activites...</div> : null}
 
       <div className="section">
-        <ActivityFilters
-          filters={filters}
-          options={options}
+        <AnalyticsFiltersBar
+          title="Filtres d'analyse"
+          subtitle={SHARED_FILTER_COPY.subtitle}
+          resetLabel={SHARED_FILTER_COPY.resetLabel}
+          infoContent={SHARED_FILTER_COPY.info}
+          preset={options.sharedPeriodPreset}
+          rangeLabel={sharedRange.label}
+          customDateFrom={options.sharedCustomDateFrom}
+          customDateTo={options.sharedCustomDateTo}
+          search={filters.search}
+          sportGroup={filters.sportGroup}
+          groupSports={options.groupSports}
           availableSports={availableSports}
           filteredCount={filteredActivities.length}
-          totalCount={safeActivities.length}
-          onChange={setFilter}
-          onReset={resetFilters}
-          onOptionChange={setOption}
+          totalCount={activityScopeActivities.length}
+          onPresetChange={handleSharedPresetChange}
+          onCustomDateChange={handleSharedCustomDateChange}
+          onSearchChange={(value) => setFilter("search", value)}
+          onSportChange={(value) => setFilter("sportGroup", value)}
+          onGroupSportsChange={(value) => setOption("groupSports", value)}
+          onReset={handleResetSharedFilters}
+          scopeNote={scopeNote}
         />
       </div>
 

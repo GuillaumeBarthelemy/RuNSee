@@ -1,0 +1,257 @@
+import prisma from "../../config/prisma.js";
+import { hashPassword, verifyPassword } from "./password.service.js";
+import { createUserSession } from "./session.service.js";
+import { serializeStravaAppForAuthUser } from "../strava/stravaApp.service.js";
+
+function buildHttpError(message, userMessage, httpStatus) {
+  const error = new Error(message);
+  error.httpStatus = httpStatus;
+  error.userMessage = userMessage;
+  return error;
+}
+
+export function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+export function serializeAuthUser(
+  appUser,
+  activeConnection = null,
+  userStravaApp = null,
+) {
+  if (!appUser) {
+    return null;
+  }
+
+  return {
+    id: appUser.id,
+    displayName: appUser.displayName,
+    email: appUser.email || "",
+    role: appUser.role || "user",
+    status: appUser.status || "active",
+    lastLoginAt: appUser.lastLoginAt,
+    createdAt: appUser.createdAt,
+    updatedAt: appUser.updatedAt,
+    stravaConnected: Boolean(activeConnection),
+    stravaAthleteId: activeConnection?.stravaAthleteId || null,
+    stravaConnectedAt: activeConnection?.connectedAt || null,
+    stravaApp: serializeStravaAppForAuthUser(
+      userStravaApp || appUser.stravaApp || null,
+      activeConnection,
+    ),
+  };
+}
+
+function validateDisplayName(displayName) {
+  const value = String(displayName || "").trim();
+
+  if (value.length < 2) {
+    throw buildHttpError(
+      "Invalid display name.",
+      "Le nom affiche doit contenir au moins 2 caracteres.",
+      400
+    );
+  }
+
+  return value;
+}
+
+function validateEmail(email) {
+  const value = String(email || "").trim();
+  const normalized = normalizeEmail(value);
+
+  if (!normalized || !normalized.includes("@")) {
+    throw buildHttpError(
+      "Invalid email.",
+      "Une adresse e-mail valide est requise.",
+      400
+    );
+  }
+
+  return {
+    email: value,
+    emailNormalized: normalized,
+  };
+}
+
+function validatePassword(password) {
+  const value = String(password || "");
+
+  if (value.length < 8) {
+    throw buildHttpError(
+      "Password too short.",
+      "Le mot de passe doit contenir au moins 8 caracteres.",
+      400
+    );
+  }
+
+  return value;
+}
+
+async function findClaimableLegacyUser() {
+  const registeredUserCount = await prisma.appUser.count({
+    where: {
+      emailNormalized: {
+        not: null,
+      },
+    },
+  });
+
+  if (registeredUserCount > 0) {
+    return null;
+  }
+
+  return prisma.appUser.findFirst({
+    where: {
+      emailNormalized: null,
+      passwordHash: null,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+}
+
+export async function registerUser({ displayName, email, password, req }) {
+  const safeDisplayName = validateDisplayName(displayName);
+  const { email: safeEmail, emailNormalized } = validateEmail(email);
+  const safePassword = validatePassword(password);
+
+  const existingUser = await prisma.appUser.findUnique({
+    where: {
+      emailNormalized,
+    },
+  });
+
+  if (existingUser) {
+    throw buildHttpError(
+      "Email already registered.",
+      "Un compte existe deja avec cette adresse e-mail.",
+      409
+    );
+  }
+
+  const passwordHash = await hashPassword(safePassword);
+  const legacyUser = await findClaimableLegacyUser();
+
+  const user = legacyUser
+    ? await prisma.appUser.update({
+        where: { id: legacyUser.id },
+        data: {
+          displayName: safeDisplayName,
+          email: safeEmail,
+          emailNormalized,
+          passwordHash,
+          role: legacyUser.role || "user",
+          status: "active",
+          lastLoginAt: new Date(),
+        },
+      })
+    : await prisma.appUser.create({
+        data: {
+          displayName: safeDisplayName,
+          email: safeEmail,
+          emailNormalized,
+          passwordHash,
+          role: "user",
+          status: "active",
+          lastLoginAt: new Date(),
+        },
+      });
+
+  const { rawToken, session } = await createUserSession(user.id, req);
+
+  return {
+    user,
+    rawToken,
+    session,
+  };
+}
+
+export async function loginUser({ email, password, req }) {
+  const { emailNormalized } = validateEmail(email);
+  const safePassword = validatePassword(password);
+
+  const user = await prisma.appUser.findUnique({
+    where: {
+      emailNormalized,
+    },
+  });
+
+  if (!user?.passwordHash) {
+    throw buildHttpError(
+      "Invalid credentials.",
+      "Adresse e-mail ou mot de passe incorrect.",
+      401
+    );
+  }
+
+  const isValidPassword = await verifyPassword(safePassword, user.passwordHash);
+
+  if (!isValidPassword) {
+    throw buildHttpError(
+      "Invalid credentials.",
+      "Adresse e-mail ou mot de passe incorrect.",
+      401
+    );
+  }
+
+  if (user.status === "disabled") {
+    throw buildHttpError(
+      "User disabled.",
+      "Ce compte est desactive.",
+      403
+    );
+  }
+
+  const updatedUser = await prisma.appUser.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      lastLoginAt: new Date(),
+    },
+  });
+
+  const { rawToken, session } = await createUserSession(updatedUser.id, req);
+
+  return {
+    user: updatedUser,
+    rawToken,
+    session,
+  };
+}
+
+export async function getCurrentAuthUser(appUserId) {
+  if (!appUserId) {
+    return null;
+  }
+
+  const appUser = await prisma.appUser.findUnique({
+    where: {
+      id: appUserId,
+    },
+    include: {
+      connections: {
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          connectedAt: "desc",
+        },
+        take: 1,
+      },
+      stravaApp: true,
+    },
+  });
+
+  if (!appUser) {
+    return null;
+  }
+
+  return serializeAuthUser(
+    appUser,
+    appUser.connections?.[0] || null,
+    appUser.stravaApp || null,
+  );
+}

@@ -10,6 +10,11 @@ export async function startIncrementalSync() {
   return response.data;
 }
 
+export async function startDetailBackfill() {
+  const response = await api.post("/sync/jobs/detail-backfill");
+  return response.data;
+}
+
 export async function getCurrentSyncJob() {
   try {
     const response = await api.get("/sync/jobs/current");

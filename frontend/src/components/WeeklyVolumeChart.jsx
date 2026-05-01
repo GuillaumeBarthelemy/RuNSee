@@ -1,142 +1,54 @@
+import { memo, useMemo } from "react";
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import useChartViewport from "../hooks/useChartViewport.js";
+import { buildTemporalAxisConfig } from "../utils/chartAxis.js";
 import InfoTooltip from "./InfoTooltip.jsx";
 
 const GRID_STROKE = "rgba(123, 140, 163, 0.16)";
-const AXIS_TICK = { fontSize: 12, fill: "#7B8CA3" };
 const noop = () => {};
 
 function defaultFormatValue(value, unit = "") {
   if (unit) {
-    return `${value} ${unit}`;
+    return `${Number(value || 0).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 1 })} ${unit}`;
   }
 
   return value;
 }
 
-function toDate(value) {
-  if (!value) return null;
-
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function formatShortWeekTick(value) {
-  const date = toDate(value);
-
-  if (!date) {
-    return value;
-  }
-
-  return date.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-  });
-}
-
-function formatMonthTick(value) {
-  const date = toDate(value);
-
-  if (!date) {
-    return value;
-  }
-
-  return date.toLocaleDateString("fr-FR", {
-    month: "short",
-    year: "2-digit",
-  });
-}
-
-function buildAxisConfig(data = []) {
-  const hasPeriodDates = data.every((entry) => entry?.periodDate);
-
-  if (!hasPeriodDates) {
-    return {
-      dataKey: "period",
-      ticks: undefined,
-      tickFormatter: (value) => value,
-      angle: -35,
-      textAnchor: "end",
-      height: 70,
-      minTickGap: 0,
-    };
-  }
-
-  const lastIndex = Math.max(0, data.length - 1);
-
-  if (data.length <= 12) {
-    return {
-      dataKey: "periodDate",
-      ticks: data.map((entry) => entry.periodDate),
-      tickFormatter: formatShortWeekTick,
-      angle: -28,
-      textAnchor: "end",
-      height: 60,
-      minTickGap: 10,
-    };
-  }
-
-  if (data.length <= 24) {
-    const step = Math.max(2, Math.ceil(data.length / 10));
-
-    return {
-      dataKey: "periodDate",
-      ticks: data
-        .filter((_, index) => index === 0 || index === lastIndex || index % step === 0)
-        .map((entry) => entry.periodDate),
-      tickFormatter: formatShortWeekTick,
-      angle: -24,
-      textAnchor: "end",
-      height: 56,
-      minTickGap: 12,
-    };
-  }
-
-  const ticks = data
-    .filter((entry, index, items) => {
-      if (index === 0 || index === lastIndex) {
-        return true;
-      }
-
-      const current = toDate(entry.periodDate);
-      const previous = toDate(items[index - 1]?.periodDate);
-
-      if (!current || !previous) {
-        return false;
-      }
-
-      return current.getMonth() !== previous.getMonth() || current.getFullYear() !== previous.getFullYear();
-    })
-    .map((entry) => entry.periodDate);
-
-  return {
-    dataKey: "periodDate",
-    ticks,
-    tickFormatter: formatMonthTick,
-    angle: 0,
-    textAnchor: "middle",
-    height: 40,
-    minTickGap: 18,
-  };
-}
-
-function buildTrendData(data = [], dataKey = "value", windowSize = 4) {
+function buildTrendData(data = [], dataKey = "value", windowSize = 4, options = {}) {
   const safeWindowSize = Math.max(2, Number(windowSize || 4));
+  const requireFullWindow = options.requireFullWindow === true;
 
   return data.map((entry, index) => {
-    const sliceStart = Math.max(0, index - safeWindowSize + 1);
+    const sliceStart = index - safeWindowSize + 1;
+    const hasFullWindow = sliceStart >= 0;
+    const effectiveSliceStart = Math.max(0, sliceStart);
     const windowValues = data
-      .slice(sliceStart, index + 1)
+      .slice(effectiveSliceStart, index + 1)
       .map((item) => Number(item?.[dataKey] || 0))
       .filter((value) => Number.isFinite(value));
-    const trendValue = windowValues.length
-      ? windowValues.reduce((sum, value) => sum + value, 0) / windowValues.length
-      : null;
+    const trendValue = requireFullWindow && !hasFullWindow
+      ? null
+      : windowValues.length
+        ? windowValues.reduce((sum, value) => sum + value, 0) / windowValues.length
+        : null;
 
     return {
       ...entry,
       __trendValue: trendValue,
     };
   });
+}
+
+function countFiniteTrendPoints(data = []) {
+  return data.reduce(
+    (count, entry) => (typeof entry?.__trendValue === "number" && Number.isFinite(entry.__trendValue) ? count + 1 : count),
+    0,
+  );
+}
+
+function getTrendEntryKey(entry = {}, index = 0) {
+  return entry?.periodDate || entry?.period || `row-${index}`;
 }
 
 function WeeklyTooltip({
@@ -164,11 +76,14 @@ function WeeklyTooltip({
       {showTrendLine && Number.isFinite(rawTrendValue) ? (
         <div>{trendLabel} : {formatValue(rawTrendValue)}</div>
       ) : null}
+      {entry?.isPartial ? (
+        <div>{entry?.viewMode === "calendar" ? "Semaine partielle" : "Fenetre partielle"} : {entry.coverageLabel || "periode tronquee"}</div>
+      ) : null}
     </div>
   );
 }
 
-export default function WeeklyVolumeChart({
+function WeeklyVolumeChart({
   data = [],
   title = "Volume hebdomadaire",
   subtitle = "Toutes les semaines de la periode affichee sont conservees, meme a 0.",
@@ -183,20 +98,73 @@ export default function WeeklyVolumeChart({
   trendWindow = 4,
   trendLabel = "Tendance",
   trendColor = "#7B8CA3",
+  trendSourceData = null,
+  requireFullTrendWindow = false,
   showMetricControl = false,
-  metricControlLabel = "Vue",
+  metricControlLabel = "Mesure",
   metricOptions = [],
   selectedMetric = "",
   onMetricChange = noop,
+  showViewControl = false,
+  viewControlLabel = "Decoupage",
+  viewOptions = [],
+  selectedView = "",
+  onViewChange = noop,
+  insight = "",
 }) {
-  const safeData = Array.isArray(data) ? data : [];
+  const { containerRef, chartWidth, axisTick } = useChartViewport();
+  const safeData = useMemo(() => (Array.isArray(data) ? data : []), [data]);
+  const safeTrendSourceData = useMemo(() => (Array.isArray(trendSourceData) && trendSourceData.length ? trendSourceData : safeData), [safeData, trendSourceData]);
   const formatValue = valueFormatter || ((value) => defaultFormatValue(value, unit));
-  const axisConfig = buildAxisConfig(safeData);
-  const chartData = showTrendLine ? buildTrendData(safeData, dataKey, trendWindow) : safeData;
+  const chartData = useMemo(
+    () => {
+      if (!showTrendLine) {
+        return safeData;
+      }
+
+      const strictTrendData = buildTrendData(safeTrendSourceData, dataKey, trendWindow, {
+        requireFullWindow: requireFullTrendWindow,
+      });
+      const mergeTrendBack = (source) => {
+        const trendMap = new Map(
+          source.map((entry, index) => [getTrendEntryKey(entry, index), entry.__trendValue]),
+        );
+
+        return safeData.map((entry, index) => ({
+          ...entry,
+          __trendValue: trendMap.get(getTrendEntryKey(entry, index)) ?? null,
+        }));
+      };
+      const strictVisibleData = mergeTrendBack(strictTrendData);
+
+      if (!requireFullTrendWindow || countFiniteTrendPoints(strictVisibleData) >= 2) {
+        return strictVisibleData;
+      }
+
+      // On les fenetres courtes, on garde une tendance lisible plutot qu'une ligne vide.
+      return mergeTrendBack(
+        buildTrendData(safeTrendSourceData, dataKey, trendWindow, { requireFullWindow: false }),
+      );
+    },
+    [dataKey, requireFullTrendWindow, safeData, safeTrendSourceData, showTrendLine, trendWindow],
+  );
+  const axisConfig = useMemo(
+    () => buildTemporalAxisConfig({
+      data: safeData,
+      width: chartWidth,
+      granularity: "week",
+      dateKey: "periodDate",
+      fallbackKey: "period",
+    }),
+    [chartWidth, safeData],
+  );
+  const yAxisWidth = chartWidth > 0 && chartWidth < 520 ? 38 : chartWidth > 0 && chartWidth < 860 ? 48 : 58;
   const safeMetricOptions = Array.isArray(metricOptions) && metricOptions.length
     ? metricOptions
     : [{ value: dataKey, label: name }];
   const safeSelectedMetric = selectedMetric || dataKey;
+  const safeViewOptions = Array.isArray(viewOptions) ? viewOptions : [];
+  const safeSelectedView = selectedView || safeViewOptions[0]?.value || "";
 
   return (
     <section className="card chart-card">
@@ -206,23 +174,36 @@ export default function WeeklyVolumeChart({
             <h2 className="card-title">{title}</h2>
             <InfoTooltip title={title} content={info} label={`Afficher l'aide pour ${title}`} />
           </div>
-          <p className="card-subtitle">{subtitle}</p>
+          {subtitle ? <p className="card-subtitle">{subtitle}</p> : null}
+          {insight ? <div className="chart-insight">{insight}</div> : null}
         </div>
-        {showMetricControl ? (
+        {showMetricControl || showViewControl ? (
           <div className="chart-controls">
-            <label className="inline-field">
-              <span className="field-label inline-label">{metricControlLabel}</span>
-              <select className="field-input field-input-small" value={safeSelectedMetric} onChange={(event) => onMetricChange(event.target.value)}>
-                {safeMetricOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
+            {showMetricControl ? (
+              <label className="inline-field">
+                <span className="field-label inline-label">{metricControlLabel}</span>
+                <select className="field-input field-input-small" value={safeSelectedMetric} onChange={(event) => onMetricChange(event.target.value)}>
+                  {safeMetricOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {showViewControl ? (
+              <label className="inline-field">
+                <span className="field-label inline-label">{viewControlLabel}</span>
+                <select className="field-input field-input-small" value={safeSelectedView} onChange={(event) => onViewChange(event.target.value)}>
+                  {safeViewOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
           </div>
         ) : null}
       </div>
       {safeData.length ? (
-        <div className="chart-box">
+        <div className="chart-box" ref={containerRef}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} barCategoryGap="18%">
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
@@ -230,17 +211,18 @@ export default function WeeklyVolumeChart({
                 dataKey={axisConfig.dataKey}
                 ticks={axisConfig.ticks}
                 tickFormatter={axisConfig.tickFormatter}
-                interval={0}
+                interval={axisConfig.interval}
                 angle={axisConfig.angle}
                 textAnchor={axisConfig.textAnchor}
                 height={axisConfig.height}
                 minTickGap={axisConfig.minTickGap}
-                tickMargin={8}
-                tick={AXIS_TICK}
+                tickMargin={axisConfig.tickMargin}
+                tick={axisTick}
                 axisLine={false}
                 tickLine={false}
+                allowDuplicatedCategory={false}
               />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis tick={axisTick} axisLine={false} tickLine={false} width={yAxisWidth} />
               <Tooltip
                 content={(
                   <WeeklyTooltip
@@ -252,17 +234,19 @@ export default function WeeklyVolumeChart({
                   />
                 )}
               />
-              <Bar dataKey={dataKey} name={name} fill={fill} radius={[8, 8, 0, 0]} />
+              <Bar dataKey={dataKey} name={name} fill={fill} radius={[8, 8, 0, 0]} isAnimationActive={false} />
               {showTrendLine ? (
                 <Line
-                  type="monotone"
+                  type="linear"
                   dataKey="__trendValue"
                   name={trendLabel}
                   stroke={trendColor}
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                   dot={false}
                   activeDot={{ r: 4 }}
                   strokeDasharray="6 4"
+                  isAnimationActive={false}
+                  connectNulls
                 />
               ) : null}
             </ComposedChart>
@@ -274,3 +258,5 @@ export default function WeeklyVolumeChart({
     </section>
   );
 }
+
+export default memo(WeeklyVolumeChart);

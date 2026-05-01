@@ -2,35 +2,37 @@ import prisma from "../../config/prisma.js";
 import {
   executeHistoricalSyncJob,
   executeIncrementalSyncJob,
+  executeDetailBackfillJob,
 } from "./activitySync.service.js";
 import {
   countActivities,
-  getLatestStoredActivity,
+  countDetailedActivities,
+  getLatestStoredActivityForUser,
 } from "../../repositories/activity.repository.js";
+import { requireActiveConnectionForUser } from "../strava/stravaConnection.service.js";
 
 const ACTIVE_JOB_STATUSES = ["queued", "running"];
 const runningJobs = new Set();
 
-async function getDefaultAppUserId() {
-  const appUser = await prisma.appUser.findFirst({
-    orderBy: {
-      createdAt: "asc",
-    },
+function buildRecoveryFailurePayload(reason, metadata = {}) {
+  return JSON.stringify({
+    reason,
+    ...metadata,
   });
-
-  if (!appUser) {
-    const error = new Error("No local app user found.");
-    error.httpStatus = 400;
-    error.userMessage = "Connecte d'abord ton compte Strava avant de lancer une synchronisation.";
-    throw error;
-  }
-
-  return appUser.id;
 }
 
-export async function assertNoActiveSyncJob() {
+function shouldQueueDetailBackfillFollowUp(job, result = {}) {
+  return (
+    job?.jobType === "detail_backfill"
+    && Number(result?.remainingToEnrich || 0) > 0
+    && Number(result?.detailsFetched || 0) > 0
+  );
+}
+
+export async function assertNoActiveSyncJob(appUserId) {
   const activeJob = await prisma.syncJob.findFirst({
     where: {
+      appUserId,
       status: {
         in: ACTIVE_JOB_STATUSES,
       },
@@ -43,15 +45,21 @@ export async function assertNoActiveSyncJob() {
   if (activeJob) {
     const error = new Error("Another synchronization job is already active.");
     error.httpStatus = 409;
-    error.userMessage = "Une synchronisation est déjà en cours.";
+    error.userMessage = "Une synchronisation est deja en cours pour ce compte.";
     throw error;
   }
 }
 
-export async function createSyncJob(jobType, triggerSource = "ui") {
-  await assertNoActiveSyncJob();
+export async function createSyncJob(appUserId, jobType, triggerSource = "ui") {
+  if (!appUserId) {
+    const error = new Error("App user id is required.");
+    error.httpStatus = 401;
+    error.userMessage = "Connecte-toi pour lancer une synchronisation.";
+    throw error;
+  }
 
-  const appUserId = await getDefaultAppUserId();
+  await assertNoActiveSyncJob(appUserId);
+  await requireActiveConnectionForUser(appUserId);
 
   return prisma.syncJob.create({
     data: {
@@ -65,6 +73,12 @@ export async function createSyncJob(jobType, triggerSource = "ui") {
   });
 }
 
+export async function queueSyncJobForUser(appUserId, jobType, triggerSource = "ui") {
+  const job = await createSyncJob(appUserId, jobType, triggerSource);
+  startSyncJobInBackground(job.id);
+  return job;
+}
+
 async function dispatchSyncJob(job) {
   if (job.jobType === "historical") {
     return executeHistoricalSyncJob(job.id);
@@ -74,9 +88,13 @@ async function dispatchSyncJob(job) {
     return executeIncrementalSyncJob(job.id);
   }
 
+  if (job.jobType === "detail_backfill") {
+    return executeDetailBackfillJob(job.id);
+  }
+
   const error = new Error(`Unsupported sync job type: ${job.jobType}`);
   error.httpStatus = 400;
-  error.userMessage = "Type de synchronisation non supporté.";
+  error.userMessage = "Type de synchronisation non supporte.";
   throw error;
 }
 
@@ -93,22 +111,121 @@ export function startSyncJobInBackground(jobId) {
         where: { id: jobId },
       });
 
-      if (!job) {
+      if (!job || !ACTIVE_JOB_STATUSES.includes(String(job.status || ""))) {
         return;
       }
 
-      await dispatchSyncJob(job);
+      const result = await dispatchSyncJob(job);
+
+      if (shouldQueueDetailBackfillFollowUp(job, result)) {
+        try {
+          await queueSyncJobForUser(job.appUserId, "detail_backfill", "auto_backfill");
+        } catch (followUpError) {
+          console.error("Unable to queue next detail backfill job automatically:", followUpError);
+        }
+      }
     } catch (error) {
       console.error("Background sync job failed:", error);
+
+      try {
+        const currentJob = await prisma.syncJob.findUnique({
+          where: { id: jobId },
+        });
+
+        if (currentJob && ACTIVE_JOB_STATUSES.includes(String(currentJob.status || ""))) {
+          await prisma.syncJob.update({
+            where: { id: jobId },
+            data: {
+              status: "failed",
+              endedAt: new Date(),
+              message: error.userMessage || "La synchronisation a echoue.",
+              errorDetails: buildRecoveryFailurePayload("background_dispatch_failed", {
+                message: error.message,
+              }),
+            },
+          });
+        }
+      } catch (markError) {
+        console.error("Failed to mark background sync job as failed:", markError);
+      }
     } finally {
       runningJobs.delete(jobId);
     }
   }, 0);
 }
 
-export async function getCurrentSyncJob() {
+export async function recoverActiveSyncJobsOnStartup() {
+  const activeJobs = await prisma.syncJob.findMany({
+    where: {
+      status: {
+        in: ACTIVE_JOB_STATUSES,
+      },
+    },
+    orderBy: [
+      { appUserId: "asc" },
+      { queuedAt: "desc" },
+    ],
+  });
+
+  if (!activeJobs.length) {
+    console.log("No active sync jobs to recover on startup.");
+    return { recoveredJobs: 0, failedDuplicateJobs: 0, activeJobs: 0 };
+  }
+
+  const seenUsers = new Set();
+  let recoveredJobs = 0;
+  let failedDuplicateJobs = 0;
+
+  for (const job of activeJobs) {
+    if (!job?.appUserId) {
+      await prisma.syncJob.update({
+        where: { id: job.id },
+        data: {
+          status: "failed",
+          endedAt: new Date(),
+          message: "Synchronisation abandonnee apres redemarrage (compte introuvable).",
+          errorDetails: buildRecoveryFailurePayload("missing_app_user_id"),
+        },
+      });
+      failedDuplicateJobs += 1;
+      continue;
+    }
+
+    if (seenUsers.has(job.appUserId)) {
+      await prisma.syncJob.update({
+        where: { id: job.id },
+        data: {
+          status: "failed",
+          endedAt: new Date(),
+          message: "Synchronisation abandonnee apres redemarrage (job concurrent plus recent conserve).",
+          errorDetails: buildRecoveryFailurePayload("duplicate_active_job", { appUserId: job.appUserId }),
+        },
+      });
+      failedDuplicateJobs += 1;
+      continue;
+    }
+
+    seenUsers.add(job.appUserId);
+    startSyncJobInBackground(job.id);
+    recoveredJobs += 1;
+  }
+
+  console.log("Recovered active sync jobs on startup.", {
+    resumed: recoveredJobs,
+    failedDuplicates: failedDuplicateJobs,
+  });
+
+  return {
+    recoveredJobs,
+    failedDuplicateJobs,
+    activeJobs: activeJobs.length,
+  };
+}
+
+export async function getCurrentSyncJob(appUserId) {
   return prisma.syncJob.findFirst({
     where: {
+      appUserId,
       status: {
         in: ACTIVE_JOB_STATUSES,
       },
@@ -119,14 +236,20 @@ export async function getCurrentSyncJob() {
   });
 }
 
-export async function getSyncJobById(jobId) {
-  return prisma.syncJob.findUnique({
-    where: { id: jobId },
+export async function getSyncJobById(appUserId, jobId) {
+  return prisma.syncJob.findFirst({
+    where: {
+      id: jobId,
+      appUserId,
+    },
   });
 }
 
-export async function listSyncJobs(limit = 20) {
+export async function listSyncJobs(appUserId, limit = 20) {
   return prisma.syncJob.findMany({
+    where: {
+      appUserId,
+    },
     take: limit,
     orderBy: {
       queuedAt: "desc",
@@ -134,21 +257,22 @@ export async function listSyncJobs(limit = 20) {
   });
 }
 
-export async function getSyncSummary() {
+export async function getSyncSummary(appUserId) {
   const [
     totalActivities,
+    detailedActivities,
     latestActivity,
     lastHistoricalSync,
     lastIncrementalSync,
+    lastDetailBackfillSync,
     currentJob,
   ] = await Promise.all([
-    countActivities(),
-    prisma.athlete.findFirst({
-      orderBy: { createdAt: "desc" },
-      select: { id: true },
-    }).then((athlete) => (athlete ? getLatestStoredActivity(athlete.id) : null)),
+    countActivities({ appUserId }),
+    countDetailedActivities({ appUserId }),
+    getLatestStoredActivityForUser(appUserId),
     prisma.syncJob.findFirst({
       where: {
+        appUserId,
         jobType: "historical",
         status: "success",
       },
@@ -158,6 +282,7 @@ export async function getSyncSummary() {
     }),
     prisma.syncJob.findFirst({
       where: {
+        appUserId,
         jobType: "incremental",
         status: "success",
       },
@@ -165,14 +290,27 @@ export async function getSyncSummary() {
         endedAt: "desc",
       },
     }),
-    getCurrentSyncJob(),
+    prisma.syncJob.findFirst({
+      where: {
+        appUserId,
+        jobType: "detail_backfill",
+        status: "success",
+      },
+      orderBy: {
+        endedAt: "desc",
+      },
+    }),
+    getCurrentSyncJob(appUserId),
   ]);
 
   return {
     totalActivities,
+    detailedActivities,
+    pendingDetailEnrichment: Math.max(0, totalActivities - detailedActivities),
     latestActivity,
     lastHistoricalSync,
     lastIncrementalSync,
+    lastDetailBackfillSync,
     currentJob,
   };
 }

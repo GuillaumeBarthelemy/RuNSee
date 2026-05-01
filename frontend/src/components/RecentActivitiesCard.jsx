@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDisplaySportLabel } from "../utils/activityAggregations.js";
 import { formatPace } from "../utils/activityInsights.js";
@@ -52,15 +53,20 @@ function persistReturnLocation(returnPath) {
   );
 }
 
-export default function RecentActivitiesCard({
+function RecentActivitiesCard({
   activities = [],
   returnPath = "/",
   title = "Activites recentes",
   subtitle = "Les dernieres seances utiles a relire avant de plonger dans l'analyse detaillee.",
   info = [],
+  limit = 6,
 }) {
   const navigate = useNavigate();
   const safeActivities = Array.isArray(activities) ? activities : [];
+  const numericLimit = Number(limit);
+  const displayedActivities = Number.isFinite(numericLimit) && numericLimit > 0
+    ? safeActivities.slice(0, numericLimit)
+    : safeActivities;
 
   return (
     <section className="card">
@@ -77,11 +83,11 @@ export default function RecentActivitiesCard({
         </button>
       </div>
 
-      {!safeActivities.length ? (
+      {!displayedActivities.length ? (
         <div className="empty-state">Aucune activite recente sur la selection courante.</div>
       ) : (
         <div className="recent-activity-list">
-          {safeActivities.map((activity) => {
+          {displayedActivities.map((activity) => {
             const key = activity?.id || activity?.stravaActivityId || activity?.name;
 
             return (
@@ -104,13 +110,38 @@ export default function RecentActivitiesCard({
                 <div className="recent-activity-main">
                   <div className="recent-activity-title">{activity?.name || "Activite"}</div>
                   <div className="small-text">
-                    {formatDate(activity?.startDate || activity?.startDateLocal)} · {getDisplaySportLabel(activity, { groupSports: true })}
+                    {formatDate(activity?.startDate || activity?.startDateLocal)} - {getDisplaySportLabel(activity, { groupSports: true })}
                   </div>
+                  {(activity?.estimatedSessionLabel || activity?.dominantIntensityLabel || activity?.loadBandLabel || activity?.microTag) ? (
+                    <div className="recent-activity-tags">
+                      {activity?.estimatedSessionLabel ? (
+                        <span className={`recent-activity-tag recent-activity-tag-${activity?.sessionTypeTone || "neutral"}`.trim()}>
+                          {activity.estimatedSessionLabel}
+                        </span>
+                      ) : null}
+                      {activity?.loadBandLabel ? (
+                        <span className={`recent-activity-tag recent-activity-tag-${activity?.loadBandTone || "neutral"}`.trim()}>
+                          {activity.loadBandLabel}
+                        </span>
+                      ) : null}
+                      {activity?.dominantIntensityLabel ? (
+                        <span className={`recent-activity-tag recent-activity-tag-${activity?.dominantIntensityTone || "neutral"}`.trim()}>
+                          {activity.dominantIntensityLabel}
+                        </span>
+                      ) : null}
+                      {activity?.microTag ? (
+                        <span className={`recent-activity-tag recent-activity-tag-${activity?.microTagTone || "neutral"}`.trim()}>
+                          {activity.microTag}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="recent-activity-metrics">
                   <span>{formatDistance(activity?.distance)}</span>
                   <span>{formatDuration(activity?.movingTime)}</span>
                   <span>{buildPace(activity)}</span>
+                  {activity?.activityLoadLabel ? <span>{activity.activityLoadLabel}</span> : null}
                 </div>
               </button>
             );
@@ -120,3 +151,5 @@ export default function RecentActivitiesCard({
     </section>
   );
 }
+
+export default memo(RecentActivitiesCard);

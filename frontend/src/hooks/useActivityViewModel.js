@@ -1,7 +1,8 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo } from "react";
 import useDashboardState, { DEFAULT_SPORT_GROUP } from "./useDashboardState.js";
 import useRunSeeData from "./useRunSeeData.js";
 import { filterActivities, getAvailableSportGroups } from "../utils/activityAggregations.js";
+import { buildAnalyticsDateRange, getFirstActivityDate } from "../utils/analyticsPeriods.js";
 
 const DEFAULT_FILTERS = {
   search: "",
@@ -15,16 +16,19 @@ const DEFAULT_OPTIONS = {
   monthlyMetric: "distanceKm",
   monthlyDisplay: "line",
   monthlyMonths: 6,
+  analyticsMonthlyMetric: "load",
   weekdayMetric: "count",
-  comparisonMetric: "distanceKm",
+  comparisonMetric: "load",
+  comparisonSelectedYears: [],
   comparisonDisplay: "line",
-  analyticsPeriodPreset: "90d",
-  analyticsCustomDateFrom: "",
-  analyticsCustomDateTo: "",
-  dashboardPeriodPreset: "30d",
-  dashboardCustomDateFrom: "",
-  dashboardCustomDateTo: "",
+  sharedPeriodPreset: "90d",
+  sharedCustomDateFrom: "",
+  sharedCustomDateTo: "",
   analyticsWeeklyMetric: "count",
+  analyticsVolumeGrouping: "rolling",
+  analyticsWeeklyViewMode: "rolling",
+  analyticsHeartRateDistributionMetric: "load",
+  todaySportGroup: DEFAULT_SPORT_GROUP,
   heartRateMax: "",
   heartRateZone1Max: "",
   heartRateZone2Max: "",
@@ -41,14 +45,28 @@ const DEFAULT_TABLE = {
 };
 
 const noop = () => {};
-
-export default function useActivityViewModel({ includeActivities = true } = {}) {
-  const { athlete, activities, error, isLoading } = useRunSeeData({ includeActivities });
+export default function useActivityViewModel({
+  includeActivities = true,
+} = {}) {
+  const {
+    athlete,
+    activities,
+    error,
+    isLoading,
+    reload,
+    trainingAnalyticsSettings,
+    trainingAnalyticsSettingsHistory,
+  } = useRunSeeData({ includeActivities });
   const { dashboardState, dashboardActions } = useDashboardState();
 
   const safeActivities = useMemo(
     () => (Array.isArray(activities) ? activities : []),
     [activities],
+  );
+
+  const firstActivityDate = useMemo(
+    () => getFirstActivityDate(safeActivities),
+    [safeActivities],
   );
 
   const filters = useMemo(
@@ -60,15 +78,30 @@ export default function useActivityViewModel({ includeActivities = true } = {}) 
     () => ({ ...DEFAULT_OPTIONS, ...(dashboardState?.options || {}) }),
     [dashboardState?.options],
   );
+  const deferredFilters = useDeferredValue(filters);
+  const deferredGroupSports = useDeferredValue(options.groupSports);
 
   const table = useMemo(
     () => ({ ...DEFAULT_TABLE, ...(dashboardState?.table || {}) }),
     [dashboardState?.table],
   );
+  const rawSetOption = dashboardActions?.setOption ?? noop;
+
+  const sharedRange = useMemo(
+    () => buildAnalyticsDateRange({
+      preset: options.sharedPeriodPreset,
+      customDateFrom: options.sharedCustomDateFrom,
+      customDateTo: options.sharedCustomDateTo,
+      firstActivityDate,
+    }),
+    [firstActivityDate, options.sharedCustomDateFrom, options.sharedCustomDateTo, options.sharedPeriodPreset],
+  );
 
   const setFilter = dashboardActions?.setFilter ?? noop;
   const resetFilters = dashboardActions?.resetFilters ?? noop;
-  const setOption = dashboardActions?.setOption ?? noop;
+  const setOption = useCallback((name, value) => {
+    rawSetOption(name, value);
+  }, [rawSetOption]);
   const setTable = dashboardActions?.setTable ?? noop;
 
   const availableSports = useMemo(
@@ -85,18 +118,26 @@ export default function useActivityViewModel({ includeActivities = true } = {}) 
   }, [availableSports, filters.sportGroup, setFilter]);
 
   const filteredActivities = useMemo(
-    () => filterActivities(safeActivities, filters, { groupSports: options.groupSports }),
-    [filters, options.groupSports, safeActivities],
+    () => filterActivities(
+      safeActivities,
+      {
+        ...deferredFilters,
+        dateFrom: sharedRange.dateFrom,
+        dateTo: sharedRange.dateTo,
+      },
+      { groupSports: deferredGroupSports },
+    ),
+    [deferredFilters, deferredGroupSports, safeActivities, sharedRange.dateFrom, sharedRange.dateTo],
   );
 
   const comparisonActivities = useMemo(
     () =>
       filterActivities(
         safeActivities,
-        { ...filters, dateFrom: "", dateTo: "" },
-        { groupSports: options.groupSports },
+        { ...deferredFilters, dateFrom: "", dateTo: "" },
+        { groupSports: deferredGroupSports },
       ),
-    [filters, options.groupSports, safeActivities],
+    [deferredFilters, deferredGroupSports, safeActivities],
   );
 
   return {
@@ -104,15 +145,22 @@ export default function useActivityViewModel({ includeActivities = true } = {}) 
     error,
     isLoading,
     safeActivities,
+    firstActivityDate,
     filteredActivities,
     comparisonActivities,
+    sharedRange,
     filters,
+    deferredFilters,
     options,
+    deferredGroupSports,
     table,
     availableSports,
+    trainingAnalyticsSettings,
+    trainingAnalyticsSettingsHistory,
     setFilter,
     resetFilters,
     setOption,
     setTable,
+    reload,
   };
 }

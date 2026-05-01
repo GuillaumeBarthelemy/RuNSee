@@ -48,7 +48,7 @@ export default function HeartRateSettingsCard({ options = {}, onOptionChange = n
     if (normalized.hasCustomMax && previewConfig.hasCustomZones) {
       return {
         tone: "success",
-        text: "Profil cardio personnalise actif. Analytics utilisera votre FC max et vos zones des qu'un bloc s'appuie sur ces donnees.",
+        text: "Profil cardio personnalise actif. Analytics utilisera ta FC max et tes zones des qu'un bloc s'appuie sur ces donnees.",
       };
     }
 
@@ -75,7 +75,7 @@ export default function HeartRateSettingsCard({ options = {}, onOptionChange = n
 
     return {
       tone: "info",
-      text: "Aucune valeur enregistree. Quand un graphique en a besoin, l'application utilisera une estimation et vous l'indiquera dans Analytics.",
+      text: "Aucune valeur enregistree. Quand un graphique en a besoin, l'application utilisera une estimation et te l'indiquera dans Analytics.",
     };
   }, [normalized.hasAnyCustomZones, normalized.hasCustomMax, previewConfig.hasCustomZones]);
 
@@ -97,7 +97,7 @@ export default function HeartRateSettingsCard({ options = {}, onOptionChange = n
         <div>
           <h2 className="card-title">Profil cardio</h2>
           <p className="card-subtitle">
-            Renseignez votre FC max et, si vous les connaissez, les bornes hautes de Z1 a Z4. Z5 est calculee automatiquement jusqu'a la FC max.
+            Renseigne ta FC max et, si tu les connais, les bornes hautes de Z1 a Z4. Z5 est calculee automatiquement jusqu'a la FC max.
           </p>
         </div>
 
@@ -143,7 +143,7 @@ export default function HeartRateSettingsCard({ options = {}, onOptionChange = n
       </div>
 
       <p className="small-text top-gap-sm">
-        Si vous laissez des champs vides, Analytics utilisera une estimation. Les zones par defaut suivent 70 %, 80 %, 87 % et 93 % de la FC max utilisee.
+        Si tu laisses des champs vides, Analytics utilisera une estimation. Les zones par defaut suivent 68 %, 79 %, 88 % et 94 % de la FC max utilisee (convention Friel/Joyner pour coureurs).
       </p>
 
       {zoneSummary ? (

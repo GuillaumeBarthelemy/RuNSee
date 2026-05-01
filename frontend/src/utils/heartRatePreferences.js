@@ -6,7 +6,12 @@ const ZONE_METADATA = [
   { key: "z5", shortLabel: "Z5", label: "Z5 intensif / VO2" },
 ];
 
-const DEFAULT_ZONE_RATIOS = [0.7, 0.8, 0.87, 0.93];
+// Ratios de zones FC par defaut (plafonds Z1, Z2, Z3, Z4 exprimes en fraction de FC max).
+// Convention Friel/Joyner pour coureurs : Z2 endurance fondamentale jusqu'a ~0.79 FC max,
+// Z3 endurance active jusqu'a ~0.88, Z4 seuil jusqu'a ~0.94, Z5 au-dela.
+// Ces valeurs remplacent l'ancienne grille [0.70, 0.80, 0.87, 0.93] qui placait
+// une partie de l'endurance fondamentale en Z3 et donnait des sessions EF classees Seuil.
+const DEFAULT_ZONE_RATIOS = [0.68, 0.79, 0.88, 0.94];
 
 export const HEART_RATE_OPTION_KEYS = {
   max: "heartRateMax",
@@ -125,13 +130,13 @@ export function resolveHeartRateZoneConfig({ preferences = {}, estimatedMaxHeart
   if (usingEstimatedMaxHeartrate && usingEstimatedZones) {
     estimationMessage = "FC max et zones estimees. Renseignez-les dans Administration pour personnaliser l'analyse.";
   } else if (usingEstimatedMaxHeartrate && customZonesAreValid) {
-    estimationMessage = "FC max estimee, avec vos zones personnalisees. Renseignez votre FC max dans Administration pour figer cette base.";
+    estimationMessage = "FC max estimee, avec tes zones personnalisees. Renseigne ta FC max dans Administration pour figer cette base.";
   } else if (!usingEstimatedMaxHeartrate && usingEstimatedZones && normalized.hasCustomMax) {
     estimationMessage = hasInvalidCustomZones
       ? "FC max personnalisee, mais zones incompletes ou incoherentes. Le repli estime reste utilise tant que Z1 < Z2 < Z3 < Z4 < FC max n'est pas respecte."
-      : "FC max personnalisee, mais zones non renseignees. Les zones estimees par defaut restent utilisees tant que vous ne les personnalisez pas.";
+      : "FC max personnalisee, mais zones non renseignees. Les zones estimees par defaut restent utilisees tant que tu ne les personnalises pas.";
   } else if (!usingEstimatedMaxHeartrate && usingEstimatedZones && !normalized.hasCustomMax) {
-    estimationMessage = "Zones non renseignees. L'application utilisera une estimation quand c'est necessaire et vous l'indiquera.";
+    estimationMessage = "Zones non renseignees. L'application utilisera une estimation quand c'est necessaire et te l'indiquera.";
   }
 
   return {

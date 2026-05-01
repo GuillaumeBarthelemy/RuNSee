@@ -5,19 +5,27 @@ import authRoutes from "./routes/auth.routes.js";
 import athleteRoutes from "./routes/athlete.routes.js";
 import activityRoutes from "./routes/activity.routes.js";
 import syncRoutes from "./routes/sync.routes.js";
+import trainingAnalyticsSettingsRoutes from "./routes/trainingAnalyticsSettings.routes.js";
+import raceObjectiveRoutes from "./routes/raceObjective.routes.js";
 import env from "./config/env.js";
+import { loadAuthSession } from "./middleware/auth.middleware.js";
 
 const app = express();
 const allowedOrigins = new Set(env.frontendAllowedOrigins);
 
+function isAllowedOrigin(origin) {
+  return Boolean(origin && allowedOrigins.has(origin));
+}
+
 app.use(
   cors({
+    credentials: true,
     origin(origin, callback) {
       if (!origin) {
         return callback(null, true);
       }
 
-      if (allowedOrigins.has(origin)) {
+      if (isAllowedOrigin(origin)) {
         return callback(null, true);
       }
 
@@ -25,7 +33,18 @@ app.use(
     },
   })
 );
+app.use((req, res, next) => {
+  const requestOrigin = String(req.get("origin") || "").trim();
+
+  if (isAllowedOrigin(requestOrigin)) {
+    res.header("Access-Control-Allow-Origin", requestOrigin);
+    res.header("Access-Control-Allow-Credentials", "true");
+  }
+
+  next();
+});
 app.use(express.json());
+app.use(loadAuthSession);
 
 app.get("/", (req, res) => {
   res.send("RuNSee backend is running");
@@ -60,6 +79,8 @@ app.use("/auth", authRoutes);
 app.use("/athlete", athleteRoutes);
 app.use("/activities", activityRoutes);
 app.use("/sync", syncRoutes);
+app.use("/settings", trainingAnalyticsSettingsRoutes);
+app.use("/settings", raceObjectiveRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

@@ -4,10 +4,17 @@ function formatDistance(meters) {
   return `${(numeric / 1000).toFixed(2)} km`;
 }
 
-function formatElevation(value) {
+function formatElevation(value, { signed = false } = {}) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return "-";
-  return `${Math.round(numeric)} m`;
+
+  const rounded = Math.round(numeric);
+
+  if (!signed || rounded <= 0) {
+    return `${rounded} m`;
+  }
+
+  return `+${rounded} m`;
 }
 
 function formatHeartRate(value) {
@@ -28,19 +35,25 @@ function formatPace(split) {
   return `${String(normalizedMinutes).padStart(2, "0")}:${String(normalizedSeconds).padStart(2, "0")}/km`;
 }
 
-function buildSplitRows(splits = []) {
+function buildSplitRows(splits = [], { elevationAccessor = null, signedElevation = false } = {}) {
   const safeSplits = Array.isArray(splits) ? splits : [];
+
   return safeSplits.map((split, index) => ({
     key: split?.id || `${index + 1}`,
     label: split?.split || split?.name || `${index + 1}`,
     distance: formatDistance(split?.distance),
     pace: formatPace(split),
-    elevation: formatElevation(split?.elevation_difference ?? split?.total_elevation_gain),
+    elevation: formatElevation(
+      typeof elevationAccessor === "function"
+        ? elevationAccessor(split)
+        : split?.elevation_difference ?? split?.total_elevation_gain,
+      { signed: signedElevation },
+    ),
     heartRate: formatHeartRate(split?.average_heartrate),
   }));
 }
 
-function SplitTable({ title, subtitle, rows = [], emptyMessage }) {
+function SplitTable({ title, subtitle, rows = [], emptyMessage, elevationHeader = "D+" }) {
   const safeRows = Array.isArray(rows) ? rows : [];
 
   return (
@@ -57,7 +70,7 @@ function SplitTable({ title, subtitle, rows = [], emptyMessage }) {
                 <th>Split</th>
                 <th>Distance</th>
                 <th>Allure</th>
-                <th>D+</th>
+                <th>{elevationHeader}</th>
                 <th>FC moy.</th>
               </tr>
             </thead>
@@ -85,31 +98,40 @@ export default function ActivitySplitsCard({ detailedPayload = null }) {
     : Array.isArray(detailedPayload?.splits_standard)
       ? detailedPayload.splits_standard
       : [];
-  const watchLaps = Array.isArray(detailedPayload?.laps) ? detailedPayload.laps : [];
+  const watchSplits = Array.isArray(detailedPayload?.laps) ? detailedPayload.laps : [];
 
-  const metricRows = buildSplitRows(metricSplits);
-  const lapRows = buildSplitRows(watchLaps);
+  const metricRows = buildSplitRows(metricSplits, {
+    elevationAccessor: (split) => split?.elevation_difference,
+    signedElevation: true,
+  });
+  const watchRows = buildSplitRows(watchSplits, {
+    elevationAccessor: (split) => split?.total_elevation_gain ?? split?.elevation_difference,
+  });
 
   return (
     <section className="top-gap-sm">
       <div className="card-header-row">
         <div>
           <h3 className="card-title">Splits</h3>
-          <p className="card-subtitle">Splits Strava automatiques et tours enregistrés par la montre, lorsqu'ils sont disponibles localement.</p>
+          <p className="card-subtitle">
+            Les splits automatiques Strava affichent la variation nette d'altitude par segment.
+            Les splits montre affichent le D+ fourni par l'appareil.
+          </p>
         </div>
       </div>
       <div className="grid two-columns">
         <SplitTable
           title="Splits automatiques"
-          subtitle="Découpage km par km proposé par Strava."
+          subtitle="Decoupage km par km propose par Strava, avec variation nette d'altitude."
           rows={metricRows}
-          emptyMessage="Enrichis l'activité pour récupérer les splits Strava détaillés."
+          elevationHeader="Delta alt."
+          emptyMessage="Enrichis l'activite pour recuperer les splits Strava detailles."
         />
         <SplitTable
-          title="Tours montre"
-          subtitle="Laps enregistrés par l'appareil pendant l'effort."
-          rows={lapRows}
-          emptyMessage="Aucun lap montre disponible sur cette activité."
+          title="Splits montre"
+          subtitle="Splits enregistres par l'appareil pendant l'effort."
+          rows={watchRows}
+          emptyMessage="Aucun split montre disponible sur cette activite."
         />
       </div>
     </section>

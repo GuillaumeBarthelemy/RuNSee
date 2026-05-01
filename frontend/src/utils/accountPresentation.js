@@ -14,13 +14,23 @@ function getInitials(value) {
     .join("");
 }
 
-function resolveDisplayName(athlete) {
+function resolveDisplayName(user, athlete) {
+  const userDisplayName = String(user?.displayName || "").trim();
+
+  if (userDisplayName) {
+    return userDisplayName;
+  }
+
   const safeAthlete = athlete || {};
   const fullName = `${safeAthlete.firstname || ""} ${safeAthlete.lastname || ""}`.trim();
   return fullName || safeAthlete.username || "Compte RuNSee";
 }
 
-function resolveIdentifier(athlete) {
+function resolveIdentifier(user, athlete) {
+  if (user?.email) {
+    return user.email;
+  }
+
   if (athlete?.username) {
     return athlete.username.startsWith("@") ? athlete.username : `@${athlete.username}`;
   }
@@ -28,7 +38,11 @@ function resolveIdentifier(athlete) {
   return "compte-local";
 }
 
-function resolveEmailDisplay(athlete) {
+function resolveEmailDisplay(user, athlete) {
+  if (user?.email) {
+    return user.email;
+  }
+
   if (athlete?.email) {
     return athlete.email;
   }
@@ -46,6 +60,22 @@ function resolveLocation(athlete) {
   }
 
   return athlete.country ? `${athlete.city}, ${athlete.country}` : athlete.city;
+}
+
+function getRoleLabel(role = "user") {
+  return role === "admin" ? "Administrateur" : "Membre";
+}
+
+function getAccountStatusLabel(status = "active") {
+  if (status === "disabled") {
+    return "Compte suspendu";
+  }
+
+  if (status === "pending") {
+    return "Activation requise";
+  }
+
+  return "Compte actif";
 }
 
 export function formatAccountDate(value) {
@@ -83,31 +113,47 @@ export function getWeekStartLabel(value = "monday") {
   return value === "sunday" ? "Dimanche" : "Lundi";
 }
 
-export function buildCurrentAccountModel({ athlete = null, options = {}, summary = null } = {}) {
-  const displayName = resolveDisplayName(athlete);
+function resolveLastSyncAt(summary) {
+  const candidates = [summary?.lastIncrementalSync?.endedAt, summary?.lastHistoricalSync?.endedAt]
+    .map((value) => (value ? new Date(value).getTime() : Number.NaN))
+    .filter((value) => Number.isFinite(value));
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  return new Date(Math.max(...candidates)).toISOString();
+}
+
+export function buildCurrentAccountModel({ user = null, athlete = null, options = {}, summary = null } = {}) {
+  const displayName = resolveDisplayName(user, athlete);
   const timezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Paris";
-  const lastSyncAt = summary?.lastIncrementalSync?.endedAt || summary?.lastHistoricalSync?.endedAt || null;
+  const lastSyncAt = resolveLastSyncAt(summary);
+  const stravaConnected = Boolean(user?.stravaConnected || athlete);
 
   return {
     displayName,
     initials: getInitials(displayName),
-    identifier: resolveIdentifier(athlete),
-    emailDisplay: resolveEmailDisplay(athlete),
-    emailHint: athlete?.email || (athlete?.username && athlete.username.includes("@"))
-      ? "Adresse issue du compte courant."
-      : "Adresse e-mail a brancher avec le module multi-utilisateur.",
+    identifier: resolveIdentifier(user, athlete),
+    emailDisplay: resolveEmailDisplay(user, athlete),
+    emailHint: user?.email
+      ? "Adresse utilisee pour la connexion RunNSee."
+      : athlete?.email || (athlete?.username && athlete.username.includes("@"))
+        ? "Adresse issue du compte connecte."
+        : "Aucune adresse e-mail n'est encore rattachee a ce profil.",
     avatarUrl: athlete?.profileMediumUrl || athlete?.profileUrl || "",
     location: resolveLocation(athlete),
-    roleLabel: "Proprietaire",
-    accountStatusLabel: athlete ? "Compte actif" : "Compte local",
-    stravaStatusLabel: athlete ? "Strava connecte" : "Strava non connecte",
-    stravaConnected: Boolean(athlete),
+    roleLabel: getRoleLabel(user?.role),
+    accountStatusLabel: getAccountStatusLabel(user?.status),
+    stravaStatusLabel: stravaConnected ? "Strava connecte" : "Strava non connecte",
+    stravaConnected,
     localeLabel: getLocaleLabel(options.userLocale),
     distanceUnitLabel: getDistanceUnitLabel(options.userDistanceUnit),
     weekStartLabel: getWeekStartLabel(options.userWeekStartsOn),
     timezoneLabel,
-    joinedAt: athlete?.createdAt || athlete?.connectedAt || null,
+    joinedAt: user?.createdAt || athlete?.createdAt || athlete?.connectedAt || null,
+    lastLoginAt: user?.lastLoginAt || null,
     lastSyncAt,
-    sessionLabel: "Ce navigateur",
+    sessionLabel: user ? "Ce navigateur" : "Session locale",
   };
 }

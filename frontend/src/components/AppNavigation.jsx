@@ -3,8 +3,8 @@ import { NavLink } from "react-router-dom";
 const NAV_ITEMS = [
   {
     to: "/",
-    label: "Tableau de bord",
-    shortLabel: "Accueil",
+    label: "Aujourd'hui",
+    shortLabel: "Jour",
     end: true,
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -23,6 +23,16 @@ const NAV_ITEMS = [
     ),
   },
   {
+    to: "/performance",
+    label: "Performance",
+    shortLabel: "Niveau",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 5h8m-6 0v4a2 2 0 0 0 4 0V5m-7 1H4v2a4 4 0 0 0 4 4m9-6h3v2a4 4 0 0 1-4 4m-4 2v4m-4 0h8m-10 3h12" />
+      </svg>
+    ),
+  },
+  {
     to: "/activities",
     label: "Activites",
     shortLabel: "Activites",
@@ -34,8 +44,8 @@ const NAV_ITEMS = [
   },
   {
     to: "/admin",
-    label: "Administration",
-    shortLabel: "Compte",
+    label: "Reglages",
+    shortLabel: "Reglages",
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-7 8a7 7 0 0 1 14 0" />
