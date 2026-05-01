@@ -27,6 +27,10 @@ model AppUser {
   sessions    UserSession[]
   trainingAnalyticsSettings UserTrainingAnalyticsSettings[]
   raceObjectives UserRaceObjective[]
+  externalProviderConnections ExternalProviderConnection[]
+  providerRawData ExternalProviderRawData[]
+  recoverySnapshots ExternalDailyRecoverySnapshot[]
+  activityProviderEnrichments ActivityProviderEnrichment[]
 }
 
 model UserRaceObjective {
@@ -235,10 +239,115 @@ model Activity {
   userRpe               Int?
   userRpeUpdatedAt      DateTime?
 
+  providerEnrichments   ActivityProviderEnrichment[]
+
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
   @@index([athleteId, startDate])
+}
+
+model ExternalProviderConnection {
+  id                    String    @id @default(cuid())
+  appUserId             String
+  appUser               AppUser   @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  providerCode          String
+  status                String    @default("disconnected")
+  displayName           String?
+  accountIdentifier     String?
+  encryptedSession      String?
+  sessionSchemaVersion  String    @default("v1")
+  consentAcceptedAt     DateTime?
+  connectedAt           DateTime?
+  disconnectedAt        DateTime?
+  lastSyncAt            DateTime?
+  lastBackfillStartedAt DateTime?
+  lastBackfillEndedAt   DateTime?
+  lastErrorCode         String?
+  lastErrorMessage      String?
+  lastErrorAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([appUserId, providerCode])
+  @@index([providerCode, status])
+  @@index([appUserId, status])
+  @@index([lastSyncAt])
+}
+
+model ExternalProviderRawData {
+  id                 String   @id @default(cuid())
+  appUserId          String
+  appUser            AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  providerCode       String
+  dataType           String
+  providerDateKey    String   @default("")
+  providerResourceId String   @default("")
+  payloadJson        String
+  payloadHash        String?
+  status             String   @default("success")
+  syncedAt           DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([appUserId, providerCode, dataType, providerDateKey, providerResourceId])
+  @@index([appUserId, providerCode, dataType])
+  @@index([providerCode, dataType, providerDateKey])
+  @@index([syncedAt])
+}
+
+model ExternalDailyRecoverySnapshot {
+  id                    String   @id @default(cuid())
+  appUserId             String
+  appUser               AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  sourceProvider        String
+  snapshotDate          DateTime
+  timezone              String?
+  sleepDurationSeconds  Int?
+  sleepScore            Float?
+  hrvAvgMs              Float?
+  hrvStatus             String?
+  restingHr             Int?
+  stressAvg             Float?
+  stressMax             Float?
+  bodyBatteryMorning    Int?
+  bodyBatteryMin        Int?
+  bodyBatteryMax        Int?
+  bodyBatteryEnd        Int?
+  trainingReadinessScore Int?
+  trainingReadinessStatus String?
+  dataQuality           String   @default("partial")
+  syncedAt              DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([appUserId, sourceProvider, snapshotDate])
+  @@index([appUserId, snapshotDate])
+  @@index([sourceProvider, snapshotDate])
+  @@index([dataQuality])
+}
+
+model ActivityProviderEnrichment {
+  id                 String   @id @default(cuid())
+  appUserId          String
+  appUser            AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  activityId         String
+  activity           Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  providerCode       String
+  providerActivityId String   @default("")
+  matchConfidence    Float?
+  matchedAt          DateTime?
+  status             String   @default("pending")
+  normalizedJson     String?
+  rawDataId          String?
+  lastErrorCode      String?
+  lastErrorMessage   String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([activityId, providerCode])
+  @@index([appUserId, providerCode, status])
+  @@index([providerCode, providerActivityId])
 }
 
 model SyncJob {

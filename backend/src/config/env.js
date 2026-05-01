@@ -132,6 +132,14 @@ const env = {
       process.env.RUNSEE_STRAVA_APP_ENCRYPTION_KEY ||
       ""
     ).trim(),
+  providerTokenEncryptionKey:
+    String(
+      process.env.RUNSEE_PROVIDER_TOKEN_ENCRYPTION_KEY ||
+      process.env.RUNSEE_GARMIN_TOKEN_ENCRYPTION_KEY ||
+      process.env.RUNSEE_STRAVA_TOKEN_ENCRYPTION_KEY ||
+      process.env.RUNSEE_STRAVA_APP_ENCRYPTION_KEY ||
+      ""
+    ).trim(),
   stravaApprovalPrompt:
     String(process.env.STRAVA_APPROVAL_PROMPT || "force").trim() || "force",
   stravaScope:
