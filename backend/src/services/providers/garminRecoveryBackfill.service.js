@@ -80,6 +80,13 @@ function buildRecoveryDateKeys() {
   return Array.from({ length: totalDays }, (_, index) => formatDateKey(addDays(today, -index)));
 }
 
+function buildRecentRecoveryDateKeys() {
+  const today = buildUtcDate(formatDateKey(new Date()));
+  const totalDays = Number(env.garminconnectRecentSyncDays || 4);
+
+  return Array.from({ length: totalDays }, (_, index) => formatDateKey(addDays(today, -index)));
+}
+
 function safeParseJson(value, fallback = null) {
   if (!value) {
     return fallback;
@@ -502,6 +509,18 @@ async function storeRecoveryDays(appUserId, days = []) {
   return storedDays;
 }
 
+async function fetchAndStoreRecoveryDates(appUserId, dates) {
+  const connection = await requireUsableGarminConnection(appUserId);
+  const session = decryptProviderSessionPayload(connection.encryptedSession, { parseJson: true });
+  const result = await fetchGarminRecoveryDays({ session, dates });
+  const storedDays = await storeRecoveryDays(appUserId, result?.days || []);
+
+  return {
+    result,
+    storedDays,
+  };
+}
+
 async function requireUsableGarminConnection(appUserId) {
   const connection = await findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE);
 
@@ -567,10 +586,7 @@ async function runGarminRecoveryBackfillLoop(appUserId) {
         break;
       }
 
-      const connection = await requireUsableGarminConnection(appUserId);
-      const session = decryptProviderSessionPayload(connection.encryptedSession, { parseJson: true });
-      const result = await fetchGarminRecoveryDays({ session, dates: pendingDates });
-      const storedDays = await storeRecoveryDays(appUserId, result?.days || []);
+      const { result, storedDays } = await fetchAndStoreRecoveryDates(appUserId, pendingDates);
 
       await upsertExternalProviderConnectionState({
         appUserId,
@@ -757,6 +773,98 @@ export async function startGarminRecoveryBackfillForUser(appUserId) {
     },
     message: "Recuperation Garmin lancee. RunNSee avance par petits lots pour limiter les appels Garmin.",
   };
+}
+
+export async function syncRecentGarminRecoveryForUser(appUserId, { triggerSource = "ui" } = {}) {
+  const connection = await requireUsableGarminConnection(appUserId);
+  const recoveryBackfill = await getGarminRecoveryBackfillStatus(appUserId);
+
+  if (runningBackfills.has(appUserId)) {
+    return {
+      connection: buildExternalProviderConnectionSummary(connection),
+      recoveryBackfill,
+      message: "Une recuperation Garmin est deja en cours. RunNSee evitera les appels concurrents.",
+    };
+  }
+
+  runningBackfills.set(appUserId, {
+    startedAt: new Date(),
+    type: "recent_sync",
+    triggerSource,
+  });
+
+  await upsertExternalProviderConnectionState({
+    appUserId,
+    providerCode: GARMIN_PROVIDER_CODE,
+    status: EXTERNAL_PROVIDER_STATUSES.SYNCING,
+    lastErrorCode: null,
+    lastErrorMessage: null,
+    lastErrorAt: null,
+  });
+
+  try {
+    const dates = buildRecentRecoveryDateKeys();
+    const { result, storedDays } = await fetchAndStoreRecoveryDates(appUserId, dates);
+    const now = new Date();
+    let connectionStatus = EXTERNAL_PROVIDER_STATUSES.CONNECTED;
+    let lastErrorCode = null;
+    let lastErrorMessage = null;
+    let lastErrorAt = null;
+    let message = `Synchronisation Garmin recente terminee : ${storedDays} jour(s) relu(s).`;
+
+    if (result?.status === "rate_limited") {
+      lastErrorCode = normalizeBridgeErrorCode(result);
+      lastErrorMessage = result?.message || "Garmin limite temporairement la synchronisation.";
+      lastErrorAt = now;
+      message = "Garmin limite temporairement la synchronisation. Les jours deja lus ont ete conserves.";
+    } else if (result?.status === "expired") {
+      connectionStatus = EXTERNAL_PROVIDER_STATUSES.EXPIRED;
+      lastErrorCode = normalizeBridgeErrorCode(result);
+      lastErrorMessage = result?.message || "La session Garmin a expire.";
+      lastErrorAt = now;
+      message = "La session Garmin a expire. Reconnecte Garmin pour reprendre la synchronisation.";
+    } else if (result?.status !== "success") {
+      lastErrorCode = normalizeBridgeErrorCode(result);
+      lastErrorMessage = result?.message || "La synchronisation Garmin recente a echoue.";
+      lastErrorAt = now;
+      message = "La synchronisation Garmin recente a ete interrompue.";
+    }
+
+    const updatedConnection = await upsertExternalProviderConnectionState({
+      appUserId,
+      providerCode: GARMIN_PROVIDER_CODE,
+      status: connectionStatus,
+      lastSyncAt: storedDays > 0 || result?.status === "success" ? now : undefined,
+      lastErrorCode,
+      lastErrorMessage,
+      lastErrorAt,
+    });
+
+    return {
+      connection: buildExternalProviderConnectionSummary(updatedConnection),
+      recoveryBackfill: await getGarminRecoveryBackfillStatus(appUserId),
+      message,
+    };
+  } catch (error) {
+    const updatedConnection = await upsertExternalProviderConnectionState({
+      appUserId,
+      providerCode: GARMIN_PROVIDER_CODE,
+      status: EXTERNAL_PROVIDER_STATUSES.CONNECTED,
+      lastErrorCode: "GARMINCONNECT_RECENT_SYNC_FAILED",
+      lastErrorMessage: error.userMessage || "La synchronisation Garmin recente a echoue.",
+      lastErrorAt: new Date(),
+    });
+
+    console.error("Garmin recent recovery sync failed:", error);
+
+    return {
+      connection: buildExternalProviderConnectionSummary(updatedConnection),
+      recoveryBackfill: await getGarminRecoveryBackfillStatus(appUserId),
+      message: error.userMessage || "La synchronisation Garmin recente a echoue.",
+    };
+  } finally {
+    runningBackfills.delete(appUserId);
+  }
 }
 
 export async function buildGarminConnectionWithRecoveryStatus(appUserId, connection) {

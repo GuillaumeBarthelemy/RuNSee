@@ -7,6 +7,21 @@ import {
 
 const noop = () => {};
 
+function formatDateTime(value) {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch {
+    return "";
+  }
+}
+
 function GarminExperimentalCard({
   status = "unavailable",
   canConnect = false,
@@ -14,9 +29,11 @@ function GarminExperimentalCard({
   recoveryBackfill = null,
   isPending = false,
   isBackfillPending = false,
+  isSyncPending = false,
   onConnect = noop,
   onDisconnect = noop,
   onStartRecoveryBackfill = noop,
+  onSyncRecentRecovery = noop,
 }) {
   const resolvedStatusCode = connection?.status || status;
   const resolvedStatus = getGarminExperimentalStatus(resolvedStatusCode);
@@ -33,6 +50,7 @@ function GarminExperimentalCard({
   );
   const isRecoveryRunning = Boolean(recoveryBackfill?.isRunning || resolvedStatusCode === "syncing");
   const isRecoveryComplete = Boolean(recoveryBackfill?.isComplete);
+  const formattedLastSync = formatDateTime(connection?.lastSyncAt || recoveryBackfill?.lastSyncedAt);
   const hasBaseCredentials = Boolean(email.trim() && password && consentAccepted);
   const canSubmit = Boolean(
     canConnect
@@ -76,6 +94,9 @@ function GarminExperimentalCard({
     isRecoveryRunning,
     recoveryBackfill?.syncedDays,
   ]);
+  const recentSyncButtonLabel = isSyncPending || isRecoveryRunning
+    ? GARMIN_EXPERIMENTAL_COPY.recoverySyncRunningAction
+    : GARMIN_EXPERIMENTAL_COPY.recoverySyncRecentAction;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -268,14 +289,24 @@ function GarminExperimentalCard({
               <h3 className="subcard-title">{GARMIN_EXPERIMENTAL_COPY.recoveryTitle}</h3>
               <p className="small-text">{GARMIN_EXPERIMENTAL_COPY.recoveryCaption}</p>
             </div>
-            <button
-              type="button"
-              className="button button-outline"
-              onClick={() => onStartRecoveryBackfill()}
-              disabled={isBackfillPending || isRecoveryRunning || isRecoveryComplete}
-            >
-              {recoveryButtonLabel}
-            </button>
+            <div className="actions-row compact-actions">
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => onSyncRecentRecovery()}
+                disabled={isSyncPending || isBackfillPending || isRecoveryRunning}
+              >
+                {recentSyncButtonLabel}
+              </button>
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => onStartRecoveryBackfill()}
+                disabled={isBackfillPending || isSyncPending || isRecoveryRunning || isRecoveryComplete}
+              >
+                {recoveryButtonLabel}
+              </button>
+            </div>
           </div>
 
           <div className="progress-shell garmin-recovery-progress" aria-hidden="true">
@@ -305,7 +336,17 @@ function GarminExperimentalCard({
                 <strong>{recoveryBackfill.nextPendingDate}</strong>
               </span>
             ) : null}
+            {formattedLastSync ? (
+              <span>
+                {GARMIN_EXPERIMENTAL_COPY.recoveryLastSyncLabel}
+                {" : "}
+                <strong>{formattedLastSync}</strong>
+              </span>
+            ) : null}
           </div>
+          <p className="small-text top-gap-sm">
+            {GARMIN_EXPERIMENTAL_COPY.recoveryDailySyncCaption}
+          </p>
         </div>
       ) : null}
     </section>

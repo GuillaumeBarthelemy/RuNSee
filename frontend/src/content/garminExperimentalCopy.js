@@ -112,9 +112,14 @@ export const GARMIN_EXPERIMENTAL_COPY = {
   recoveryRunningAction: "Recuperation en cours",
   recoveryCompleteAction: "Historique complet",
   recoveryContinueAction: "Reprendre la recuperation",
+  recoverySyncRecentAction: "Synchroniser les derniers jours",
+  recoverySyncRunningAction: "Synchronisation en cours",
   recoveryProgressLabel: "jours analyses",
   recoveryRemainingLabel: "jours restants",
   recoveryNextDateLabel: "prochain jour a recuperer",
+  recoveryLastSyncLabel: "derniere synchronisation",
+  recoveryDailySyncCaption:
+    "La synchronisation automatique relit J-3 a J pour absorber les corrections Garmin apres coup.",
   tooltip: [
     {
       label: "Pourquoi",

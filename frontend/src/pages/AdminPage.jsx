@@ -19,6 +19,7 @@ import {
   disconnectGarmin,
   getGarminConnectionStatus,
   startGarminRecoveryBackfill,
+  syncRecentGarminRecovery,
 } from "../services/externalProvider.service.js";
 import { saveTrainingAnalyticsSettings } from "../services/trainingAnalyticsSettings.service.js";
 import { startDetailBackfill, startHistoricalSync, startIncrementalSync } from "../services/sync.service.js";
@@ -56,6 +57,7 @@ export default function AdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGarminSubmitting, setIsGarminSubmitting] = useState(false);
   const [isGarminBackfillSubmitting, setIsGarminBackfillSubmitting] = useState(false);
+  const [isGarminSyncSubmitting, setIsGarminSyncSubmitting] = useState(false);
   const [garminConnection, setGarminConnection] = useState(null);
   const [garminRecoveryBackfill, setGarminRecoveryBackfill] = useState(null);
   const [trainingSettingsOverride, setTrainingSettingsOverride] = useState(null);
@@ -392,6 +394,31 @@ export default function AdminPage() {
     }
   }, [loadGarminConnection, safeSetError]);
 
+  const handleSyncRecentGarminRecovery = useCallback(async () => {
+    safeSetError("");
+    setInfoNotice("");
+    setActionNotice("");
+    setIsGarminSyncSubmitting(true);
+
+    try {
+      const result = await syncRecentGarminRecovery();
+      setGarminConnection(result?.connection || null);
+      setGarminRecoveryBackfill(result?.recoveryBackfill || null);
+      setActionNotice(result?.message || "Synchronisation Garmin recente terminee.");
+    } catch (error) {
+      const connection = error?.response?.data?.connection;
+      if (connection) {
+        setGarminConnection(connection);
+      } else {
+        await loadGarminConnection();
+      }
+
+      safeSetError(extractErrorMessage(error, "Erreur lors de la synchronisation Garmin recente."));
+    } finally {
+      setIsGarminSyncSubmitting(false);
+    }
+  }, [loadGarminConnection, safeSetError]);
+
   const handleSaveTrainingAnalyticsSettings = useCallback(async (payload) => {
     safeSetError("");
     setInfoNotice("");
@@ -492,9 +519,11 @@ export default function AdminPage() {
           canConnect
           isPending={isGarminSubmitting}
           isBackfillPending={isGarminBackfillSubmitting}
+          isSyncPending={isGarminSyncSubmitting}
           onConnect={handleConnectGarmin}
           onDisconnect={handleDisconnectGarmin}
           onStartRecoveryBackfill={handleStartGarminRecoveryBackfill}
+          onSyncRecentRecovery={handleSyncRecentGarminRecovery}
         />
       </section>
 

@@ -5113,6 +5113,10 @@ body.modal-open {
   margin-top: 14px;
 }
 
+.garmin-recovery-panel .compact-actions {
+  justify-content: flex-end;
+}
+
 .garmin-recovery-stats {
   display: flex;
   flex-wrap: wrap;

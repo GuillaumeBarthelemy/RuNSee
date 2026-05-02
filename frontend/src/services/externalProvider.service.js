@@ -19,3 +19,8 @@ export async function startGarminRecoveryBackfill() {
   const response = await api.post("/providers/garmin/recovery/backfill", {});
   return response.data;
 }
+
+export async function syncRecentGarminRecovery() {
+  const response = await api.post("/providers/garmin/recovery/sync-recent", {});
+  return response.data;
+}

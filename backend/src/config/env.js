@@ -158,6 +158,22 @@ const env = {
     5000,
     parseNumber(process.env.GARMINCONNECT_RECOVERY_BATCH_DELAY_MS, 12000),
   ),
+  garminconnectDailySyncEnabled: parseBoolean(
+    process.env.GARMINCONNECT_DAILY_SYNC_ENABLED,
+    true,
+  ),
+  garminconnectDailySyncIntervalMinutes: Math.max(
+    60,
+    parseNumber(process.env.GARMINCONNECT_DAILY_SYNC_INTERVAL_MINUTES, 24 * 60),
+  ),
+  garminconnectDailySyncStartupDelaySeconds: Math.max(
+    0,
+    parseNumber(process.env.GARMINCONNECT_DAILY_SYNC_STARTUP_DELAY_SECONDS, 120),
+  ),
+  garminconnectRecentSyncDays: Math.min(
+    7,
+    Math.max(1, parseNumber(process.env.GARMINCONNECT_RECENT_SYNC_DAYS, 4)),
+  ),
   stravaApprovalPrompt:
     String(process.env.STRAVA_APPROVAL_PROMPT || "force").trim() || "force",
   stravaScope:
