@@ -17,6 +17,8 @@ export default function DashboardDecisionSummaryCard({
   info = [],
 }) {
   const safeModel = model || {};
+  const decisionMeta = safeModel.decisionMeta || {};
+  const decisionFactors = Array.isArray(decisionMeta.factors) ? decisionMeta.factors : [];
 
   return (
     <section className="card dashboard-decision-card">
@@ -56,6 +58,26 @@ export default function DashboardDecisionSummaryCard({
           detail={safeModel.charge?.detail || "Pas assez de donnees"}
           tone={safeModel.charge?.tone}
         />
+        <DecisionPill
+          label="Recuperation"
+          value={safeModel.recovery?.label || "Non disponible"}
+          detail={safeModel.recovery?.detail || "Aucun signal Garmin exploitable"}
+          tone={safeModel.recovery?.tone}
+        />
+      </div>
+
+      <div className="decision-evidence-strip">
+        <span>
+          <strong>Confiance</strong>
+          {decisionMeta.confidence?.label || "Standard"}
+        </span>
+        <span>
+          <strong>Point limitant</strong>
+          {decisionMeta.limitingFactor || "Charge uniquement"}
+        </span>
+        {decisionFactors.slice(0, 3).map((factor) => (
+          <span key={factor}>{factor}</span>
+        ))}
       </div>
 
       <div className={`dashboard-recommendation dashboard-recommendation-${safeModel.recommendation?.tone || "neutral"}`.trim()}>

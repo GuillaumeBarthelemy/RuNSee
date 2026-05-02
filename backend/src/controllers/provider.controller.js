@@ -5,6 +5,7 @@ import {
   getGarminConnectionStatus,
 } from "../services/providers/garminProvider.service.js";
 import {
+  listGarminRecoverySnapshotsForUser,
   startGarminRecoveryBackfillForUser,
   syncRecentGarminRecoveryForUser,
 } from "../services/providers/garminRecoveryBackfill.service.js";
@@ -57,6 +58,19 @@ export async function syncRecentGarminRecoveryController(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
     const result = await syncRecentGarminRecoveryForUser(user.id, { triggerSource: "ui" });
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function listGarminRecoverySnapshotsController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await listGarminRecoverySnapshotsForUser(user.id, {
+      days: req.query?.days,
+    });
 
     return res.json(result);
   } catch (error) {

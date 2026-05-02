@@ -3,6 +3,7 @@ import {
   connectGarminController,
   disconnectGarminController,
   getGarminConnectionStatusController,
+  listGarminRecoverySnapshotsController,
   syncRecentGarminRecoveryController,
   startGarminRecoveryBackfillController,
 } from "../controllers/provider.controller.js";
@@ -15,5 +16,6 @@ router.post("/garmin/connect", requireAuth, connectGarminController);
 router.post("/garmin/disconnect", requireAuth, disconnectGarminController);
 router.post("/garmin/recovery/backfill", requireAuth, startGarminRecoveryBackfillController);
 router.post("/garmin/recovery/sync-recent", requireAuth, syncRecentGarminRecoveryController);
+router.get("/garmin/recovery/snapshots", requireAuth, listGarminRecoverySnapshotsController);
 
 export default router;

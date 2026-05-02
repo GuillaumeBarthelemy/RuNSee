@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardDecisionSummaryCard from "../components/DashboardDecisionSummaryCard.jsx";
 import RecentActivitiesCard from "../components/RecentActivitiesCard.jsx";
 import TodayAlertBanner from "../components/TodayAlertBanner.jsx";
@@ -11,6 +11,7 @@ import { TRAINING_MVP_SECTION_INFO } from "../content/trainingMvpCopy.js";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import useRaceObjectives from "../hooks/useRaceObjectives.js";
 import AppShell from "../layouts/AppShell.jsx";
+import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
 import { startIncrementalSync } from "../services/sync.service.js";
 import { filterActivities, getAvailableSportGroups, RUN_SPORT_GROUP_LABEL } from "../utils/activityAggregations.js";
 import { buildActivityItems, buildBestEffortRecords, buildRegularitySummary } from "../utils/activityInsights.js";
@@ -32,6 +33,7 @@ import {
 
 const TODAY_PERIOD_PRESET = "7d";
 const TODAY_VOLUME_VIEW_MODE = "rolling";
+const RECOVERY_SNAPSHOT_DAYS = 56;
 
 function toDate(value) {
   if (!value) {
@@ -65,6 +67,27 @@ export default function DashboardPage() {
     includeActivities: true,
   });
   const { activeRace } = useRaceObjectives();
+  const [recoverySnapshotData, setRecoverySnapshotData] = useState(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    getGarminRecoverySnapshots({ days: RECOVERY_SNAPSHOT_DAYS })
+      .then((data) => {
+        if (!ignore) {
+          setRecoverySnapshotData(data || null);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setRecoverySnapshotData(null);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const account = useMemo(
     () => buildCurrentAccountModel({ athlete, options }),
@@ -139,10 +162,14 @@ export default function DashboardPage() {
     }),
     [dashboardScopeActivities, options.userWeekStartsOn, todayRange.end, trainingAnalyticsSettings, trendStartDate],
   );
+  const recoverySnapshots = useMemo(
+    () => (Array.isArray(recoverySnapshotData?.snapshots) ? recoverySnapshotData.snapshots : []),
+    [recoverySnapshotData],
+  );
 
   const dashboardDecisionModel = useMemo(
-    () => buildDashboardDecisionSummary(trainingLoadModel, trendLoadModel),
-    [trainingLoadModel, trendLoadModel],
+    () => buildDashboardDecisionSummary(trainingLoadModel, trendLoadModel, { recoverySnapshots }),
+    [recoverySnapshots, trainingLoadModel, trendLoadModel],
   );
 
   const loadVarianceModel = useMemo(

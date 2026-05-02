@@ -24,3 +24,12 @@ export async function syncRecentGarminRecovery() {
   const response = await api.post("/providers/garmin/recovery/sync-recent", {});
   return response.data;
 }
+
+export async function getGarminRecoverySnapshots({ days = 56 } = {}) {
+  const response = await api.get("/providers/garmin/recovery/snapshots", {
+    params: {
+      days,
+    },
+  });
+  return response.data;
+}

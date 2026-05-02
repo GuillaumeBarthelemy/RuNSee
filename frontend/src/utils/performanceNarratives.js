@@ -12,6 +12,11 @@ function toNumber(value) {
   return Number.isFinite(Number(value)) ? Number(value) : 0;
 }
 
+function toOptionalNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function roundValue(value, decimals = 1) {
   return Number(toNumber(value).toFixed(decimals));
 }
@@ -24,6 +29,18 @@ function average(values = []) {
   }
 
   return safeValues.reduce((sum, value) => sum + Number(value), 0) / safeValues.length;
+}
+
+function averageOptional(values = []) {
+  const safeValues = values
+    .map((value) => toOptionalNumber(value))
+    .filter((value) => value !== null);
+
+  if (!safeValues.length) {
+    return null;
+  }
+
+  return safeValues.reduce((total, value) => total + value, 0) / safeValues.length;
 }
 
 function sum(values = []) {
@@ -283,18 +300,268 @@ function buildDecisionRecommendation(summary = {}, form = {}, fatigue = {}, char
   };
 }
 
-export function buildDashboardDecisionSummary(loadModel = {}, contextLoadModel = loadModel) {
+function getRecoverySignalCount(snapshot = {}) {
+  return [
+    snapshot.sleepDurationSeconds,
+    snapshot.sleepScore,
+    snapshot.hrvAvgMs,
+    snapshot.restingHr,
+    snapshot.stressAvg,
+    snapshot.bodyBatteryMorning ?? snapshot.bodyBatteryEnd,
+  ].filter((value) => toOptionalNumber(value) !== null).length;
+}
+
+function getRecoverySnapshotDate(snapshot = {}) {
+  const parsed = new Date(snapshot.date || snapshot.snapshotDate || snapshot.syncedAt || "");
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getSortedRecoverySnapshots(snapshots = []) {
+  return (Array.isArray(snapshots) ? snapshots : [])
+    .map((snapshot) => ({
+      ...snapshot,
+      __date: getRecoverySnapshotDate(snapshot),
+      __signalCount: getRecoverySignalCount(snapshot),
+    }))
+    .filter((snapshot) => snapshot.__date && snapshot.__signalCount > 0)
+    .sort((first, second) => first.__date - second.__date);
+}
+
+function formatSignedPercent(value) {
+  if (!Number.isFinite(Number(value))) {
+    return "";
+  }
+
+  const rounded = roundValue(value, 0);
+  return `${rounded > 0 ? "+" : ""}${rounded} %`;
+}
+
+function formatSleepDuration(seconds) {
+  const minutes = Math.round(toNumber(seconds) / 60);
+
+  if (minutes <= 0) {
+    return "";
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  return `${hours} h ${String(remainingMinutes).padStart(2, "0")}`;
+}
+
+function buildRecoveryDecisionProfile(snapshots = []) {
+  const sortedSnapshots = getSortedRecoverySnapshots(snapshots);
+
+  if (!sortedSnapshots.length) {
+    return {
+      label: "Non disponible",
+      detail: "Aucun signal Garmin exploitable.",
+      tone: "neutral",
+      confidence: { label: "Standard", tone: "neutral" },
+      limitingFactor: "Charge uniquement",
+      factors: ["Pas encore de donnees de recuperation Garmin."],
+      score: 0,
+      hasData: false,
+    };
+  }
+
+  const recentSnapshots = sortedSnapshots.slice(-7);
+  const baselineSnapshots = sortedSnapshots.slice(0, Math.max(0, sortedSnapshots.length - 7)).slice(-35);
+  const recentThree = recentSnapshots.slice(-3);
+  const coverage = recentSnapshots.length / 7;
+  const recentSignalCount = recentSnapshots.reduce((total, snapshot) => total + snapshot.__signalCount, 0);
+  const expectedSignalCount = Math.max(1, recentSnapshots.length * 5);
+  const signalCoverage = Math.min(1, recentSignalCount / expectedSignalCount);
+  const hrvRecent = averageOptional(recentThree.map((snapshot) => snapshot.hrvAvgMs));
+  const hrvBaseline = averageOptional(baselineSnapshots.map((snapshot) => snapshot.hrvAvgMs));
+  const restingHrRecent = averageOptional(recentThree.map((snapshot) => snapshot.restingHr));
+  const restingHrBaseline = averageOptional(baselineSnapshots.map((snapshot) => snapshot.restingHr));
+  const sleepScoreRecent = averageOptional(recentSnapshots.map((snapshot) => snapshot.sleepScore));
+  const sleepDurationRecent = averageOptional(recentSnapshots.map((snapshot) => snapshot.sleepDurationSeconds));
+  const stressRecent = averageOptional(recentSnapshots.map((snapshot) => snapshot.stressAvg));
+  const bodyBatteryRecent = averageOptional(
+    recentSnapshots.map((snapshot) => snapshot.bodyBatteryMorning ?? snapshot.bodyBatteryEnd),
+  );
+  const hrvDeltaPercent = hrvRecent !== null && hrvBaseline
+    ? ((hrvRecent - hrvBaseline) / hrvBaseline) * 100
+    : null;
+  const restingHrDelta = restingHrRecent !== null && restingHrBaseline !== null
+    ? restingHrRecent - restingHrBaseline
+    : null;
+  const factors = [];
+  let score = 0;
+  let limitingFactor = "";
+
+  if (hrvDeltaPercent !== null) {
+    factors.push(`Variabilite cardiaque ${formatSignedPercent(hrvDeltaPercent)} vs repere.`);
+    if (hrvDeltaPercent <= -12) {
+      score -= 3;
+      limitingFactor ||= "Variabilite cardiaque basse";
+    } else if (hrvDeltaPercent <= -7) {
+      score -= 2;
+      limitingFactor ||= "Variabilite cardiaque en retrait";
+    } else if (hrvDeltaPercent >= 6) {
+      score += 1;
+    }
+  }
+
+  if (restingHrDelta !== null) {
+    factors.push(`FC repos ${restingHrDelta >= 0 ? "+" : ""}${roundValue(restingHrDelta, 0)} bpm vs repere.`);
+    if (restingHrDelta >= 6) {
+      score -= 3;
+      limitingFactor ||= "FC repos elevee";
+    } else if (restingHrDelta >= 3) {
+      score -= 2;
+      limitingFactor ||= "FC repos en hausse";
+    } else if (restingHrDelta <= -3) {
+      score += 1;
+    }
+  }
+
+  if (sleepScoreRecent !== null) {
+    factors.push(`Sommeil score moyen ${roundValue(sleepScoreRecent, 0)}.`);
+    if (sleepScoreRecent < 55) {
+      score -= 2;
+      limitingFactor ||= "Sommeil faible";
+    } else if (sleepScoreRecent >= 75) {
+      score += 1;
+    }
+  } else if (sleepDurationRecent !== null) {
+    factors.push(`Sommeil moyen ${formatSleepDuration(sleepDurationRecent)}.`);
+    if (sleepDurationRecent < 6.5 * 3600) {
+      score -= 2;
+      limitingFactor ||= "Sommeil court";
+    } else if (sleepDurationRecent >= 7.5 * 3600) {
+      score += 1;
+    }
+  }
+
+  if (stressRecent !== null) {
+    factors.push(`Stress moyen ${roundValue(stressRecent, 0)}.`);
+    if (stressRecent >= 55) {
+      score -= 2;
+      limitingFactor ||= "Stress eleve";
+    } else if (stressRecent <= 30) {
+      score += 1;
+    }
+  }
+
+  if (bodyBatteryRecent !== null) {
+    factors.push(`Body Battery moyen ${roundValue(bodyBatteryRecent, 0)}.`);
+    if (bodyBatteryRecent < 35) {
+      score -= 2;
+      limitingFactor ||= "Reserve energetique basse";
+    } else if (bodyBatteryRecent >= 70) {
+      score += 1;
+    }
+  }
+
+  const confidenceScore = (coverage * 0.45) + (signalCoverage * 0.55);
+  const confidence = confidenceScore >= 0.72
+    ? { label: "Haute", tone: "positive" }
+    : confidenceScore >= 0.42
+      ? { label: "Moyenne", tone: "warning" }
+      : { label: "Faible", tone: "neutral" };
+
+  if (score <= -5) {
+    return {
+      label: "Fragile",
+      detail: "Plusieurs signaux de recuperation sont defavorables.",
+      tone: "negative",
+      confidence,
+      limitingFactor: limitingFactor || "Recuperation basse",
+      factors: factors.slice(0, 4),
+      score,
+      hasData: true,
+    };
+  }
+
+  if (score <= -2) {
+    return {
+      label: "A surveiller",
+      detail: "La recuperation invite a rester prudent.",
+      tone: "warning",
+      confidence,
+      limitingFactor: limitingFactor || "Recuperation inegale",
+      factors: factors.slice(0, 4),
+      score,
+      hasData: true,
+    };
+  }
+
+  if (score >= 2) {
+    return {
+      label: "Solide",
+      detail: "Les signaux de recuperation soutiennent la decision.",
+      tone: "positive",
+      confidence,
+      limitingFactor: "Aucun signal bloquant",
+      factors: factors.slice(0, 4),
+      score,
+      hasData: true,
+    };
+  }
+
+  return {
+    label: "Neutre",
+    detail: "Les signaux Garmin ne changent pas fortement la lecture.",
+    tone: "neutral",
+    confidence,
+    limitingFactor: limitingFactor || "Aucun signal dominant",
+    factors: factors.slice(0, 4),
+    score,
+    hasData: true,
+  };
+}
+
+function adjustRecommendationWithRecovery(recommendation = {}, recovery = {}) {
+  if (!recovery?.hasData) {
+    return recommendation;
+  }
+
+  if (recovery.tone === "negative") {
+    return {
+      label: "Recuperation fragile : eviter la qualite, privilegier repos actif ou endurance tres facile.",
+      tone: "negative",
+    };
+  }
+
+  if (recovery.tone === "warning" && recommendation.tone !== "negative") {
+    return {
+      label: "Recuperation a surveiller : garder la seance facile ou reduire l'intensite prevue.",
+      tone: "warning",
+    };
+  }
+
+  if (recovery.tone === "positive" && recommendation.tone === "neutral") {
+    return {
+      label: "Recuperation favorable : seance structuree possible si la charge du plan reste maitrisee.",
+      tone: "positive",
+    };
+  }
+
+  return recommendation;
+}
+
+export function buildDashboardDecisionSummary(loadModel = {}, contextLoadModel = loadModel, options = {}) {
   const summary = loadModel?.summary;
   const horizonMeta = buildDecisionHorizonMeta(loadModel, contextLoadModel);
+  const recovery = buildRecoveryDecisionProfile(options.recoverySnapshots);
 
   if (!summary) {
     return {
       form: { label: "Indeterminee", detail: "Pas assez de donnees pour conclure.", tone: "neutral" },
       fatigue: { label: "Indeterminee", detail: "Pas assez de donnees pour conclure.", tone: "neutral" },
       charge: { label: "A lire", detail: "Le bloc recent manque encore d'historique.", tone: "neutral" },
+      recovery,
       recommendation: { label: "Accumuler quelques seances avant de piloter la charge.", tone: "neutral" },
       rangeLabel: horizonMeta.decisionRange,
       horizonLabel: horizonMeta.label,
+      decisionMeta: {
+        confidence: recovery.confidence,
+        limitingFactor: recovery.limitingFactor,
+        factors: recovery.factors,
+      },
       insight: "Les indicateurs de forme se stabilisent apres quelques jours de pratique tracee.",
     };
   }
@@ -303,15 +570,24 @@ export function buildDashboardDecisionSummary(loadModel = {}, contextLoadModel =
   const fatigue = resolveFatigueLabel(summary.ctl, summary.atl, summary.tsb);
   const charge = resolveChargeTrendLabel(summary.loadDeltaPercent, summary.loadDeltaValue);
   const recentLoadPattern = buildRecentLoadPattern(contextLoadModel);
-  const recommendation = buildDecisionRecommendation(summary, form, fatigue, charge, recentLoadPattern);
+  const recommendation = adjustRecommendationWithRecovery(
+    buildDecisionRecommendation(summary, form, fatigue, charge, recentLoadPattern),
+    recovery,
+  );
 
   return {
     form,
     fatigue,
     charge,
+    recovery,
     recommendation,
     rangeLabel: horizonMeta.decisionRange,
     horizonLabel: horizonMeta.label,
+    decisionMeta: {
+      confidence: recovery.confidence,
+      limitingFactor: recovery.limitingFactor,
+      factors: recovery.factors,
+    },
     insight: buildDecisionInsight(form, fatigue, charge, recentLoadPattern),
   };
 }

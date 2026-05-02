@@ -87,6 +87,18 @@ function buildRecentRecoveryDateKeys() {
   return Array.from({ length: totalDays }, (_, index) => formatDateKey(addDays(today, -index)));
 }
 
+function buildRecoverySnapshotWindow(days) {
+  const safeDays = Math.min(180, Math.max(1, Number(days || 56)));
+  const endDate = buildUtcDate(formatDateKey(new Date()));
+  const startDate = addDays(endDate, -(safeDays - 1));
+
+  return {
+    days: safeDays,
+    startDate,
+    endDate,
+  };
+}
+
 function safeParseJson(value, fallback = null) {
   if (!value) {
     return fallback;
@@ -374,6 +386,29 @@ function normalizeDailyRecovery(rawSources = {}, sourceErrors = []) {
   return {
     ...normalized,
     dataQuality,
+  };
+}
+
+function serializeRecoverySnapshot(snapshot) {
+  return {
+    date: formatDateKey(snapshot.snapshotDate),
+    sourceProvider: snapshot.sourceProvider,
+    dataQuality: snapshot.dataQuality,
+    timezone: snapshot.timezone,
+    sleepDurationSeconds: snapshot.sleepDurationSeconds,
+    sleepScore: snapshot.sleepScore,
+    hrvAvgMs: snapshot.hrvAvgMs,
+    hrvStatus: snapshot.hrvStatus,
+    restingHr: snapshot.restingHr,
+    stressAvg: snapshot.stressAvg,
+    stressMax: snapshot.stressMax,
+    bodyBatteryMorning: snapshot.bodyBatteryMorning,
+    bodyBatteryMin: snapshot.bodyBatteryMin,
+    bodyBatteryMax: snapshot.bodyBatteryMax,
+    bodyBatteryEnd: snapshot.bodyBatteryEnd,
+    trainingReadinessScore: snapshot.trainingReadinessScore,
+    trainingReadinessStatus: snapshot.trainingReadinessStatus,
+    syncedAt: snapshot.syncedAt,
   };
 }
 
@@ -720,6 +755,40 @@ export async function getGarminRecoveryBackfillStatus(appUserId) {
     lastSyncedDate: latestSnapshot?.snapshotDate ? formatDateKey(latestSnapshot.snapshotDate) : null,
     lastSyncedAt: latestSnapshot?.syncedAt || null,
     qualityCounts,
+  };
+}
+
+export async function listGarminRecoverySnapshotsForUser(appUserId, { days = 56 } = {}) {
+  const window = buildRecoverySnapshotWindow(days);
+  const snapshots = await prisma.externalDailyRecoverySnapshot.findMany({
+    where: {
+      appUserId,
+      sourceProvider: GARMIN_PROVIDER_CODE,
+      snapshotDate: {
+        gte: window.startDate,
+        lte: window.endDate,
+      },
+    },
+    orderBy: {
+      snapshotDate: "asc",
+    },
+  });
+  const qualityCounts = snapshots.reduce((accumulator, snapshot) => {
+    const quality = snapshot.dataQuality || EXTERNAL_PROVIDER_DATA_QUALITIES.PARTIAL;
+    accumulator[quality] = (accumulator[quality] || 0) + 1;
+    return accumulator;
+  }, {});
+
+  return {
+    sourceProvider: GARMIN_PROVIDER_CODE,
+    windowDays: window.days,
+    startDate: formatDateKey(window.startDate),
+    endDate: formatDateKey(window.endDate),
+    snapshots: snapshots.map((snapshot) => serializeRecoverySnapshot(snapshot)),
+    qualityCounts,
+    latestSnapshotDate: snapshots.at(-1)?.snapshotDate
+      ? formatDateKey(snapshots.at(-1).snapshotDate)
+      : null,
   };
 }
 
