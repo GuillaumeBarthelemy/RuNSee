@@ -2700,7 +2700,7 @@ select {
 
 .decision-pill-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
 }
 
@@ -2778,6 +2778,45 @@ select {
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.decision-recovery-detail {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+  gap: 14px;
+  align-items: start;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(53, 88, 134, 0.14);
+  border-radius: 16px;
+  background: rgba(246, 248, 252, 0.74);
+}
+
+.decision-recovery-detail .decision-evidence-strip {
+  margin-top: 0;
+}
+
+.decision-recovery-kicker {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.decision-recovery-detail strong {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: 15px;
+}
+
+.decision-recovery-detail p {
+  margin: 6px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .dashboard-recommendation {
@@ -3360,6 +3399,10 @@ select {
   }
 
   .decision-pill-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .decision-recovery-detail {
     grid-template-columns: 1fr;
   }
 

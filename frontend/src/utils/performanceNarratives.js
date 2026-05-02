@@ -349,7 +349,7 @@ function formatSleepDuration(seconds) {
   return `${hours} h ${String(remainingMinutes).padStart(2, "0")}`;
 }
 
-function buildRecoveryDecisionProfile(snapshots = []) {
+export function buildRecoveryDecisionProfile(snapshots = []) {
   const sortedSnapshots = getSortedRecoverySnapshots(snapshots);
 
   if (!sortedSnapshots.length) {
@@ -367,6 +367,8 @@ function buildRecoveryDecisionProfile(snapshots = []) {
 
   const recentSnapshots = sortedSnapshots.slice(-7);
   const baselineSnapshots = sortedSnapshots.slice(0, Math.max(0, sortedSnapshots.length - 7)).slice(-35);
+  const baselineLength = baselineSnapshots.length;
+  const hasReliableBaseline = baselineLength >= 14;
   const recentThree = recentSnapshots.slice(-3);
   const coverage = recentSnapshots.length / 7;
   const recentSignalCount = recentSnapshots.reduce((total, snapshot) => total + snapshot.__signalCount, 0);
@@ -382,21 +384,47 @@ function buildRecoveryDecisionProfile(snapshots = []) {
   const bodyBatteryRecent = averageOptional(
     recentSnapshots.map((snapshot) => snapshot.bodyBatteryMorning ?? snapshot.bodyBatteryEnd),
   );
-  const hrvDeltaPercent = hrvRecent !== null && hrvBaseline
+  const hrvDeltaPercent = hasReliableBaseline && hrvRecent !== null && hrvBaseline
     ? ((hrvRecent - hrvBaseline) / hrvBaseline) * 100
     : null;
-  const restingHrDelta = restingHrRecent !== null && restingHrBaseline !== null
+  const restingHrDelta = hasReliableBaseline && restingHrRecent !== null && restingHrBaseline !== null
     ? restingHrRecent - restingHrBaseline
     : null;
   const factors = [];
   let score = 0;
   let limitingFactor = "";
+  let hasCriticalRecoverySignal = false;
+
+  if (!hasReliableBaseline) {
+    factors.push(`Baseline en cours de constitution (${baselineLength}/14 jours).`);
+  }
+
+  const hasAbsoluteSignal = [
+    sleepScoreRecent,
+    sleepDurationRecent,
+    stressRecent,
+    bodyBatteryRecent,
+  ].some((value) => value !== null);
+
+  if (!hasReliableBaseline && !hasAbsoluteSignal) {
+    return {
+      label: "Non disponible",
+      detail: "Donnees Garmin trop recentes pour produire une lecture fiable.",
+      tone: "neutral",
+      confidence: { label: "Faible", tone: "neutral" },
+      limitingFactor: "Baseline Garmin incomplete",
+      factors: factors.slice(0, 4),
+      score: 0,
+      hasData: false,
+    };
+  }
 
   if (hrvDeltaPercent !== null) {
     factors.push(`Variabilite cardiaque ${formatSignedPercent(hrvDeltaPercent)} vs repere.`);
     if (hrvDeltaPercent <= -12) {
       score -= 3;
       limitingFactor ||= "Variabilite cardiaque basse";
+      hasCriticalRecoverySignal = true;
     } else if (hrvDeltaPercent <= -7) {
       score -= 2;
       limitingFactor ||= "Variabilite cardiaque en retrait";
@@ -410,6 +438,7 @@ function buildRecoveryDecisionProfile(snapshots = []) {
     if (restingHrDelta >= 6) {
       score -= 3;
       limitingFactor ||= "FC repos elevee";
+      hasCriticalRecoverySignal = true;
     } else if (restingHrDelta >= 3) {
       score -= 2;
       limitingFactor ||= "FC repos en hausse";
@@ -463,7 +492,7 @@ function buildRecoveryDecisionProfile(snapshots = []) {
       ? { label: "Moyenne", tone: "warning" }
       : { label: "Faible", tone: "neutral" };
 
-  if (score <= -5) {
+  if (score <= -5 || (hasCriticalRecoverySignal && score <= -3)) {
     return {
       label: "Fragile",
       detail: "Plusieurs signaux de recuperation sont defavorables.",
@@ -514,14 +543,45 @@ function buildRecoveryDecisionProfile(snapshots = []) {
   };
 }
 
-function adjustRecommendationWithRecovery(recommendation = {}, recovery = {}) {
+export function adjustRecommendationWithRecovery(recommendation = {}, recovery = {}, context = {}) {
   if (!recovery?.hasData) {
     return recommendation;
   }
 
+  const limitingFactor = String(recovery.limitingFactor || "");
+  const tsb = toNumber(context?.summary?.tsb);
+
   if (recovery.tone === "negative") {
+    if (/Sommeil/.test(limitingFactor)) {
+      return {
+        label: "Sommeil defavorable : eviter la qualite, viser repos actif ou endurance tres facile.",
+        tone: "negative",
+      };
+    }
+
+    if (/Variabilite cardiaque/.test(limitingFactor)) {
+      return {
+        label: "Variabilite cardiaque en retrait : reduire l'intensite et privilegier une seance facile.",
+        tone: "negative",
+      };
+    }
+
+    if (/Stress/.test(limitingFactor)) {
+      return {
+        label: "Stress eleve : garder une contrainte basse et reporter la qualite si les sensations confirment.",
+        tone: "negative",
+      };
+    }
+
     return {
       label: "Recuperation fragile : eviter la qualite, privilegier repos actif ou endurance tres facile.",
+      tone: "negative",
+    };
+  }
+
+  if (recovery.tone === "warning" && recommendation.tone === "negative") {
+    return {
+      label: "Charge deja exigeante et recuperation inegale : rester facile jusqu'a retrouver des signaux plus stables.",
       tone: "negative",
     };
   }
@@ -530,6 +590,13 @@ function adjustRecommendationWithRecovery(recommendation = {}, recovery = {}) {
     return {
       label: "Recuperation a surveiller : garder la seance facile ou reduire l'intensite prevue.",
       tone: "warning",
+    };
+  }
+
+  if (recovery.tone === "positive" && tsb > 5) {
+    return {
+      label: "Fraicheur et recuperation favorables : seance structuree possible si elle reste dans le plan.",
+      tone: "positive",
     };
   }
 
@@ -573,6 +640,7 @@ export function buildDashboardDecisionSummary(loadModel = {}, contextLoadModel =
   const recommendation = adjustRecommendationWithRecovery(
     buildDecisionRecommendation(summary, form, fatigue, charge, recentLoadPattern),
     recovery,
+    { summary },
   );
 
   return {

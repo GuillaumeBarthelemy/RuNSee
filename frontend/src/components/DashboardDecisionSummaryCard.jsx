@@ -19,6 +19,8 @@ export default function DashboardDecisionSummaryCard({
   const safeModel = model || {};
   const decisionMeta = safeModel.decisionMeta || {};
   const decisionFactors = Array.isArray(decisionMeta.factors) ? decisionMeta.factors : [];
+  const recovery = safeModel.recovery || {};
+  const hasRecoveryData = recovery.hasData === true;
 
   return (
     <section className="card dashboard-decision-card">
@@ -58,27 +60,38 @@ export default function DashboardDecisionSummaryCard({
           detail={safeModel.charge?.detail || "Pas assez de donnees"}
           tone={safeModel.charge?.tone}
         />
-        <DecisionPill
-          label="Recuperation"
-          value={safeModel.recovery?.label || "Non disponible"}
-          detail={safeModel.recovery?.detail || "Aucun signal Garmin exploitable"}
-          tone={safeModel.recovery?.tone}
-        />
+        {hasRecoveryData ? (
+          <DecisionPill
+            label="Recuperation"
+            value={recovery.label || "Neutre"}
+            detail={recovery.detail || "Signal Garmin exploitable."}
+            tone={recovery.tone}
+          />
+        ) : null}
       </div>
 
-      <div className="decision-evidence-strip">
-        <span>
-          <strong>Confiance</strong>
-          {decisionMeta.confidence?.label || "Standard"}
-        </span>
-        <span>
-          <strong>Point limitant</strong>
-          {decisionMeta.limitingFactor || "Charge uniquement"}
-        </span>
-        {decisionFactors.slice(0, 3).map((factor) => (
-          <span key={factor}>{factor}</span>
-        ))}
-      </div>
+      {hasRecoveryData ? (
+        <div className="decision-recovery-detail">
+          <div>
+            <span className="decision-recovery-kicker">Signaux Garmin</span>
+            <strong>{recovery.label || "Lecture recovery"}</strong>
+            <p>{recovery.detail || "Les signaux de recuperation completent la lecture de charge."}</p>
+          </div>
+          <div className="decision-evidence-strip">
+            <span>
+              <strong>Confiance</strong>
+              {decisionMeta.confidence?.label || recovery.confidence?.label || "Standard"}
+            </span>
+            <span>
+              <strong>Point limitant</strong>
+              {decisionMeta.limitingFactor || recovery.limitingFactor || "Aucun signal dominant"}
+            </span>
+            {decisionFactors.slice(0, 3).map((factor) => (
+              <span key={factor}>{factor}</span>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className={`dashboard-recommendation dashboard-recommendation-${safeModel.recommendation?.tone || "neutral"}`.trim()}>
         <span className="dashboard-recommendation-label">Recommandation</span>
