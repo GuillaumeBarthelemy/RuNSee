@@ -12,7 +12,7 @@ function formatDateDaysBefore(daysBefore) {
 }
 
 function buildSnapshots({
-  baselineDays = 21,
+  baselineDays = 28,
   recentDays = 7,
   baseline = {},
   recent = {},
@@ -44,7 +44,7 @@ describe("buildRecoveryDecisionProfile", () => {
     expect(profile.limitingFactor).toBe("Charge uniquement");
   });
 
-  it("does not compare HRV or resting HR before a 14-day baseline", () => {
+  it("does not compare HRV or resting HR before a 21-day baseline", () => {
     const profile = buildRecoveryDecisionProfile(buildSnapshots({
       baselineDays: 5,
       baseline: { hrvAvgMs: 62, restingHr: 45 },
@@ -53,22 +53,22 @@ describe("buildRecoveryDecisionProfile", () => {
 
     expect(profile.hasData).toBe(false);
     expect(profile.detail).toBe("Donnees Garmin trop recentes pour produire une lecture fiable.");
-    expect(profile.factors[0]).toBe("Baseline en cours de constitution (5/14 jours).");
+    expect(profile.factors[0]).toBe("Baseline en cours de constitution (5/21 jours).");
   });
 
   it("keeps absolute recovery signals usable while the baseline is still building", () => {
     const profile = buildRecoveryDecisionProfile(buildSnapshots({
-      baselineDays: 8,
-      baseline: { sleepScore: 72 },
-      recent: { sleepScore: 50, stressAvg: 62 },
+      baselineDays: 14,
+      baseline: { sleepScore: 75 },
+      recent: { sleepScore: 45, stressAvg: 70 },
     }));
 
     expect(profile.hasData).toBe(true);
-    expect(profile.factors).toContain("Baseline en cours de constitution (8/14 jours).");
+    expect(profile.factors).toContain("Baseline en cours de constitution (14/21 jours).");
     expect(profile.limitingFactor).toBe("Sommeil faible");
   });
 
-  it("flags a strong HRV drop as a fragile recovery signal", () => {
+  it("flags a strong HRV drop (-23 percent) as a fragile recovery signal when no Garmin status is provided", () => {
     const profile = buildRecoveryDecisionProfile(buildSnapshots({
       baseline: { hrvAvgMs: 65, restingHr: 46 },
       recent: { hrvAvgMs: 50, restingHr: 46 },
@@ -79,34 +79,110 @@ describe("buildRecoveryDecisionProfile", () => {
     expect(profile.limitingFactor).toBe("Variabilite cardiaque basse");
   });
 
-  it("flags a resting heart-rate rise as a fragile recovery signal", () => {
+  it("does not flag HRV drop when Garmin reports BALANCED on the recent week", () => {
+    // Cas reel : HRV recente plus basse que la baseline RunNSee, mais Garmin
+    // confirme que c'est dans la zone normale personnelle. On respecte Garmin.
     const profile = buildRecoveryDecisionProfile(buildSnapshots({
-      baseline: { hrvAvgMs: 60, restingHr: 44 },
+      baseline: { hrvAvgMs: 56, restingHr: 50 },
+      recent: { hrvAvgMs: 48, restingHr: 50, hrvStatus: "BALANCED" },
+    }));
+
+    expect(profile.hasData).toBe(true);
+    expect(profile.tone).not.toBe("negative");
+    expect(profile.factors.some((factor) => factor.includes("equilibree selon Garmin"))).toBe(true);
+    // Aucune mention "en retrait" ne doit apparaitre.
+    expect(profile.factors.every((factor) => !factor.includes("en retrait"))).toBe(true);
+  });
+
+  it("does flag HRV when Garmin reports POOR on multiple days", () => {
+    const profile = buildRecoveryDecisionProfile(buildSnapshots({
+      baseline: { hrvAvgMs: 55, restingHr: 50 },
+      recent: { hrvAvgMs: 48, restingHr: 50, hrvStatus: "POOR" },
+    }));
+
+    expect(profile.tone).toBe("negative");
+    expect(profile.limitingFactor).toBe("Variabilite cardiaque tres basse");
+  });
+
+  it("ignores resting HR rise when absolute value stays low (under 55 bpm)", () => {
+    // Cas reel : FC repos passe de 47 a 51 (delta +4) mais reste tres basse.
+    // +4 etait une alerte avant. Maintenant on tolere car la valeur absolue
+    // reste excellente.
+    const profile = buildRecoveryDecisionProfile(buildSnapshots({
+      baseline: { hrvAvgMs: 60, restingHr: 47 },
       recent: { hrvAvgMs: 60, restingHr: 51 },
+    }));
+
+    expect(profile.tone).not.toBe("negative");
+    expect(profile.factors.every((factor) => !factor.includes("FC repos en hausse"))).toBe(true);
+  });
+
+  it("flags a real resting HR rise (+7 bpm) as a fragile recovery signal", () => {
+    const profile = buildRecoveryDecisionProfile(buildSnapshots({
+      baseline: { hrvAvgMs: 60, restingHr: 56 },
+      recent: { hrvAvgMs: 60, restingHr: 63 },
     }));
 
     expect(profile.tone).toBe("negative");
     expect(profile.limitingFactor).toBe("FC repos elevee");
   });
 
-  it("keeps poor sleep as a warning when it is the only degraded signal", () => {
+  it("keeps poor sleep (score < 50) as a warning when it is the only degraded signal", () => {
     const profile = buildRecoveryDecisionProfile(buildSnapshots({
       baseline: { sleepScore: 80 },
-      recent: { sleepScore: 52 },
+      recent: { sleepScore: 45 },
     }));
 
     expect(profile.tone).toBe("warning");
     expect(profile.limitingFactor).toBe("Sommeil faible");
   });
 
+  it("does not flag a sleep score of 70 (within the neutral band)", () => {
+    const profile = buildRecoveryDecisionProfile(buildSnapshots({
+      baseline: { sleepScore: 78 },
+      recent: { sleepScore: 70 },
+    }));
+
+    // 70 est dans la zone neutre (50-80), pas de penalite ni de bonus.
+    expect(profile.factors.every((factor) => !factor.includes("Sommeil faible"))).toBe(true);
+  });
+
+  it("flags a very high stress (>= 75) as a critical recovery signal", () => {
+    const profile = buildRecoveryDecisionProfile(buildSnapshots({
+      baseline: { sleepScore: 75, stressAvg: 35 },
+      recent: { sleepScore: 75, stressAvg: 78 },
+    }));
+
+    expect(profile.tone).toBe("negative");
+    expect(profile.limitingFactor).toBe("Stress tres eleve");
+  });
+
   it("detects a positive recovery context from converging favourable signals", () => {
     const profile = buildRecoveryDecisionProfile(buildSnapshots({
-      baseline: { hrvAvgMs: 58, restingHr: 49, sleepScore: 72, stressAvg: 40, bodyBatteryMorning: 55 },
-      recent: { hrvAvgMs: 64, restingHr: 45, sleepScore: 82, stressAvg: 24, bodyBatteryMorning: 76 },
+      baseline: { hrvAvgMs: 55, restingHr: 49, sleepScore: 72, stressAvg: 40, bodyBatteryMorning: 55 },
+      recent: { hrvAvgMs: 62, restingHr: 45, sleepScore: 82, stressAvg: 24, bodyBatteryMorning: 76 },
     }));
 
     expect(profile.tone).toBe("positive");
     expect(profile.label).toBe("Solide");
+  });
+
+  it("uses 7-day window for HRV (not 3-day) to smooth daily volatility", () => {
+    // Snapshot recent : 4 jours bons + 3 jours mauvais. Sur 3 jours seulement,
+    // le verdict serait "HRV basse". Sur 7 jours, la moyenne reste neutre.
+    const snapshots = buildSnapshots({
+      baselineDays: 28,
+      baseline: { hrvAvgMs: 55 },
+      recent: { hrvAvgMs: 55 },
+    });
+    // Modifier les 3 derniers jours pour simuler une chute ponctuelle.
+    snapshots.slice(-3).forEach((snapshot) => { snapshot.hrvAvgMs = 42; });
+    snapshots.slice(-7, -3).forEach((snapshot) => { snapshot.hrvAvgMs = 58; });
+
+    const profile = buildRecoveryDecisionProfile(snapshots);
+    // Moyenne 7j ~ (4*58 + 3*42)/7 = 51.1, baseline 55, delta -7%.
+    // Avec les nouveaux seuils (-10/-15), -7% reste neutre.
+    expect(profile.tone).not.toBe("negative");
   });
 });
 

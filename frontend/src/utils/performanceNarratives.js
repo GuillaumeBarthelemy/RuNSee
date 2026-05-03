@@ -349,6 +349,37 @@ function formatSleepDuration(seconds) {
   return `${hours} h ${String(remainingMinutes).padStart(2, "0")}`;
 }
 
+// Mapping du statut HRV Garmin natif (BALANCED, LOW, UNBALANCED, POOR) vers
+// l'effet decisionnel RunNSee. Lorsqu'il est disponible, ce statut prime sur
+// le delta HRV % calcule en interne, car Garmin compare deja la HRV a une
+// baseline personnelle adaptative que nous ne pouvons pas reproduire.
+function summarizeHrvStatusValues(snapshots = []) {
+  if (!Array.isArray(snapshots) || !snapshots.length) {
+    return null;
+  }
+
+  const counts = { balanced: 0, low: 0, unbalanced: 0, poor: 0, other: 0 };
+  let total = 0;
+
+  for (const snapshot of snapshots) {
+    const status = String(snapshot?.hrvStatus || "").trim().toUpperCase();
+    if (!status) continue;
+
+    total += 1;
+    if (status === "BALANCED") counts.balanced += 1;
+    else if (status === "LOW") counts.low += 1;
+    else if (status === "POOR") counts.poor += 1;
+    else if (status.startsWith("UNBALANCED")) counts.unbalanced += 1;
+    else counts.other += 1;
+  }
+
+  if (total === 0) {
+    return null;
+  }
+
+  return { ...counts, total };
+}
+
 export function buildRecoveryDecisionProfile(snapshots = []) {
   const sortedSnapshots = getSortedRecoverySnapshots(snapshots);
 
@@ -365,18 +396,23 @@ export function buildRecoveryDecisionProfile(snapshots = []) {
     };
   }
 
+  // Fenetre recente : 7 jours (au lieu de 3) pour rester proche de la lecture
+  // 7-day Garmin et lisser les outliers ponctuels (Stanley et al., 2013).
   const recentSnapshots = sortedSnapshots.slice(-7);
-  const baselineSnapshots = sortedSnapshots.slice(0, Math.max(0, sortedSnapshots.length - 7)).slice(-35);
+  // Baseline : 28 jours qui precedent les 7 derniers (au lieu de 35), plus
+  // proche de la baseline glissante Garmin et exigeant 21 jours minimum
+  // pour qu'un delta % soit considere fiable.
+  const baselineSnapshots = sortedSnapshots.slice(0, Math.max(0, sortedSnapshots.length - 7)).slice(-28);
   const baselineLength = baselineSnapshots.length;
-  const hasReliableBaseline = baselineLength >= 14;
-  const recentThree = recentSnapshots.slice(-3);
+  const hasReliableBaseline = baselineLength >= 21;
   const coverage = recentSnapshots.length / 7;
   const recentSignalCount = recentSnapshots.reduce((total, snapshot) => total + snapshot.__signalCount, 0);
   const expectedSignalCount = Math.max(1, recentSnapshots.length * 5);
   const signalCoverage = Math.min(1, recentSignalCount / expectedSignalCount);
-  const hrvRecent = averageOptional(recentThree.map((snapshot) => snapshot.hrvAvgMs));
+  // HRV / FC repos lus sur 7 jours (et non plus 3) : moyenne plus stable.
+  const hrvRecent = averageOptional(recentSnapshots.map((snapshot) => snapshot.hrvAvgMs));
   const hrvBaseline = averageOptional(baselineSnapshots.map((snapshot) => snapshot.hrvAvgMs));
-  const restingHrRecent = averageOptional(recentThree.map((snapshot) => snapshot.restingHr));
+  const restingHrRecent = averageOptional(recentSnapshots.map((snapshot) => snapshot.restingHr));
   const restingHrBaseline = averageOptional(baselineSnapshots.map((snapshot) => snapshot.restingHr));
   const sleepScoreRecent = averageOptional(recentSnapshots.map((snapshot) => snapshot.sleepScore));
   const sleepDurationRecent = averageOptional(recentSnapshots.map((snapshot) => snapshot.sleepDurationSeconds));
@@ -396,7 +432,7 @@ export function buildRecoveryDecisionProfile(snapshots = []) {
   let hasCriticalRecoverySignal = false;
 
   if (!hasReliableBaseline) {
-    factors.push(`Baseline en cours de constitution (${baselineLength}/14 jours).`);
+    factors.push(`Baseline en cours de constitution (${baselineLength}/21 jours).`);
   }
 
   const hasAbsoluteSignal = [
@@ -419,27 +455,73 @@ export function buildRecoveryDecisionProfile(snapshots = []) {
     };
   }
 
-  if (hrvDeltaPercent !== null) {
+  // PRIORITE 1 : statut HRV Garmin natif.
+  // Garmin compare deja la HRV a une baseline personnelle adaptative et
+  // marque BALANCED quand la valeur reste dans la zone normale (zone grise
+  // affichee dans Garmin Connect). Quand ce statut est disponible et
+  // majoritairement BALANCED sur 7 jours, on neutralise le calcul delta %
+  // qui peut faussement alerter sur des variations naturelles.
+  const hrvStatusSummary = summarizeHrvStatusValues(recentSnapshots);
+  const hasHrvStatusMajority = hrvStatusSummary && hrvStatusSummary.total >= 4;
+  let hrvHandledByStatus = false;
+
+  if (hasHrvStatusMajority) {
+    const { balanced, low, unbalanced, poor, total } = hrvStatusSummary;
+    const balancedRatio = balanced / total;
+    const adverseRatio = (low + poor) / total;
+
+    if (poor >= 2) {
+      factors.push(`HRV signalee POOR par Garmin sur ${poor}/${total} jours.`);
+      score -= 3;
+      limitingFactor ||= "Variabilite cardiaque tres basse";
+      hasCriticalRecoverySignal = true;
+      hrvHandledByStatus = true;
+    } else if (adverseRatio >= 0.5) {
+      factors.push(`HRV basse selon Garmin sur ${low + poor}/${total} jours.`);
+      score -= 2;
+      limitingFactor ||= "Variabilite cardiaque basse selon Garmin";
+      hrvHandledByStatus = true;
+    } else if (balancedRatio >= 0.6) {
+      factors.push(`HRV equilibree selon Garmin sur ${balanced}/${total} jours.`);
+      // Pas de bonus arbitraire, juste neutralisation : on respecte le verdict
+      // Garmin et on ignore le calcul delta % derriere.
+      hrvHandledByStatus = true;
+    } else if (unbalanced >= 2) {
+      factors.push(`HRV en zone instable selon Garmin sur ${unbalanced}/${total} jours.`);
+      score -= 1;
+      limitingFactor ||= "Variabilite cardiaque instable";
+      hrvHandledByStatus = true;
+    }
+  }
+
+  // FALLBACK : delta HRV % avec seuils elargis (-15/-10/+8) pour rester
+  // tolerant a la variabilite naturelle (Stanley et al., 2013).
+  if (!hrvHandledByStatus && hrvDeltaPercent !== null) {
     factors.push(`Variabilite cardiaque ${formatSignedPercent(hrvDeltaPercent)} vs repere.`);
-    if (hrvDeltaPercent <= -12) {
+    if (hrvDeltaPercent <= -15) {
       score -= 3;
       limitingFactor ||= "Variabilite cardiaque basse";
       hasCriticalRecoverySignal = true;
-    } else if (hrvDeltaPercent <= -7) {
+    } else if (hrvDeltaPercent <= -10) {
       score -= 2;
       limitingFactor ||= "Variabilite cardiaque en retrait";
-    } else if (hrvDeltaPercent >= 6) {
+    } else if (hrvDeltaPercent >= 8) {
       score += 1;
     }
   }
 
+  // FC repos : seuils legerement elargis et exception pour les FC repos
+  // tres basses ou +5 bpm reste dans le bruit naturel.
   if (restingHrDelta !== null) {
+    const restingHrAbsolute = restingHrRecent;
+    const isLowAbsoluteHr = restingHrAbsolute !== null && restingHrAbsolute < 55;
     factors.push(`FC repos ${restingHrDelta >= 0 ? "+" : ""}${roundValue(restingHrDelta, 0)} bpm vs repere.`);
-    if (restingHrDelta >= 6) {
+
+    if (restingHrDelta >= 7) {
       score -= 3;
       limitingFactor ||= "FC repos elevee";
       hasCriticalRecoverySignal = true;
-    } else if (restingHrDelta >= 3) {
+    } else if (restingHrDelta >= 5 && !isLowAbsoluteHr) {
       score -= 2;
       limitingFactor ||= "FC repos en hausse";
     } else if (restingHrDelta <= -3) {
@@ -447,14 +529,16 @@ export function buildRecoveryDecisionProfile(snapshots = []) {
     }
   }
 
+  // Sommeil score : palier intermediaire (70 = neutre, 80 = positif).
   if (sleepScoreRecent !== null) {
     factors.push(`Sommeil score moyen ${roundValue(sleepScoreRecent, 0)}.`);
-    if (sleepScoreRecent < 55) {
+    if (sleepScoreRecent < 50) {
       score -= 2;
       limitingFactor ||= "Sommeil faible";
-    } else if (sleepScoreRecent >= 75) {
+    } else if (sleepScoreRecent >= 80) {
       score += 1;
     }
+    // Plage 50-80 = neutre, pas de pénalité ni de bonus.
   } else if (sleepDurationRecent !== null) {
     factors.push(`Sommeil moyen ${formatSleepDuration(sleepDurationRecent)}.`);
     if (sleepDurationRecent < 6.5 * 3600) {
@@ -465,9 +549,14 @@ export function buildRecoveryDecisionProfile(snapshots = []) {
     }
   }
 
+  // Stress : palier eleve (Garmin considere 50-75 comme "modere").
   if (stressRecent !== null) {
     factors.push(`Stress moyen ${roundValue(stressRecent, 0)}.`);
-    if (stressRecent >= 55) {
+    if (stressRecent >= 75) {
+      score -= 3;
+      limitingFactor ||= "Stress tres eleve";
+      hasCriticalRecoverySignal = true;
+    } else if (stressRecent >= 60) {
       score -= 2;
       limitingFactor ||= "Stress eleve";
     } else if (stressRecent <= 30) {
