@@ -66,7 +66,7 @@ function buildPath(points, xFn, valueKey, bounds) {
 function buildBarPath(points, xFn, bounds) {
   const bars = points
     .filter((p) => p.load != null && p.load > 0)
-    .map((p, _unused, arr) => {
+    .map((p) => {
       const i = points.indexOf(p);
       const x = xFn(i, points.length);
       const barW = Math.max(2, INNER_W / points.length - 1);
