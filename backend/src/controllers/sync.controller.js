@@ -57,10 +57,12 @@ export async function getCurrentJob(req, res, next) {
     const user = getRequiredAuthUser(req);
     const job = await getCurrentSyncJob(user.id);
 
+    // 200 { job: null } est sémantiquement plus correct qu'un 404 pour
+    // signaler "aucune sync en cours" : ce n'est pas une erreur, c'est un
+    // état attendu. Le 404 polluait la console navigateur et rendait
+    // les vraies erreurs (500, 401) moins visibles.
     if (!job) {
-      return res.status(404).json({
-        message: "Aucune synchronisation en cours.",
-      });
+      return res.json({ job: null });
     }
 
     return res.json(job);

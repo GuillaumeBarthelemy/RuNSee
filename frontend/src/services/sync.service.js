@@ -18,8 +18,15 @@ export async function startDetailBackfill() {
 export async function getCurrentSyncJob() {
   try {
     const response = await api.get("/sync/jobs/current");
-    return response.data;
+    const data = response.data;
+    // Nouvelle forme : 200 { job: null } quand aucune sync en cours.
+    // Ancienne forme (rétrocompat) : 200 { id, status, ... } quand un job existe.
+    if (data && typeof data === "object" && "job" in data) {
+      return data.job;
+    }
+    return data || null;
   } catch (error) {
+    // Rétrocompat : ancien backend renvoyait 404 pour signaler "aucun job"
     if (error?.response?.status === 404) {
       return null;
     }
