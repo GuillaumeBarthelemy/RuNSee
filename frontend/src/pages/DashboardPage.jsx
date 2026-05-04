@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardDecisionSummaryCard from "../components/DashboardDecisionSummaryCard.jsx";
 import RecentActivitiesCard from "../components/RecentActivitiesCard.jsx";
+import RecoverySnapshotCard from "../components/RecoverySnapshotCard.jsx";
 import TodayAlertBanner from "../components/TodayAlertBanner.jsx";
 import TodayFormCards from "../components/TodayFormCards.jsx";
 import TodayHeader from "../components/TodayHeader.jsx";
@@ -370,6 +371,12 @@ export default function DashboardPage() {
             trendLoadModel={trendLoadModel}
           />
         </div>
+
+        {recoverySnapshots.length > 0 ? (
+          <div className="section">
+            <RecoverySnapshotCard snapshots={recoverySnapshots} />
+          </div>
+        ) : null}
 
         <div className="section">
           <TodayVolumeStrip weeklySummary={weeklySummary} />

@@ -2,3 +2,8 @@
 deployment/windows/runtime/
 deployment/postgresql/runtime/
 deployment/postgresql/backups/
+
+# Fichiers de handoff générés automatiquement
+.ai/handoff_*.txt
+.ai/git_*.txt
+.ai/handoff_*.md
