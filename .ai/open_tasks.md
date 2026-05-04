@@ -26,13 +26,13 @@
 ## Zones à analyser (lecture seule, pas de modif sans analyse)
 
 - [x] `garminProvider.service.js` — lu, dispatch bien structuré, gestion d'erreurs OK
-- [ ] `pages/AdminPage.jsx` — cartographier les actions exposées (providers, assistant, sync)
+- [x] `pages/AdminPage.jsx` — cartographié : 8 sections, 12 actions, gaps mineurs (polling cleanup, loading states manquants sur quelques backfills)
 - [x] `utils/activityAggregation.js` vs `utils/activityAggregations.js` — doublon supprimé (`activityAggregation.js` était un re-export inutilisé)
 
 ## Backlog fonctionnel (non démarré)
 
 - [x] Affichage des données recovery (HRV, body battery, sleep score) dans le Dashboard — `RecoverySnapshotCard` déployée
-- [ ] Intégration des snapshots recovery dans les calculs de charge (`loadDynamics`, `trainingIntelligence`)
+- [x] Intégration des snapshots recovery dans les calculs de charge — `buildRecoveryContextProfile` + groupe "Récupération biologique" dans `DynamicsGrid` (commit c6f413b)
 - [ ] Tests automatisés pour les services Garmin (zéro couverture actuellement)
 
 ## Housekeeping
