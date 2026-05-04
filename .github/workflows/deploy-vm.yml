@@ -79,7 +79,10 @@ jobs:
           ssh -i ~/.ssh/runsee_vm -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
             "set -Eeuo pipefail; \
              cd '${REMOTE_PATH}'; \
-             if ! git diff --quiet || ! git diff --cached --quiet; then echo 'Remote repository has uncommitted changes. Deployment aborted.'; exit 1; fi; \
+             if ! git diff --quiet || ! git diff --cached --quiet; then \
+               echo 'Local changes detected on VM — stashing before deploy.'; \
+               git stash push -m 'auto-stash before deploy ${GITHUB_SHA}'; \
+             fi; \
              git fetch --prune origin main; \
              git checkout --detach '${GITHUB_SHA}'; \
              chmod +x deployment/linux/scripts/deploy-vm.sh; \
