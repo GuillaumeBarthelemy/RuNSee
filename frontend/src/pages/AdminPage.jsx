@@ -20,6 +20,7 @@ import {
   getGarminConnectionStatus,
   getGarminSyncMetrics,
   purgeGarminData,
+  renormalizeGarminRecovery,
   startGarminRecoveryBackfill,
   syncRecentGarminRecovery,
 } from "../services/externalProvider.service.js";
@@ -61,6 +62,7 @@ export default function AdminPage() {
   const [isGarminBackfillSubmitting, setIsGarminBackfillSubmitting] = useState(false);
   const [isGarminSyncSubmitting, setIsGarminSyncSubmitting] = useState(false);
   const [isGarminPurgeSubmitting, setIsGarminPurgeSubmitting] = useState(false);
+  const [isGarminRenormalizeSubmitting, setIsGarminRenormalizeSubmitting] = useState(false);
   const [garminConnection, setGarminConnection] = useState(null);
   const [garminRecoveryBackfill, setGarminRecoveryBackfill] = useState(null);
   const [garminMetrics, setGarminMetrics] = useState(null);
@@ -451,6 +453,24 @@ export default function AdminPage() {
     }
   }, [safeSetError]);
 
+  const handleRenormalizeGarmin = useCallback(async () => {
+    safeSetError("");
+    setActionNotice("");
+    setIsGarminRenormalizeSubmitting(true);
+
+    try {
+      const result = await renormalizeGarminRecovery();
+      const processed = result?.processedDays ?? result?.data?.processedDays ?? "?";
+      const updated = result?.updatedDays ?? result?.data?.updatedDays ?? "?";
+      await loadGarminMetrics();
+      setActionNotice(`Re-normalisation terminée : ${processed} jours traités, ${updated} snapshots mis à jour.`);
+    } catch (error) {
+      safeSetError(extractErrorMessage(error, "Erreur lors de la re-normalisation des snapshots Garmin."));
+    } finally {
+      setIsGarminRenormalizeSubmitting(false);
+    }
+  }, [loadGarminMetrics, safeSetError]);
+
   const handleSaveTrainingAnalyticsSettings = useCallback(async (payload) => {
     safeSetError("");
     setInfoNotice("");
@@ -554,10 +574,12 @@ export default function AdminPage() {
           isBackfillPending={isGarminBackfillSubmitting}
           isSyncPending={isGarminSyncSubmitting}
           isPurgePending={isGarminPurgeSubmitting}
+          isRenormalizePending={isGarminRenormalizeSubmitting}
           onConnect={handleConnectGarmin}
           onDisconnect={handleDisconnectGarmin}
           onStartRecoveryBackfill={handleStartGarminRecoveryBackfill}
           onSyncRecentRecovery={handleSyncRecentGarminRecovery}
+          onRenormalizeRecovery={handleRenormalizeGarmin}
           onPurgeGarminData={handlePurgeGarminData}
         />
       </section>

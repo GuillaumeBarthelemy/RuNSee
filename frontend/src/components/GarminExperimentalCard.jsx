@@ -32,10 +32,12 @@ function GarminExperimentalCard({
   isBackfillPending = false,
   isSyncPending = false,
   isPurgePending = false,
+  isRenormalizePending = false,
   onConnect = noop,
   onDisconnect = noop,
   onStartRecoveryBackfill = noop,
   onSyncRecentRecovery = noop,
+  onRenormalizeRecovery = noop,
   onPurgeGarminData = noop,
 }) {
   const resolvedStatusCode = connection?.status || status;
@@ -367,7 +369,7 @@ function GarminExperimentalCard({
                 type="button"
                 className="button button-outline"
                 onClick={() => onSyncRecentRecovery()}
-                disabled={isSyncPending || isBackfillPending || isRecoveryRunning}
+                disabled={isSyncPending || isBackfillPending || isRecoveryRunning || isRenormalizePending}
               >
                 {recentSyncButtonLabel}
               </button>
@@ -375,9 +377,18 @@ function GarminExperimentalCard({
                 type="button"
                 className="button button-outline"
                 onClick={() => onStartRecoveryBackfill()}
-                disabled={isBackfillPending || isSyncPending || isRecoveryRunning || isRecoveryComplete}
+                disabled={isBackfillPending || isSyncPending || isRecoveryRunning || isRecoveryComplete || isRenormalizePending}
               >
                 {recoveryButtonLabel}
+              </button>
+              <button
+                type="button"
+                className="button button-outline"
+                onClick={() => onRenormalizeRecovery()}
+                disabled={isRenormalizePending || isBackfillPending || isSyncPending || isRecoveryRunning}
+                title="Recalcule les snapshots depuis les raw data déjà stockées (sans rappel Garmin)"
+              >
+                {isRenormalizePending ? "Re-normalisation..." : "Re-normaliser"}
               </button>
             </div>
           </div>
