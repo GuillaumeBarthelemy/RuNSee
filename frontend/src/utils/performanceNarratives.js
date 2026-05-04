@@ -32,9 +32,13 @@ function average(values = []) {
 }
 
 function averageOptional(values = []) {
+  // On exclut les valeurs nulles ET les zéros : Garmin pose souvent des
+  // placeholders à 0 sur les jours sans capture (sommeil non enregistré,
+  // HRV absente). Inclure ces 0 dans la moyenne tire le score vers le bas
+  // et désaligne ce composant de TodayRecoveryCard / PerformancePhysioCard.
   const safeValues = values
     .map((value) => toOptionalNumber(value))
-    .filter((value) => value !== null);
+    .filter((value) => value !== null && value > 0);
 
   if (!safeValues.length) {
     return null;
