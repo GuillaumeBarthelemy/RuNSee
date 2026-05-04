@@ -5,6 +5,7 @@ import useRunSeeData from "../hooks/useRunSeeData.js";
 import AppShell from "../layouts/AppShell.jsx";
 import { enrichActivity, getActivityById } from "../services/activity.service.js";
 import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
+import { getRecoveryContextForActivity } from "../utils/crossDataAnalytics.js";
 
 function extractErrorMessage(error, fallback) {
   return error?.response?.data?.details || error?.response?.data?.message || error?.message || fallback;
@@ -58,6 +59,7 @@ export default function ActivityDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isEnriching, setIsEnriching] = useState(false);
   const [garminSnapshot, setGarminSnapshot] = useState(null);
+  const [garminRecoveryContext, setGarminRecoveryContext] = useState(null);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -111,19 +113,23 @@ export default function ActivityDetailPage() {
     loadActivity();
   }, [loadActivity]);
 
-  // Fetch Garmin snapshot for the activity's date (2-day window = today + yesterday in case of late sync)
+  // Fetch Garmin recovery snapshots (60 j fenêtre) pour produire :
+  // - garminSnapshot : le snapshot du jour de l'activité (onglet Garmin)
+  // - garminRecoveryContext : avant/après avec deltas vs baseline (D3)
   useEffect(() => {
     let ignore = false;
-    getGarminRecoverySnapshots({ days: 7 })
+    if (!activity) return undefined;
+    getGarminRecoverySnapshots({ days: 60 })
       .then((data) => {
-        if (ignore || !Array.isArray(data?.snapshots) || !activity) return;
+        if (ignore || !Array.isArray(data?.snapshots)) return;
+        const snapshots = data.snapshots;
         const activityDateKey = (() => {
           const d = new Date(activity.startDateLocal || activity.startDate || "");
           if (Number.isNaN(d.getTime())) return null;
           return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
         })();
         const match = activityDateKey
-          ? data.snapshots.find((s) => {
+          ? snapshots.find((s) => {
               if (!s.snapshotDate) return false;
               const sd = new Date(s.snapshotDate);
               const key = `${sd.getUTCFullYear()}-${String(sd.getUTCMonth() + 1).padStart(2, "0")}-${String(sd.getUTCDate()).padStart(2, "0")}`;
@@ -131,6 +137,7 @@ export default function ActivityDetailPage() {
             })
           : null;
         setGarminSnapshot(match || null);
+        setGarminRecoveryContext(getRecoveryContextForActivity({ activity, snapshots }));
       })
       .catch(() => {});
     return () => { ignore = true; };
@@ -158,6 +165,7 @@ export default function ActivityDetailPage() {
           isEnriching={isEnriching}
           onActivityUpdated={setActivity}
           garminSnapshot={garminSnapshot}
+          garminRecoveryContext={garminRecoveryContext}
         />
       ) : null}
       {!loading && !activity && !error ? (

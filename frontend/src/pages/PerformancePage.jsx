@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import AnalyticsFiltersBar from "../components/AnalyticsFiltersBar.jsx";
 import BestEffortsPanel from "../components/BestEffortsPanel.jsx";
 import PerformancePhysioCard from "../components/PerformancePhysioCard.jsx";
+import PersonalPatternsCard from "../components/PersonalPatternsCard.jsx";
 import RaceCountdownCard from "../components/RaceCountdownCard.jsx";
 import RaceObjectiveCallToAction from "../components/RaceObjectiveCallToAction.jsx";
 import VdotProfileCard from "../components/VdotProfileCard.jsx";
@@ -24,6 +25,7 @@ import { getAnalyticsGranularity, getAnalyticsPresetLabel } from "../utils/analy
 import { buildTrainingLoadStateModel } from "../utils/trainingMetrics.js";
 import { buildRaceObjectiveProfile } from "../utils/raceObjectivePlanner.js";
 import { buildVdotProfile } from "../utils/runningPerformance.js";
+import { buildPersonalPatterns } from "../utils/crossDataAnalytics.js";
 
 const BEST_EFFORTS_INFO = buildInfoBlocks({
   role: "Faire remonter les seances saillantes de la selection et relier les records route a leur course support quand elle est retrouvee.",
@@ -142,6 +144,14 @@ export default function PerformancePage() {
       records: allTimeEfforts.records,
     };
   }, [performanceActivities, performanceScopeActivities]);
+
+  const personalPatterns = useMemo(
+    () => buildPersonalPatterns({
+      activities: performanceScopeActivities,
+      snapshots: recoverySnapshots,
+    }),
+    [performanceScopeActivities, recoverySnapshots],
+  );
 
   const vdotProfile = useMemo(
     () => buildVdotProfile({
@@ -299,6 +309,12 @@ export default function PerformancePage() {
             definitions={EFFORT_DEFINITIONS}
           />
         </div>
+
+        {recoverySnapshots.length > 0 ? (
+          <div className="section">
+            <PersonalPatternsCard patterns={personalPatterns} />
+          </div>
+        ) : null}
 
         <div className="section">
           {raceProfile?.hasRace ? (

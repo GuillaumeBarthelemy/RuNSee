@@ -50,6 +50,7 @@ export default function ActivityDetailCard({
   isEnriching = false,
   onActivityUpdated = noop,
   garminSnapshot = null,
+  garminRecoveryContext = null,
 }) {
   const safeActivity = useMemo(() => activity || {}, [activity]);
   const detailedPayload = useMemo(() => parseJsonSafe(safeActivity.rawJson), [safeActivity.rawJson]);
@@ -92,6 +93,7 @@ export default function ActivityDetailCard({
         trainingAnalyticsSettings={trainingAnalyticsSettings}
         onActivityUpdated={onActivityUpdated}
         garminSnapshot={garminSnapshot}
+        garminRecoveryContext={garminRecoveryContext}
       />
     </section>
   );

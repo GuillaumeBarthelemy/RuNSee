@@ -1,5 +1,6 @@
 import { memo, useMemo, useState } from "react";
 import ActivityMapCard from "./ActivityMapCard.jsx";
+import ActivityRecoveryContextCard from "./ActivityRecoveryContextCard.jsx";
 import ActivityRpeCard from "./ActivityRpeCard.jsx";
 import ActivitySplitsCard from "./ActivitySplitsCard.jsx";
 import GarminEnrichmentPanel from "./GarminEnrichmentPanel.jsx";
@@ -40,6 +41,7 @@ function ActivityDetailTabs({
   trainingAnalyticsSettings = null,
   onActivityUpdated = noop,
   garminSnapshot = null,
+  garminRecoveryContext = null,
 }) {
   const [activeTab, setActiveTab] = useState(getStoredTab);
   const description = String(activity?.description || "").trim();
@@ -77,7 +79,12 @@ function ActivityDetailTabs({
       nextTabs.push({
         id: "garmin",
         label: "Garmin",
-        render: () => <GarminEnrichmentPanel snapshot={garminSnapshot} />,
+        render: () => (
+          <>
+            <GarminEnrichmentPanel snapshot={garminSnapshot} />
+            <ActivityRecoveryContextCard context={garminRecoveryContext} />
+          </>
+        ),
       });
     }
 
@@ -90,7 +97,7 @@ function ActivityDetailTabs({
     }
 
     return nextTabs;
-  }, [activity, description, detailedPayload, garminSnapshot, onActivityUpdated, trainingAnalyticsSettings]);
+  }, [activity, description, detailedPayload, garminSnapshot, garminRecoveryContext, onActivityUpdated, trainingAnalyticsSettings]);
 
   const activeTabId = tabs.some((tab) => tab.id === activeTab)
     ? activeTab

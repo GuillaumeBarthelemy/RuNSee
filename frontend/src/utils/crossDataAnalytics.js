@@ -271,7 +271,7 @@ export function analyzeChargeImpactOnSleep(joined = []) {
  *   (utilisé seulement comme indicateur global ; pour la stratification on
  *   recalcule la monotonie semaine par semaine à partir des dailyLoads).
  */
-export function analyzeMonotonyVsHrv(joined = [], _varianceProfile = null) {
+export function analyzeMonotonyVsHrv(joined = []) {
   const empty = {
     sampleSize: 0,
     bands: MONOTONY_BANDS.reduce((acc, b) => ({ ...acc, [b.key]: { weeks: 0, avgHrv: null } }), {}),
@@ -373,7 +373,7 @@ export function analyzeMonotonyVsHrv(joined = [], _varianceProfile = null) {
  * @param {Array} args.snapshots
  * @param {Object} [args.varianceProfile]
  */
-export function buildPersonalPatterns({ activities = [], snapshots = [], varianceProfile = null } = {}) {
+export function buildPersonalPatterns({ activities = [], snapshots = [] } = {}) {
   const joined = joinActivitiesWithRecovery({ activities, snapshots });
 
   const validSnapshotDays = snapshots.filter(
@@ -386,7 +386,7 @@ export function buildPersonalPatterns({ activities = [], snapshots = [], varianc
 
   const qualityVsRecovery = analyzeQualityVsRecovery(joined);
   const chargeImpactOnSleep = analyzeChargeImpactOnSleep(joined);
-  const monotonyVsHrv = analyzeMonotonyVsHrv(joined, varianceProfile);
+  const monotonyVsHrv = analyzeMonotonyVsHrv(joined);
 
   const presentInsights = [qualityVsRecovery, chargeImpactOnSleep, monotonyVsHrv]
     .filter((a) => a.hasData);
