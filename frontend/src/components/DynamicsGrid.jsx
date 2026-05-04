@@ -172,6 +172,7 @@ function DynamicsGrid({
   const timeToRecover = loadDynamicsProfile?.timeToRecover || {};
   const ctlProgression = loadDynamicsProfile?.ctlProgression || {};
   const efficiencyPlateau = loadDynamicsProfile?.efficiencyPlateau || {};
+  const recoveryContext = loadDynamicsProfile?.recoveryContext || {};
   const criticalSpeedValue = criticalSpeedModel?.hasData
     ? `${formatNumber(criticalSpeedModel.criticalSpeedKmh, 2)} km/h`
     : "-";
@@ -305,6 +306,53 @@ function DynamicsGrid({
             info={signalInfo.criticalSpeed}
           />
         </DynamicsGroup>
+
+        {recoveryContext.hasData ? (
+          <DynamicsGroup title="Recuperation biologique">
+            <DynamicsTile
+              title="Etat general"
+              value={recoveryContext.label}
+              status={`${recoveryContext.sampleDays} jour(s) analyses`}
+              detail="Lecture croisee sommeil, HRV et FC repos sur la periode recente."
+              meta={recoveryContext.message}
+              tone={recoveryContext.tone || "neutral"}
+            />
+            <DynamicsTile
+              title="Sommeil (score moyen)"
+              value={recoveryContext.avgSleepScore != null ? `${recoveryContext.avgSleepScore} / 100` : "-"}
+              status={recoveryContext.latestSleepScore != null ? `Dernier : ${recoveryContext.latestSleepScore}` : "Indisponible"}
+              detail="Score de qualite du sommeil Garmin."
+              meta={recoveryContext.sleepWarning ? "Qualite insuffisante — impact probable sur l'absorption de la charge." : "Qualite correcte."}
+              tone={recoveryContext.sleepWarning ? "warning" : "positive"}
+            />
+            <DynamicsTile
+              title="HRV moyenne (ms)"
+              value={recoveryContext.avgHrvMs != null ? `${recoveryContext.avgHrvMs} ms` : "-"}
+              status={recoveryContext.latestHrvMs != null ? `Dernier : ${recoveryContext.latestHrvMs} ms` : "Indisponible"}
+              detail="Variabilite cardiaque nocturne. Baisse = fatigue systémique probable."
+              meta={recoveryContext.hrvDeclineFlag ? "HRV en recul vs debut de periode : surveiller." : "HRV stable ou en hausse."}
+              tone={recoveryContext.hrvDeclineFlag ? "warning" : "positive"}
+            />
+            <DynamicsTile
+              title="FC repos"
+              value={recoveryContext.latestRestingHr != null ? `${recoveryContext.latestRestingHr} bpm` : "-"}
+              status={recoveryContext.restingHrElevatedFlag ? "Elevee" : "Normale"}
+              detail="FC de repos matinale. Hausse = recuperation insuffisante ou stress."
+              meta={recoveryContext.restingHrElevatedFlag ? "FC repos au-dessus du repere de la periode." : "FC repos dans les normes."}
+              tone={recoveryContext.restingHrElevatedFlag ? "warning" : "positive"}
+            />
+            {recoveryContext.latestBodyBattery != null ? (
+              <DynamicsTile
+                title="Body Battery"
+                value={`${recoveryContext.latestBodyBattery} %`}
+                status="Derniere mesure"
+                detail="Niveau d'energie estime par Garmin au reveil ou en journee."
+                meta={recoveryContext.latestBodyBattery < 30 ? "Niveau faible — favoriser la recuperation." : "Niveau suffisant."}
+                tone={recoveryContext.latestBodyBattery < 30 ? "warning" : "positive"}
+              />
+            ) : null}
+          </DynamicsGroup>
+        ) : null}
       </div>
     </section>
   );

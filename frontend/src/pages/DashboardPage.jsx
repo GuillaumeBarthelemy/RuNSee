@@ -212,8 +212,9 @@ export default function DashboardPage() {
     () => buildLoadDynamicsProfile({
       loadModel: trendLoadModel,
       efficiencyModel,
+      recoverySnapshots,
     }),
-    [efficiencyModel, trendLoadModel],
+    [efficiencyModel, trendLoadModel, recoverySnapshots],
   );
 
   const intensityDistributionModel = useMemo(

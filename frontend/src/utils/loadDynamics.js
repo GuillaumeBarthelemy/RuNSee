@@ -447,14 +447,105 @@ export function buildEfficiencyPlateauProfile(efficiencyModel = {}) {
 }
 
 // ============================================================================
-// Profil global Sprint 7 : agrege les 5 indicateurs.
+// Contexte de récupération biologique (HRV, sommeil, FC repos)
 // ============================================================================
-export function buildLoadDynamicsProfile({ loadModel = {}, efficiencyModel = {} } = {}) {
+//
+// Enrichissement optionnel de buildLoadDynamicsProfile avec les snapshots
+// Garmin recovery. Fournit une lecture de l'état biologique indépendante
+// de la charge calculée (CTL/ATL/TSB).
+//
+// Références :
+//   - Plews DJ et al. (2013). Heart rate variability in elite triathletes.
+//   - Buchheit M (2014). Monitoring training status with HR measures.
+
+function averageOptionalValues(values = []) {
+  const finite = values.filter((v) => v != null && Number.isFinite(Number(v)));
+  if (!finite.length) return null;
+  return finite.reduce((sum, v) => sum + Number(v), 0) / finite.length;
+}
+
+export function buildRecoveryContextProfile(recoverySnapshots = []) {
+  const snapshots = Array.isArray(recoverySnapshots) ? recoverySnapshots : [];
+
+  if (snapshots.length < 2) {
+    return { hasData: false, message: "Pas assez de donnees de recuperation (minimum 2 jours)." };
+  }
+
+  // Snapshots sont triés asc — le plus récent est le dernier
+  const recent = snapshots.slice(-3);
+  const baseline = snapshots.slice(0, Math.max(snapshots.length - 3, 1));
+  const latest = snapshots[snapshots.length - 1];
+
+  const latestSleepScore = latest?.sleepScore != null ? roundValue(latest.sleepScore, 0) : null;
+  const latestHrvMs = latest?.hrvAvgMs != null ? roundValue(latest.hrvAvgMs, 1) : null;
+  const latestRestingHr = latest?.restingHr != null ? Math.round(latest.restingHr) : null;
+  const latestBodyBattery = latest?.bodyBatteryMorning ?? latest?.bodyBatteryEnd ?? null;
+
+  const avgSleepScore = averageOptionalValues(snapshots.map((s) => s.sleepScore));
+  const avgHrvRecent = averageOptionalValues(recent.map((s) => s.hrvAvgMs));
+  const avgHrvBaseline = averageOptionalValues(baseline.map((s) => s.hrvAvgMs));
+  const avgRestingHrRecent = averageOptionalValues(recent.map((s) => s.restingHr));
+  const avgRestingHrBaseline = averageOptionalValues(baseline.map((s) => s.restingHr));
+
+  // Signaux de vigilance
+  const sleepWarning = avgSleepScore != null && avgSleepScore < 60;
+  const hrvDeclineFlag = avgHrvRecent != null && avgHrvBaseline != null
+    && avgHrvRecent < avgHrvBaseline * 0.93; // baisse > 7 %
+  const restingHrElevatedFlag = avgRestingHrRecent != null && avgRestingHrBaseline != null
+    && avgRestingHrRecent > avgRestingHrBaseline + 4; // hausse > 4 bpm
+
+  const warningCount = [sleepWarning, hrvDeclineFlag, restingHrElevatedFlag].filter(Boolean).length;
+
+  let tone;
+  let label;
+  let message;
+
+  if (warningCount >= 2) {
+    tone = "danger";
+    label = "Récupération dégradée";
+    message = "Plusieurs signaux biologiques convergent vers une fatigue accumulée. Priorise le repos avant d'augmenter la charge.";
+  } else if (warningCount === 1) {
+    tone = "warning";
+    label = "Signal de vigilance";
+    message = sleepWarning
+      ? "Qualité de sommeil en baisse sur la période : vérifier la charge et le stress extra-sportif."
+      : hrvDeclineFlag
+        ? "HRV en recul par rapport à la semaine : probable fatigue systémique naissante."
+        : "FC de repos au-dessus du repère : surveiller la récupération les prochains jours.";
+  } else {
+    tone = "positive";
+    label = "Récupération correcte";
+    message = "Les indicateurs biologiques sont stables. La charge actuelle semble bien absorbée.";
+  }
+
+  return {
+    hasData: true,
+    tone,
+    label,
+    message,
+    latestSleepScore,
+    latestHrvMs,
+    latestRestingHr,
+    latestBodyBattery: latestBodyBattery != null ? Math.round(latestBodyBattery) : null,
+    avgSleepScore: avgSleepScore != null ? roundValue(avgSleepScore, 0) : null,
+    avgHrvMs: avgHrvRecent != null ? roundValue(avgHrvRecent, 1) : null,
+    sleepWarning,
+    hrvDeclineFlag,
+    restingHrElevatedFlag,
+    sampleDays: snapshots.length,
+  };
+}
+
+// ============================================================================
+// Profil global : agrege les indicateurs de charge + contexte biologique.
+// ============================================================================
+export function buildLoadDynamicsProfile({ loadModel = {}, efficiencyModel = {}, recoverySnapshots = [] } = {}) {
   return {
     acwrEwma: buildAcwrEwmaProfile(loadModel),
     detraining: buildDetrainingProfile(loadModel),
     timeToRecover: buildTimeToRecoverProfile(loadModel),
     ctlProgression: buildCtlProgressionProfile(loadModel),
     efficiencyPlateau: buildEfficiencyPlateauProfile(efficiencyModel),
+    recoveryContext: buildRecoveryContextProfile(recoverySnapshots),
   };
 }
