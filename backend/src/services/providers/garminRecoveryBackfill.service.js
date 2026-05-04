@@ -983,11 +983,14 @@ export async function syncRecentGarminRecoveryForUser(appUserId, { triggerSource
   }
 }
 
-// Inverse de RAW_SOURCE_TYPES : providerResourceId (ex. "daily_summary") → clé rawSources (ex. "userSummary")
-// RAW_SOURCE_TYPES = { userSummary: "daily_summary", heartRates: "daily_heart_rate", ... }
-// On inverse pour retrouver la clé rawSources à partir du providerResourceId stocké en DB.
+// IMPORTANT : `providerResourceId` stocké en DB est la CLE `source` du fetcher
+// (cf. `upsertRawData` ligne 504 : `providerResourceId: source` avec source ∈
+// {"userSummary", "heartRates", "sleep", "hrv", "stress", "bodyBattery"}).
+// Ce n'est PAS la valeur `RAW_SOURCE_TYPES[source]` (= "daily_summary",
+// "daily_heart_rate", "body_battery", etc., qui va dans `dataType`).
+// Le mapping providerResourceId → clé rawSources est donc l'identité.
 const RAW_RESOURCE_ID_TO_SOURCE_KEY = Object.fromEntries(
-  Object.entries(RAW_SOURCE_TYPES).map(([sourceKey, resourceId]) => [resourceId, sourceKey]),
+  Object.keys(RAW_SOURCE_TYPES).map((sourceKey) => [sourceKey, sourceKey]),
 );
 
 export async function renormalizeGarminRecoverySnapshotsForUser(appUserId) {
