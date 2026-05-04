@@ -295,6 +295,7 @@ function extractSleepScore(rawSleep) {
     getNestedNumber(
       rawSleep,
       [
+        ["dailySleepDTO", "sleepScores", "overall", "value"],
         ["sleepScores", "overall", "value"],
         ["sleepScore", "value"],
         ["dailySleepDTO", "sleepScore"],
