@@ -68,8 +68,11 @@ function toneClass(tone) {
 function MetricTile({ label, unit, metricModel, info }) {
   if (!metricModel) return null;
 
-  const { latestValue, deltaPct, series, tone } = metricModel;
-  const displayValue = latestValue != null ? `${Math.round(latestValue)} ${unit}` : "—";
+  const { recentAvg, latestValue, deltaPct, series, tone } = metricModel;
+  // Affiche la moyenne 14 j (cohérent avec le sous-titre de la carte).
+  // Fallback sur latestValue si la moyenne n'a pas pu être calculée (< 3 valeurs).
+  const displayedNumber = recentAvg != null ? recentAvg : latestValue;
+  const displayValue = displayedNumber != null ? `${Math.round(displayedNumber)} ${unit}` : "—";
   const delta = formatDelta(deltaPct);
   const tc = toneClass(tone);
 

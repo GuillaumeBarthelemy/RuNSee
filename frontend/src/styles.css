@@ -6307,3 +6307,301 @@ button.alert-banner-positive-item {
     min-width: 0;
   }
 }
+
+/* ===========================================================================
+   Recovery (Phase C) — TodayRecoveryCard, PerformancePhysioCard,
+   RecoveryVsLoadChart, GarminEnrichmentPanel
+   =========================================================================== */
+
+:root {
+  --recovery-good: #15803d;
+  --recovery-good-bg: rgba(34, 197, 94, 0.12);
+  --recovery-warning: #b45309;
+  --recovery-warning-bg: rgba(245, 158, 11, 0.14);
+  --recovery-sleep-color: #7c6af7;
+  --recovery-hrv-color: #38bdf8;
+  --recovery-hr-color: #f97316;
+  --recovery-bb-color: #22d3ee;
+}
+
+/* --- TodayRecoveryCard ----------------------------------------------------- */
+
+.today-recovery-card .card-subtitle {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.today-recovery-card--empty .today-recovery-empty-hint {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+.recovery-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.recovery-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  min-height: 130px;
+  transition: border-color 0.15s ease;
+}
+
+.recovery-tile.tone-good {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: var(--recovery-good-bg);
+}
+
+.recovery-tile.tone-warning {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: var(--recovery-warning-bg);
+}
+
+.recovery-tile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.recovery-tile-label {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.recovery-tile-value {
+  color: var(--color-text-primary);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.recovery-tile-value.tone-good { color: var(--recovery-good); }
+.recovery-tile-value.tone-warning { color: var(--recovery-warning); }
+
+.recovery-tile-delta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.recovery-tile.tone-good .recovery-tile-delta { color: var(--recovery-good); }
+.recovery-tile.tone-warning .recovery-tile-delta { color: var(--recovery-warning); }
+
+.recovery-spark {
+  width: 100%;
+  height: 32px;
+  margin-top: auto;
+  stroke: var(--color-text-muted);
+}
+
+.recovery-spark.tone-good { stroke: var(--recovery-good); }
+.recovery-spark.tone-warning { stroke: var(--recovery-warning); }
+
+@media (max-width: 900px) {
+  .recovery-tiles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .recovery-tiles-grid { grid-template-columns: 1fr; }
+}
+
+/* --- RecoveryVsLoadChart --------------------------------------------------- */
+
+.recovery-vs-load-chart .recovery-metric-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.recovery-metric-tab {
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.recovery-metric-tab:hover { border-color: var(--color-accent-soft); }
+
+.recovery-metric-tab.is-active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.recovery-chart-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.recovery-chart-svg {
+  width: 100%;
+  height: auto;
+  min-width: 540px;
+  display: block;
+}
+
+.recovery-load-bar {
+  fill: rgba(124, 106, 247, 0.35);
+}
+
+.recovery-chart-empty {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* --- PerformancePhysioCard ------------------------------------------------- */
+
+.performance-physio-card .physio-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.physio-row {
+  padding: 10px 12px;
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.physio-row.tone-good {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: var(--recovery-good-bg);
+}
+
+.physio-row.tone-warning {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: var(--recovery-warning-bg);
+}
+
+.physio-row-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.physio-row-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  flex: 0 0 auto;
+}
+
+.physio-row-value {
+  margin-left: auto;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.physio-row-value.tone-good { color: var(--recovery-good); }
+.physio-row-value.tone-warning { color: var(--recovery-warning); }
+
+.physio-row-delta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.physio-row.tone-good .physio-row-delta { color: var(--recovery-good); }
+.physio-row.tone-warning .physio-row-delta { color: var(--recovery-warning); }
+
+.physio-gauge {
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.physio-gauge-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.physio-gauge--empty { opacity: 0.3; }
+
+.performance-physio-card--empty .physio-empty-hint {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+/* --- GarminEnrichmentPanel ------------------------------------------------- */
+
+.garmin-enrichment-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.garmin-enrichment-panel--empty {
+  display: block;
+  padding: 16px 0;
+}
+
+.garmin-enrichment-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.garmin-enrichment-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.garmin-enrichment-row:last-child { border-bottom: none; }
+
+.garmin-enrichment-label {
+  flex: 1;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.garmin-enrichment-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.garmin-enrichment-value.tone-good { color: var(--recovery-good); }
+.garmin-enrichment-value.tone-warning { color: var(--recovery-warning); }
+
+.garmin-enrichment-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+@media (max-width: 760px) {
+  .garmin-enrichment-panel { grid-template-columns: 1fr; }
+}
