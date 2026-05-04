@@ -7,8 +7,12 @@
  * Convention: snapshots are sorted ascending by snapshotDate.
  */
 
-/** Last N days of sparkline history shown in the card */
+/** Last N days of sparkline history shown in the card.
+ * 14 days for visual smoothness, but `recentAvg` (displayed value) uses
+ * the last 7 days only — alignement avec la moyenne 7 j affichée par
+ * l'app Garmin Connect. */
 const SPARKLINE_DAYS = 14;
+const RECENT_AVG_DAYS = 7;
 
 /** Baseline window: days −35 to −8 relative to the most recent snapshot */
 const BASELINE_OFFSET_START = -35;
@@ -83,7 +87,8 @@ function buildMetricModel(recentSnapshots, baselineSnapshots, field, opts = {}) 
 
   const series = extractSeries(recentSnapshots, field);
   const latestValue = [...series].reverse().find((v) => v != null) ?? null;
-  const recentAvg = safeMean(series, 3);
+  // recentAvg = moyenne des 7 derniers jours (matche l'agrégat affiché par Garmin Connect)
+  const recentAvg = safeMean(series.slice(-RECENT_AVG_DAYS), 3);
   const baselineSeries = extractSeries(baselineSnapshots, field);
   const baselineAvg = safeMean(baselineSeries, BASELINE_MIN_DAYS);
 

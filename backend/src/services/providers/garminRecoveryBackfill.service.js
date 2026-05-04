@@ -366,23 +366,25 @@ function extractStress(rawStress) {
 
 function extractBodyBattery(rawBodyBattery) {
   const series = extractBodyBatterySeries(rawBodyBattery);
+  const positiveSeries = series.filter((value) => value > 0);
+  const positivePredicate = { predicate: (value) => value > 0 };
 
   return {
     bodyBatteryMorning: toInteger(
-      findFirstNumberByKeys(rawBodyBattery, ["bodyBatteryMorning", "morningBodyBattery"])
-        ?? series[0],
+      findFirstNumberByKeys(rawBodyBattery, ["bodyBatteryMorning", "morningBodyBattery"], positivePredicate)
+        ?? (positiveSeries.length ? positiveSeries[0] : null),
     ),
     bodyBatteryMin: toInteger(
-      findFirstNumberByKeys(rawBodyBattery, ["bodyBatteryMin", "lowestBodyBattery"])
-        ?? (series.length ? Math.min(...series) : null),
+      findFirstNumberByKeys(rawBodyBattery, ["bodyBatteryMin", "lowestBodyBattery"], positivePredicate)
+        ?? (positiveSeries.length ? Math.min(...positiveSeries) : null),
     ),
     bodyBatteryMax: toInteger(
-      findFirstNumberByKeys(rawBodyBattery, ["bodyBatteryMax", "highestBodyBattery"])
-        ?? (series.length ? Math.max(...series) : null),
+      findFirstNumberByKeys(rawBodyBattery, ["bodyBatteryMax", "highestBodyBattery"], positivePredicate)
+        ?? (positiveSeries.length ? Math.max(...positiveSeries) : null),
     ),
     bodyBatteryEnd: toInteger(
-      findFirstNumberByKeys(rawBodyBattery, ["bodyBatteryEnd", "endOfDayBodyBattery"])
-        ?? series.at(-1),
+      findFirstNumberByKeys(rawBodyBattery, ["bodyBatteryEnd", "endOfDayBodyBattery"], positivePredicate)
+        ?? (positiveSeries.length ? positiveSeries[positiveSeries.length - 1] : null),
     ),
   };
 }

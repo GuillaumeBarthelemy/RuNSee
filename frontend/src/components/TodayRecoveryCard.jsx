@@ -122,7 +122,7 @@ function TodayRecoveryCard({ snapshots = [] }) {
       <div className="card-header">
         <div className="card-title-block">
           <h2 className="card-title">Récupération Garmin</h2>
-          <span className="card-subtitle">{vm.confidenceLabel} · 14 derniers jours</span>
+          <span className="card-subtitle">{vm.confidenceLabel} · moyenne 7 j (sparkline 14 j)</span>
         </div>
         {TRAINING_MVP_RECOVERY_INFO?.card ? (
           <InfoTooltip
