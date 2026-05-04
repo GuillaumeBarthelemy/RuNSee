@@ -5,6 +5,7 @@ import {
   EXTERNAL_PROVIDER_STATUSES,
 } from "./externalProvider.constants.js";
 import { syncRecentGarminRecoveryForUser } from "./garminRecoveryBackfill.service.js";
+import { sanitizeError } from "./loggerSanitization.js";
 
 let startupTimer = null;
 let intervalTimer = null;
@@ -85,7 +86,10 @@ export async function runAutoGarminRecoverySyncSweep() {
         syncedCount += 1;
       } catch (error) {
         skippedCount += 1;
-        console.error(`Auto Garmin recovery sync failed for user ${appUserId}:`, error);
+        console.error("Auto Garmin recovery sync failed:", {
+          userRef: appUserId.slice(0, 8),
+          error: sanitizeError(error),
+        });
       }
     }
 
@@ -99,7 +103,7 @@ export async function runAutoGarminRecoverySyncSweep() {
       candidateCount: candidateConnections.length,
     };
   } catch (error) {
-    console.error("Auto Garmin recovery sync sweep failed:", error);
+    console.error("Auto Garmin recovery sync sweep failed:", sanitizeError(error));
     throw error;
   } finally {
     isSweepRunning = false;

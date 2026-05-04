@@ -3,9 +3,12 @@ import {
   connectGarminForUser,
   disconnectGarminForUser,
   getGarminConnectionStatus,
+  getGarminSyncMetrics,
+  purgeGarminDataForUser,
 } from "../services/providers/garminProvider.service.js";
 import {
   listGarminRecoverySnapshotsForUser,
+  renormalizeGarminRecoverySnapshotsForUser,
   startGarminRecoveryBackfillForUser,
   syncRecentGarminRecoveryForUser,
 } from "../services/providers/garminRecoveryBackfill.service.js";
@@ -43,6 +46,28 @@ export async function disconnectGarminController(req, res, next) {
   }
 }
 
+export async function purgeGarminDataController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await purgeGarminDataForUser(user.id, req.body || {});
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getGarminSyncMetricsController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await getGarminSyncMetrics(user.id);
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function startGarminRecoveryBackfillController(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
@@ -60,6 +85,21 @@ export async function syncRecentGarminRecoveryController(req, res, next) {
     const result = await syncRecentGarminRecoveryForUser(user.id, { triggerSource: "ui" });
 
     return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function renormalizeGarminRecoveryController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const { processedDays, updatedDays } = await renormalizeGarminRecoverySnapshotsForUser(user.id);
+
+    return res.json({
+      message: `Re-normalisation terminee : ${processedDays} jour(s) traite(s), ${updatedDays} snapshot(s) mis a jour.`,
+      processedDays,
+      updatedDays,
+    });
   } catch (error) {
     return next(error);
   }

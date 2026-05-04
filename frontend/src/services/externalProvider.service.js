@@ -15,6 +15,20 @@ export async function disconnectGarmin() {
   return response.data;
 }
 
+export async function purgeGarminData({ confirm } = {}) {
+  const response = await api.delete("/providers/garmin/data", {
+    data: {
+      confirm,
+    },
+  });
+  return response.data;
+}
+
+export async function getGarminSyncMetrics() {
+  const response = await api.get("/providers/garmin/metrics");
+  return response.data;
+}
+
 export async function startGarminRecoveryBackfill() {
   const response = await api.post("/providers/garmin/recovery/backfill", {});
   return response.data;
@@ -22,6 +36,11 @@ export async function startGarminRecoveryBackfill() {
 
 export async function syncRecentGarminRecovery() {
   const response = await api.post("/providers/garmin/recovery/sync-recent", {});
+  return response.data;
+}
+
+export async function renormalizeGarminRecovery() {
+  const response = await api.post("/providers/garmin/recovery/renormalize", {});
   return response.data;
 }
 

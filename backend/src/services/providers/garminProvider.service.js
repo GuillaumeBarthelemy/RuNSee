@@ -2,6 +2,7 @@ import {
   EXTERNAL_PROVIDER_CODES,
   EXTERNAL_PROVIDER_STATUSES,
 } from "./externalProvider.constants.js";
+import prisma from "../../config/prisma.js";
 import {
   buildExternalProviderConnectionSummary,
   findExternalProviderConnectionForUser,
@@ -20,6 +21,8 @@ import {
 
 const GARMIN_PROVIDER_CODE = EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL;
 const GARMIN_RATE_LIMIT_COOLDOWN_MS = 30 * 60 * 1000;
+const PURGE_CONFIRMATION_TOKEN = "PURGE_GARMIN";
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 function buildHttpError(message, userMessage, httpStatus = 400) {
   const error = new Error(message);
@@ -299,4 +302,132 @@ export async function disconnectGarminForUser(appUserId) {
     recoveryBackfill: await getGarminRecoveryBackfillStatus(appUserId),
     message: "Garmin est deconnecte. Les sessions stockees ont ete supprimees.",
   });
+}
+
+export async function purgeGarminDataForUser(appUserId, { confirm } = {}) {
+  if (confirm !== PURGE_CONFIRMATION_TOKEN) {
+    throw buildHttpError(
+      "Garmin purge confirmation is invalid.",
+      "Confirme la purge Garmin avec le texte exact PURGE_GARMIN.",
+      400,
+    );
+  }
+
+  const recoveryBackfill = await getGarminRecoveryBackfillStatus(appUserId);
+
+  if (recoveryBackfill?.isRunning) {
+    throw buildHttpError(
+      "Cannot purge Garmin data while recovery sync is running.",
+      "Une recuperation Garmin est en cours. Attends la fin avant de purger les donnees.",
+      409,
+    );
+  }
+
+  const deleted = await prisma.$transaction(async (tx) => {
+    const activityProviderEnrichments = await tx.activityProviderEnrichment.deleteMany({
+      where: {
+        appUserId,
+        providerCode: GARMIN_PROVIDER_CODE,
+      },
+    });
+    const recoverySnapshots = await tx.externalDailyRecoverySnapshot.deleteMany({
+      where: {
+        appUserId,
+        sourceProvider: GARMIN_PROVIDER_CODE,
+      },
+    });
+    const rawData = await tx.externalProviderRawData.deleteMany({
+      where: {
+        appUserId,
+        providerCode: GARMIN_PROVIDER_CODE,
+      },
+    });
+    const connections = await tx.externalProviderConnection.deleteMany({
+      where: {
+        appUserId,
+        providerCode: GARMIN_PROVIDER_CODE,
+      },
+    });
+
+    return {
+      activityProviderEnrichments: activityProviderEnrichments.count,
+      recoverySnapshots: recoverySnapshots.count,
+      rawData: rawData.count,
+      connections: connections.count,
+    };
+  });
+
+  return {
+    connection: null,
+    recoveryBackfill: await getGarminRecoveryBackfillStatus(appUserId),
+    deleted,
+    message: "Toutes les donnees Garmin non officielles de ce compte ont ete purgees.",
+  };
+}
+
+export async function getGarminSyncMetrics(appUserId) {
+  const since = new Date(Date.now() - THIRTY_DAYS_MS);
+
+  const [
+    connection,
+    totalSnapshots,
+    snapshotsLast30Days,
+    rawErrorsLast30Days,
+    latestSnapshot,
+  ] = await Promise.all([
+    findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE),
+    prisma.externalDailyRecoverySnapshot.count({
+      where: {
+        appUserId,
+        sourceProvider: GARMIN_PROVIDER_CODE,
+      },
+    }),
+    prisma.externalDailyRecoverySnapshot.count({
+      where: {
+        appUserId,
+        sourceProvider: GARMIN_PROVIDER_CODE,
+        snapshotDate: {
+          gte: since,
+        },
+      },
+    }),
+    prisma.externalProviderRawData.count({
+      where: {
+        appUserId,
+        providerCode: GARMIN_PROVIDER_CODE,
+        status: "error",
+        syncedAt: {
+          gte: since,
+        },
+      },
+    }),
+    prisma.externalDailyRecoverySnapshot.findFirst({
+      where: {
+        appUserId,
+        sourceProvider: GARMIN_PROVIDER_CODE,
+      },
+      orderBy: {
+        syncedAt: "desc",
+      },
+      select: {
+        snapshotDate: true,
+        syncedAt: true,
+        dataQuality: true,
+      },
+    }),
+  ]);
+
+  const connectionErrorCount = connection?.lastErrorAt && new Date(connection.lastErrorAt) >= since ? 1 : 0;
+
+  return {
+    totalSnapshots,
+    snapshotsLast30Days,
+    errorsLast30Days: rawErrorsLast30Days + connectionErrorCount,
+    lastSyncAt: connection?.lastSyncAt || latestSnapshot?.syncedAt || null,
+    latestSnapshotDate: latestSnapshot?.snapshotDate || null,
+    latestSnapshotQuality: latestSnapshot?.dataQuality || null,
+    connectionStatus: connection?.status || EXTERNAL_PROVIDER_STATUSES.DISCONNECTED,
+    lastErrorCode: connection?.lastErrorCode || null,
+    lastErrorAt: connection?.lastErrorAt || null,
+  };
 }

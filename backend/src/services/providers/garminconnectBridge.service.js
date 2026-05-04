@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import env from "../../config/env.js";
+import { sanitizeForLog } from "./loggerSanitization.js";
 
 const CURRENT_FILE = fileURLToPath(import.meta.url);
 const BACKEND_ROOT = path.resolve(path.dirname(CURRENT_FILE), "../../..");
@@ -35,7 +36,7 @@ function parseBridgePayload(rawPayload) {
 }
 
 function buildSanitizedStderr(stderr) {
-  return String(stderr || "").trim().slice(-MAX_STDERR_LENGTH);
+  return sanitizeForLog(String(stderr || "").trim().slice(-MAX_STDERR_LENGTH));
 }
 
 export function runGarminconnectBridge(payload = {}) {

@@ -13,6 +13,7 @@ import {
   upsertExternalProviderConnectionState,
 } from "./externalProviderConnection.service.js";
 import { fetchGarminRecoveryDays } from "./garminconnectBridge.service.js";
+import { sanitizeError } from "./loggerSanitization.js";
 import { decryptProviderSessionPayload } from "./providerSessionCrypto.service.js";
 
 const GARMIN_PROVIDER_CODE = EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL;
@@ -135,7 +136,15 @@ function walkObject(value, callback, path = []) {
   });
 }
 
-function findFirstNumberByKeys(value, keys) {
+// Cherche dans `value` la premiere occurrence d'une cle dont le nom matche
+// `keys` (insensible a la casse), en parcourant l'objet en profondeur.
+//
+// Option `predicate(numericValue) => boolean` : si fournie, ne retient un
+// match que si la valeur numerique trouvee passe le predicat. Sert a ignorer
+// les placeholders Garmin (0, valeurs aberrantes) qui peuvent apparaitre
+// dans des sous-sections du payload avant la vraie valeur.
+function findFirstNumberByKeys(value, keys, options = {}) {
+  const predicate = typeof options.predicate === "function" ? options.predicate : null;
   let result = null;
   const normalizedKeys = new Set(keys.map((key) => key.toLowerCase()));
 
@@ -148,7 +157,16 @@ function findFirstNumberByKeys(value, keys) {
       return;
     }
 
-    result = toNumber(item);
+    const candidate = toNumber(item);
+    if (candidate === null) {
+      return;
+    }
+
+    if (predicate && !predicate(candidate)) {
+      return;
+    }
+
+    result = candidate;
   });
 
   return result;
@@ -176,7 +194,14 @@ function findFirstStringByKeys(value, keys) {
   return result;
 }
 
-function getNestedNumber(value, paths) {
+// Parcourt `paths` dans l'ordre et retourne la premiere valeur numerique
+// trouvee. Option `predicate(numericValue) => boolean` : si fournie, on ne
+// considere comme valide que les valeurs qui passent le predicat ; sinon on
+// continue d'essayer les paths suivants. Utile pour ignorer les placeholders
+// (sleepScore: 0 a la racine) et tomber sur le path imbrique correct.
+function getNestedNumber(value, paths, options = {}) {
+  const predicate = typeof options.predicate === "function" ? options.predicate : null;
+
   for (const path of paths) {
     let current = value;
 
@@ -185,9 +210,15 @@ function getNestedNumber(value, paths) {
     }
 
     const numericValue = toNumber(current);
-    if (numericValue !== null) {
-      return numericValue;
+    if (numericValue === null) {
+      continue;
     }
+
+    if (predicate && !predicate(numericValue)) {
+      continue;
+    }
+
+    return numericValue;
   }
 
   return null;
@@ -243,59 +274,72 @@ function extractBodyBatterySeries(rawBodyBattery) {
 
 function extractSleepDurationSeconds(rawSleep) {
   return toInteger(
-    getNestedNumber(rawSleep, [
-      ["dailySleepDTO", "sleepTimeSeconds"],
-      ["dailySleepDTO", "totalSleepSeconds"],
-      ["dailySleepDTO", "durationInSeconds"],
-      ["sleepTimeSeconds"],
-      ["totalSleepSeconds"],
-      ["sleepDurationSeconds"],
-      ["durationInSeconds"],
-    ]),
+    getNestedNumber(
+      rawSleep,
+      [
+        ["dailySleepDTO", "sleepTimeSeconds"],
+        ["dailySleepDTO", "totalSleepSeconds"],
+        ["dailySleepDTO", "durationInSeconds"],
+        ["sleepTimeSeconds"],
+        ["totalSleepSeconds"],
+        ["sleepDurationSeconds"],
+        ["durationInSeconds"],
+      ],
+      { predicate: (value) => value > 0 },
+    ),
   );
 }
 
 function extractSleepScore(rawSleep) {
   return toRoundedNumber(
-    getNestedNumber(rawSleep, [
-      ["sleepScores", "overall", "value"],
-      ["sleepScore", "value"],
-      ["dailySleepDTO", "sleepScore"],
-      ["sleepScore"],
-      ["overallScore"],
-    ]),
+    getNestedNumber(
+      rawSleep,
+      [
+        ["sleepScores", "overall", "value"],
+        ["sleepScore", "value"],
+        ["dailySleepDTO", "sleepScore"],
+        ["sleepScore"],
+        ["overallScore"],
+      ],
+      { predicate: (value) => value > 0 },
+    ),
     1,
   );
 }
 
 function extractHrvAvg(rawHrv) {
   return toRoundedNumber(
-    getNestedNumber(rawHrv, [
-      ["hrvSummary", "lastNightAvg"],
-      ["hrvSummary", "weeklyAvg"],
-      ["lastNightAvg"],
-      ["weeklyAvg"],
-      ["avgHrv"],
-      ["hrvValue"],
-    ]),
+    getNestedNumber(
+      rawHrv,
+      [
+        ["hrvSummary", "lastNightAvg"],
+        ["hrvSummary", "weeklyAvg"],
+        ["lastNightAvg"],
+        ["weeklyAvg"],
+        ["avgHrv"],
+        ["hrvValue"],
+      ],
+      { predicate: (value) => value > 0 },
+    ),
     1,
   );
 }
 
 function extractRestingHr(rawSources) {
+  const hrPredicate = { predicate: (value) => value > 0 };
   return toInteger(
     findFirstNumberByKeys(rawSources?.heartRates, [
       "restingHeartRate",
       "restingHr",
       "restingHR",
       "wellnessRestingHeartRate",
-    ])
+    ], hrPredicate)
       ?? findFirstNumberByKeys(rawSources?.userSummary, [
         "restingHeartRate",
         "restingHr",
         "restingHR",
         "wellnessRestingHeartRate",
-      ]),
+      ], hrPredicate),
   );
 }
 
@@ -706,7 +750,7 @@ async function runGarminRecoveryBackfillLoop(appUserId) {
       lastErrorMessage: error.userMessage || "La recuperation Garmin a ete interrompue.",
       lastErrorAt: new Date(),
     });
-    console.error("Garmin recovery backfill failed:", error);
+    console.error("Garmin recovery backfill failed:", sanitizeError(error));
   } finally {
     runningBackfills.delete(appUserId);
   }
@@ -829,7 +873,7 @@ export async function startGarminRecoveryBackfillForUser(appUserId) {
 
   setTimeout(() => {
     runGarminRecoveryBackfillLoop(appUserId).catch((error) => {
-      console.error("Unable to start Garmin recovery backfill:", error);
+      console.error("Unable to start Garmin recovery backfill:", sanitizeError(error));
       runningBackfills.delete(appUserId);
     });
   }, 0);
@@ -924,7 +968,7 @@ export async function syncRecentGarminRecoveryForUser(appUserId, { triggerSource
       lastErrorAt: new Date(),
     });
 
-    console.error("Garmin recent recovery sync failed:", error);
+    console.error("Garmin recent recovery sync failed:", sanitizeError(error));
 
     return {
       connection: buildExternalProviderConnectionSummary(updatedConnection),
@@ -934,6 +978,93 @@ export async function syncRecentGarminRecoveryForUser(appUserId, { triggerSource
   } finally {
     runningBackfills.delete(appUserId);
   }
+}
+
+// Inverse de RAW_SOURCE_TYPES : providerResourceId (ex. "sleep") → clé rawSources (ex. "sleep")
+const RAW_RESOURCE_ID_TO_SOURCE_KEY = Object.fromEntries(
+  Object.entries(RAW_SOURCE_TYPES).map(([sourceKey]) => [sourceKey, sourceKey]),
+);
+
+export async function renormalizeGarminRecoverySnapshotsForUser(appUserId) {
+  const allRawData = await prisma.externalProviderRawData.findMany({
+    where: {
+      appUserId,
+      providerCode: GARMIN_PROVIDER_CODE,
+    },
+    select: {
+      providerDateKey: true,
+      providerResourceId: true,
+      payloadJson: true,
+      status: true,
+    },
+    orderBy: { providerDateKey: "asc" },
+  });
+
+  // Grouper par date
+  const byDate = new Map();
+  for (const row of allRawData) {
+    const dateKey = normalizeDateKey(row.providerDateKey);
+    if (!dateKey) {
+      continue;
+    }
+    if (!byDate.has(dateKey)) {
+      byDate.set(dateKey, { rawSources: {}, sourceErrors: [] });
+    }
+    const group = byDate.get(dateKey);
+    const sourceKey = RAW_RESOURCE_ID_TO_SOURCE_KEY[row.providerResourceId];
+    if (row.status === "error") {
+      group.sourceErrors.push({ source: row.providerResourceId });
+    } else if (sourceKey) {
+      group.rawSources[sourceKey] = safeParseJson(row.payloadJson);
+    }
+  }
+
+  let processedDays = 0;
+  let updatedDays = 0;
+
+  for (const [dateKey, { rawSources, sourceErrors }] of byDate) {
+    const normalizedSnapshot = normalizeDailyRecovery(rawSources, sourceErrors);
+    const snapshotDate = buildUtcDate(dateKey);
+
+    const existing = await prisma.externalDailyRecoverySnapshot.findUnique({
+      where: {
+        appUserId_sourceProvider_snapshotDate: {
+          appUserId,
+          sourceProvider: GARMIN_PROVIDER_CODE,
+          snapshotDate,
+        },
+      },
+      select: { id: true },
+    });
+
+    await prisma.externalDailyRecoverySnapshot.upsert({
+      where: {
+        appUserId_sourceProvider_snapshotDate: {
+          appUserId,
+          sourceProvider: GARMIN_PROVIDER_CODE,
+          snapshotDate,
+        },
+      },
+      create: {
+        appUserId,
+        sourceProvider: GARMIN_PROVIDER_CODE,
+        snapshotDate,
+        ...normalizedSnapshot,
+        syncedAt: new Date(),
+      },
+      update: {
+        ...normalizedSnapshot,
+        syncedAt: new Date(),
+      },
+    });
+
+    processedDays += 1;
+    if (existing) {
+      updatedDays += 1;
+    }
+  }
+
+  return { processedDays, updatedDays };
 }
 
 export async function buildGarminConnectionWithRecoveryStatus(appUserId, connection) {
