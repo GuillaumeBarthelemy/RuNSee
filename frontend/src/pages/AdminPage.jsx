@@ -18,6 +18,8 @@ import {
   connectGarmin,
   disconnectGarmin,
   getGarminConnectionStatus,
+  getGarminSyncMetrics,
+  purgeGarminData,
   startGarminRecoveryBackfill,
   syncRecentGarminRecovery,
 } from "../services/externalProvider.service.js";
@@ -58,8 +60,10 @@ export default function AdminPage() {
   const [isGarminSubmitting, setIsGarminSubmitting] = useState(false);
   const [isGarminBackfillSubmitting, setIsGarminBackfillSubmitting] = useState(false);
   const [isGarminSyncSubmitting, setIsGarminSyncSubmitting] = useState(false);
+  const [isGarminPurgeSubmitting, setIsGarminPurgeSubmitting] = useState(false);
   const [garminConnection, setGarminConnection] = useState(null);
   const [garminRecoveryBackfill, setGarminRecoveryBackfill] = useState(null);
+  const [garminMetrics, setGarminMetrics] = useState(null);
   const [trainingSettingsOverride, setTrainingSettingsOverride] = useState(null);
   const [trainingSettingsHistoryOverride, setTrainingSettingsHistoryOverride] = useState(null);
   const safeSetError = setError ?? noop;
@@ -108,6 +112,15 @@ export default function AdminPage() {
     }
   }, []);
 
+  const loadGarminMetrics = useCallback(async () => {
+    try {
+      const result = await getGarminSyncMetrics();
+      setGarminMetrics(result || null);
+    } catch {
+      setGarminMetrics(null);
+    }
+  }, []);
+
   const handleConnectStrava = useCallback(() => {
     if (!stravaApp?.personalAppConfigured && !stravaApp?.sharedAppAvailable) {
       safeSetError("Ajoute d'abord ton application Strava personnelle pour connecter ce compte.");
@@ -141,7 +154,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     loadGarminConnection().catch(() => {});
-  }, [loadGarminConnection]);
+    loadGarminMetrics().catch(() => {});
+  }, [loadGarminConnection, loadGarminMetrics]);
 
   useEffect(() => {
     const isRecoveryRunning = Boolean(
@@ -419,6 +433,24 @@ export default function AdminPage() {
     }
   }, [loadGarminConnection, safeSetError]);
 
+  const handlePurgeGarminData = useCallback(async () => {
+    safeSetError("");
+    setActionNotice("");
+    setIsGarminPurgeSubmitting(true);
+
+    try {
+      await purgeGarminData({ confirm: "PURGE_GARMIN" });
+      setGarminConnection(null);
+      setGarminRecoveryBackfill(null);
+      setGarminMetrics(null);
+      setActionNotice("Toutes les donnees Garmin ont ete supprimees.");
+    } catch (error) {
+      safeSetError(extractErrorMessage(error, "Erreur lors de la suppression des donnees Garmin."));
+    } finally {
+      setIsGarminPurgeSubmitting(false);
+    }
+  }, [safeSetError]);
+
   const handleSaveTrainingAnalyticsSettings = useCallback(async (payload) => {
     safeSetError("");
     setInfoNotice("");
@@ -516,14 +548,17 @@ export default function AdminPage() {
           status={garminConnection?.status || "disconnected"}
           connection={garminConnection}
           recoveryBackfill={garminRecoveryBackfill}
+          metrics={garminMetrics}
           canConnect
           isPending={isGarminSubmitting}
           isBackfillPending={isGarminBackfillSubmitting}
           isSyncPending={isGarminSyncSubmitting}
+          isPurgePending={isGarminPurgeSubmitting}
           onConnect={handleConnectGarmin}
           onDisconnect={handleDisconnectGarmin}
           onStartRecoveryBackfill={handleStartGarminRecoveryBackfill}
           onSyncRecentRecovery={handleSyncRecentGarminRecovery}
+          onPurgeGarminData={handlePurgeGarminData}
         />
       </section>
 

@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, useCallback } from "react";
 import InfoTooltip from "./InfoTooltip.jsx";
 import {
   GARMIN_EXPERIMENTAL_COPY,
@@ -27,13 +27,16 @@ function GarminExperimentalCard({
   canConnect = false,
   connection = null,
   recoveryBackfill = null,
+  metrics = null,
   isPending = false,
   isBackfillPending = false,
   isSyncPending = false,
+  isPurgePending = false,
   onConnect = noop,
   onDisconnect = noop,
   onStartRecoveryBackfill = noop,
   onSyncRecentRecovery = noop,
+  onPurgeGarminData = noop,
 }) {
   const resolvedStatusCode = connection?.status || status;
   const resolvedStatus = getGarminExperimentalStatus(resolvedStatusCode);
@@ -97,6 +100,31 @@ function GarminExperimentalCard({
   const recentSyncButtonLabel = isSyncPending || isRecoveryRunning
     ? GARMIN_EXPERIMENTAL_COPY.recoverySyncRunningAction
     : GARMIN_EXPERIMENTAL_COPY.recoverySyncRecentAction;
+
+  // B1 — purge confirmation state
+  const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
+  const [purgeText, setPurgeText] = useState("");
+  const canConfirmPurge = purgeText.trim().toUpperCase() === "PURGE";
+
+  const handlePurgeClick = useCallback(() => {
+    setShowPurgeConfirm(true);
+    setPurgeText("");
+  }, []);
+
+  const handlePurgeCancel = useCallback(() => {
+    setShowPurgeConfirm(false);
+    setPurgeText("");
+  }, []);
+
+  const handlePurgeConfirm = useCallback(async () => {
+    if (!canConfirmPurge || typeof onPurgeGarminData !== "function") return;
+    setShowPurgeConfirm(false);
+    setPurgeText("");
+    await onPurgeGarminData();
+  }, [canConfirmPurge, onPurgeGarminData]);
+
+  // B2 — diagnostic panel toggle
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -282,6 +310,51 @@ function GarminExperimentalCard({
         </div>
       </form>
 
+      {/* B2 — Diagnostic section */}
+      {isConnected && metrics ? (
+        <div className="garmin-diagnostic-panel top-gap-md">
+          <button
+            type="button"
+            className="button button-ghost garmin-diagnostic-toggle"
+            onClick={() => setShowDiagnostic((v) => !v)}
+          >
+            {showDiagnostic ? "▲ Masquer le diagnostic" : "▼ Diagnostic sync"}
+          </button>
+          {showDiagnostic ? (
+            <div className="garmin-diagnostic-grid top-gap-sm">
+              <div className="garmin-diagnostic-item">
+                <span className="diagnostic-label">Snapshots totaux</span>
+                <strong>{metrics.totalSnapshots ?? "—"}</strong>
+              </div>
+              <div className="garmin-diagnostic-item">
+                <span className="diagnostic-label">Snapshots 30 j</span>
+                <strong>{metrics.snapshotsLast30Days ?? "—"}</strong>
+              </div>
+              <div className="garmin-diagnostic-item">
+                <span className="diagnostic-label">Erreurs 30 j</span>
+                <strong className={metrics.errorsLast30Days > 0 ? "diagnostic-warn" : ""}>
+                  {metrics.errorsLast30Days ?? "—"}
+                </strong>
+              </div>
+              <div className="garmin-diagnostic-item">
+                <span className="diagnostic-label">Derniere sync</span>
+                <strong>{metrics.lastSyncAt ? formatDateTime(metrics.lastSyncAt) : "Jamais"}</strong>
+              </div>
+              <div className="garmin-diagnostic-item">
+                <span className="diagnostic-label">Etat connexion</span>
+                <strong>{metrics.connectionStatus ?? "—"}</strong>
+              </div>
+              {metrics.lastErrorCode ? (
+                <div className="garmin-diagnostic-item">
+                  <span className="diagnostic-label">Derniere erreur</span>
+                  <strong className="diagnostic-warn">{metrics.lastErrorCode}</strong>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       {isConnected ? (
         <div className="garmin-recovery-panel top-gap-md">
           <div className="card-header-row wrap-on-mobile compact-header">
@@ -347,6 +420,57 @@ function GarminExperimentalCard({
           <p className="small-text top-gap-sm">
             {GARMIN_EXPERIMENTAL_COPY.recoveryDailySyncCaption}
           </p>
+        </div>
+      ) : null}
+
+      {/* B1 — Purge section */}
+      {isConnected ? (
+        <div className="garmin-purge-panel top-gap-md">
+          {!showPurgeConfirm ? (
+            <button
+              type="button"
+              className="button button-outline-danger garmin-purge-trigger"
+              onClick={handlePurgeClick}
+              disabled={isPurgePending}
+            >
+              {isPurgePending ? "Suppression..." : "Supprimer mes donnees Garmin"}
+            </button>
+          ) : (
+            <div className="garmin-purge-confirm-block">
+              <p className="alert alert-warning">
+                <strong>Action irréversible.</strong> Toutes tes données Garmin (connexion, sommeil, HRV,
+                FC repos, stress, Body Battery) seront supprimées définitivement.
+              </p>
+              <label className="field top-gap-sm">
+                <span className="field-label">Tape <strong>PURGE</strong> pour confirmer</span>
+                <input
+                  type="text"
+                  className="field-input"
+                  value={purgeText}
+                  onChange={(e) => setPurgeText(e.target.value)}
+                  placeholder="PURGE"
+                  autoComplete="off"
+                />
+              </label>
+              <div className="actions-row top-gap-sm">
+                <button
+                  type="button"
+                  className="button button-danger"
+                  onClick={handlePurgeConfirm}
+                  disabled={!canConfirmPurge}
+                >
+                  Confirmer la suppression
+                </button>
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={handlePurgeCancel}
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : null}
     </section>
