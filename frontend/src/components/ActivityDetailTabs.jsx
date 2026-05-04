@@ -2,6 +2,7 @@ import { memo, useMemo, useState } from "react";
 import ActivityMapCard from "./ActivityMapCard.jsx";
 import ActivityRpeCard from "./ActivityRpeCard.jsx";
 import ActivitySplitsCard from "./ActivitySplitsCard.jsx";
+import GarminEnrichmentPanel from "./GarminEnrichmentPanel.jsx";
 import IntraSessionInsightsCard from "./IntraSessionInsightsCard.jsx";
 
 const STORAGE_KEY = "runsee-activity-tab";
@@ -38,6 +39,7 @@ function ActivityDetailTabs({
   detailedPayload = null,
   trainingAnalyticsSettings = null,
   onActivityUpdated = noop,
+  garminSnapshot = null,
 }) {
   const [activeTab, setActiveTab] = useState(getStoredTab);
   const description = String(activity?.description || "").trim();
@@ -71,6 +73,14 @@ function ActivityDetailTabs({
       },
     ];
 
+    if (garminSnapshot !== undefined) {
+      nextTabs.push({
+        id: "garmin",
+        label: "Garmin",
+        render: () => <GarminEnrichmentPanel snapshot={garminSnapshot} />,
+      });
+    }
+
     if (description) {
       nextTabs.push({
         id: "description",
@@ -80,7 +90,7 @@ function ActivityDetailTabs({
     }
 
     return nextTabs;
-  }, [activity, description, detailedPayload, onActivityUpdated, trainingAnalyticsSettings]);
+  }, [activity, description, detailedPayload, garminSnapshot, onActivityUpdated, trainingAnalyticsSettings]);
 
   const activeTabId = tabs.some((tab) => tab.id === activeTab)
     ? activeTab

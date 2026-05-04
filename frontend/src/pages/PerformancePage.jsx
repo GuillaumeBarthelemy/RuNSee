@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AnalyticsFiltersBar from "../components/AnalyticsFiltersBar.jsx";
 import BestEffortsPanel from "../components/BestEffortsPanel.jsx";
+import PerformancePhysioCard from "../components/PerformancePhysioCard.jsx";
 import RaceCountdownCard from "../components/RaceCountdownCard.jsx";
 import RaceObjectiveCallToAction from "../components/RaceObjectiveCallToAction.jsx";
 import VdotProfileCard from "../components/VdotProfileCard.jsx";
@@ -10,6 +11,7 @@ import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import useRaceObjectives from "../hooks/useRaceObjectives.js";
 import AppShell from "../layouts/AppShell.jsx";
 import { enrichActivity } from "../services/activity.service.js";
+import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
 import { filterActivities } from "../utils/activityAggregations.js";
 import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
 import {
@@ -82,6 +84,18 @@ export default function PerformancePage() {
     () => buildCurrentAccountModel({ athlete, options }),
     [athlete, options],
   );
+
+  const [recoverySnapshots, setRecoverySnapshots] = useState([]);
+
+  useEffect(() => {
+    let ignore = false;
+    getGarminRecoverySnapshots({ days: 56 })
+      .then((data) => {
+        if (!ignore && Array.isArray(data?.snapshots)) setRecoverySnapshots(data.snapshots);
+      })
+      .catch(() => {});
+    return () => { ignore = true; };
+  }, []);
 
   const performanceFilters = useMemo(
     () => ({
@@ -270,6 +284,12 @@ export default function PerformancePage() {
             info={TRAINING_MVP_KPI_INFO.vdotProfile || TRAINING_MVP_SECTION_INFO.advancedSignals}
           />
         </div>
+
+        {recoverySnapshots.length > 0 ? (
+          <div className="section">
+            <PerformancePhysioCard snapshots={recoverySnapshots} />
+          </div>
+        ) : null}
 
         <div className="section">
           <BestEffortsPanel

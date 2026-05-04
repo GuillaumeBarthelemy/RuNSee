@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AnalyticsFiltersBar from "../components/AnalyticsFiltersBar.jsx";
+import RecoveryVsLoadChart from "../components/RecoveryVsLoadChart.jsx";
 import DynamicsGrid from "../components/DynamicsGrid.jsx";
 import MonthlyVolumeChart from "../components/MonthlyVolumeChart.jsx";
 import PerformanceTrendChart from "../components/PerformanceTrendChart.jsx";
@@ -41,6 +42,8 @@ import {
   buildLoadVarianceProfile,
 } from "../utils/trainingIntelligence.js";
 import { buildLoadDynamicsProfile } from "../utils/loadDynamics.js";
+import { buildRecoveryCorrelationDataset } from "../utils/recoveryCorrelations.js";
+import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
 
 function addDays(date, days) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
@@ -63,6 +66,18 @@ export default function AnalyticsPage() {
   } = useActivityViewModel({
     includeActivities: true,
   });
+
+  const [recoverySnapshots, setRecoverySnapshots] = useState([]);
+
+  useEffect(() => {
+    let ignore = false;
+    getGarminRecoverySnapshots({ days: 56 })
+      .then((data) => {
+        if (!ignore && Array.isArray(data?.snapshots)) setRecoverySnapshots(data.snapshots);
+      })
+      .catch(() => {});
+    return () => { ignore = true; };
+  }, []);
 
   const account = useMemo(
     () => buildCurrentAccountModel({ athlete, options }),
@@ -217,6 +232,15 @@ export default function AnalyticsPage() {
       efficiencyModel,
     }),
     [trainingLoadModel, efficiencyModel],
+  );
+
+  const recoveryCorrelation = useMemo(
+    () => buildRecoveryCorrelationDataset(
+      recoverySnapshots,
+      trainingLoadModel.chartData || [],
+      56,
+    ),
+    [recoverySnapshots, trainingLoadModel.chartData],
   );
 
   const scopeLabel = filters.sportGroup === "all" ? "tous les sports" : filters.sportGroup;
@@ -375,6 +399,12 @@ export default function AnalyticsPage() {
             />
           </div>
         </div>
+
+        {recoveryCorrelation.hasData ? (
+          <div className="section">
+            <RecoveryVsLoadChart points={recoveryCorrelation.points} />
+          </div>
+        ) : null}
 
         <div className="section analysis-section-shell">
           <DynamicsGrid

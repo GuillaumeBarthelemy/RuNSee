@@ -383,3 +383,54 @@ export const TRAINING_MVP_LOAD_DYNAMICS_SIGNAL_INFO = {
       "Sur plateau durable, varie les stimulations : fartlek, cotes ou bloc seuil court.",
   }),
 };
+
+// ---------------------------------------------------------------------------
+// Recovery card copy (TodayRecoveryCard, PerformancePhysioCard)
+// ---------------------------------------------------------------------------
+
+export const TRAINING_MVP_RECOVERY_INFO = {
+  card: buildInfoBlocks({
+    role: "Suivre tes indicateurs physiologiques de recuperation sur 14 jours glissants.",
+    calculation:
+      "Données issues de Garmin Connect (non officiel). Chaque indicateur est compare a ta moyenne de reference calculee sur la fenetre −35 j à −8 j, pour filtrer les effets de fatigue aigue recente.",
+    interpretation:
+      "Un delta positif sur Sommeil / HRV = recuperation au-dessus de ton repere. Un delta negatif sur FC repos = coeur plus economique. Le vert indique une tendance favorable, le orange une vigilance utile.",
+    action:
+      "Si HRV baisse et FC repos monte en meme temps, reduis l'intensite du lendemain. Si Body Battery < 40 au reveil, privilegier endurance fondamentale ou repos.",
+    reference: "HRV4Training research, Plews et al. (2013), Buchheit (2014).",
+  }),
+  sleep: buildInfoBlocks({
+    role: "Evaluer la qualite de ton sommeil selon Garmin.",
+    calculation: "Score Garmin 0-100 base sur duree, phases, respiration et mouvements nocturnes.",
+    interpretation:
+      "< 50 = sommeil insuffisant. 50-70 = acceptable. > 70 = bon. Le delta compare ta moyenne des 7 derniers jours a ton repere de base.",
+    action: "Repere les nuits < 50 : si recurrentes sur 3+ jours, baisse la charge du lendemain.",
+    glossaryKey: "sleep-score",
+  }),
+  hrv: buildInfoBlocks({
+    role: "Mesurer ta variabilite cardiaque nocturne, proxy du systeme nerveux autonome.",
+    calculation: "HRV moyenne nocturne en ms. Plus la valeur est elevee, plus le systeme parasympathique domine — signe de recuperation.",
+    interpretation:
+      "La valeur absolue depend de ton profil. Ce qui compte : la tendance vs ton repere. −8 % ou plus = vigilance. +5 % ou plus = bonne forme.",
+    action: "HRV bas + sommeil faible + FC repos haute = triple signal de fatigue. Adapte la journee.",
+    glossaryKey: "hrv",
+  }),
+  restingHr: buildInfoBlocks({
+    role: "Surveiller ta frequence cardiaque au repos comme indicateur de recoup.",
+    calculation: "FC minimale detectee pendant le sommeil (bpm). Normalement enregistree avant 4h du matin.",
+    interpretation:
+      "Une FC repos elevee vs ton repere (+5 % ou plus) peut signaler fatigue, stress, debut de maladie. Une FC plus basse = bonne recuperation.",
+    action:
+      "Si FC repos depasse de 5+ bpm ton repere habituel sur 2 jours, consulte la section Decision du jour avant de t'engager sur une seance intense.",
+    glossaryKey: "resting-hr",
+  }),
+  bodyBattery: buildInfoBlocks({
+    role: "Lire ton niveau d'energie estime au reveil selon Garmin.",
+    calculation:
+      "Algorithme propriétaire Garmin qui combine sommeil, stress, activite. Score 0-100 : 0 = vide, 100 = plein.",
+    interpretation:
+      "< 30 au reveil = journee de regeneration conseillée. 30-60 = vigilance sur l'intensite. > 60 = capacite a absorber une seance exigeante.",
+    action:
+      "Utilise Body Battery comme un filtre rapide le matin. Combine-le avec HRV et FC repos pour une decision plus robuste.",
+  }),
+};

@@ -4,6 +4,7 @@ import ActivityDetailCard from "../components/ActivityDetailCard.jsx";
 import useRunSeeData from "../hooks/useRunSeeData.js";
 import AppShell from "../layouts/AppShell.jsx";
 import { enrichActivity, getActivityById } from "../services/activity.service.js";
+import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
 
 function extractErrorMessage(error, fallback) {
   return error?.response?.data?.details || error?.response?.data?.message || error?.message || fallback;
@@ -56,6 +57,7 @@ export default function ActivityDetailPage() {
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEnriching, setIsEnriching] = useState(false);
+  const [garminSnapshot, setGarminSnapshot] = useState(null);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -109,6 +111,31 @@ export default function ActivityDetailPage() {
     loadActivity();
   }, [loadActivity]);
 
+  // Fetch Garmin snapshot for the activity's date (2-day window = today + yesterday in case of late sync)
+  useEffect(() => {
+    let ignore = false;
+    getGarminRecoverySnapshots({ days: 7 })
+      .then((data) => {
+        if (ignore || !Array.isArray(data?.snapshots) || !activity) return;
+        const activityDateKey = (() => {
+          const d = new Date(activity.startDateLocal || activity.startDate || "");
+          if (Number.isNaN(d.getTime())) return null;
+          return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+        })();
+        const match = activityDateKey
+          ? data.snapshots.find((s) => {
+              if (!s.snapshotDate) return false;
+              const sd = new Date(s.snapshotDate);
+              const key = `${sd.getUTCFullYear()}-${String(sd.getUTCMonth() + 1).padStart(2, "0")}-${String(sd.getUTCDate()).padStart(2, "0")}`;
+              return key === activityDateKey;
+            })
+          : null;
+        setGarminSnapshot(match || null);
+      })
+      .catch(() => {});
+    return () => { ignore = true; };
+  }, [activity]);
+
   return (
     <AppShell
       eyebrow="Activite"
@@ -130,6 +157,7 @@ export default function ActivityDetailPage() {
           onEnrich={handleEnrich}
           isEnriching={isEnriching}
           onActivityUpdated={setActivity}
+          garminSnapshot={garminSnapshot}
         />
       ) : null}
       {!loading && !activity && !error ? (
