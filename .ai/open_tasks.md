@@ -21,7 +21,7 @@
 
 - [x] Comparer `prisma/schema.prisma` et `prisma-postgresql/schema.prisma` — identiques fonctionnellement (diff cosmétique uniquement)
 - [x] Tester l'import SQLite → PG dev — OK (fix port 55532→55432 dans `.env.postgresql.dev.local` + suppression `--env-file=.env` dans `db:ensure:postgres`, commit 069a9e8)
-- [ ] Valider la stack green PG avant tout cutover (`deployment/postgresql/CUTOVER.md`)
+- [x] Valider la stack green PG — production déjà sur PostgreSQL confirmé via `GET /db/health` → `{"database":"postgresql"}`. Le Dockerfile.prod génère le client Prisma PG et exécute `prisma migrate deploy` au démarrage. Aucun cutover nécessaire.
 
 ## Zones à analyser (lecture seule, pas de modif sans analyse)
 
