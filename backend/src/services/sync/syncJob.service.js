@@ -14,6 +14,11 @@ import { requireActiveConnectionForUser } from "../strava/stravaConnection.servi
 const ACTIVE_JOB_STATUSES = ["queued", "running"];
 const runningJobs = new Set();
 
+// Au-delà de cette durée, un job en "running" est considéré orphelin (le worker
+// l'a probablement perdu suite à un restart container). On l'auto-marque "failed"
+// pour ne pas bloquer indéfiniment les nouvelles synchros.
+const STALE_JOB_TIMEOUT_MS = 30 * 60 * 1000; // 30 min
+
 function buildRecoveryFailurePayload(reason, metadata = {}) {
   return JSON.stringify({
     reason,
@@ -29,7 +34,39 @@ function shouldQueueDetailBackfillFollowUp(job, result = {}) {
   );
 }
 
+/**
+ * Marque comme "failed" tout job "running" qui a dépassé STALE_JOB_TIMEOUT_MS
+ * sans signe de vie. Ces jobs orphelins surviennent typiquement après un
+ * restart du container backend pendant une synchro.
+ */
+async function failStaleJobsForUser(appUserId) {
+  const cutoff = new Date(Date.now() - STALE_JOB_TIMEOUT_MS);
+  await prisma.syncJob.updateMany({
+    where: {
+      appUserId,
+      status: "running",
+      OR: [
+        { startedAt: { lt: cutoff } },
+        { startedAt: null, queuedAt: { lt: cutoff } },
+      ],
+    },
+    data: {
+      status: "failed",
+      finishedAt: new Date(),
+      message: "Job interrompu (timeout > 30 min sans completion).",
+    },
+  });
+}
+
 export async function assertNoActiveSyncJob(appUserId) {
+  // 1. Auto-purge des jobs orphelins (best-effort, non-bloquant en cas d'erreur)
+  try {
+    await failStaleJobsForUser(appUserId);
+  } catch {
+    // ignorer : on ne veut pas bloquer la sync si le cleanup échoue
+  }
+
+  // 2. Vérification habituelle après cleanup
   const activeJob = await prisma.syncJob.findFirst({
     where: {
       appUserId,
