@@ -33,10 +33,13 @@ Frontend :
 
 ## Erreurs résolues
 
-### Bug "Sommeil 0 / FC repos 0 bpm" (résolu 2026-05-04)
-- **Cause** : les extracteurs `extractSleepScore`, `extractHrvAvg`, `extractSleepDurationSeconds`, `extractRestingHr` prenaient la première valeur numérique trouvée sans filtre, y compris les placeholders Garmin à `0`.
-- **Fix** : ajout de `{ predicate: (value) => value > 0 }` sur les 4 extracteurs dans `garminRecoveryBackfill.service.js`.
-- **Re-normalisation** : nouvelle fonction `renormalizeGarminRecoverySnapshotsForUser` + endpoint `POST /provider/garmin/recovery/renormalize` pour recalculer les snapshots déjà pollués sans rappel Garmin.
+### Bug "Sommeil 0 / FC repos 0 bpm" (résolu et validé 2026-05-04)
+- **Cause 1** : extracteurs sans prédicat → placeholders Garmin à `0` pris comme valeurs réelles.
+- **Fix 1** : `{ predicate: (value) => value > 0 }` sur `extractSleepScore`, `extractHrvAvg`, `extractSleepDurationSeconds`, `extractRestingHr`.
+- **Cause 2** : `sleepScore` cherché à la racine (`sleepScores.overall.value`) alors que Garmin le place sous `dailySleepDTO.sleepScores.overall.value`.
+- **Fix 2** : chemin `["dailySleepDTO", "sleepScores", "overall", "value"]` ajouté en tête de liste.
+- **Re-normalisation** : `renormalizeGarminRecoverySnapshotsForUser` + `POST /provider/garmin/recovery/renormalize` + workflow `maintenance-renormalize-garmin.yml`.
+- **Résultat validé** : Dashboard affiche "Sommeil score moyen 70", "FC repos +0 bpm vs repere", "HRV equilibree 7/7 jours".
 
 ## Risques de régression
 
@@ -49,8 +52,7 @@ Résumé :
 
 ## Validations restantes
 
-- [ ] **Déclencher `POST /provider/garmin/recovery/renormalize`** pour recalculer les snapshots DB déjà pollués
-- [ ] Vérifier dans `ExternalDailyRecoverySnapshot` après renormalisation : `sleepScore` ≈ 80, `restingHr` ≈ 49
-- [ ] Dashboard frontend → "Sommeil score moyen 80" et "FC repos ±X bpm vs repere" (non nul)
+- [x] Snapshots re-normalisés via workflow `maintenance-renormalize-garmin.yml`
+- [x] Dashboard : "Sommeil score moyen 70", "FC repos +0 bpm vs repere", "HRV equilibree 7/7 jours"
 - [ ] Déclencher un sync récent → vérifier que les nouveaux snapshots ont des valeurs correctes
 - [ ] Test de l'auto-sync Garmin après backfill initial

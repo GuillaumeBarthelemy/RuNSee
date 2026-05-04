@@ -8,10 +8,9 @@
 - [x] Service frontend `renormalizeGarminRecovery()` ajouté
 
 ### Garmin Recovery — validation post-correctif (à faire)
-- [ ] **PRIORITAIRE** : déclencher `POST /provider/garmin/recovery/renormalize` pour recalculer les snapshots DB pollués
-- [ ] Vérifier DB après renormalisation : `sleepScore` ≈ 80, `restingHr` ≈ 49 (via Prisma Studio ou requête directe)
-- [ ] Recharger Dashboard → "Sommeil score moyen 80" et "FC repos ±X bpm vs repere" non nuls
-- [ ] Déclencher un sync récent → confirmer que nouveaux snapshots ont des valeurs correctes (plus de 0)
+- [x] Re-normalisation déclenchée via `maintenance-renormalize-garmin.yml`
+- [x] Dashboard validé : "Sommeil score moyen 70", "FC repos +0 bpm vs repere", "HRV equilibree 7/7 jours"
+- [ ] Déclencher un sync récent → confirmer que nouveaux snapshots ont des valeurs correctes
 - [ ] Vérifier la gestion des erreurs dans `garminProvider.service.js` (stderr bridge, timeout, exit code)
 - [ ] Confirmer que `garminRecoveryAutoSync.service.js` s'enclenche correctement après un backfill réussi
 

@@ -1,0 +1,8 @@
+﻿ backend/src/controllers/provider.controller.js     |  24 ++++
+ backend/src/routes/provider.routes.js              |   4 +
+ .../services/providers/garminProvider.service.js   | 131 +++++++++++++++++++++
+ .../providers/garminRecoveryAutoSync.service.js    |   8 +-
+ .../providers/garminRecoveryBackfill.service.js    |  47 ++++++--
+ .../providers/garminconnectBridge.service.js       |   3 +-
+ frontend/src/services/externalProvider.service.js  |  14 +++
+ 7 files changed, 220 insertions(+), 11 deletions(-)
