@@ -1,0 +1,40 @@
+name: runsee-monitoring
+
+# Uptime Kuma — monitoring continu avec alerting Telegram.
+#
+# Démarrage :
+#   cd /srv/runsee/repo
+#   docker compose -f deployment/linux/docker-compose.monitoring.yml up -d
+#
+# Accès initial (via tunnel SSH) :
+#   ssh -L 3001:127.0.0.1:3001 <user>@<vps>
+#   Navigateur : http://localhost:3001
+#
+# Après setup UI, configurer 3 monitors :
+#   1. HTTP https://api.runnsee.net/health          — interval 60 s
+#   2. HTTP https://api.runnsee.net/db/health       — interval 5 min
+#   3. HTTP https://runsee.runnsee.net              — interval 60 s, retry 3
+#
+# Notification Telegram : Settings > Notifications > Add > Telegram
+#   BOT_TOKEN + chat_id (voir docs/RUNBOOK_GARMIN.md)
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: runsee-uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - uptime-kuma-data:/app/data
+    mem_limit: 200m
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/api/entry-page >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  uptime-kuma-data:
+    driver: local
