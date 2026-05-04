@@ -379,11 +379,6 @@ export default function DashboardPage() {
           />
         </div>
 
-        {false ? (
-          <div className="section">
-            {/* RecoverySnapshotCard replaced by TodayRecoveryCard above */}
-        ) : null}
-
         <div className="section">
           <TodayVolumeStrip weeklySummary={weeklySummary} />
         </div>
