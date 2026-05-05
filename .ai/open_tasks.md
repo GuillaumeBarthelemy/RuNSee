@@ -1,39 +1,74 @@
 # Open Tasks
 
-## En cours / prioritaires
+## En cours / prioritaire (séance 2026-05-05)
 
-### Garmin Recovery — correction extracteurs (fait 2026-05-04)
-- [x] Correctif `predicate > 0` appliqué sur `extractSleepScore`, `extractHrvAvg`, `extractSleepDurationSeconds`, `extractRestingHr`
-- [x] Endpoint `POST /provider/garmin/recovery/renormalize` créé
-- [x] Service frontend `renormalizeGarminRecovery()` ajouté
+### Phase E — Audit UX (✅ documents produits)
+- [x] `docs/UX_AUDIT.md` — inventaire 72 composants
+- [x] `docs/GLOSSAIRE.md` — 26 entrées canoniques avec refs scientifiques
+- [x] `docs/UX_CHARTE.md` — palette + typo + composants visuels + breakpoints
 
-### Garmin Recovery — validation post-correctif
-- [x] Re-normalisation déclenchée via `maintenance-renormalize-garmin.yml`
-- [x] Dashboard validé : "Sommeil score moyen 70", "FC repos +0 bpm vs repere", "HRV equilibree 7/7 jours"
-- [ ] Déclencher un sync récent → confirmer que nouveaux snapshots ont des valeurs correctes
-- [x] Vérifier la gestion des erreurs dans `garminProvider.service.js` (stderr bridge, timeout, exit code) — RAS, bridge robuste
-- [x] Confirmer que `garminRecoveryAutoSync.service.js` s'enclenche correctement après backfill — OK via `lastSyncAt`
+### Phase J — Vocabulaire et glossaire (en cours)
+- [ ] Mode `compact` pour `InfoTooltip` (≤ 80 caractères)
+- [ ] Composant `GlossaryLink` (lien vers entrée glossaire)
+- [ ] Page `/glossaire` avec liste alphabétique + ancres
+- [ ] Renommage copy `analyticsCopy.js` (HRV→VFC, GAP→Allure ajustée, etc.)
+- [ ] Renommage copy `trainingMvpCopy.js` (Body Battery→Énergie, etc.)
+- [ ] Suppression `GlossaryModal` (remplacé par page)
+- [ ] Tests Vitest sur les helpers de mapping
+- [ ] Capture mobile + desktop avant commit
 
-### Frontend provider
-- [x] Connecter les données `ExternalDailyRecoverySnapshot` à une vue frontend — `RecoverySnapshotCard` ajoutée au Dashboard (commit 735a153)
+## À faire après Phase J
 
-## Migration PostgreSQL
+### Phase G — Composants visuels
+- [ ] CSS variables `--tone-1` à `--tone-5`
+- [ ] `MetricGauge` (demi-cercle 0-100)
+- [ ] `RangeBar` (barre horizontale + zones)
+- [ ] `MicroBars` (remplaçant sparkline)
+- [ ] `TrendChip` (delta avec flèche)
+- [ ] `BandPositioner` (extraction depuis DynamicsGrid)
+- [ ] Page démo `/admin/visuals-preview` (DEV uniquement)
 
-- [x] Comparer `prisma/schema.prisma` et `prisma-postgresql/schema.prisma` — identiques fonctionnellement (diff cosmétique uniquement)
-- [x] Tester l'import SQLite → PG dev — OK (fix port 55532→55432 dans `.env.postgresql.dev.local` + suppression `--env-file=.env` dans `db:ensure:postgres`, commit 069a9e8)
-- [x] Valider la stack green PG — production déjà sur PostgreSQL confirmé via `GET /db/health` → `{"database":"postgresql"}`. Le Dockerfile.prod génère le client Prisma PG et exécute `prisma migrate deploy` au démarrage. Aucun cutover nécessaire.
+### Phase F — Refonte Dashboard
+- [ ] Création `TodayReadinessCard` (fusion 3 doublons)
+- [ ] Refonte `DashboardDecisionSummaryCard` (verdict descriptif + jauge)
+- [ ] Migration `TodayFormCards` (RangeBar)
+- [ ] Migration `TodayVolumeStrip` (MicroBars)
+- [ ] Suppression `RecoverySnapshotCard`, `TodayRecoveryCard`
+- [ ] Évaluation suppression `TodaySnapshotToday`
 
-## Zones à analyser (lecture seule, pas de modif sans analyse)
+### Phase H — GAP + Decoupling + EPOC
+- [ ] Audit code GAP existant
+- [ ] Implémentation Minetti complet
+- [ ] Tests Vitest sur 10 séances réelles (écart < 2 % vs Strava)
+- [ ] Implémentation Dérive cardiaque (Pa:Hr ratio)
+- [ ] Implémentation Dette d'oxygène (depuis raw Garmin EPOC, vulgarisation)
+- [ ] Intégration dans `ActivityDetailCard`
 
-- [x] `garminProvider.service.js` — lu, dispatch bien structuré, gestion d'erreurs OK
-- [x] `pages/AdminPage.jsx` — cartographié : 8 sections, 12 actions, gaps mineurs (polling cleanup, loading states manquants sur quelques backfills)
-- [x] `utils/activityAggregation.js` vs `utils/activityAggregations.js` — doublon supprimé (`activityAggregation.js` était un re-export inutilisé)
+### Phase I — Refonte Réglages 5 onglets
+- [ ] Composant `TabbedSettings` avec routing par hash
+- [ ] Découpage `AdminPage.jsx` en 5 sous-pages
+- [ ] Refonte `GarminExperimentalCard` (purge isolée mais visible)
+- [ ] Tests mobile (drawer)
 
-## Backlog fonctionnel (non démarré)
+### Phase K — Extension Garmin activités (Option B)
+- [ ] Bridge Python : `get_activities` + matching timestamp ± 10 min
+- [ ] Backend : table `ExternalActivityEnrichment` ou colonnes JSON sur `Activity`
+- [ ] Service jointure Strava ↔ Garmin
+- [ ] UI : enrichir `GarminEnrichmentPanel` avec Training Effect, VO2max séance, Performance Condition, Recovery Time
 
-- [x] Affichage des données recovery (HRV, body battery, sleep score) dans le Dashboard — `RecoverySnapshotCard` déployée
-- [x] Intégration des snapshots recovery dans les calculs de charge — `buildRecoveryContextProfile` + groupe "Récupération biologique" dans `DynamicsGrid` (commit c6f413b)
-- [ ] Tests automatisés pour les services Garmin (zéro couverture actuellement)
+## Validations utilisateur attendues
 
-## Housekeeping
-- [x] Ajouter `handoff_*` et `git_*` au `.gitignore` — fait (commit 735a153)
+- [ ] Validation Phase E : suppressions confirmées (RecoverySnapshotCard, TodayRecoveryCard, GlossaryModal, AdminSectionHeader)
+- [ ] Validation mapping vocabulaire Phase J (table de UX_AUDIT.md section 9)
+- [ ] Validation captures Phase G avant intégration Phase F
+
+## Backlog (post-refonte)
+
+- [ ] Tests automatisés services Garmin backend (zéro couverture actuellement)
+- [ ] Confirmer FC repos + Body Battery après prochain renormalize
+- [ ] Dark mode complet (palette tones préparée mais activation non priorisée)
+
+## Bugs / risques connus
+
+- [ ] Sync activités Garmin (Phase K) — non implémentée actuellement
+- [ ] Renormalize Garmin doit être re-déclenché après chaque correctif extracteur

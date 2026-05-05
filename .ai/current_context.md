@@ -2,57 +2,68 @@
 
 ## Objectif actif
 
-Implémenter et valider la couche **Garmin Recovery** : récupération automatique des données de récupération quotidiennes (HRV, sleep, body battery, stress, training readiness) via le bridge Python `garminconnect_bridge.py`, avec backfill historique et auto-sync.
+**Refonte UX/UI complète RuNSee** (phases E → K), articulée autour :
+- Intégration homogène Garmin (pas de blocs dédiés)
+- Lisibilité visuelle (jauges, tones, barres au lieu de sparklines)
+- Mobile-first
+- Vocabulaire FR canonique unique (VFC, Allure ajustée, Dérive cardiaque, etc.)
 
-## Décisions validées
+## Décisions validées (séance 2026-05-05)
 
-- Sessions auth : token opaque hashé en DB (`UserSession`), pas de JWT
-- Bridge Garmin : subprocess Python (bibliothèque `garminconnect`) appelé depuis Node — pas d'appel API direct
-- Dual-schema Prisma pendant la migration : `prisma/schema.prisma` (SQLite actif) + `prisma-postgresql/schema.prisma` (cible)
-- Déduplication recovery : contrainte `@@unique([appUserId, sourceProvider, snapshotDate])` sur `ExternalDailyRecoverySnapshot`
-- Déduplication raw data : `@@unique([appUserId, providerCode, dataType, providerDateKey, providerResourceId])` sur `ExternalProviderRawData`
+- **Sync Garmin Option B** : enrichissement activités Strava avec métriques Garmin (Training Effect, VO2max, Performance Condition, Recovery Time) — Phase K
+- **Tutoiement style coach** maintenu
+- **5 niveaux de tone** : très bon / bon / neutre / vigilance / alerte
+- **Sparklines remplacées** par MicroBars (barres horizontales)
+- **Verdict descriptif** ("Forme correcte, marge présente"), pas prescriptif
+- **Jauge Aptitude RuNSee** maison (recalcul transparent, pas affichage direct Training Readiness Garmin)
+- **GAP** : réplique Strava via formule Minetti (2002)
+- **Decoupling cardiaque** ajouté (vulgarisé "Dérive cardiaque")
+- **EPOC** ajouté (vulgarisé "Dette d'oxygène", niveau qualitatif)
+- **Settings** : 5 onglets (Compte / Connexions / Entraînement / Données / À propos)
+- **Glossaire** : page dédiée + tooltips compacts ≤ 80 caractères pour mobile
+- **Termes français** : VFC, Énergie, Allure ajustée, Dérive cardiaque, Dette d'oxygène, Aptitude
 
-## Fichiers modifiés ou concernés
+## Roadmap (linéaire validée)
 
-Backend (chantier Garmin Recovery initial) :
-- `backend/src/services/providers/garminProvider.service.js` — dispatcher principal
-- `backend/src/services/providers/garminRecoveryBackfill.service.js` — extracteurs corrigés (predicate > 0) + `renormalizeGarminRecoverySnapshotsForUser` ajouté
-- `backend/src/services/providers/garminRecoveryAutoSync.service.js` — ajustements mineurs
-- `backend/src/services/providers/garminconnectBridge.service.js` — ajustement mineur
-- `backend/src/controllers/provider.controller.js` — `renormalizeGarminRecoveryController` ajouté
-- `backend/src/routes/provider.routes.js` — `POST /garmin/recovery/renormalize` ajouté
+| Phase | Statut | Objet | Effort |
+|---|---|---|---|
+| **E** — Audit UX | ✅ Fait (commit en cours) | Docs `UX_AUDIT.md`, `GLOSSAIRE.md`, `UX_CHARTE.md` | 7-8 h |
+| **J** — Vocabulaire + glossaire | À faire | Renommage copy, page `/glossaire`, GlossaryLink, InfoTooltip compact | 5 h |
+| **G** — Composants visuels | À faire | MetricGauge, RangeBar, MicroBars, TrendChip, BandPositioner | 13 h |
+| **F** — Refonte Dashboard | À faire | TodayReadinessCard fusion, verdict descriptif, jauge | 12 h |
+| **H** — GAP + Decoupling + EPOC | À faire | Minetti GAP, dérive cardiaque, dette d'oxygène | 12 h |
+| **I** — Refonte Réglages 5 onglets | À faire | TabbedSettings, sous-pages | 12 h |
+| **K** — Extension Garmin activités | À faire | Bridge Python étendu, jointure Strava×Garmin | 10 h |
 
-Frontend :
-- `frontend/src/services/externalProvider.service.js` — `renormalizeGarminRecovery()` ajouté
+## Fichiers de référence Phase E
 
-## Tâches en cours ou interrompues
+- `docs/UX_AUDIT.md` — inventaire 72 composants + décisions par phase + suppressions/fusions
+- `docs/GLOSSAIRE.md` — 26 entrées canoniques avec références scientifiques
+- `docs/UX_CHARTE.md` — palette tones, typographie, breakpoints, composants visuels
 
-- [ ] Vérifier que `garminProvider.service.js` gère correctement tous les cas d'erreur du bridge Python
-- [ ] Connecter les données `ExternalDailyRecoverySnapshot` à l'affichage frontend (DashboardPage ou AnalyticsPage ?)
-- [ ] Vérifier la parité entre `prisma/schema.prisma` et `prisma-postgresql/schema.prisma`
+## Erreurs résolues récemment
 
-## Erreurs résolues
-
-### Bug "Sommeil 0 / FC repos 0 bpm" (résolu et validé 2026-05-04)
-- **Cause 1** : extracteurs sans prédicat → placeholders Garmin à `0` pris comme valeurs réelles.
-- **Fix 1** : `{ predicate: (value) => value > 0 }` sur `extractSleepScore`, `extractHrvAvg`, `extractSleepDurationSeconds`, `extractRestingHr`.
-- **Cause 2** : `sleepScore` cherché à la racine (`sleepScores.overall.value`) alors que Garmin le place sous `dailySleepDTO.sleepScores.overall.value`.
-- **Fix 2** : chemin `["dailySleepDTO", "sleepScores", "overall", "value"]` ajouté en tête de liste.
-- **Re-normalisation** : `renormalizeGarminRecoverySnapshotsForUser` + `POST /provider/garmin/recovery/renormalize` + workflow `maintenance-renormalize-garmin.yml`.
-- **Résultat validé** : Dashboard affiche "Sommeil score moyen 70", "FC repos +0 bpm vs repere", "HRV equilibree 7/7 jours".
-
-## Risques de régression
-
-→ Voir `regression_risks.md` pour le détail complet.
-
-Résumé :
-- Migration SQLite → PG : **Élevé**
-- Garmin bridge subprocess : **Élevé** (code récent, zéro test automatisé)
-- Auth middleware : **Moyen** (partagé par toutes les routes protégées)
+- Bug "Sommeil 0 / FC repos 0" — extracteurs sans predicate → corrigé Phase A (predicate > 0)
+- Bug mapping `RAW_RESOURCE_ID_TO_SOURCE_KEY` — révert (commit 666c98c) — l'ancien mapping était correct
+- Bug `averageOptional` incluait les 0 → corrigé (commit 2cbd168)
+- Sync `/sync/jobs/current` 404 → 200 `{ job: null }` (commit 89799a0)
+- Auto-purge sync jobs orphelins > 30 min (commit d241f76)
 
 ## Validations restantes
 
-- [x] Snapshots re-normalisés via workflow `maintenance-renormalize-garmin.yml`
-- [x] Dashboard : "Sommeil score moyen 70", "FC repos +0 bpm vs repere", "HRV equilibree 7/7 jours"
-- [ ] Déclencher un sync récent → vérifier que les nouveaux snapshots ont des valeurs correctes
-- [ ] Test de l'auto-sync Garmin après backfill initial
+- [ ] Re-déclencher renormalize Garmin après commits 9bff7e5, 666c98c (mapping correct + predicate body battery)
+- [ ] Confirmer que FC repos et Body Battery se remplissent correctement après renormalize
+
+## Risques de régression principaux Phases F-K
+
+→ Voir `regression_risks.md` (mis à jour avec phases F-K).
+
+Synthèse :
+- `DashboardDecisionSummaryCard` (refonte F2) : **Moyen**
+- `TodayFormCards` (migration F3) : **Moyen**
+- `DynamicsGrid` (migration G) : **Moyen**
+- `GarminExperimentalCard` (migration I3) : **Moyen**
+- `ActivitySplitsCard`, `ActivityHeaderKpis`, `ActivityPerformanceStrip` (Phase H) : **Moyen**
+- `InfoTooltip` (Phase J) : **Moyen** (utilisé partout)
+
+Stratégie globale : snapshots tests Vitest avant migration, captures avant/après, anciens composants supprimés en dernier.
