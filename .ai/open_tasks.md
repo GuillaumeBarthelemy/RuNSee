@@ -52,11 +52,15 @@
 - [x] Intégration dans `ActivityDetailCard` (entre PerformanceStrip et tabs)
 - [x] Tones via `decouplingTone` + tones spéciaux EPOC
 
-### Phase I — Refonte Réglages 5 onglets
-- [ ] Composant `TabbedSettings` avec routing par hash
-- [ ] Découpage `AdminPage.jsx` en 5 sous-pages
-- [ ] Refonte `GarminExperimentalCard` (purge isolée mais visible)
-- [ ] Tests mobile (drawer)
+### Phase I — Refonte Réglages 5 onglets (✅ TERMINÉE)
+- [x] Composant `TabbedSettings` avec routing par hash (URL partageables `/admin#compte`, `#connexions`...)
+- [x] Pas de state local — onglet dérivé directement du hash URL (back/forward natif)
+- [x] 5 onglets : Compte / Connexions / Entraînement / Données / À propos
+- [x] Onglet "À propos" : page dédiée avec sources scientifiques + lien glossaire + crédits Strava/Garmin
+- [x] Onglet "Données" : SyncActions + SyncSummary regroupés
+- [x] Onglet "Connexions" : GarminExperimentalCard + Strava regroupés
+- [x] Tabs scrollables horizontalement sur mobile (overflow-x: auto)
+- [x] ARIA roles (tab, tabpanel, aria-selected, aria-controls)
 
 ### Phase K — Extension Garmin activités (Option B)
 - [ ] Bridge Python : `get_activities` + matching timestamp ± 10 min

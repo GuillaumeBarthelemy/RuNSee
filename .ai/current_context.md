@@ -31,8 +31,8 @@
 | **J** — Vocabulaire + glossaire | ✅ Commit `30b8d10` | Page `/glossaire` + GlossaryLink + InfoTooltip compact + renommages VFC/Énergie | 5 h |
 | **G** — Composants visuels | ✅ Commit `7002737` | MetricGauge, RangeBar, MicroBars, TrendChip, BandPositioner + tonePicker + VisualsPreviewPage | 13 h |
 | **F** — Refonte Dashboard | ✅ Commit `8485fd4` | TodayReadinessCard fusion (3 doublons → 1), verdict descriptif, MicroBars sur charge | 12 h |
-| **H** — GAP + Decoupling + EPOC | ✅ Commit en cours | Tests Vitest GAP, Decoupling Pa:Hr, EPOC vulgarisé, ActivityIntensityCard | 12 h |
-| **I** — Refonte Réglages 5 onglets | À faire | TabbedSettings, sous-pages | 12 h |
+| **H** — GAP + Decoupling + EPOC | ✅ Commit `386f5b2` | Tests Vitest GAP, Decoupling Pa:Hr, EPOC vulgarisé, ActivityIntensityCard | 12 h |
+| **I** — Refonte Réglages 5 onglets | ✅ Commit en cours | TabbedSettings + 5 onglets routés par hash URL | 12 h |
 | **K** — Extension Garmin activités | À faire | Bridge Python étendu, jointure Strava×Garmin | 10 h |
 
 ## Fichiers de référence Phase E

@@ -7402,3 +7402,99 @@ button.alert-banner-positive-item {
     gap: 6px;
   }
 }
+
+/* --- TabbedSettings (Phase I1) --------------------------------------------- */
+
+.tabbed-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tabbed-settings-nav {
+  display: flex;
+  gap: 4px;
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tabbed-settings-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tabbed-settings-tab:hover {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.tabbed-settings-tab.is-active {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.tabbed-settings-tab.is-active:hover {
+  background: var(--color-accent);
+}
+
+.tabbed-settings-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 760px) {
+  .tabbed-settings-tab {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+/* --- AdminPage refonte (Phase I) ------------------------------------------- */
+
+.admin-data-card .sync-actions-card,
+.admin-data-card .sync-actions-grid {
+  margin-top: 12px;
+}
+
+.admin-about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}
+
+.admin-about-content p {
+  margin: 0;
+}
+
+.admin-about-content .subcard-title {
+  margin-top: 8px;
+}
+
+.admin-about-references {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.admin-about-references li {
+  margin-bottom: 4px;
+}

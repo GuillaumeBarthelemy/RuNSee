@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import GarminExperimentalCard from "../components/GarminExperimentalCard.jsx";
 import PhysiologicalProfileCard from "../components/PhysiologicalProfileCard.jsx";
 import RaceObjectivesCard from "../components/RaceObjectivesCard.jsx";
 import StravaAppSettingsCard from "../components/StravaAppSettingsCard.jsx";
 import SyncActions from "../components/SyncActions.jsx";
 import SyncSummaryCard from "../components/SyncSummaryCard.jsx";
+import TabbedSettings from "../components/TabbedSettings.jsx";
 import TrainingAnalyticsSettingsCard from "../components/TrainingAnalyticsSettingsCard.jsx";
 import UserPreferencesCard from "../components/UserPreferencesCard.jsx";
 import useDashboardState from "../hooks/useDashboardState.js";
@@ -514,112 +516,204 @@ export default function AdminPage() {
     });
   }, [handleSaveTrainingAnalyticsSettings]);
 
+  // Phase I — 5 onglets : Compte / Connexions / Entraînement / Données / À propos
+  const settingsTabs = [
+    {
+      id: "compte",
+      label: "Compte",
+      render: () => (
+        <>
+          <section className="section">
+            <PhysiologicalProfileCard
+              settings={displayedTrainingAnalyticsSettings}
+              isPending={isFormSubmitting}
+              onSave={handleSaveTrainingAnalyticsSettings}
+            />
+          </section>
+          <section className="section">
+            <UserPreferencesCard
+              options={userPreferenceOptions}
+              onOptionChange={(name, value) => safeSetOption(name, value)}
+            />
+          </section>
+        </>
+      ),
+    },
+    {
+      id: "connexions",
+      label: "Connexions",
+      render: () => (
+        <>
+          <section className="section">
+            <GarminExperimentalCard
+              status={garminConnection?.status || "disconnected"}
+              connection={garminConnection}
+              recoveryBackfill={garminRecoveryBackfill}
+              metrics={garminMetrics}
+              canConnect
+              isPending={isGarminSubmitting}
+              isBackfillPending={isGarminBackfillSubmitting}
+              isSyncPending={isGarminSyncSubmitting}
+              isPurgePending={isGarminPurgeSubmitting}
+              isRenormalizePending={isGarminRenormalizeSubmitting}
+              onConnect={handleConnectGarmin}
+              onDisconnect={handleDisconnectGarmin}
+              onStartRecoveryBackfill={handleStartGarminRecoveryBackfill}
+              onSyncRecentRecovery={handleSyncRecentGarminRecovery}
+              onRenormalizeRecovery={handleRenormalizeGarmin}
+              onPurgeGarminData={handlePurgeGarminData}
+            />
+          </section>
+          <section className="section admin-strava-section">
+            <div className="admin-strava-heading">
+              <span className="eyebrow admin-card-kicker">Strava</span>
+              <h2 className="card-title">Connexion et synchronisation</h2>
+              <p className="card-subtitle">
+                Application Strava, connexion du compte et synchronisations.
+              </p>
+            </div>
+            <div className="admin-strava-grid">
+              <StravaAppSettingsCard
+                stravaApp={stravaApp}
+                isPending={isFormSubmitting}
+                onSave={handleSaveStravaApp}
+                onDelete={handleDeleteStravaApp}
+                onDisconnectStrava={handleDisconnectStrava}
+                canDisconnectStrava={isStravaConnected}
+              />
+            </div>
+          </section>
+        </>
+      ),
+    },
+    {
+      id: "entrainement",
+      label: "Entraînement",
+      render: () => (
+        <>
+          <section className="section">
+            <TrainingAnalyticsSettingsCard
+              settings={displayedTrainingAnalyticsSettings}
+              history={displayedTrainingAnalyticsSettingsHistory}
+              isPending={isFormSubmitting}
+              onSave={handleSaveTrainingAnalyticsSettings}
+              onRestore={handleRestoreTrainingAnalyticsSettings}
+              showPhysiologyPanel={false}
+            />
+          </section>
+          <section id="race-objectives" className="section admin-anchor-section">
+            <RaceObjectivesCard
+              races={raceObjectives}
+              activeRace={activeRaceObjective}
+              isLoading={isLoadingRaces}
+              isMutating={isMutatingRaces}
+              onCreate={createRaceObjective}
+              onArchive={archiveRaceObjective}
+              onReactivate={reactivateRaceObjective}
+            />
+          </section>
+        </>
+      ),
+    },
+    {
+      id: "donnees",
+      label: "Données",
+      render: () => (
+        <>
+          <section className="section">
+            <div className="card admin-data-card">
+              <div className="card-header">
+                <div className="card-title-block">
+                  <h2 className="card-title">Synchronisations Strava</h2>
+                  <p className="card-subtitle">
+                    Lance un import historique, une synchro incrémentale, ou complète les détails manquants.
+                  </p>
+                </div>
+              </div>
+              <SyncActions
+                onConnectStrava={handleConnectStrava}
+                onStartHistorical={handleStartHistorical}
+                onStartIncremental={handleStartIncremental}
+                onStartDetailBackfill={handleStartDetailBackfill}
+                isBusy={Boolean(isBusy || isFormSubmitting)}
+                isStravaConnected={isStravaConnected}
+                hasImportedActivities={hasImportedActivities}
+                missingDetailCount={missingDetailCount}
+                currentJob={currentJob}
+              />
+            </div>
+          </section>
+          <section className="section">
+            <SyncSummaryCard
+              summary={summary}
+              athlete={athlete}
+              currentJob={currentJob}
+              isStravaConnected={isStravaConnected}
+            />
+          </section>
+        </>
+      ),
+    },
+    {
+      id: "apropos",
+      label: "À propos",
+      render: () => (
+        <section className="section">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title-block">
+                <h2 className="card-title">À propos de RunSee</h2>
+                <p className="card-subtitle">Version, glossaire et crédits.</p>
+              </div>
+            </div>
+            <div className="admin-about-content">
+              <p>
+                RunSee est une application open source d'analyse d'entraînement combinant les données
+                Strava (activités) et Garmin Connect (récupération). Toutes les méthodes de calcul
+                reposent sur la littérature scientifique référencée.
+              </p>
+              <p>
+                <strong>
+                  <Link to="/glossaire" className="link-button">Voir le glossaire complet →</Link>
+                </strong>
+              </p>
+              <h3 className="subcard-title">Sources scientifiques</h3>
+              <ul className="admin-about-references">
+                <li>Banister (1991) — TRIMP, modèle de charge</li>
+                <li>Coggan & Allen (2019) — CTL / ATL / TSB</li>
+                <li>Foster et al. (1998) — Monotonie et strain</li>
+                <li>Plews et al. (2013), Buchheit (2014) — VFC nocturne</li>
+                <li>Jones et al. (2010) — Vitesse critique CS-D'</li>
+                <li>Minetti et al. (2002) — Allure ajustée à la pente (GAP)</li>
+                <li>Allen & Coggan (2010) — Dérive cardiaque (decoupling)</li>
+                <li>Børsheim & Bahr (2003) — EPOC / Dette d'oxygène</li>
+                <li>Daniels (2014) — VDOT et zones d'allure</li>
+                <li>Seiler (2010) — Polarisation</li>
+              </ul>
+              <h3 className="subcard-title">Crédits</h3>
+              <p className="small-text">
+                Données activités : <a href="https://www.strava.com" target="_blank" rel="noopener noreferrer">Strava</a> ·
+                Données récupération : <a href="https://connect.garmin.com" target="_blank" rel="noopener noreferrer">Garmin Connect</a> (via bridge non officiel)
+              </p>
+            </div>
+          </div>
+        </section>
+      ),
+    },
+  ];
+
   return (
     <AppShell
       eyebrow="Reglages"
       title="Reglages"
-      subtitle="Ajuste ton profil, tes objectifs, tes preferences et tes sources de donnees."
+      subtitle="Compte, connexions, entraînement, données — tout est regroupé par sections."
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {infoNotice ? <div className="alert alert-info section">{infoNotice}</div> : null}
       {actionNotice ? <div className="alert alert-success section">{actionNotice}</div> : null}
       {!summary && isBusy ? <div className="card section">Chargement des reglages...</div> : null}
 
-      <section className="section">
-        <PhysiologicalProfileCard
-          settings={displayedTrainingAnalyticsSettings}
-          isPending={isFormSubmitting}
-          onSave={handleSaveTrainingAnalyticsSettings}
-        />
-      </section>
-
-      <section id="race-objectives" className="section admin-anchor-section">
-        <RaceObjectivesCard
-          races={raceObjectives}
-          activeRace={activeRaceObjective}
-          isLoading={isLoadingRaces}
-          isMutating={isMutatingRaces}
-          onCreate={createRaceObjective}
-          onArchive={archiveRaceObjective}
-          onReactivate={reactivateRaceObjective}
-        />
-      </section>
-
-      <section className="section">
-        <UserPreferencesCard
-          options={userPreferenceOptions}
-          onOptionChange={(name, value) => safeSetOption(name, value)}
-        />
-      </section>
-
-      <section className="section">
-        <TrainingAnalyticsSettingsCard
-          settings={displayedTrainingAnalyticsSettings}
-          history={displayedTrainingAnalyticsSettingsHistory}
-          isPending={isFormSubmitting}
-          onSave={handleSaveTrainingAnalyticsSettings}
-          onRestore={handleRestoreTrainingAnalyticsSettings}
-          showPhysiologyPanel={false}
-        />
-      </section>
-
-      <section className="section">
-        <GarminExperimentalCard
-          status={garminConnection?.status || "disconnected"}
-          connection={garminConnection}
-          recoveryBackfill={garminRecoveryBackfill}
-          metrics={garminMetrics}
-          canConnect
-          isPending={isGarminSubmitting}
-          isBackfillPending={isGarminBackfillSubmitting}
-          isSyncPending={isGarminSyncSubmitting}
-          isPurgePending={isGarminPurgeSubmitting}
-          isRenormalizePending={isGarminRenormalizeSubmitting}
-          onConnect={handleConnectGarmin}
-          onDisconnect={handleDisconnectGarmin}
-          onStartRecoveryBackfill={handleStartGarminRecoveryBackfill}
-          onSyncRecentRecovery={handleSyncRecentGarminRecovery}
-          onRenormalizeRecovery={handleRenormalizeGarmin}
-          onPurgeGarminData={handlePurgeGarminData}
-        />
-      </section>
-
-      <section className="section admin-strava-section">
-        <div className="admin-strava-heading">
-          <span className="eyebrow admin-card-kicker">Strava</span>
-          <h2 className="card-title">Connexion et synchronisation</h2>
-          <p className="card-subtitle">
-            Tout ce qui concerne l'application Strava, la connexion du compte et les imports reste regroupe en bas de page.
-          </p>
-        </div>
-        <div className="admin-strava-grid">
-          <StravaAppSettingsCard
-            stravaApp={stravaApp}
-            isPending={isFormSubmitting}
-            onSave={handleSaveStravaApp}
-            onDelete={handleDeleteStravaApp}
-            onDisconnectStrava={handleDisconnectStrava}
-            canDisconnectStrava={isStravaConnected}
-          />
-          <SyncActions
-            onConnectStrava={handleConnectStrava}
-            onStartHistorical={handleStartHistorical}
-            onStartIncremental={handleStartIncremental}
-            onStartDetailBackfill={handleStartDetailBackfill}
-            isBusy={Boolean(isBusy || isFormSubmitting)}
-            isStravaConnected={isStravaConnected}
-            hasImportedActivities={hasImportedActivities}
-            missingDetailCount={missingDetailCount}
-            currentJob={currentJob}
-          />
-          <SyncSummaryCard
-            summary={summary}
-            athlete={athlete}
-            currentJob={currentJob}
-            isStravaConnected={isStravaConnected}
-          />
-        </div>
-      </section>
+      <TabbedSettings tabs={settingsTabs} defaultTabId="compte" />
     </AppShell>
   );
 }
