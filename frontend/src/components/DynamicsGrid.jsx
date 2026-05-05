@@ -326,11 +326,11 @@ function DynamicsGrid({
               tone={recoveryContext.sleepWarning ? "warning" : "positive"}
             />
             <DynamicsTile
-              title="HRV moyenne (ms)"
+              title="VFC moyenne (ms)"
               value={recoveryContext.avgHrvMs != null ? `${recoveryContext.avgHrvMs} ms` : "-"}
-              status={recoveryContext.latestHrvMs != null ? `Dernier : ${recoveryContext.latestHrvMs} ms` : "Indisponible"}
-              detail="Variabilite cardiaque nocturne. Baisse = fatigue systémique probable."
-              meta={recoveryContext.hrvDeclineFlag ? "HRV en recul vs debut de periode : surveiller." : "HRV stable ou en hausse."}
+              status={recoveryContext.latestHrvMs != null ? `Derniere : ${recoveryContext.latestHrvMs} ms` : "Indisponible"}
+              detail="Variabilite de frequence cardiaque nocturne. Baisse = fatigue systemique probable."
+              meta={recoveryContext.hrvDeclineFlag ? "VFC en recul vs debut de periode : surveiller." : "VFC stable ou en hausse."}
               tone={recoveryContext.hrvDeclineFlag ? "warning" : "positive"}
             />
             <DynamicsTile
@@ -343,10 +343,10 @@ function DynamicsGrid({
             />
             {recoveryContext.latestBodyBattery != null ? (
               <DynamicsTile
-                title="Body Battery"
+                title="Energie"
                 value={`${recoveryContext.latestBodyBattery} %`}
                 status="Derniere mesure"
-                detail="Niveau d'energie estime par Garmin au reveil ou en journee."
+                detail="Energie disponible (Body Battery Garmin), au reveil ou en journee."
                 meta={recoveryContext.latestBodyBattery < 30 ? "Niveau faible — favoriser la recuperation." : "Niveau suffisant."}
                 tone={recoveryContext.latestBodyBattery < 30 ? "warning" : "positive"}
               />

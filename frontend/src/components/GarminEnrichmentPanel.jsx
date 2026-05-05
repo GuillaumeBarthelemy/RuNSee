@@ -78,7 +78,7 @@ function GarminEnrichmentPanel({ snapshot = null }) {
       <div className="garmin-enrichment-group">
         <h3 className="subcard-title">Cardio</h3>
         <Row
-          label="HRV moy."
+          label="VFC moy."
           value={formatValue(snapshot.hrvAvgMs, "ms")}
           hint={snapshot.hrvStatus ? snapshot.hrvStatus.toLowerCase().replace(/_/g, " ") : null}
           toneClass={statusToneClass(snapshot.hrvStatus)}
@@ -92,7 +92,7 @@ function GarminEnrichmentPanel({ snapshot = null }) {
       <div className="garmin-enrichment-group">
         <h3 className="subcard-title">Énergie</h3>
         <Row
-          label="Body Battery (matin)"
+          label="Énergie (matin)"
           value={formatValue(snapshot.bodyBatteryMorning, "%")}
           toneClass={
             snapshot.bodyBatteryMorning != null && snapshot.bodyBatteryMorning < 30
@@ -101,7 +101,7 @@ function GarminEnrichmentPanel({ snapshot = null }) {
           }
         />
         <Row
-          label="Body Battery (soir)"
+          label="Énergie (soir)"
           value={formatValue(snapshot.bodyBatteryEnd, "%")}
         />
         <Row

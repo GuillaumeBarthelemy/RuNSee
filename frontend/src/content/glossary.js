@@ -1,6 +1,15 @@
 // Glossaire RunNSee : definitions vulgarisees + references scientifiques.
-// Affiche dans le composant GlossaryModal et accessible depuis la barre superieure.
+// Affiche dans la page /glossaire et accessible depuis la barre superieure.
 // Chaque entree est volontairement courte et orientee athlete (tutoiement).
+//
+// Convention :
+// - `key` : clé technique stable (utilisée par GlossaryLink, ancres URL #key)
+// - `term` : nom canonique français (UX_AUDIT.md / GLOSSAIRE.md)
+// - `aliases` : anciens termes / abréviations / équivalents anglais
+// - `category` : groupe de classement
+// - `short` : description courte pour tooltip compact (≤ 80 caractères de préférence)
+// - `definition` : explication complète pour la page glossaire
+// - `formula`, `thresholds`, `reference` : optionnels selon pertinence
 
 export const GLOSSARY_ENTRIES = [
   {
@@ -152,9 +161,168 @@ export const GLOSSARY_ENTRIES = [
     category: "Subjectif",
     short: "Effort percu sur l'echelle de Borg modifiee (1-10).",
     definition:
-      "Echelle subjective d'effort : 1 = tres facile, 5 = soutenu, 10 = effort maximal. Multiplie par la duree, donne le sRPE (session-RPE) qui est une charge alternative quand la cardio n'est pas disponible. Pas encore saisi dans RunNSee mais prevu.",
+      "Echelle subjective d'effort : 1 = tres facile, 5 = soutenu, 10 = effort maximal. Multiplie par la duree, donne le sRPE (session-RPE) qui est une charge alternative quand la cardio n'est pas disponible.",
     reference: "Borg (1982) ; Foster et al. (2001), A new approach to monitoring exercise training.",
+  },
+
+  // --- Recuperation Garmin ----------------------------------------------------
+
+  {
+    key: "vfc",
+    term: "VFC",
+    aliases: ["HRV", "Variabilite de Frequence Cardiaque", "Heart Rate Variability"],
+    category: "Recuperation",
+    short: "Indicateur du systeme nerveux. Hausse vs ta baseline = mieux recupere.",
+    definition:
+      "La VFC (Variabilite de Frequence Cardiaque, RMSSD) mesure la variation des intervalles entre tes battements pendant la nuit. Plus elle est haute par rapport a TA baseline, plus le systeme parasympathique domine et plus tu es recupere. La valeur absolue depend de ton age et de ta genetique : ce qui compte c'est la tendance vs ta baseline 28 jours, pas la valeur d'un coureur a un autre.",
+    reference: "Plews et al. (2013), Sports Medicine ; Buchheit (2014), Frontiers in Physiology.",
+    thresholds: "Hausse > +5 % vs baseline = bonne adaptation. Stable = neutre. Baisse > -8 % = vigilance (fatigue, stress, infection latente).",
+  },
+  {
+    key: "sleepScore",
+    term: "Score sommeil",
+    aliases: ["Sleep Score", "Score de sommeil Garmin"],
+    category: "Recuperation",
+    short: "Qualite de ta nuit selon Garmin (duree + phases + respiration).",
+    definition:
+      "Score Garmin de 0 a 100 calcule par l'algorithme Firstbeat a partir de la duree de sommeil, des phases (legere, profonde, REM), de la respiration et des mouvements nocturnes. C'est l'indicateur que tu vois dans l'app Garmin Connect.",
+    reference: "Algorithme proprietaire Garmin / Firstbeat.",
+    thresholds: "< 50 = sommeil insuffisant. 50-70 = acceptable. 70-85 = bon. > 85 = excellent.",
+  },
+  {
+    key: "restingHr",
+    term: "FC repos",
+    aliases: ["Resting Heart Rate", "RHR"],
+    category: "Recuperation",
+    short: "FC mesuree pendant le sommeil. Plus basse = mieux recupere.",
+    definition:
+      "Frequence cardiaque minimale enregistree pendant ta nuit (typiquement avant 4h). C'est un indicateur ancien mais robuste : une FC repos qui monte de 5+ bpm sur 2 jours peut signaler fatigue, stress, debut de maladie ou dette de sommeil. Une baisse progressive sur plusieurs semaines = base aerobie qui se renforce.",
+    reference: "Indicateur clinique standard ; Buchheit (2014) pour l'usage entrainement.",
+    thresholds: "Vise une stabilite +-2 bpm vs ta baseline. +5 bpm sur 2 jours = vigilance. -3 bpm progressif = adaptation aerobie.",
+  },
+  {
+    key: "energyLevel",
+    term: "Energie",
+    aliases: ["Body Battery", "Niveau d'energie"],
+    category: "Recuperation",
+    short: "Energie disponible selon Garmin (0 = vide, 100 = plein).",
+    definition:
+      "Score Garmin 0-100 calcule par l'algorithme Firstbeat qui combine ton sommeil, ton stress et ton activite. A regarder le matin au reveil : il indique la capacite de la journee a venir.",
+    reference: "Algorithme proprietaire Garmin / Firstbeat (Saalasti et al. 2007 partiellement publie).",
+    thresholds: "< 30 au reveil = journee de regeneration. 30-60 = vigilance sur l'intensite. > 60 = capacite a absorber une seance exigeante.",
+  },
+  {
+    key: "trainingReadinessGarmin",
+    term: "Aptitude (Garmin)",
+    aliases: ["Training Readiness", "Aptitude a l'entrainement"],
+    category: "Recuperation",
+    short: "Aptitude du jour selon Garmin (sommeil + VFC + charge).",
+    definition:
+      "Score 0-100 calcule par Garmin / Firstbeat qui combine sommeil recent, VFC nocturne, charge des jours precedents et stress. Indique ta capacite a absorber une seance exigeante aujourd'hui. RunNSee affiche cette valeur lorsque Garmin la fournit, mais calcule egalement une Aptitude RunSee (recommandation transparente avec formule publique).",
+    reference: "Algorithme proprietaire Garmin / Firstbeat.",
+    thresholds: "0-25 = faible (repos recommande). 25-50 = limitee (endurance facile). 50-75 = moderee (seance modere OK). 75-100 = haute (seance exigeante possible).",
+  },
+  {
+    key: "trainingReadinessRunsee",
+    term: "Aptitude RunSee",
+    aliases: ["Readiness RunSee"],
+    category: "Recuperation",
+    short: "Aptitude du jour calculee par RunSee, formule publique transparente.",
+    definition:
+      "Score 0-100 calcule par RunSee combinant : score sommeil (poids 0.30), delta VFC vs baseline (0.30), delta FC repos vs baseline inverse (0.20), stress journalier inverse (0.10), Energie du matin (0.10). Pondere a la baisse en cas de donnees partielles. Difference avec l'Aptitude Garmin : tu peux retracer comment chaque entree a influence le score.",
+    reference: "Plews et al. (2013) ; Buchheit (2014) ; Le Meur et al. (2013), Med Sci Sports Exerc.",
+    thresholds: "Meme baremes que l'Aptitude Garmin (0-25 / 25-50 / 50-75 / 75-100).",
+  },
+  {
+    key: "stressAvg",
+    term: "Stress moyen",
+    aliases: ["Niveau de stress journalier"],
+    category: "Recuperation",
+    short: "Stress moyen sur la journee selon Garmin (0-100).",
+    definition:
+      "Score Garmin / Firstbeat calcule a partir de la VFC en continu sur la journee. Reflete l'activation du systeme nerveux sympathique. Different du stress psychologique : un effort sportif fait monter ce score, c'est normal.",
+    reference: "Algorithme proprietaire Firstbeat.",
+    thresholds: "0-25 = repos profond. 25-50 = repos. 50-75 = activite / stress moyen. 75-100 = haut stress.",
+  },
+  {
+    key: "epoc",
+    term: "Dette d'oxygene",
+    aliases: ["EPOC", "Excess Post-exercise Oxygen Consumption"],
+    category: "Intra-seance",
+    short: "Intensite de la recuperation a venir apres cette seance.",
+    definition:
+      "L'EPOC est la consommation d'oxygene supplementaire que ton corps utilise apres l'effort pour retrouver son etat de repos (reconstitution glycogene, reparation tissulaire, regulation hormonale). Garmin le quantifie en mL/kg, RunSee le presente en niveau qualitatif (Leger / Modere / Eleve / Tres eleve) car la valeur brute n'est pas intuitive.",
+    reference: "Borsheim & Bahr (2003), Sports Medicine ; algorithme Firstbeat (Saalasti et al. 2007).",
+    thresholds: "Leger (< 30 mL/kg) = recuperation rapide. Modere (30-90) = recuperation en quelques heures. Eleve (90-150) = 24 h. Tres eleve (> 150) = > 36 h.",
+  },
+
+  // --- Performance complementaires ------------------------------------------
+
+  {
+    key: "criticalDistance",
+    term: "Distance critique (D')",
+    aliases: ["D prime", "W prime", "Anaerobic capacity"],
+    category: "Performance",
+    short: "Reserve d'effort au-dessus de la vitesse critique avant epuisement.",
+    definition:
+      "Second parametre du modele 2-parametres CS-D' de Jones. Represente la quantite d'energie anaerobie mobilisable au-dessus de ta vitesse critique. Une fois D' epuise, tu dois ralentir sous CS pour la regenerer. C'est ce qui te permet de finir un 10 km plus vite que ta CS pure.",
+    reference: "Jones et al. (2010), Med Sci Sports Exerc, Critical power: implications for determination of VO2max and exercise tolerance.",
+  },
+  {
+    key: "vo2max",
+    term: "VO2max",
+    aliases: ["Capacite aerobie maximale"],
+    category: "Performance",
+    short: "Capacite aerobie maximale (mL O2 / kg / min).",
+    definition:
+      "Volume maximal d'oxygene que tes muscles peuvent utiliser par minute, rapporte a ton poids. Garmin l'estime via Firstbeat ; RunSee le derive du VDOT a partir de tes records sur route. Indicateur clé pour comparer son niveau dans le temps, mais peu sensible aux changements rapides (evolue lentement).",
+    reference: "Daniels (2014) ; Saalasti et al. (2007) Firstbeat.",
+    thresholds: "30-40 = sedentaire. 40-50 = amateur. 50-60 = amateur entraine. 60-70 = competiteur. > 70 = elite.",
+  },
+
+  // --- Meta indicateurs ------------------------------------------------------
+
+  {
+    key: "dataQuality",
+    term: "Couverture des donnees",
+    aliases: ["dataQuality", "Qualite snapshot"],
+    category: "Subjectif",
+    short: "Indique si toutes les sources Garmin sont remontees ce jour.",
+    definition:
+      "Quand Garmin n'a pas pu collecter une source pour une nuit (montre dechargee, pas porte la nuit, sync manquee), la snapshot est marquee partielle. RunSee t'indique le niveau de couverture pour que tu saches quand un signal du jour est moins fiable.",
+    thresholds: "Complete = 5 sources / 5 (snapshot fiable). Partielle = 1-4 sources (indicatif). Absente = 0 source.",
+  },
+  {
+    key: "confidence",
+    term: "Confiance",
+    aliases: ["Niveau de confiance", "Fiabilite de la lecture"],
+    category: "Subjectif",
+    short: "Fiabilite de la lecture (taille echantillon, coherence).",
+    definition:
+      "Indicateur meta qui combine la taille de l'echantillon (nombre de jours / activites disponibles) et la coherence des signaux (concordance entre VFC, FC repos, sommeil). Si la Confiance est Faible, ne sur-interprete pas le verdict ou les patterns affiches : c'est qu'on n'a pas encore assez de donnees pour etre categorique.",
+    thresholds: "Haute = echantillon suffisant + signaux concordants. Moyenne = donnees partielles. Faible = echantillon trop petit ou signaux contradictoires.",
   },
 ];
 
-export const GLOSSARY_CATEGORIES = ["Charge", "Variabilite", "Distribution", "Performance", "Intra-seance", "Subjectif"];
+export const GLOSSARY_CATEGORIES = [
+  "Charge",
+  "Variabilite",
+  "Distribution",
+  "Performance",
+  "Recuperation",
+  "Intra-seance",
+  "Subjectif",
+];
+
+/**
+ * Lookup helper : retrouve une entrée par sa clé ou un de ses alias.
+ */
+export function findGlossaryEntry(key) {
+  if (!key) return null;
+  const normalized = String(key).toLowerCase().trim();
+  return GLOSSARY_ENTRIES.find((entry) => {
+    if (entry.key.toLowerCase() === normalized) return true;
+    if (entry.term.toLowerCase() === normalized) return true;
+    return (entry.aliases || []).some((alias) => alias.toLowerCase() === normalized);
+  }) || null;
+}

@@ -450,7 +450,7 @@ function GarminExperimentalCard({
             <div className="garmin-purge-confirm-block">
               <p className="alert alert-warning">
                 <strong>Action irréversible.</strong> Toutes tes données Garmin (connexion, sommeil, HRV,
-                FC repos, stress, Body Battery) seront supprimées définitivement.
+                FC repos, stress, Énergie) seront supprimées définitivement.
               </p>
               <label className="field top-gap-sm">
                 <span className="field-label">Tape <strong>PURGE</strong> pour confirmer</span>

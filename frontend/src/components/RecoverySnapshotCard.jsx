@@ -34,9 +34,9 @@ function buildRecoveryKpiItems(snapshot) {
   const hrv = snapshot.hrvAvgMs != null ? Math.round(snapshot.hrvAvgMs) : null;
   const hrvStatus = snapshot.hrvStatus;
   items.push({
-    label: "HRV moy.",
+    label: "VFC moy.",
     value: hrv != null ? `${hrv} ms` : "-",
-    hint: hrvStatus ? hrvStatus.toLowerCase().replace("_", " ") : "variabilite cardiaque",
+    hint: hrvStatus ? hrvStatus.toLowerCase().replace("_", " ") : "variabilite de frequence cardiaque",
   });
 
   const restingHr = snapshot.restingHr != null ? Math.round(snapshot.restingHr) : null;
@@ -48,7 +48,7 @@ function buildRecoveryKpiItems(snapshot) {
 
   const bodyBattery = snapshot.bodyBatteryMorning ?? snapshot.bodyBatteryEnd ?? null;
   items.push({
-    label: "Body Battery",
+    label: "Énergie",
     value: bodyBattery != null ? `${bodyBattery} %` : "-",
     hint: bodyBattery != null && snapshot.bodyBatteryMorning != null ? "au reveil" : "en journee",
     valueClassName: bodyBattery != null && bodyBattery < 30 ? "metric-value-warning" : "",

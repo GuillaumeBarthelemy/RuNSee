@@ -104,7 +104,7 @@ function PerformancePhysioCard({ snapshots = [] }) {
           info={TRAINING_MVP_RECOVERY_INFO?.sleep}
         />
         <PhysioRow
-          label="HRV moy."
+          label="VFC moy."
           unit="ms"
           metricModel={vm.hrv}
           max={120}
@@ -120,7 +120,7 @@ function PerformancePhysioCard({ snapshots = [] }) {
           info={TRAINING_MVP_RECOVERY_INFO?.restingHr}
         />
         <PhysioRow
-          label="Body Battery"
+          label="Énergie"
           unit="%"
           metricModel={vm.bodyBattery}
           max={100}

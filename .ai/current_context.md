@@ -27,8 +27,8 @@
 
 | Phase | Statut | Objet | Effort |
 |---|---|---|---|
-| **E** — Audit UX | ✅ Fait (commit en cours) | Docs `UX_AUDIT.md`, `GLOSSAIRE.md`, `UX_CHARTE.md` | 7-8 h |
-| **J** — Vocabulaire + glossaire | À faire | Renommage copy, page `/glossaire`, GlossaryLink, InfoTooltip compact | 5 h |
+| **E** — Audit UX | ✅ Commit `1334de7` | Docs `UX_AUDIT.md`, `GLOSSAIRE.md`, `UX_CHARTE.md` | 7-8 h |
+| **J** — Vocabulaire + glossaire | ✅ Commit en cours | Page `/glossaire` + GlossaryLink + InfoTooltip compact + renommages VFC/Énergie | 5 h |
 | **G** — Composants visuels | À faire | MetricGauge, RangeBar, MicroBars, TrendChip, BandPositioner | 13 h |
 | **F** — Refonte Dashboard | À faire | TodayReadinessCard fusion, verdict descriptif, jauge | 12 h |
 | **H** — GAP + Decoupling + EPOC | À faire | Minetti GAP, dérive cardiaque, dette d'oxygène | 12 h |

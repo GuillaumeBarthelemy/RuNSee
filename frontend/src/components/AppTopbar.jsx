@@ -21,6 +21,12 @@ export default function AppTopbar({ title, subtitle, actions }) {
             >
               Administration
             </NavLink>
+            <NavLink
+              to="/glossaire"
+              className={({ isActive }) => `topnav-link ${isActive ? "is-active" : ""}`}
+            >
+              Glossaire
+            </NavLink>
           </nav>
         </div>
         <h1 className="topbar-title">{title}</h1>

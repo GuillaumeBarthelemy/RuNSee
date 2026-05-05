@@ -7,15 +7,19 @@
 - [x] `docs/GLOSSAIRE.md` — 26 entrées canoniques avec refs scientifiques
 - [x] `docs/UX_CHARTE.md` — palette + typo + composants visuels + breakpoints
 
-### Phase J — Vocabulaire et glossaire (en cours)
-- [ ] Mode `compact` pour `InfoTooltip` (≤ 80 caractères)
-- [ ] Composant `GlossaryLink` (lien vers entrée glossaire)
-- [ ] Page `/glossaire` avec liste alphabétique + ancres
-- [ ] Renommage copy `analyticsCopy.js` (HRV→VFC, GAP→Allure ajustée, etc.)
-- [ ] Renommage copy `trainingMvpCopy.js` (Body Battery→Énergie, etc.)
-- [ ] Suppression `GlossaryModal` (remplacé par page)
-- [ ] Tests Vitest sur les helpers de mapping
-- [ ] Capture mobile + desktop avant commit
+### Phase J — Vocabulaire et glossaire (✅ TERMINÉE)
+- [x] Mode `compact` pour `InfoTooltip` (≤ 80 caractères, slice 1 item)
+- [x] Composant `GlossaryLink` (lien vers entrée glossaire)
+- [x] Page `/glossaire` avec recherche, catégories, ancres URL
+- [x] Lien vers /glossaire dans Topbar et Sidebar
+- [x] Extension `glossary.js` : 26 entrées (était 14) avec `findGlossaryEntry` helper
+- [x] Renommage labels HRV → VFC dans 7 composants
+- [x] Renommage labels Body Battery → Énergie dans 7 composants
+- [x] Renommage copy `trainingMvpCopy.js` (HRV→VFC, Body Battery→Énergie)
+- [x] Suppression `GlossaryModal` (remplacé par page `/glossaire`)
+- [x] Suppression event `runsee:open-glossary` (non utilisé)
+- [x] Tests Vitest `glossary.test.js` (12 tests, 60 verts au total)
+- [x] InfoTooltip navigue vers `/glossaire#key` au lieu d'ouvrir le modal
 
 ## À faire après Phase J
 

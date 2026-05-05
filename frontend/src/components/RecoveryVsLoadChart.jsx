@@ -21,9 +21,9 @@ const INNER_H = CHART_H - PAD_TOP - PAD_BOTTOM;
 
 const METRIC_OPTIONS = [
   { key: "sleepScore", label: "Sommeil (score)", unit: "/ 100", color: "var(--recovery-sleep-color, #7c6af7)" },
-  { key: "hrvAvgMs", label: "HRV moy.", unit: "ms", color: "var(--recovery-hrv-color, #38bdf8)" },
+  { key: "hrvAvgMs", label: "VFC moy.", unit: "ms", color: "var(--recovery-hrv-color, #38bdf8)" },
   { key: "restingHr", label: "FC repos", unit: "bpm", color: "var(--recovery-hr-color, #f97316)" },
-  { key: "bodyBattery", label: "Body Battery", unit: "%", color: "var(--recovery-bb-color, #22d3ee)" },
+  { key: "bodyBattery", label: "Énergie", unit: "%", color: "var(--recovery-bb-color, #22d3ee)" },
 ];
 
 // ---------------------------------------------------------------------------

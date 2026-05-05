@@ -12,6 +12,7 @@ const PerformancePage = lazy(() => import("./pages/PerformancePage.jsx"));
 const ActivitiesPage = lazy(() => import("./pages/ActivitiesPage.jsx"));
 const ActivityDetailPage = lazy(() => import("./pages/ActivityDetailPage.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
+const GlossairePage = lazy(() => import("./pages/GlossairePage.jsx"));
 const LoginPage = lazy(() => import("./pages/LoginPage.jsx"));
 
 function PageRoute({ children }) {
@@ -134,6 +135,14 @@ export default function App() {
             element={(
               <PageRoute>
                 <AdminPage />
+              </PageRoute>
+            )}
+          />
+          <Route
+            path="glossaire"
+            element={(
+              <PageRoute>
+                <GlossairePage />
               </PageRoute>
             )}
           />

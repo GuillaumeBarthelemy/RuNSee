@@ -6723,3 +6723,150 @@ button.alert-banner-positive-item {
 }
 
 .activity-recovery-row--empty { gap: 2px; }
+
+/* --- GlossaryLink + Page Glossaire (Phase J) ------------------------------- */
+
+.glossary-link {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.glossary-link:hover,
+.glossary-link:focus {
+  text-decoration: underline;
+}
+
+.glossary-search-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.glossary-search-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.glossary-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 15px;
+  background: var(--color-surface-light);
+  color: var(--color-text-primary);
+}
+
+.glossary-search-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.glossary-search-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.glossary-category {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.glossary-category-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.glossary-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.glossary-entry {
+  padding: 16px;
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  scroll-margin-top: 80px;
+  transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+.glossary-entry--highlight {
+  background: rgba(249, 115, 22, 0.08);
+  border-color: var(--color-accent);
+}
+
+.glossary-entry-header {
+  margin-bottom: 8px;
+}
+
+.glossary-entry-term {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 2px;
+}
+
+.glossary-entry-aliases {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin: 0;
+}
+
+.glossary-entry-short {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 8px;
+}
+
+.glossary-entry-definition {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  margin: 0 0 10px;
+}
+
+.glossary-entry-meta {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+.glossary-entry-reference {
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.glossary-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  padding: 24px;
+}
+
+@media (max-width: 760px) {
+  .glossary-entry {
+    padding: 12px;
+  }
+  .glossary-entry-term {
+    font-size: 16px;
+  }
+}

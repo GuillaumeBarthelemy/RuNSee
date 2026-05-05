@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import AppBrand from "../components/AppBrand.jsx";
 import CurrentAccountPanel from "../components/CurrentAccountPanel.jsx";
 import AppNavigation from "../components/AppNavigation.jsx";
-import GlossaryModal from "../components/GlossaryModal.jsx";
 import useAuth from "../hooks/useAuth.js";
 import useRunSeeData from "../hooks/useRunSeeData.js";
 import { startHistoricalSync, startIncrementalSync } from "../services/sync.service.js";
@@ -15,7 +14,6 @@ export default function AppLayout() {
   const { athlete, summary, currentJob, isBusy, reload, setError } = useRunSeeData({ includeActivities: false });
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSyncLaunching, setIsSyncLaunching] = useState(false);
-  const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
 
   const account = useMemo(
     () => buildCurrentAccountModel({ user, athlete, summary }),
@@ -23,18 +21,6 @@ export default function AppLayout() {
   );
   const canSync = Boolean(user?.stravaConnected || athlete);
   const hasImportedActivities = Number(summary?.totalActivities || 0) > 0;
-
-  useEffect(() => {
-    function handleOpenGlossary() {
-      setIsGlossaryOpen(true);
-    }
-
-    window.addEventListener("runsee:open-glossary", handleOpenGlossary);
-
-    return () => {
-      window.removeEventListener("runsee:open-glossary", handleOpenGlossary);
-    };
-  }, []);
 
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
@@ -97,7 +83,7 @@ export default function AppLayout() {
           <button
             type="button"
             className="button button-outline app-sidebar-glossary-button"
-            onClick={() => setIsGlossaryOpen(true)}
+            onClick={() => navigate("/glossaire")}
           >
             Glossaire
           </button>
@@ -107,8 +93,6 @@ export default function AppLayout() {
       <main className="app-main">
         <Outlet />
       </main>
-
-      <GlossaryModal isOpen={isGlossaryOpen} onClose={() => setIsGlossaryOpen(false)} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 
 const MOBILE_TOOLTIP_BREAKPOINT = 720;
 const TOOLTIP_VIEWPORT_PADDING = 16;
@@ -35,7 +36,12 @@ export default function InfoTooltip({
   customContent = null,
   contentClassName = "",
   glossaryKey = "",
+  compact = false,
 }) {
+  // Mode compact (Phase J) : on coupe le contenu à 2 lignes (≤ 80 caractères
+  // par item) et on privilégie le lien vers /glossaire pour le détail.
+  // Cela améliore drastiquement la lisibilité mobile.
+  const navigate = useNavigate();
   const items = normalizeContent(content);
   const resolvedGlossaryKey = String(glossaryKey || "").trim()
     || items.find((item) => item.glossaryKey)?.glossaryKey
@@ -228,17 +234,14 @@ export default function InfoTooltip({
   const openGlossaryDefinition = (event) => {
     event.preventDefault();
 
-    if (!resolvedGlossaryKey || typeof window === "undefined") {
-      return;
-    }
+    if (!resolvedGlossaryKey) return;
 
-    window.dispatchEvent(
-      new CustomEvent("runsee:open-glossary", {
-        detail: { entryKey: resolvedGlossaryKey },
-      }),
-    );
+    // Phase J : on navigue vers /glossaire#key au lieu d'ouvrir le modal
+    // (le modal n'est plus utilisé). Bénéfice : URL partageable, ancres
+    // navigables au clavier, meilleure accessibilité mobile.
     setIsPinned(false);
     setIsHovered(false);
+    navigate(`/glossaire#${resolvedGlossaryKey}`);
   };
 
   const isOpen = isHovered || isPinned;
@@ -272,9 +275,9 @@ export default function InfoTooltip({
       {title ? <strong className="info-tooltip-title">{title}</strong> : null}
       {customContent ? customContent : (
         <span className="info-tooltip-list">
-          {items.map((item, index) => (
+          {(compact ? items.slice(0, 1) : items).map((item, index) => (
             <span className="info-tooltip-item" key={`${title}-${index}`}>
-              {item.label ? <span className="info-tooltip-label">{item.label}</span> : null}
+              {item.label && !compact ? <span className="info-tooltip-label">{item.label}</span> : null}
               <span className="info-tooltip-line">{item.text}</span>
             </span>
           ))}
@@ -286,7 +289,7 @@ export default function InfoTooltip({
           className="info-tooltip-glossary-link"
           onClick={openGlossaryDefinition}
         >
-          Definition complete -&gt;
+          Voir la définition complète →
         </button>
       ) : null}
     </span>

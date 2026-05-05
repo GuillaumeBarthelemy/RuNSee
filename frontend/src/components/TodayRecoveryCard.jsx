@@ -140,7 +140,7 @@ function TodayRecoveryCard({ snapshots = [] }) {
           info={TRAINING_MVP_RECOVERY_INFO?.sleep}
         />
         <MetricTile
-          label="HRV moy."
+          label="VFC moy."
           unit="ms"
           metricModel={vm.hrv}
           info={TRAINING_MVP_RECOVERY_INFO?.hrv}
@@ -152,7 +152,7 @@ function TodayRecoveryCard({ snapshots = [] }) {
           info={TRAINING_MVP_RECOVERY_INFO?.restingHr}
         />
         <MetricTile
-          label="Body Battery"
+          label="Énergie"
           unit="%"
           metricModel={vm.bodyBattery}
           info={TRAINING_MVP_RECOVERY_INFO?.bodyBattery}
