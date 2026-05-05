@@ -104,15 +104,27 @@ describe("vfcDeltaTone", () => {
   });
 });
 
-describe("restingHrDeltaTone", () => {
-  it("hausse FC repos = vigilance ou alerte (lower-is-better)", () => {
-    expect(restingHrDeltaTone(7)).toBe(5);
-    expect(restingHrDeltaTone(3)).toBe(4);
+describe("restingHrDeltaTone (en pourcentage, lower-is-better)", () => {
+  it("hausse forte FC repos = alerte", () => {
+    expect(restingHrDeltaTone(8)).toBe(5);
   });
 
-  it("baisse FC repos = bon ou tres bon", () => {
-    expect(restingHrDeltaTone(-3)).toBe(2);
-    expect(restingHrDeltaTone(-7)).toBe(1);
+  it("hausse legere FC repos = vigilance", () => {
+    expect(restingHrDeltaTone(4)).toBe(4);
+  });
+
+  it("variation faible = neutre (zone normale)", () => {
+    expect(restingHrDeltaTone(0)).toBe(3);
+    expect(restingHrDeltaTone(-1)).toBe(3);
+    expect(restingHrDeltaTone(2)).toBe(3);
+  });
+
+  it("baisse moderee FC repos = bon", () => {
+    expect(restingHrDeltaTone(-4)).toBe(2);
+  });
+
+  it("baisse forte FC repos = tres bon (base aerobie qui se renforce)", () => {
+    expect(restingHrDeltaTone(-8)).toBe(1);
   });
 });
 

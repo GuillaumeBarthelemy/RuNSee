@@ -82,16 +82,23 @@ export function vfcDeltaTone(deltaPct) {
 }
 
 /**
- * Delta FC repos vs baseline en bpm : lower-is-better (inversé).
- * > +5 bpm → alerte ; +2 à +5 → vigilance ; -2 à +2 → neutre ; -5 à -2 → bon ; < -5 → très bon
+ * Delta FC repos vs baseline en pourcentage : lower-is-better (inversé).
+ *
+ * Une baisse de FC repos vs baseline = bonne récupération / progression
+ * de la base aérobie (Buchheit 2014). Une hausse = vigilance (fatigue,
+ * stress, début de maladie, dette de sommeil).
+ *
+ * > +6 % → alerte ; +3 à +6 → vigilance ; -3 à +3 → neutre ; -3 à -6 → bon ; < -6 → très bon
+ *
+ * Sur une FC repos de 50 bpm : 6 % = 3 bpm de variation, ce qui est notable.
  */
-export function restingHrDeltaTone(deltaBpm) {
-  return pickTone(deltaBpm, [
-    { from: 5, to: Infinity, tone: 5 },
-    { from: 2, to: 5, tone: 4 },
-    { from: -2, to: 2, tone: 3 },
-    { from: -5, to: -2, tone: 2 },
-    { from: -Infinity, to: -5, tone: 1 },
+export function restingHrDeltaTone(deltaPct) {
+  return pickTone(deltaPct, [
+    { from: 6, to: Infinity, tone: 5 },
+    { from: 3, to: 6, tone: 4 },
+    { from: -3, to: 3, tone: 3 },
+    { from: -6, to: -3, tone: 2 },
+    { from: -Infinity, to: -6, tone: 1 },
   ]);
 }
 

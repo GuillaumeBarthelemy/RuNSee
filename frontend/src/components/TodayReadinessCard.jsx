@@ -30,16 +30,55 @@ import {
  * - UX_AUDIT.md section Phase F1
  */
 
-function MetricTile({ label, unit, valueModel, glossaryKey, toneFn, isLowerBetter = false }) {
+/**
+ * Pour chaque tuile recovery, le tone est calculé sur le **delta vs baseline**
+ * (logique scientifique correcte) — PAS sur la valeur absolue.
+ *
+ * - Sommeil : score 0-100 directement comparable (sleepScoreTone(value))
+ * - VFC, FC repos, Énergie : tone basé sur deltaPct vs baseline
+ *
+ * `isAbsolute` : passe la valeur brute à toneFn (ex: sleepScore).
+ * Sinon : passe le deltaPct.
+ *
+ * Pour les MicroBars : on calcule le tone de chaque jour vs sa propre baseline
+ * (la moyenne de la fenêtre). Cela évite le bug où une FC repos absolue de 49
+ * bpm tombait dans la zone "+5 bpm = alerte" alors que c'est la valeur normale
+ * de l'utilisateur.
+ */
+function MetricTile({ label, unit, valueModel, glossaryKey, toneFn, isAbsolute = false }) {
   if (!valueModel) return null;
 
   const value = valueModel.recentAvg ?? valueModel.latestValue;
   const display = value != null ? `${Math.round(value)} ${unit}` : "—";
-  const tone = value != null ? toneFn(isLowerBetter && valueModel.deltaPct != null ? valueModel.deltaPct : value) : 3;
 
-  // Build series of tones for MicroBars (14j)
+  // Tone du résumé : basé sur delta vs baseline (scientifique correct)
+  // ou sur la valeur absolue pour les scores normalisés (sleepScore 0-100)
+  let summaryTone = 3;
+  if (value != null && toneFn) {
+    if (isAbsolute) {
+      summaryTone = toneFn(value);
+    } else if (valueModel.deltaPct != null) {
+      summaryTone = toneFn(valueModel.deltaPct);
+    }
+  }
+
+  // Tones des MicroBars : pour les valeurs absolues (sleepScore), on applique
+  // toneFn directement à chaque valeur.
+  // Pour les deltas (VFC, FC repos, Énergie), on compare chaque barre à la
+  // moyenne baseline de la fenêtre (= un "delta % vs moyenne").
   const series = valueModel.series || [];
-  const tones = series.map((v) => v != null ? toneFn(v) : 3);
+  const baselineMean = valueModel.baselineAvg ?? valueModel.recentAvg ?? null;
+  const tones = series.map((v) => {
+    if (v == null || !toneFn) return 3;
+    if (isAbsolute) {
+      return toneFn(v);
+    }
+    if (baselineMean != null && baselineMean > 0) {
+      const deltaPct = ((v - baselineMean) / baselineMean) * 100;
+      return toneFn(deltaPct);
+    }
+    return 3;
+  });
 
   return (
     <div className="readiness-tile">
@@ -47,12 +86,12 @@ function MetricTile({ label, unit, valueModel, glossaryKey, toneFn, isLowerBette
         <span className="readiness-tile-label">{label}</span>
         {glossaryKey ? <GlossaryLink termKey={glossaryKey}>?</GlossaryLink> : null}
       </div>
-      <span className={`readiness-tile-value tone-${tone}`}>{display}</span>
+      <span className={`readiness-tile-value tone-${summaryTone}`}>{display}</span>
       {valueModel.deltaPct != null ? (
         <TrendChip
           delta={valueModel.deltaPct}
           unit="%"
-          tone={tone}
+          tone={summaryTone}
           label="vs repère"
         />
       ) : null}
@@ -127,23 +166,21 @@ function TodayReadinessCard({ snapshots = [] }) {
             valueModel={vm.sleep}
             glossaryKey="sleepScore"
             toneFn={sleepScoreTone}
+            isAbsolute
           />
           <MetricTile
             label="VFC moy."
             unit="ms"
             valueModel={vm.hrv}
             glossaryKey="vfc"
-            toneFn={(deltaPct) => vfcDeltaTone(deltaPct)}
-            isLowerBetter={false}
+            toneFn={vfcDeltaTone}
           />
           <MetricTile
             label="FC repos"
             unit="bpm"
             valueModel={vm.restingHr}
             glossaryKey="restingHr"
-            // FC repos : utilise le delta inversé pour le tone (lower-is-better)
-            toneFn={(deltaPct) => restingHrDeltaTone(deltaPct)}
-            isLowerBetter
+            toneFn={restingHrDeltaTone}
           />
           <MetricTile
             label="Énergie"
@@ -151,6 +188,7 @@ function TodayReadinessCard({ snapshots = [] }) {
             valueModel={vm.bodyBattery}
             glossaryKey="energyLevel"
             toneFn={energyLevelTone}
+            isAbsolute
           />
         </div>
       </div>

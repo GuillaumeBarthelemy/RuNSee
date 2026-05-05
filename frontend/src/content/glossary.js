@@ -205,11 +205,11 @@ export const GLOSSARY_ENTRIES = [
     term: "Energie",
     aliases: ["Body Battery", "Niveau d'energie"],
     category: "Recuperation",
-    short: "Energie disponible selon Garmin (0 = vide, 100 = plein).",
+    short: "Pic d'energie de la journee selon Garmin (0 = vide, 100 = plein).",
     definition:
-      "Score Garmin 0-100 calcule par l'algorithme Firstbeat qui combine ton sommeil, ton stress et ton activite. A regarder le matin au reveil : il indique la capacite de la journee a venir.",
+      "Score Garmin 0-100 calcule par l'algorithme Firstbeat qui combine ton sommeil, ton stress et ton activite. RunSee affiche le **maximum** atteint sur la journee (typiquement au reveil apres une nuit de recup) plutot que la valeur ponctuelle du matin, car cette derniere peut etre imprecise selon l'heure de captation.",
     reference: "Algorithme proprietaire Garmin / Firstbeat (Saalasti et al. 2007 partiellement publie).",
-    thresholds: "< 30 au reveil = journee de regeneration. 30-60 = vigilance sur l'intensite. > 60 = capacite a absorber une seance exigeante.",
+    thresholds: "Pic < 50 = recuperation insuffisante (journee facile recommandee). 50-70 = vigilance sur l'intensite. > 70 = capacite a absorber une seance exigeante.",
   },
   {
     key: "trainingReadinessGarmin",

@@ -168,7 +168,12 @@ export function buildRecoveryViewModel(snapshots) {
     goodThresholdPct: 8,
   });
 
-  const bodyBattery = buildMetricModel(recentSnapshots, baselineSnapshots, "bodyBatteryMorning", {
+  // Énergie : on utilise bodyBatteryMax (pic de la journée, atteint typiquement
+  // au réveil après une nuit de récup) plutôt que bodyBatteryMorning qui peut
+  // être imprécis si Garmin n'a pas la valeur exacte du matin (fallback série[0]
+  // pouvant tomber sur une lecture mid-day basse).
+  // bodyBatteryMax = vrai indicateur de l'énergie disponible.
+  const bodyBattery = buildMetricModel(recentSnapshots, baselineSnapshots, "bodyBatteryMax", {
     positiveIsGood: true,
     warningThresholdPct: 10,
     goodThresholdPct: 5,
