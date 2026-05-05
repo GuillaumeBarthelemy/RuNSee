@@ -18,6 +18,21 @@
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
 
+  /* --- Palette tones unifiée (Phase G — UX_CHARTE.md) -------------------- */
+  /* 5 niveaux qualitatifs utilisés par tous les composants visuels.
+     Mapping helper : pickTone(value, thresholds) → 1..5 */
+  --tone-1: #15803d;  /* Très bon */
+  --tone-2: #65a30d;  /* Bon */
+  --tone-3: #64748b;  /* Neutre */
+  --tone-4: #b45309;  /* Vigilance */
+  --tone-5: #b91c1c;  /* Alerte */
+
+  --tone-1-bg: rgba(34, 197, 94, 0.12);
+  --tone-2-bg: rgba(132, 204, 22, 0.10);
+  --tone-3-bg: rgba(100, 116, 139, 0.06);
+  --tone-4-bg: rgba(245, 158, 11, 0.14);
+  --tone-5-bg: rgba(239, 68, 68, 0.12);
+
   --color-sidebar: #223A5E;
   --color-sidebar-light: #2C4A73;
   --color-sidebar-active: #355886;
@@ -6869,4 +6884,290 @@ button.alert-banner-positive-item {
   .glossary-entry-term {
     font-size: 16px;
   }
+}
+
+/* ===========================================================================
+   Phase G — Composants visuels canoniques
+   MetricGauge, RangeBar, MicroBars, TrendChip, BandPositioner
+   Tones cohérents avec --tone-1 à --tone-5
+   =========================================================================== */
+
+/* Helpers tone : applique la couleur texte selon le tone niveau */
+.tone-1 { color: var(--tone-1); }
+.tone-2 { color: var(--tone-2); }
+.tone-3 { color: var(--tone-3); }
+.tone-4 { color: var(--tone-4); }
+.tone-5 { color: var(--tone-5); }
+
+/* --- MetricGauge ----------------------------------------------------------- */
+
+.metric-gauge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.metric-gauge svg {
+  display: block;
+}
+
+.metric-gauge-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.metric-gauge-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.metric-gauge-unit {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 760px) {
+  .metric-gauge--md svg {
+    width: 130px;
+    height: 75px;
+  }
+}
+
+/* --- RangeBar -------------------------------------------------------------- */
+
+.range-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-width: 200px;
+}
+
+.range-bar-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.range-bar-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.range-bar-value {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.range-bar-track {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.range-bar-zone {
+  position: absolute;
+  top: 0;
+  height: 100%;
+}
+
+.range-bar-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface-light);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  z-index: 1;
+}
+
+.range-bar-zone-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* --- MicroBars ------------------------------------------------------------- */
+
+.micro-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 100%;
+}
+
+.micro-bars--md {
+  height: 32px;
+}
+
+.micro-bars--sm {
+  height: 24px;
+}
+
+.micro-bars--empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.micro-bar {
+  flex: 1;
+  min-width: 3px;
+  border-radius: 2px;
+  background: var(--tone-3);
+  transition: opacity 0.15s ease;
+}
+
+.micro-bar.tone-1 { background: var(--tone-1); }
+.micro-bar.tone-2 { background: var(--tone-2); }
+.micro-bar.tone-3 { background: var(--tone-3); }
+.micro-bar.tone-4 { background: var(--tone-4); }
+.micro-bar.tone-5 { background: var(--tone-5); }
+
+.micro-bar.is-last {
+  outline: 1.5px solid var(--color-text-primary);
+  outline-offset: 1px;
+}
+
+.micro-bar--empty {
+  background: var(--color-border);
+  opacity: 0.4;
+  height: 20% !important;
+  align-self: flex-end;
+}
+
+@media (max-width: 760px) {
+  .micro-bars--md { height: 24px; }
+  .micro-bars--sm { height: 18px; }
+}
+
+/* --- TrendChip ------------------------------------------------------------- */
+
+.trend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.trend-chip.tone-1 { background: var(--tone-1-bg); border-color: rgba(34, 197, 94, 0.3); color: var(--tone-1); }
+.trend-chip.tone-2 { background: var(--tone-2-bg); border-color: rgba(132, 204, 22, 0.3); color: var(--tone-2); }
+.trend-chip.tone-3 { background: var(--tone-3-bg); border-color: var(--color-border); color: var(--color-text-secondary); }
+.trend-chip.tone-4 { background: var(--tone-4-bg); border-color: rgba(245, 158, 11, 0.4); color: var(--tone-4); }
+.trend-chip.tone-5 { background: var(--tone-5-bg); border-color: rgba(239, 68, 68, 0.35); color: var(--tone-5); }
+
+.trend-chip-arrow {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.trend-chip-label {
+  color: var(--color-text-muted);
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+/* --- BandPositioner -------------------------------------------------------- */
+
+.band-positioner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.band-positioner-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.band-positioner-bands {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.band-positioner-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  border: 1px solid transparent;
+}
+
+.band-positioner-band.is-active {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.band-positioner-band-label {
+  flex: 1;
+}
+
+.band-positioner-marker {
+  font-size: 14px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+/* --- VisualsPreviewPage (démo G5) ------------------------------------------ */
+
+.visuals-preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.visuals-preview-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.visuals-preview-tone-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 760px) {
+  .visuals-preview-tone-grid { grid-template-columns: repeat(2, 1fr); }
 }

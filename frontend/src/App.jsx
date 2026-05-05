@@ -13,6 +13,7 @@ const ActivitiesPage = lazy(() => import("./pages/ActivitiesPage.jsx"));
 const ActivityDetailPage = lazy(() => import("./pages/ActivityDetailPage.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
 const GlossairePage = lazy(() => import("./pages/GlossairePage.jsx"));
+const VisualsPreviewPage = lazy(() => import("./pages/VisualsPreviewPage.jsx"));
 const LoginPage = lazy(() => import("./pages/LoginPage.jsx"));
 
 function PageRoute({ children }) {
@@ -143,6 +144,14 @@ export default function App() {
             element={(
               <PageRoute>
                 <GlossairePage />
+              </PageRoute>
+            )}
+          />
+          <Route
+            path="visuals-preview"
+            element={(
+              <PageRoute>
+                <VisualsPreviewPage />
               </PageRoute>
             )}
           />

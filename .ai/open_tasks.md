@@ -23,14 +23,17 @@
 
 ## À faire après Phase J
 
-### Phase G — Composants visuels
-- [ ] CSS variables `--tone-1` à `--tone-5`
-- [ ] `MetricGauge` (demi-cercle 0-100)
-- [ ] `RangeBar` (barre horizontale + zones)
-- [ ] `MicroBars` (remplaçant sparkline)
-- [ ] `TrendChip` (delta avec flèche)
-- [ ] `BandPositioner` (extraction depuis DynamicsGrid)
-- [ ] Page démo `/admin/visuals-preview` (DEV uniquement)
+### Phase G — Composants visuels (✅ TERMINÉE)
+- [x] CSS variables `--tone-1` à `--tone-5` + backgrounds 12% opacity
+- [x] `MetricGauge` (demi-cercle SVG 0-100, sm/md, fallback null)
+- [x] `RangeBar` (barre horizontale + zones colorées + marqueur)
+- [x] `MicroBars` (barres verticales colorées par tone, gestion null)
+- [x] `TrendChip` (pill delta avec flèche directionnelle)
+- [x] `BandPositioner` (bandes empilées avec curseur)
+- [x] Helper `tonePicker.js` avec 9 mappers spécialisés (sleep, vfc, hr, readiness, freshness, load, stress, decoupling, energy)
+- [x] Page `/visuals-preview` pour validation visuelle
+- [x] Tests Vitest (29 tests tonePicker, 89 verts au total)
+- [ ] Migration des composants existants vers ces visuels — fait dans phases F/H
 
 ### Phase F — Refonte Dashboard
 - [ ] Création `TodayReadinessCard` (fusion 3 doublons)
