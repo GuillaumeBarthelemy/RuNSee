@@ -7171,3 +7171,166 @@ button.alert-banner-positive-item {
 @media (max-width: 760px) {
   .visuals-preview-tone-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* --- TodayReadinessCard (Phase F1) ----------------------------------------- */
+
+.today-readiness-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.today-readiness-card--empty .today-readiness-empty-hint {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+.readiness-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.readiness-gauge-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+}
+
+.readiness-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.readiness-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  min-height: 100px;
+}
+
+.readiness-tile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.readiness-tile-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.readiness-tile-value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.readiness-tile-value.tone-1 { color: var(--tone-1); }
+.readiness-tile-value.tone-2 { color: var(--tone-2); }
+.readiness-tile-value.tone-3 { color: var(--color-text-primary); }
+.readiness-tile-value.tone-4 { color: var(--tone-4); }
+.readiness-tile-value.tone-5 { color: var(--tone-5); }
+
+@media (max-width: 900px) {
+  .readiness-layout {
+    grid-template-columns: 1fr;
+  }
+  .readiness-gauge-block {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .readiness-tiles-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- DashboardDecisionSummaryCard refonte (Phase F2) ----------------------- */
+
+.dashboard-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0 4px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(53, 88, 134, 0.12);
+  background: rgba(53, 88, 134, 0.05);
+}
+
+.dashboard-verdict-positive {
+  border-color: rgba(34, 197, 94, 0.22);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.dashboard-verdict-warning {
+  border-color: rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.dashboard-verdict-negative {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.dashboard-verdict-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.dashboard-verdict-text {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.dashboard-verdict-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.verdict-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.dashboard-verdict-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.dashboard-verdict-meta strong {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  margin-right: 4px;
+}

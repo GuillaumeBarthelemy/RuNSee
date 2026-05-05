@@ -29,8 +29,8 @@
 |---|---|---|---|
 | **E** — Audit UX | ✅ Commit `1334de7` | Docs `UX_AUDIT.md`, `GLOSSAIRE.md`, `UX_CHARTE.md` | 7-8 h |
 | **J** — Vocabulaire + glossaire | ✅ Commit `30b8d10` | Page `/glossaire` + GlossaryLink + InfoTooltip compact + renommages VFC/Énergie | 5 h |
-| **G** — Composants visuels | ✅ Commit en cours | MetricGauge, RangeBar, MicroBars, TrendChip, BandPositioner + tonePicker + VisualsPreviewPage | 13 h |
-| **F** — Refonte Dashboard | À faire | TodayReadinessCard fusion, verdict descriptif, jauge | 12 h |
+| **G** — Composants visuels | ✅ Commit `7002737` | MetricGauge, RangeBar, MicroBars, TrendChip, BandPositioner + tonePicker + VisualsPreviewPage | 13 h |
+| **F** — Refonte Dashboard | ✅ Commit en cours | TodayReadinessCard fusion (3 doublons → 1), verdict descriptif, MicroBars sur charge | 12 h |
 | **H** — GAP + Decoupling + EPOC | À faire | Minetti GAP, dérive cardiaque, dette d'oxygène | 12 h |
 | **I** — Refonte Réglages 5 onglets | À faire | TabbedSettings, sous-pages | 12 h |
 | **K** — Extension Garmin activités | À faire | Bridge Python étendu, jointure Strava×Garmin | 10 h |

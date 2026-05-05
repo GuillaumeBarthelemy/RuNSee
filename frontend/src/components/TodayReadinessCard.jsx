@@ -1,0 +1,161 @@
+import { memo } from "react";
+import GlossaryLink from "./GlossaryLink.jsx";
+import MetricGauge from "./visuals/MetricGauge.jsx";
+import MicroBars from "./visuals/MicroBars.jsx";
+import TrendChip from "./visuals/TrendChip.jsx";
+import { buildRecoveryViewModel } from "../utils/recoveryViewModel.js";
+import {
+  energyLevelTone,
+  readinessTone,
+  restingHrDeltaTone,
+  sleepScoreTone,
+  vfcDeltaTone,
+} from "../utils/tonePicker.js";
+
+/**
+ * TodayReadinessCard — Phase F1.
+ *
+ * Composant unique remplaçant les 3 doublons :
+ * - RecoverySnapshotCard (KpiGrid simple)
+ * - TodayRecoveryCard (sparklines)
+ * - Section "Signaux Garmin" du DashboardDecisionSummaryCard
+ *
+ * Affiche :
+ * - Jauge Aptitude RuNSee (composite 0-100, formule transparente)
+ * - 4 tuiles : Sommeil, VFC, FC repos, Énergie (valeur 7j + delta + MicroBars 14j)
+ * - Indicateur de confiance basé sur la couverture des données
+ *
+ * Référence :
+ * - GLOSSAIRE.md (entrées vfc, sleepScore, restingHr, energyLevel, trainingReadinessRunsee)
+ * - UX_AUDIT.md section Phase F1
+ */
+
+function MetricTile({ label, unit, valueModel, glossaryKey, toneFn, isLowerBetter = false }) {
+  if (!valueModel) return null;
+
+  const value = valueModel.recentAvg ?? valueModel.latestValue;
+  const display = value != null ? `${Math.round(value)} ${unit}` : "—";
+  const tone = value != null ? toneFn(isLowerBetter && valueModel.deltaPct != null ? valueModel.deltaPct : value) : 3;
+
+  // Build series of tones for MicroBars (14j)
+  const series = valueModel.series || [];
+  const tones = series.map((v) => v != null ? toneFn(v) : 3);
+
+  return (
+    <div className="readiness-tile">
+      <div className="readiness-tile-header">
+        <span className="readiness-tile-label">{label}</span>
+        {glossaryKey ? <GlossaryLink termKey={glossaryKey}>?</GlossaryLink> : null}
+      </div>
+      <span className={`readiness-tile-value tone-${tone}`}>{display}</span>
+      {valueModel.deltaPct != null ? (
+        <TrendChip
+          delta={valueModel.deltaPct}
+          unit="%"
+          tone={tone}
+          label="vs repère"
+        />
+      ) : null}
+      {series.length > 1 ? (
+        <MicroBars
+          series={series}
+          tones={tones}
+          height="sm"
+          ariaLabel={`${label} sur 14 jours`}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function TodayReadinessCard({ snapshots = [] }) {
+  const vm = buildRecoveryViewModel(snapshots);
+
+  if (!vm.hasData) {
+    return (
+      <section className="card today-readiness-card today-readiness-card--empty">
+        <div className="card-header">
+          <div className="card-title-block">
+            <h2 className="card-title">Aptitude du jour</h2>
+            <span className="card-subtitle">Garmin non connecté</span>
+          </div>
+        </div>
+        <p className="today-readiness-empty-hint">
+          Connecte ton compte Garmin depuis la page&nbsp;Réglages pour voir ton aptitude
+          du jour, ta VFC, ta FC repos et ton énergie.
+        </p>
+      </section>
+    );
+  }
+
+  const readinessScore = vm.readiness?.score ?? null;
+  const readinessConfidence = vm.readiness?.confidence ?? "Faible";
+
+  return (
+    <section className="card today-readiness-card">
+      <div className="card-header">
+        <div className="card-title-block">
+          <h2 className="card-title">Aptitude du jour</h2>
+          <span className="card-subtitle">
+            Confiance : {readinessConfidence} · {vm.confidenceLabel}
+          </span>
+        </div>
+      </div>
+
+      <div className="readiness-layout">
+        {/* Jauge principale Aptitude RuNSee */}
+        <div className="readiness-gauge-block">
+          <MetricGauge
+            value={readinessScore}
+            min={0}
+            max={100}
+            tone={readinessScore != null ? readinessTone(readinessScore) : 3}
+            unit="/ 100"
+            label="Aptitude RunSee"
+            size="md"
+          />
+          <GlossaryLink termKey="trainingReadinessRunsee">
+            Comment c'est calculé ?
+          </GlossaryLink>
+        </div>
+
+        {/* 4 tuiles : Sommeil, VFC, FC repos, Énergie */}
+        <div className="readiness-tiles-grid">
+          <MetricTile
+            label="Sommeil"
+            unit="/ 100"
+            valueModel={vm.sleep}
+            glossaryKey="sleepScore"
+            toneFn={sleepScoreTone}
+          />
+          <MetricTile
+            label="VFC moy."
+            unit="ms"
+            valueModel={vm.hrv}
+            glossaryKey="vfc"
+            toneFn={(deltaPct) => vfcDeltaTone(deltaPct)}
+            isLowerBetter={false}
+          />
+          <MetricTile
+            label="FC repos"
+            unit="bpm"
+            valueModel={vm.restingHr}
+            glossaryKey="restingHr"
+            // FC repos : utilise le delta inversé pour le tone (lower-is-better)
+            toneFn={(deltaPct) => restingHrDeltaTone(deltaPct)}
+            isLowerBetter
+          />
+          <MetricTile
+            label="Énergie"
+            unit="%"
+            valueModel={vm.bodyBattery}
+            glossaryKey="energyLevel"
+            toneFn={energyLevelTone}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export default memo(TodayReadinessCard);

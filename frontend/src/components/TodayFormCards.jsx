@@ -1,10 +1,8 @@
 import { memo } from "react";
 import { TRAINING_MVP_KPI_INFO } from "../content/trainingMvpCopy.js";
 import InfoTooltip from "./InfoTooltip.jsx";
-
-const SPARK_WIDTH = 260;
-const SPARK_HEIGHT = 78;
-const SPARK_PADDING = 8;
+import MicroBars from "./visuals/MicroBars.jsx";
+import { freshnessTone, load7dTone } from "../utils/tonePicker.js";
 
 function toNumber(value) {
   const numeric = Number(value);
@@ -22,40 +20,6 @@ function normalizeSeries(data = [], key = "value") {
   return (Array.isArray(data) ? data : [])
     .map((point) => toNumber(point?.[key]))
     .filter((value) => Number.isFinite(value));
-}
-
-function buildLinePath(values = [], minValue, maxValue) {
-  if (!values.length) {
-    return "";
-  }
-
-  const span = Math.max(1, maxValue - minValue);
-  const usableWidth = SPARK_WIDTH - (SPARK_PADDING * 2);
-  const usableHeight = SPARK_HEIGHT - (SPARK_PADDING * 2);
-
-  return values
-    .map((value, index) => {
-      const x = SPARK_PADDING + (values.length === 1 ? usableWidth : (index / (values.length - 1)) * usableWidth);
-      const y = SPARK_PADDING + ((maxValue - value) / span) * usableHeight;
-      return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    })
-    .join(" ");
-}
-
-function getLastPoint(values = [], minValue, maxValue) {
-  if (!values.length) {
-    return null;
-  }
-
-  const span = Math.max(1, maxValue - minValue);
-  const usableWidth = SPARK_WIDTH - (SPARK_PADDING * 2);
-  const usableHeight = SPARK_HEIGHT - (SPARK_PADDING * 2);
-  const value = values[values.length - 1];
-
-  return {
-    x: SPARK_PADDING + usableWidth,
-    y: SPARK_PADDING + ((maxValue - value) / span) * usableHeight,
-  };
 }
 
 function getFreshnessStatus(value) {
@@ -78,64 +42,24 @@ function getLoadStatus(value) {
   return { label: "Bloc leger", tone: "neutral" };
 }
 
-function LineSparkline({ data = [], dataKey = "value", color = "#355886", withFreshnessZones = false }) {
+/**
+ * Sparkline (ligne) → MicroBars (Phase F3, lot G).
+ * Pour fraîcheur (TSB) : tone selon zone freshness.
+ * Pour base (CTL) : tone neutre (croissance lente, peu d'info dans le delta court terme).
+ */
+function FormMicroBars({ data = [], dataKey = "value", toneFn = null }) {
   const values = normalizeSeries(data, dataKey);
-  const naturalMin = Math.min(...values, 0);
-  const naturalMax = Math.max(...values, 10);
-  const minValue = withFreshnessZones ? Math.min(-30, naturalMin) : naturalMin;
-  const maxValue = withFreshnessZones ? Math.max(20, naturalMax) : naturalMax;
-  const path = buildLinePath(values, minValue, maxValue);
-  const lastPoint = getLastPoint(values, minValue, maxValue);
-
   if (!values.length) {
-    return <div className="empty-state compact-empty-state">Pas assez de donnees.</div>;
+    return <div className="empty-state compact-empty-state">Pas assez de données.</div>;
   }
-
+  const tones = toneFn ? values.map(toneFn) : null;
   return (
-    <svg className="today-form-sparkline" viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`} role="img" aria-label="Tendance recente">
-      {withFreshnessZones ? (
-        <>
-          <rect x="0" y="0" width={SPARK_WIDTH} height={SPARK_HEIGHT * 0.34} className="spark-zone-positive" />
-          <rect x="0" y={SPARK_HEIGHT * 0.34} width={SPARK_WIDTH} height={SPARK_HEIGHT * 0.25} className="spark-zone-neutral" />
-          <rect x="0" y={SPARK_HEIGHT * 0.59} width={SPARK_WIDTH} height={SPARK_HEIGHT * 0.41} className="spark-zone-warning" />
-        </>
-      ) : null}
-      <path d={path} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      {lastPoint ? <circle cx={lastPoint.x} cy={lastPoint.y} r="4" fill={color} /> : null}
-    </svg>
-  );
-}
-
-function BarSparkline({ data = [], dataKey = "value" }) {
-  const values = normalizeSeries(data, dataKey);
-  const maxValue = Math.max(...values, 1);
-  const barGap = 4;
-  const barWidth = Math.max(5, (SPARK_WIDTH - (SPARK_PADDING * 2) - (barGap * Math.max(0, values.length - 1))) / Math.max(1, values.length));
-
-  if (!values.length) {
-    return <div className="empty-state compact-empty-state">Pas assez de donnees.</div>;
-  }
-
-  return (
-    <svg className="today-form-sparkline" viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`} role="img" aria-label="Charge recente">
-      {values.map((value, index) => {
-        const height = Math.max(2, (value / maxValue) * (SPARK_HEIGHT - SPARK_PADDING * 2));
-        const x = SPARK_PADDING + index * (barWidth + barGap);
-        const y = SPARK_HEIGHT - SPARK_PADDING - height;
-
-        return (
-          <rect
-            key={`${value}-${index}`}
-            x={x}
-            y={y}
-            width={barWidth}
-            height={height}
-            rx="4"
-            className={index === values.length - 1 ? "spark-bar-current" : "spark-bar"}
-          />
-        );
-      })}
-    </svg>
+    <MicroBars
+      series={values}
+      tones={tones}
+      height="md"
+      ariaLabel="Tendance récente"
+    />
   );
 }
 
@@ -176,34 +100,34 @@ function TodayFormCards({ loadModel = {}, trendLoadModel = {} }) {
   return (
     <section className="today-form-grid">
       <FormCard
-        label="Fraicheur"
+        label="Fraîcheur"
         value={formatPoints(freshness, 1)}
         status={freshnessStatus.label}
         tone={freshnessStatus.tone}
-        detail="Plus c'est haut, plus tu as de reserve."
+        detail="Plus c'est haut, plus tu as de réserve."
         info={TRAINING_MVP_KPI_INFO.tsb}
       >
-        <LineSparkline data={chartData.slice(-28)} dataKey="tsb" color="#16a34a" withFreshnessZones />
+        <FormMicroBars data={chartData.slice(-14)} dataKey="tsb" toneFn={freshnessTone} />
       </FormCard>
       <FormCard
         label="Base de fond"
         value={formatPoints(base, 1)}
         status={baseStatus.label}
         tone={baseStatus.tone}
-        detail="Plus c'est haut, plus ton bloc recent est solide."
+        detail="Plus c'est haut, plus ton bloc récent est solide."
         info={TRAINING_MVP_KPI_INFO.ctl}
       >
-        <LineSparkline data={chartData.slice(-28)} dataKey="ctl" color="#355886" />
+        <FormMicroBars data={chartData.slice(-14)} dataKey="ctl" />
       </FormCard>
       <FormCard
-        label="Charge recente"
+        label="Charge récente"
         value={formatPoints(loadValue, todayLoad > 0 ? 1 : 0)}
-        status={todayLoad > 0 ? loadStatus.label : `cumul 7 j - ${loadStatus.label}`}
+        status={todayLoad > 0 ? loadStatus.label : `cumul 7 j — ${loadStatus.label}`}
         tone={loadStatus.tone}
-        detail="Charge des derniers jours, avec le jour courant mis en avant si une sortie est detectee."
+        detail="Charge des derniers jours, avec le jour courant mis en avant si une sortie est détectée."
         info={TRAINING_MVP_KPI_INFO.load}
       >
-        <BarSparkline data={loadSeries} dataKey="load" />
+        <FormMicroBars data={loadSeries} dataKey="load" toneFn={load7dTone} />
       </FormCard>
     </section>
   );

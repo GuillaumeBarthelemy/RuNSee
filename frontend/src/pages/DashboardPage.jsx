@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardDecisionSummaryCard from "../components/DashboardDecisionSummaryCard.jsx";
 import RecentActivitiesCard from "../components/RecentActivitiesCard.jsx";
-import TodayRecoveryCard from "../components/TodayRecoveryCard.jsx";
+import TodayReadinessCard from "../components/TodayReadinessCard.jsx";
 import TodayAlertBanner from "../components/TodayAlertBanner.jsx";
 import TodayFormCards from "../components/TodayFormCards.jsx";
 import TodayHeader from "../components/TodayHeader.jsx";
@@ -368,7 +368,7 @@ export default function DashboardPage() {
 
         {recoverySnapshots.length > 0 ? (
           <div className="section">
-            <TodayRecoveryCard snapshots={recoverySnapshots} />
+            <TodayReadinessCard snapshots={recoverySnapshots} />
           </div>
         ) : null}
 

@@ -187,6 +187,15 @@ export function buildRecoveryViewModel(snapshots) {
     confidenceLabel = "Données insuffisantes";
   }
 
+  // --- Aptitude RuNSee : score composite 0-100 (formule transparente) ----
+  // Cf. GLOSSAIRE.md entrée "trainingReadinessRunsee".
+  // Poids : sommeil 0.30, VFC 0.30, FC repos 0.20, stress 0.10, énergie 0.10.
+  // Sources :
+  //   - Plews et al. (2013), Sports Medicine
+  //   - Buchheit (2014), Front Physiol
+  //   - Le Meur et al. (2013), Med Sci Sports Exerc
+  const readiness = computeRunseeReadiness({ sleep, hrv, restingHr, stress, bodyBattery });
+
   return {
     hasData: true,
     sleep,
@@ -196,5 +205,78 @@ export function buildRecoveryViewModel(snapshots) {
     bodyBattery,
     coverage,
     confidenceLabel,
+    readiness,
   };
+}
+
+/**
+ * Calcul de l'Aptitude RuNSee (0-100) à partir des sous-modèles.
+ *
+ * Chaque composante normalisée dans [0, 1] :
+ *  - sleep : score sommeil / 100
+ *  - hrv : delta VFC vs baseline, mappé linéairement sur [-15 %, +15 %]
+ *  - restingHr : delta inversé, mappé sur [+8 %, -8 %] (lower-is-better)
+ *  - stress : (100 - stress) / 100 (lower-is-better)
+ *  - energyLevel : valeur / 100
+ *
+ * Si une composante n'est pas calculable, son poids est redistribué.
+ *
+ * @returns {{ score: number|null, confidence: "Haute"|"Moyenne"|"Faible" }}
+ */
+function computeRunseeReadiness({ sleep, hrv, restingHr, stress, bodyBattery }) {
+  const components = [
+    { weight: 0.30, value: normalizeSleep(sleep) },
+    { weight: 0.30, value: normalizeHrvDelta(hrv) },
+    { weight: 0.20, value: normalizeRestingHrDelta(restingHr) },
+    { weight: 0.10, value: normalizeStress(stress) },
+    { weight: 0.10, value: normalizeEnergy(bodyBattery) },
+  ];
+
+  const valid = components.filter((c) => c.value != null);
+  if (valid.length === 0) {
+    return { score: null, confidence: "Faible" };
+  }
+
+  const totalWeight = valid.reduce((acc, c) => acc + c.weight, 0);
+  const weightedSum = valid.reduce((acc, c) => acc + c.weight * c.value, 0);
+  const score = Math.round((weightedSum / totalWeight) * 100);
+
+  // Confiance basée sur le poids couvert
+  let confidence;
+  if (totalWeight >= 0.85) confidence = "Haute";
+  else if (totalWeight >= 0.50) confidence = "Moyenne";
+  else confidence = "Faible";
+
+  return { score, confidence };
+}
+
+function normalizeSleep(sleep) {
+  if (!sleep || sleep.recentAvg == null) return null;
+  return clamp(sleep.recentAvg / 100, 0, 1);
+}
+
+function normalizeHrvDelta(hrv) {
+  if (!hrv || hrv.deltaPct == null) {
+    // fallback sur la valeur absolue normalisée si pas de delta dispo
+    return null;
+  }
+  // Mapping linéaire : -15 % → 0, 0 % → 0.5, +15 % → 1
+  return clamp((hrv.deltaPct + 15) / 30, 0, 1);
+}
+
+function normalizeRestingHrDelta(restingHr) {
+  if (!restingHr || restingHr.deltaPct == null) return null;
+  // Inversé : -8 % → 1, 0 → 0.5, +8 % → 0
+  return clamp((-restingHr.deltaPct + 8) / 16, 0, 1);
+}
+
+function normalizeStress(stress) {
+  if (!stress || stress.recentAvg == null) return null;
+  // Inversé : 0 → 1, 100 → 0
+  return clamp((100 - stress.recentAvg) / 100, 0, 1);
+}
+
+function normalizeEnergy(bodyBattery) {
+  if (!bodyBattery || bodyBattery.recentAvg == null) return null;
+  return clamp(bodyBattery.recentAvg / 100, 0, 1);
 }

@@ -35,13 +35,13 @@
 - [x] Tests Vitest (29 tests tonePicker, 89 verts au total)
 - [ ] Migration des composants existants vers ces visuels — fait dans phases F/H
 
-### Phase F — Refonte Dashboard
-- [ ] Création `TodayReadinessCard` (fusion 3 doublons)
-- [ ] Refonte `DashboardDecisionSummaryCard` (verdict descriptif + jauge)
-- [ ] Migration `TodayFormCards` (RangeBar)
-- [ ] Migration `TodayVolumeStrip` (MicroBars)
-- [ ] Suppression `RecoverySnapshotCard`, `TodayRecoveryCard`
-- [ ] Évaluation suppression `TodaySnapshotToday`
+### Phase F — Refonte Dashboard (✅ TERMINÉE)
+- [x] **F1** Création `TodayReadinessCard` (fusion 3 doublons : RecoverySnapshotCard, TodayRecoveryCard, section Recovery du DecisionSummary)
+- [x] **F1** Calcul Aptitude RuNSee composite (formule transparente) ajouté à `recoveryViewModel`
+- [x] **F2** Refonte `DashboardDecisionSummaryCard` : verdict descriptif + chips (max 4) + meta confiance, suppression section Recovery
+- [x] **F3** Migration `TodayFormCards` : MicroBars colorés selon `freshnessTone` / `load7dTone`
+- [x] **F5** Évaluation `TodaySnapshotToday` : conservé (montre activités du jour, distinct de RecentActivitiesCard)
+- [x] Suppression `RecoverySnapshotCard.jsx`, `TodayRecoveryCard.jsx`
 
 ### Phase H — GAP + Decoupling + EPOC
 - [ ] Audit code GAP existant

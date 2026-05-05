@@ -1,5 +1,17 @@
 import InfoTooltip from "./InfoTooltip.jsx";
 
+/**
+ * DashboardDecisionSummaryCard — refonte Phase F2.
+ *
+ * Changements vs version pré-Phase F :
+ * - Plus de section "Récupération Garmin détaillée" : déplacée dans TodayReadinessCard
+ * - Verdict descriptif (au lieu de "Recommandation" prescriptive)
+ * - 3 pills concises (Forme / Fatigue / Charge) au lieu de 4 + section
+ * - Chips de facteurs sous le verdict (max 4)
+ *
+ * Prop `model` inchangée pour rétrocompat avec buildDashboardDecisionSummary.
+ */
+
 function DecisionPill({ label, value, detail, tone = "neutral" }) {
   return (
     <div className={`decision-pill decision-pill-${tone}`.trim()}>
@@ -10,17 +22,29 @@ function DecisionPill({ label, value, detail, tone = "neutral" }) {
   );
 }
 
+function VerdictChip({ label }) {
+  return <span className="verdict-chip">{label}</span>;
+}
+
 export default function DashboardDecisionSummaryCard({
   model = {},
-  title = "Synthese decisionnelle",
-  subtitle = "Lecture rapide de la forme du moment, de la fatigue recente et du sens de charge avant de choisir la suite.",
+  title = "Lecture du jour",
+  subtitle = "Forme, fatigue récente et sens de charge — à lire avant de choisir ta prochaine séance.",
   info = [],
 }) {
   const safeModel = model || {};
   const decisionMeta = safeModel.decisionMeta || {};
   const decisionFactors = Array.isArray(decisionMeta.factors) ? decisionMeta.factors : [];
-  const recovery = safeModel.recovery || {};
-  const hasRecoveryData = recovery.hasData === true;
+
+  // Verdict descriptif : on privilégie l'insight (déjà descriptif) plutôt que
+  // la recommandation prescriptive. Fallback sur recommandation si absent.
+  const verdictText = safeModel.insight
+    || safeModel.recommendation?.label
+    || "Pas assez de données pour produire une lecture du jour.";
+  const verdictTone = safeModel.recommendation?.tone || "neutral";
+
+  // Chips : facteurs synthétiques (max 4)
+  const visibleChips = decisionFactors.slice(0, 4);
 
   return (
     <section className="card dashboard-decision-card">
@@ -28,74 +52,56 @@ export default function DashboardDecisionSummaryCard({
         <div>
           <div className="title-with-info">
             <h2 className="card-title">{title}</h2>
-            <InfoTooltip title={title} content={info} label={`Afficher l'aide pour ${title}`} />
+            <InfoTooltip title={title} content={info} label={`Afficher l'aide pour ${title}`} compact />
           </div>
           <p className="card-subtitle">{subtitle}</p>
           {safeModel.horizonLabel ? <p className="small-text">{safeModel.horizonLabel}</p> : null}
         </div>
-        {safeModel.insight ? (
-          <div className="decision-summary-note">
-            <strong>Lecture</strong>
-            <span>{safeModel.insight}</span>
+      </div>
+
+      {/* Verdict descriptif + chips */}
+      <div className={`dashboard-verdict dashboard-verdict-${verdictTone}`.trim()}>
+        <span className="dashboard-verdict-kicker">Verdict du jour</span>
+        <strong className="dashboard-verdict-text">{verdictText}</strong>
+        {visibleChips.length > 0 ? (
+          <div className="dashboard-verdict-chips">
+            {visibleChips.map((factor, idx) => (
+              <VerdictChip key={`${factor}-${idx}`} label={factor} />
+            ))}
+          </div>
+        ) : null}
+        {decisionMeta.confidence?.label || decisionMeta.limitingFactor ? (
+          <div className="dashboard-verdict-meta">
+            {decisionMeta.confidence?.label ? (
+              <span><strong>Confiance</strong> {decisionMeta.confidence.label}</span>
+            ) : null}
+            {decisionMeta.limitingFactor ? (
+              <span><strong>Point limitant</strong> {decisionMeta.limitingFactor}</span>
+            ) : null}
           </div>
         ) : null}
       </div>
 
+      {/* 3 pills Forme / Fatigue / Charge (sans Recovery, géré par TodayReadinessCard) */}
       <div className="decision-pill-grid">
         <DecisionPill
           label="Forme du moment"
-          value={safeModel.form?.label || "Indeterminee"}
-          detail={safeModel.form?.detail || "Pas assez de donnees"}
+          value={safeModel.form?.label || "Indéterminée"}
+          detail={safeModel.form?.detail || "Pas assez de données"}
           tone={safeModel.form?.tone}
         />
         <DecisionPill
-          label="Fatigue"
-          value={safeModel.fatigue?.label || "Indeterminee"}
-          detail={safeModel.fatigue?.detail || "Pas assez de donnees"}
+          label="Fatigue récente"
+          value={safeModel.fatigue?.label || "Indéterminée"}
+          detail={safeModel.fatigue?.detail || "Pas assez de données"}
           tone={safeModel.fatigue?.tone}
         />
         <DecisionPill
           label="Charge"
-          value={safeModel.charge?.label || "A lire"}
-          detail={safeModel.charge?.detail || "Pas assez de donnees"}
+          value={safeModel.charge?.label || "À lire"}
+          detail={safeModel.charge?.detail || "Pas assez de données"}
           tone={safeModel.charge?.tone}
         />
-        {hasRecoveryData ? (
-          <DecisionPill
-            label="Recuperation"
-            value={recovery.label || "Neutre"}
-            detail={recovery.detail || "Signal Garmin exploitable."}
-            tone={recovery.tone}
-          />
-        ) : null}
-      </div>
-
-      {hasRecoveryData ? (
-        <div className="decision-recovery-detail">
-          <div>
-            <span className="decision-recovery-kicker">Signaux Garmin</span>
-            <strong>{recovery.label || "Lecture recovery"}</strong>
-            <p>{recovery.detail || "Les signaux de recuperation completent la lecture de charge."}</p>
-          </div>
-          <div className="decision-evidence-strip">
-            <span>
-              <strong>Confiance</strong>
-              {decisionMeta.confidence?.label || recovery.confidence?.label || "Standard"}
-            </span>
-            <span>
-              <strong>Point limitant</strong>
-              {decisionMeta.limitingFactor || recovery.limitingFactor || "Aucun signal dominant"}
-            </span>
-            {decisionFactors.slice(0, 3).map((factor) => (
-              <span key={factor}>{factor}</span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <div className={`dashboard-recommendation dashboard-recommendation-${safeModel.recommendation?.tone || "neutral"}`.trim()}>
-        <span className="dashboard-recommendation-label">Recommandation</span>
-        <strong>{safeModel.recommendation?.label || "Laisser davantage de donnees s'accumuler avant de trancher."}</strong>
       </div>
     </section>
   );
