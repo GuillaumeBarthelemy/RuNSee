@@ -48,15 +48,25 @@ function Row({ label, value, hint = null, toneClass = "" }) {
  *
  * Props:
  *   snapshot — ExternalDailyRecoverySnapshot for the activity's date (or null)
+ *   activityEnrichment — modèle Phase K (Option B) avec métriques par activité
+ *     (Training Effect, VO2max séance, Performance Condition...). Optionnel.
  */
-function GarminEnrichmentPanel({ snapshot = null }) {
-  if (!snapshot) {
+function GarminEnrichmentPanel({ snapshot = null, activityEnrichment = null }) {
+  if (!snapshot && !activityEnrichment) {
     return (
       <section className="garmin-enrichment-panel garmin-enrichment-panel--empty">
         <p className="muted">
-          Aucune donnée Garmin disponible pour cette date. Lance un sync récent depuis la page Admin
-          pour mettre à jour les 4 derniers jours.
+          Aucune donnée Garmin disponible pour cette date. Lance un sync récent depuis la page
+          Réglages pour mettre à jour les 4 derniers jours.
         </p>
+      </section>
+    );
+  }
+
+  if (!snapshot) {
+    return (
+      <section className="garmin-enrichment-panel">
+        <ActivityEnrichmentBlock enrichment={activityEnrichment} />
       </section>
     );
   }
@@ -117,7 +127,7 @@ function GarminEnrichmentPanel({ snapshot = null }) {
         <div className="garmin-enrichment-group">
           <h3 className="subcard-title">Aptitude à l'entraînement</h3>
           <Row
-            label="Readiness"
+            label="Aptitude (Garmin)"
             value={formatScore(snapshot.trainingReadinessScore)}
             hint={
               snapshot.trainingReadinessStatus
@@ -128,7 +138,75 @@ function GarminEnrichmentPanel({ snapshot = null }) {
           />
         </div>
       ) : null}
+
+      <ActivityEnrichmentBlock enrichment={activityEnrichment} />
     </section>
+  );
+}
+
+/**
+ * Bloc affichant les métriques Garmin par activité (Phase K — Option B).
+ * Affiche uniquement les métriques disponibles.
+ */
+function ActivityEnrichmentBlock({ enrichment }) {
+  if (!enrichment) return null;
+
+  const { aerobicTrainingEffect, anaerobicTrainingEffect, vo2max, performanceCondition, recoveryHeartRate, epoc } = enrichment;
+
+  // Si aucune métrique exploitable, ne pas afficher le bloc
+  const hasAny = aerobicTrainingEffect?.value
+    || anaerobicTrainingEffect?.value
+    || vo2max
+    || performanceCondition?.value != null
+    || recoveryHeartRate
+    || epoc;
+  if (!hasAny) return null;
+
+  return (
+    <div className="garmin-enrichment-group garmin-enrichment-activity-group">
+      <h3 className="subcard-title">Métriques de la séance</h3>
+
+      {aerobicTrainingEffect?.classification ? (
+        <Row
+          label="Effet aérobie"
+          value={`${aerobicTrainingEffect.value.toFixed(1)} / 5`}
+          hint={aerobicTrainingEffect.classification.label}
+          toneClass={`tone-${aerobicTrainingEffect.classification.tone}`}
+        />
+      ) : null}
+
+      {anaerobicTrainingEffect?.classification && anaerobicTrainingEffect.value > 0 ? (
+        <Row
+          label="Effet anaérobie"
+          value={`${anaerobicTrainingEffect.value.toFixed(1)} / 5`}
+          hint={anaerobicTrainingEffect.classification.label}
+          toneClass={`tone-${anaerobicTrainingEffect.classification.tone}`}
+        />
+      ) : null}
+
+      {vo2max ? (
+        <Row
+          label="VO2max séance"
+          value={`${vo2max.toFixed(1)} mL/kg/min`}
+        />
+      ) : null}
+
+      {performanceCondition?.classification ? (
+        <Row
+          label="Forme du jour"
+          value={performanceCondition.classification.valueLabel}
+          hint={performanceCondition.classification.label}
+          toneClass={`tone-${performanceCondition.classification.tone}`}
+        />
+      ) : null}
+
+      {recoveryHeartRate ? (
+        <Row
+          label="FC à la récup (-1 min)"
+          value={`-${recoveryHeartRate} bpm`}
+        />
+      ) : null}
+    </div>
   );
 }
 

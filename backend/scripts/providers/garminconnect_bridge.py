@@ -417,6 +417,152 @@ def fetch_recovery_days(request: dict) -> dict:
         }
 
 
+def fetch_activities(request: dict) -> dict:
+    """Récupère les activités Garmin sur une plage de dates avec leurs
+    métriques natives (Training Effect aérobie/anaérobie, VO2max séance,
+    Performance Condition, Recovery Time).
+
+    Phase K — Option B : enrichissement des activités Strava avec les données
+    Garmin. Le matching avec les activités Strava se fait côté Node par
+    timestamp (fenêtre ± 10 min).
+
+    Request payload :
+      - session : tokens Garmin sérialisés (comme fetch_recovery_days)
+      - startDate : "YYYY-MM-DD" (inclus)
+      - endDate : "YYYY-MM-DD" (inclus)
+
+    Response :
+      - status : "success" | "error" | "expired" | "rate_limited"
+      - activities : liste de { activityId, startTimeLocal, activityName,
+        activityType, distance, duration, aerobicTrainingEffect,
+        anaerobicTrainingEffect, vO2MaxValue, performanceCondition,
+        recoveryHeartRate, recoveryTime, ... }
+    """
+    try:
+        from garminconnect import (  # pylint: disable=import-outside-toplevel
+            Garmin,
+            GarminConnectAuthenticationError,
+            GarminConnectConnectionError,
+            GarminConnectTooManyRequestsError,
+        )
+        from garth.exc import GarthException, GarthHTTPError  # pylint: disable=import-outside-toplevel
+    except Exception as exc:  # pragma: no cover
+        return build_error(
+            "GARMINCONNECT_DEPENDENCY_MISSING",
+            f"La librairie garminconnect n'est pas disponible: {exc}",
+        )
+
+    start_date = str(request.get("startDate") or "").strip()
+    end_date = str(request.get("endDate") or "").strip()
+
+    if not start_date or not end_date:
+        return build_error(
+            "GARMINCONNECT_DATES_REQUIRED",
+            "startDate et endDate (YYYY-MM-DD) sont requis.",
+        )
+
+    with tempfile.TemporaryDirectory(prefix="runsee-garmin-act-") as tokenstore:
+        tokenstore_path = Path(tokenstore)
+
+        try:
+            restore_tokenstore_files(request.get("session"), tokenstore_path)
+            api = Garmin()
+            api.login(tokenstore=str(tokenstore_path))
+        except (ValueError, GarminConnectAuthenticationError):
+            return build_error(
+                "GARMINCONNECT_SESSION_EXPIRED",
+                "La session Garmin n'est plus valide. Reconnecte Garmin.",
+            )
+        except (GarminConnectConnectionError, GarthHTTPError, GarthException) as exc:
+            if is_rate_limit_exception(exc):
+                return build_error(
+                    "GARMINCONNECT_RATE_LIMITED",
+                    "Garmin limite temporairement la recuperation. Reessaie plus tard.",
+                    retryable=True,
+                )
+            return build_garth_error(exc)
+        except Exception:
+            return build_error(
+                "GARMINCONNECT_SESSION_RESTORE_FAILED",
+                "La session Garmin stockee ne peut pas etre rechargee.",
+                retryable=True,
+            )
+
+        try:
+            raw_activities = api.get_activities_by_date(start_date, end_date)
+        except GarminConnectTooManyRequestsError:
+            return {
+                "status": "rate_limited",
+                "code": "GARMINCONNECT_RATE_LIMITED",
+                "message": "Garmin limite temporairement la recuperation.",
+                "retryable": True,
+                "activities": [],
+            }
+        except (GarminConnectAuthenticationError, GarthHTTPError) as exc:
+            status_code = get_http_status_from_exception(exc)
+            if status_code in (401, 403):
+                return {
+                    "status": "expired",
+                    "code": "GARMINCONNECT_SESSION_EXPIRED",
+                    "message": "Session Garmin expiree.",
+                    "activities": [],
+                }
+            return build_garth_error(exc)
+        except Exception as exc:  # pylint: disable=broad-except
+            return build_error("GARMINCONNECT_ACTIVITIES_ERROR", sanitize_message(exc))
+
+        # Filtrer les champs intéressants pour limiter le payload renvoyé.
+        # On garde les clés natives Garmin pour traçabilité ; le mapping FR
+        # canonique se fait côté frontend (activityEnrichment.types.js).
+        kept_keys = (
+            "activityId",
+            "activityName",
+            "activityType",
+            "startTimeLocal",
+            "startTimeGMT",
+            "distance",
+            "duration",
+            "elapsedDuration",
+            "movingDuration",
+            "elevationGain",
+            "averageHR",
+            "maxHR",
+            "averageRunCadence",
+            "vO2MaxValue",
+            "aerobicTrainingEffect",
+            "aerobicTrainingEffectMessage",
+            "anaerobicTrainingEffect",
+            "anaerobicTrainingEffectMessage",
+            "trainingEffectLabel",
+            "performanceCondition",
+            "recoveryHeartRate",
+            "minActivityLapDuration",
+            "averagePower",
+            "maxPower",
+            "trainingLoad",
+            "trainingStressScore",
+            "intensityFactor",
+            "epoc",
+            "anaerobicTrainingEffectScore",
+            "aerobicTrainingEffectScore",
+            "lactateThresholdBpm",
+            "lactateThresholdSpeed",
+        )
+
+        activities = []
+        for raw in raw_activities or []:
+            if not isinstance(raw, dict):
+                continue
+            kept = {key: raw.get(key) for key in kept_keys if key in raw}
+            activities.append(kept)
+
+        return {
+            "status": "success",
+            "activities": activities,
+            "count": len(activities),
+        }
+
+
 def login_with_tokens(request: dict) -> dict:
     try:
         from garminconnect import (  # pylint: disable=import-outside-toplevel
@@ -587,6 +733,10 @@ def main() -> None:
 
     if operation == "fetch_recovery_days":
         write_response(fetch_recovery_days(request))
+        return
+
+    if operation == "fetch_activities":
+        write_response(fetch_activities(request))
         return
 
     write_response(build_error("GARMINCONNECT_UNSUPPORTED_OPERATION", "Operation non supportee."))

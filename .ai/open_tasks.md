@@ -62,11 +62,16 @@
 - [x] Tabs scrollables horizontalement sur mobile (overflow-x: auto)
 - [x] ARIA roles (tab, tabpanel, aria-selected, aria-controls)
 
-### Phase K — Extension Garmin activités (Option B)
-- [ ] Bridge Python : `get_activities` + matching timestamp ± 10 min
-- [ ] Backend : table `ExternalActivityEnrichment` ou colonnes JSON sur `Activity`
-- [ ] Service jointure Strava ↔ Garmin
-- [ ] UI : enrichir `GarminEnrichmentPanel` avec Training Effect, VO2max séance, Performance Condition, Recovery Time
+### Phase K — Extension Garmin activités (Option B) — Frontend ready, backend service à wirer
+- [x] Bridge Python : opération `fetch_activities(startDate, endDate)` qui appelle `get_activities_by_date`
+- [x] Filtrage des champs natifs Garmin (Training Effect, VO2max, Performance Condition, Recovery Time, EPOC, etc.)
+- [x] Helper `activityEnrichment.js` avec classifyTrainingEffect, classifyPerformanceCondition, formatRecoveryTime, buildActivityEnrichmentModel, matchActivityByTimestamp
+- [x] Tests Vitest (14 nouveaux, 135 verts au total)
+- [x] `GarminEnrichmentPanel` étendu avec bloc "Métriques de la séance" affiché conditionnellement
+- [ ] **À WIRER** : backend service `garminActivityEnrichment.service.js` qui appelle le bridge + stocke les raw data
+- [ ] **À WIRER** : endpoint backend `POST /providers/garmin/activities/enrich` (sync manuelle)
+- [ ] **À WIRER** : récupération côté frontend dans `ActivityDetailPage` (passage de la prop `activityEnrichment` à `GarminEnrichmentPanel`)
+- [ ] Test d'intégration sur la VM avec un compte Garmin réel
 
 ## Validations utilisateur attendues
 
