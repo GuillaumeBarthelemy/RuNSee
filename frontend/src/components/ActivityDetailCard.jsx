@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import ActivityDetailTabs from "./ActivityDetailTabs.jsx";
 import ActivityHeaderKpis from "./ActivityHeaderKpis.jsx";
+import ActivityIntensityCard from "./ActivityIntensityCard.jsx";
 import ActivityPerformanceStrip from "./ActivityPerformanceStrip.jsx";
 import { getDisplaySportLabel } from "../utils/activityAggregations.js";
 import { buildActivityTrainingInsights } from "../utils/trainingMetrics.js";
@@ -79,6 +80,12 @@ export default function ActivityDetailCard({
         activity={safeActivity}
         trainingInsights={trainingInsights}
         trainingAnalyticsSettings={trainingAnalyticsSettings}
+      />
+
+      <ActivityIntensityCard
+        activity={safeActivity}
+        detailedPayload={detailedPayload}
+        garminSnapshot={garminSnapshot}
       />
 
       {!hasDetailedPayload ? (

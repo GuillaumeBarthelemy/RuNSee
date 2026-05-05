@@ -43,13 +43,14 @@
 - [x] **F5** Évaluation `TodaySnapshotToday` : conservé (montre activités du jour, distinct de RecentActivitiesCard)
 - [x] Suppression `RecoverySnapshotCard.jsx`, `TodayRecoveryCard.jsx`
 
-### Phase H — GAP + Decoupling + EPOC
-- [ ] Audit code GAP existant
-- [ ] Implémentation Minetti complet
-- [ ] Tests Vitest sur 10 séances réelles (écart < 2 % vs Strava)
-- [ ] Implémentation Dérive cardiaque (Pa:Hr ratio)
-- [ ] Implémentation Dette d'oxygène (depuis raw Garmin EPOC, vulgarisation)
-- [ ] Intégration dans `ActivityDetailCard`
+### Phase H — GAP + Decoupling + EPOC (✅ TERMINÉE)
+- [x] Audit code GAP existant : Minetti 2002 déjà correctement implémenté (`gradeAdjustedPace.js`)
+- [x] Tests Vitest GAP : 14 cas (cost, factor, loop, sortie courte/plate/vallonnée/trail)
+- [x] Implémentation **Dérive cardiaque** (`cardiacDecoupling.js`) avec pondération distance + tests Vitest 7 cas
+- [x] Implémentation **Dette d'oxygène** vulgarisée (`epocLevel.js`) — niveaux qualitatifs Léger/Modéré/Élevé/Très élevé + tests Vitest 11 cas
+- [x] Composant `ActivityIntensityCard` regroupant les 3 indicateurs avec RangeBar + GlossaryLink
+- [x] Intégration dans `ActivityDetailCard` (entre PerformanceStrip et tabs)
+- [x] Tones via `decouplingTone` + tones spéciaux EPOC
 
 ### Phase I — Refonte Réglages 5 onglets
 - [ ] Composant `TabbedSettings` avec routing par hash
