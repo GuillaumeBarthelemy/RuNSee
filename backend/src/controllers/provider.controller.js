@@ -6,6 +6,7 @@ import {
   getGarminSyncMetrics,
   purgeGarminDataForUser,
 } from "../services/providers/garminProvider.service.js";
+import { enrichGarminActivitiesForUser } from "../services/providers/garminActivityEnrichment.service.js";
 import {
   listGarminRecoverySnapshotsForUser,
   renormalizeGarminRecoverySnapshotsForUser,
@@ -61,6 +62,17 @@ export async function getGarminSyncMetricsController(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
     const result = await getGarminSyncMetrics(user.id);
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function enrichGarminActivitiesController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await enrichGarminActivitiesForUser(user.id, req.body || {});
 
     return res.json(result);
   } catch (error) {

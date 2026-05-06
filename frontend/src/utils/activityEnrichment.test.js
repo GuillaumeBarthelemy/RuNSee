@@ -85,6 +85,24 @@ describe("buildActivityEnrichmentModel", () => {
     expect(result.performanceCondition.classification.label).toBe("Bonne forme");
     expect(result.epoc).toBe(95);
   });
+
+  it("conserve les valeurs nulles ou negatives utiles", () => {
+    const result = buildActivityEnrichmentModel({
+      activityId: 12345,
+      aerobicTrainingEffect: 0,
+      anaerobicTrainingEffect: 0,
+      performanceCondition: -4,
+      recoveryTime: 36,
+      epoc: 0,
+    });
+
+    expect(result).not.toBeNull();
+    expect(result.aerobicTrainingEffect.value).toBe(0);
+    expect(result.anaerobicTrainingEffect.value).toBe(0);
+    expect(result.performanceCondition.classification.label).toContain("limit");
+    expect(result.recoveryTime).toBe(36);
+    expect(result.epoc).toBe(0);
+  });
 });
 
 describe("matchActivityByTimestamp", () => {

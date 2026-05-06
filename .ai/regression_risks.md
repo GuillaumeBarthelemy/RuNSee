@@ -1,47 +1,48 @@
 # Regression Risks
 
-## Élevé
+## Eleve
 
-### Migration SQLite → PostgreSQL
-- **Zone** : `prisma-postgresql/schema.prisma`, `scripts/db/`, `deployment/postgresql/`
-- **Risque** : données de production encore sur SQLite. Toute modification du schéma SQLite sans répercussion sur le schéma PG crée une divergence. Les scripts d'import (`import-postgresql-dump.js`) ne sont pas idempotents par défaut.
-- **Garde-fou** : comparer les deux schémas avant chaque `prisma migrate dev`. Tester l'import sur la stack dev PG avant tout cutover.
+### Migration SQLite vers PostgreSQL
 
-### Garmin bridge subprocess
-- **Zone** : `garminconnectBridge.service.js`, `garminProvider.service.js`, `garminconnect_bridge.py`
-- **Risque** : le bridge Python est appelé en subprocess depuis Node. Une erreur de parsing de la sortie JSON, un timeout ou un changement d'API Garmin plante silencieusement le sync sans alerte visible.
-- **Garde-fou** : vérifier que `garminProvider.service.js` gère les cas `stderr`, `exit code != 0` et timeout. Aucun test automatisé couvre ce chemin.
+- Zone : `backend/scripts/db/*`, `backend/prisma/schema.prisma`, `backend/prisma-postgresql/schema.prisma`.
+- Risque : perte ou duplication de donnees si l'import est lance sur une base non vide sans intention explicite.
+- Garde-fous presents : `import-postgresql-dump.js` refuse maintenant l'import sans `--truncate` ou `--allow-append`; `--dry-run` permet de verifier le dump sans base cible.
+- Validation requise : backup PostgreSQL avant tout import reel, puis comparaison des compteurs par table.
+
+### Donnees locales et secrets
+
+- Zone : ignore files + Git index.
+- Risque : `dev.db`, `.env` ou logs runtime commites par erreur.
+- Garde-fous presents : patterns ignores ajoutes ; artefacts deja suivis retires de l'index.
+- Validation requise : verifier `git status --short` avant commit.
 
 ## Moyen
 
-### Auth middleware
-- **Zone** : `backend/src/middleware/auth.middleware.js`
-- **Risque** : partagé par toutes les routes protégées. Une régression (token lookup, expiry check, revocation) déconnecte tous les utilisateurs ou ouvre une faille.
-- **Garde-fou** : ne pas modifier sans test manuel de login/logout/session expirée.
+### Garmin activites non officiel
 
-### Garmin backfill étendu
-- **Zone** : `garminRecoveryBackfill.service.js` (+47 lignes récentes)
-- **Risque** : la logique de déduplication repose sur `@@unique` Prisma (upsert). Une mauvaise construction de la clé composite (`appUserId + sourceProvider + snapshotDate`) peut créer des doublons ou écraser des données valides.
-- **Garde-fou** : vérifier que `snapshotDate` est normalisée (UTC minuit ou date locale cohérente) avant upsert.
+- Zone : `garminconnect_bridge.py`, `garminconnectBridge.service.js`, `garminActivityEnrichment.service.js`.
+- Risque : API Garmin non officielle instable, 429, session expiree, payloads partiels.
+- Garde-fous presents : fenetre courte, max 180 jours, pas de backfill massif depuis la fiche, erreurs 429/expired propagees, brut stocke separement.
+- Validation requise : test manuel avec compte Garmin reel et activite connue.
 
-### Calculs analytique frontend
-- **Zone** : `frontend/src/utils/` (~18 modules)
-- **Risque** : aucun test sauf `performanceNarratives.test.js`. Les bugs dans `loadDynamics`, `trainingIntelligence`, `raceObjectivePlanner` sont silencieux et affectent les affichages Dashboard/Analytics/Performance.
-- **Garde-fou** : toute modification d'un util analytique doit être vérifiée visuellement sur un jeu de données réel.
+### Matching Strava/Garmin
 
-### ExternalProviderConnection status machine
-- **Zone** : `externalProviderConnection.service.js`, `provider.controller.js`
-- **Risque** : les champs `status`, `lastErrorCode`, `lastErrorAt` pilotent l'affichage de l'état de connexion Garmin en frontend. Un statut bloqué en `"error"` après un test peut persister si le reset n'est pas explicite.
-- **Garde-fou** : vérifier que les flux de reconnexion et de déconnexion remettent bien `status` à la bonne valeur.
+- Zone : `garminActivityEnrichment.service.js`.
+- Risque : associer une mauvaise activite si deux sorties proches existent.
+- Garde-fous presents : fenetre ±10 min, controle distance/duree/sport, score, statut `ambiguous` non applique automatiquement.
+- Validation requise : verifier un cas avec doublon de seance proche.
 
-### Re-normalisation des snapshots Garmin
-- **Zone** : `renormalizeGarminRecoverySnapshotsForUser` → upsert `ExternalDailyRecoverySnapshot`
-- **Risque** : la renormalisation recalcule `dataQuality` à partir des raw data. Des snapshots précédemment marqués `complete` (avec des zéros qui gonflaient `signalCount`) peuvent passer à `partial` ou `absent`. C'est le comportement attendu mais peut surprendre si on surveille `qualityCounts`.
-- **Garde-fou** : comparer `qualityCounts` avant/après via `GET /provider/garmin/recovery/snapshots`. Une dégradation est normale et honnête — ne pas revenir en arrière.
+### Fiche detail activite
+
+- Zone : `ActivityDetailPage.jsx`, `ActivityDetailCard.jsx`, `ActivityDetailTabs.jsx`, `GarminEnrichmentPanel.jsx`.
+- Risque : onglet Garmin vide ou crash si snapshot recovery absent mais enrichissement activite present.
+- Garde-fous presents : props par defaut, etat vide, action ciblee, mapping tolerant.
+- Validation requise : ouvrir une activite avec et sans snapshot Garmin.
 
 ## Faible
 
-### Doublon activityAggregation(s).js
-- **Zone** : `frontend/src/utils/activityAggregation.js` et `activityAggregations.js`
-- **Risque** : si les deux fichiers coexistent avec des implémentations divergentes, les imports incorrects passent silencieusement.
-- **Garde-fou** : clarifier lequel est actif avant de modifier l'un des deux.
+### Mapping Garmin frontend
+
+- Zone : `frontend/src/utils/activityEnrichment.js`.
+- Risque : valeurs nulles, zero ou negatives masquees a tort.
+- Garde-fous presents : tests Vitest edge cases pour `performanceCondition`, TE a 0, recovery time, EPOC.

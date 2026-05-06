@@ -1,91 +1,28 @@
 # Open Tasks
 
-## En cours / prioritaire (séance 2026-05-05)
+## Termines dans la derniere passe
 
-### Phase E — Audit UX (✅ documents produits)
-- [x] `docs/UX_AUDIT.md` — inventaire 72 composants
-- [x] `docs/GLOSSAIRE.md` — 26 entrées canoniques avec refs scientifiques
-- [x] `docs/UX_CHARTE.md` — palette + typo + composants visuels + breakpoints
+- [x] Securiser les ignore files et retirer de l'index les artefacts locaux/secrets/logs.
+- [x] Appliquer les migrations SQLite locales et regenerer Prisma.
+- [x] Completer `backend/scripts/db/tableDefinitions.js` pour toutes les tables actuelles.
+- [x] Durcir `import-postgresql-dump.js` : dry-run, garde-fou truncate/append, comparaison de comptage.
+- [x] Etendre `report-database-snapshot.js` aux tables Garmin/settings et indicateurs d'integrite.
+- [x] Ajouter le service backend Garmin activites ciblees.
+- [x] Ajouter `POST /providers/garmin/activities/enrich`.
+- [x] Exposer l'enrichissement Garmin dans le detail activite.
+- [x] Ajouter l'action frontend de completion Garmin sur la fiche activite.
+- [x] Ajouter tests edge cases Garmin `activityEnrichment`.
 
-### Phase J — Vocabulaire et glossaire (✅ TERMINÉE)
-- [x] Mode `compact` pour `InfoTooltip` (≤ 80 caractères, slice 1 item)
-- [x] Composant `GlossaryLink` (lien vers entrée glossaire)
-- [x] Page `/glossaire` avec recherche, catégories, ancres URL
-- [x] Lien vers /glossaire dans Topbar et Sidebar
-- [x] Extension `glossary.js` : 26 entrées (était 14) avec `findGlossaryEntry` helper
-- [x] Renommage labels HRV → VFC dans 7 composants
-- [x] Renommage labels Body Battery → Énergie dans 7 composants
-- [x] Renommage copy `trainingMvpCopy.js` (HRV→VFC, Body Battery→Énergie)
-- [x] Suppression `GlossaryModal` (remplacé par page `/glossaire`)
-- [x] Suppression event `runsee:open-glossary` (non utilisé)
-- [x] Tests Vitest `glossary.test.js` (12 tests, 60 verts au total)
-- [x] InfoTooltip navigue vers `/glossaire#key` au lieu d'ouvrir le modal
+## A faire / validation manuelle
 
-## À faire après Phase J
+- [ ] Tester l'enrichissement Garmin sur une activite reelle apres connexion Garmin.
+- [ ] Verifier que `ActivityProviderEnrichment.status` vaut `matched_exact` ou `matched_tolerated` quand le matching est fiable.
+- [ ] Verifier qu'un cas ambigu ne cree pas d'association automatique.
+- [ ] Verifier que les metriques affichees dans l'onglet Garmin correspondent au payload Garmin reel.
+- [ ] Appliquer/valider l'import PostgreSQL sur une base cible de preprod ou prod uniquement avec backup et option explicite (`--truncate` ou `--allow-append`).
+- [ ] Pousser le commit et surveiller la CI/CD GitHub Actions vers la VM.
 
-### Phase G — Composants visuels (✅ TERMINÉE)
-- [x] CSS variables `--tone-1` à `--tone-5` + backgrounds 12% opacity
-- [x] `MetricGauge` (demi-cercle SVG 0-100, sm/md, fallback null)
-- [x] `RangeBar` (barre horizontale + zones colorées + marqueur)
-- [x] `MicroBars` (barres verticales colorées par tone, gestion null)
-- [x] `TrendChip` (pill delta avec flèche directionnelle)
-- [x] `BandPositioner` (bandes empilées avec curseur)
-- [x] Helper `tonePicker.js` avec 9 mappers spécialisés (sleep, vfc, hr, readiness, freshness, load, stress, decoupling, energy)
-- [x] Page `/visuals-preview` pour validation visuelle
-- [x] Tests Vitest (29 tests tonePicker, 89 verts au total)
-- [ ] Migration des composants existants vers ces visuels — fait dans phases F/H
+## Dette hors scope
 
-### Phase F — Refonte Dashboard (✅ TERMINÉE)
-- [x] **F1** Création `TodayReadinessCard` (fusion 3 doublons : RecoverySnapshotCard, TodayRecoveryCard, section Recovery du DecisionSummary)
-- [x] **F1** Calcul Aptitude RuNSee composite (formule transparente) ajouté à `recoveryViewModel`
-- [x] **F2** Refonte `DashboardDecisionSummaryCard` : verdict descriptif + chips (max 4) + meta confiance, suppression section Recovery
-- [x] **F3** Migration `TodayFormCards` : MicroBars colorés selon `freshnessTone` / `load7dTone`
-- [x] **F5** Évaluation `TodaySnapshotToday` : conservé (montre activités du jour, distinct de RecentActivitiesCard)
-- [x] Suppression `RecoverySnapshotCard.jsx`, `TodayRecoveryCard.jsx`
-
-### Phase H — GAP + Decoupling + EPOC (✅ TERMINÉE)
-- [x] Audit code GAP existant : Minetti 2002 déjà correctement implémenté (`gradeAdjustedPace.js`)
-- [x] Tests Vitest GAP : 14 cas (cost, factor, loop, sortie courte/plate/vallonnée/trail)
-- [x] Implémentation **Dérive cardiaque** (`cardiacDecoupling.js`) avec pondération distance + tests Vitest 7 cas
-- [x] Implémentation **Dette d'oxygène** vulgarisée (`epocLevel.js`) — niveaux qualitatifs Léger/Modéré/Élevé/Très élevé + tests Vitest 11 cas
-- [x] Composant `ActivityIntensityCard` regroupant les 3 indicateurs avec RangeBar + GlossaryLink
-- [x] Intégration dans `ActivityDetailCard` (entre PerformanceStrip et tabs)
-- [x] Tones via `decouplingTone` + tones spéciaux EPOC
-
-### Phase I — Refonte Réglages 5 onglets (✅ TERMINÉE)
-- [x] Composant `TabbedSettings` avec routing par hash (URL partageables `/admin#compte`, `#connexions`...)
-- [x] Pas de state local — onglet dérivé directement du hash URL (back/forward natif)
-- [x] 5 onglets : Compte / Connexions / Entraînement / Données / À propos
-- [x] Onglet "À propos" : page dédiée avec sources scientifiques + lien glossaire + crédits Strava/Garmin
-- [x] Onglet "Données" : SyncActions + SyncSummary regroupés
-- [x] Onglet "Connexions" : GarminExperimentalCard + Strava regroupés
-- [x] Tabs scrollables horizontalement sur mobile (overflow-x: auto)
-- [x] ARIA roles (tab, tabpanel, aria-selected, aria-controls)
-
-### Phase K — Extension Garmin activités (Option B) — Frontend ready, backend service à wirer
-- [x] Bridge Python : opération `fetch_activities(startDate, endDate)` qui appelle `get_activities_by_date`
-- [x] Filtrage des champs natifs Garmin (Training Effect, VO2max, Performance Condition, Recovery Time, EPOC, etc.)
-- [x] Helper `activityEnrichment.js` avec classifyTrainingEffect, classifyPerformanceCondition, formatRecoveryTime, buildActivityEnrichmentModel, matchActivityByTimestamp
-- [x] Tests Vitest (14 nouveaux, 135 verts au total)
-- [x] `GarminEnrichmentPanel` étendu avec bloc "Métriques de la séance" affiché conditionnellement
-- [ ] **À WIRER** : backend service `garminActivityEnrichment.service.js` qui appelle le bridge + stocke les raw data
-- [ ] **À WIRER** : endpoint backend `POST /providers/garmin/activities/enrich` (sync manuelle)
-- [ ] **À WIRER** : récupération côté frontend dans `ActivityDetailPage` (passage de la prop `activityEnrichment` à `GarminEnrichmentPanel`)
-- [ ] Test d'intégration sur la VM avec un compte Garmin réel
-
-## Validations utilisateur attendues
-
-- [ ] Validation Phase E : suppressions confirmées (RecoverySnapshotCard, TodayRecoveryCard, GlossaryModal, AdminSectionHeader)
-- [ ] Validation mapping vocabulaire Phase J (table de UX_AUDIT.md section 9)
-- [ ] Validation captures Phase G avant intégration Phase F
-
-## Backlog (post-refonte)
-
-- [ ] Tests automatisés services Garmin backend (zéro couverture actuellement)
-- [ ] Confirmer FC repos + Body Battery après prochain renormalize
-- [ ] Dark mode complet (palette tones préparée mais activation non priorisée)
-
-## Bugs / risques connus
-
-- [ ] Sync activités Garmin (Phase K) — non implémentée actuellement
-- [ ] Renormalize Garmin doit être re-déclenché après chaque correctif extracteur
+- [ ] Backend sans configuration ESLint compatible ESLint 10 : les controles actuels reposent sur `node --check` et Prisma.
+- [ ] Tests automatises backend providers a creer plus tard si une strategie test backend est ajoutee.

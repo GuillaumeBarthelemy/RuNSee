@@ -77,10 +77,11 @@ export function buildActivityEnrichmentModel(rawGarminActivity) {
   const vo2max = toNumber(rawGarminActivity.vO2MaxValue);
   const performanceCondition = toNumber(rawGarminActivity.performanceCondition);
   const recoveryHr = toNumber(rawGarminActivity.recoveryHeartRate);
+  const recoveryTime = toNumber(rawGarminActivity.recoveryTime);
   const epoc = toNumber(rawGarminActivity.epoc);
 
-  const hasAnyMetric = [aerobicTE, anaerobicTE, vo2max, performanceCondition, recoveryHr, epoc]
-    .some((v) => v != null && v > 0);
+  const hasAnyMetric = [aerobicTE, anaerobicTE, vo2max, performanceCondition, recoveryHr, recoveryTime, epoc]
+    .some((v) => v != null);
 
   if (!hasAnyMetric) return null;
 
@@ -102,6 +103,7 @@ export function buildActivityEnrichmentModel(rawGarminActivity) {
       classification: classifyPerformanceCondition(performanceCondition),
     },
     recoveryHeartRate: recoveryHr,
+    recoveryTime,
     epoc,
   };
 }

@@ -4,7 +4,10 @@ import ActivityDetailCard from "../components/ActivityDetailCard.jsx";
 import useRunSeeData from "../hooks/useRunSeeData.js";
 import AppShell from "../layouts/AppShell.jsx";
 import { enrichActivity, getActivityById } from "../services/activity.service.js";
-import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
+import {
+  enrichGarminActivities,
+  getGarminRecoverySnapshots,
+} from "../services/externalProvider.service.js";
 import { getRecoveryContextForActivity } from "../utils/crossDataAnalytics.js";
 
 function extractErrorMessage(error, fallback) {
@@ -60,6 +63,8 @@ export default function ActivityDetailPage() {
   const [isEnriching, setIsEnriching] = useState(false);
   const [garminSnapshot, setGarminSnapshot] = useState(null);
   const [garminRecoveryContext, setGarminRecoveryContext] = useState(null);
+  const [isGarminEnriching, setIsGarminEnriching] = useState(false);
+  const [garminEnrichmentMessage, setGarminEnrichmentMessage] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -109,6 +114,32 @@ export default function ActivityDetailPage() {
     }
   }, [stravaActivityId]);
 
+  const handleGarminActivityEnrich = useCallback(async () => {
+    if (!stravaActivityId) {
+      return;
+    }
+
+    try {
+      setIsGarminEnriching(true);
+      setError("");
+      setGarminEnrichmentMessage("");
+      const result = await enrichGarminActivities({ stravaActivityId });
+      await loadActivity();
+
+      if (result?.enrichmentUpsertedCount > 0) {
+        setGarminEnrichmentMessage("Metriques Garmin de seance ajoutees.");
+      } else if (result?.ambiguousCount > 0) {
+        setGarminEnrichmentMessage("Garmin a trouve plusieurs seances proches : aucun matching automatique applique.");
+      } else {
+        setGarminEnrichmentMessage("Aucune seance Garmin exploitable n'a ete matchee sur cette activite.");
+      }
+    } catch (err) {
+      setError(extractErrorMessage(err, "Erreur lors de l'enrichissement Garmin de l'activite."));
+    } finally {
+      setIsGarminEnriching(false);
+    }
+  }, [loadActivity, stravaActivityId]);
+
   useEffect(() => {
     loadActivity();
   }, [loadActivity]);
@@ -157,6 +188,7 @@ export default function ActivityDetailPage() {
       {loading ? <div className="card">Chargement de l'activite...</div> : null}
       {!loading && error ? <div className="alert alert-error section">{error}</div> : null}
       {!loading && successMessage ? <div className="alert alert-success section">{successMessage}</div> : null}
+      {!loading && garminEnrichmentMessage ? <div className="alert alert-info section">{garminEnrichmentMessage}</div> : null}
       {!loading && activity ? (
         <ActivityDetailCard
           activity={activity}
@@ -166,6 +198,9 @@ export default function ActivityDetailPage() {
           onActivityUpdated={setActivity}
           garminSnapshot={garminSnapshot}
           garminRecoveryContext={garminRecoveryContext}
+          garminActivityEnrichment={activity.garminActivityEnrichment}
+          onGarminActivityEnrich={handleGarminActivityEnrich}
+          isGarminActivityEnriching={isGarminEnriching}
         />
       ) : null}
       {!loading && !activity && !error ? (

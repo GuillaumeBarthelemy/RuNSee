@@ -42,6 +42,9 @@ function ActivityDetailTabs({
   onActivityUpdated = noop,
   garminSnapshot = null,
   garminRecoveryContext = null,
+  garminActivityEnrichment = null,
+  onGarminActivityEnrich = noop,
+  isGarminActivityEnriching = false,
 }) {
   const [activeTab, setActiveTab] = useState(getStoredTab);
   const description = String(activity?.description || "").trim();
@@ -81,7 +84,12 @@ function ActivityDetailTabs({
         label: "Garmin",
         render: () => (
           <>
-            <GarminEnrichmentPanel snapshot={garminSnapshot} />
+            <GarminEnrichmentPanel
+              snapshot={garminSnapshot}
+              activityEnrichment={garminActivityEnrichment}
+              onEnrichActivity={onGarminActivityEnrich}
+              isEnrichingActivity={isGarminActivityEnriching}
+            />
             <ActivityRecoveryContextCard context={garminRecoveryContext} />
           </>
         ),
@@ -97,7 +105,18 @@ function ActivityDetailTabs({
     }
 
     return nextTabs;
-  }, [activity, description, detailedPayload, garminSnapshot, garminRecoveryContext, onActivityUpdated, trainingAnalyticsSettings]);
+  }, [
+    activity,
+    description,
+    detailedPayload,
+    garminActivityEnrichment,
+    garminRecoveryContext,
+    garminSnapshot,
+    isGarminActivityEnriching,
+    onActivityUpdated,
+    onGarminActivityEnrich,
+    trainingAnalyticsSettings,
+  ]);
 
   const activeTabId = tabs.some((tab) => tab.id === activeTab)
     ? activeTab

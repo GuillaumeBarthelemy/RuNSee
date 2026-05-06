@@ -17,6 +17,10 @@ function hasFlag(flagName) {
   return process.argv.includes(flagName);
 }
 
+function formatStatus(expected, actual) {
+  return expected === actual ? "OK" : "MISMATCH";
+}
+
 function resolveInputPath() {
   const requested = getArgValue("--input") || getPositionalArgs()[0] || "";
 
@@ -85,6 +89,7 @@ async function main() {
   const batchSize = Number(getArgValue("--batch-size") || 200);
   const dryRun = hasFlag("--dry-run");
   const truncate = hasFlag("--truncate");
+  const allowAppend = hasFlag("--allow-append");
 
   if (!Number.isInteger(batchSize) || batchSize <= 0) {
     throw new Error("--batch-size must be a positive integer.");
@@ -108,6 +113,12 @@ async function main() {
       console.log(`${tableName}: ${count}`);
     }
     return;
+  }
+
+  if (!truncate && !allowAppend) {
+    throw new Error(
+      "Refusing PostgreSQL import without --truncate. Use --truncate for a controlled refresh or --allow-append only when the target database is known empty."
+    );
   }
 
   const databaseUrl = String(process.env.DATABASE_URL || "");
@@ -147,8 +158,22 @@ async function main() {
       console.log(`Imported ${rows.length} rows into ${table.name}.`);
     }
 
+    const importedCounts = {};
+    for (const table of TABLES) {
+      const result = await client.query(`SELECT COUNT(*)::int AS count FROM "${table.name}";`);
+      importedCounts[table.name] = Number(result.rows[0]?.count || 0);
+    }
+
     await client.query("COMMIT");
     console.log(`POSTGRES_IMPORT_OK ${inputPath}`);
+    console.log("Table                         Dump     PostgreSQL   Statut");
+    for (const table of TABLES) {
+      const dumpCount = counts[table.name];
+      const postgresCount = importedCounts[table.name];
+      console.log(
+        `${table.name.padEnd(30)} ${String(dumpCount).padStart(7)} ${String(postgresCount).padStart(12)}   ${formatStatus(dumpCount, postgresCount)}`
+      );
+    }
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

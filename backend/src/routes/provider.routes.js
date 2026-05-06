@@ -2,6 +2,7 @@ import express from "express";
 import {
   connectGarminController,
   disconnectGarminController,
+  enrichGarminActivitiesController,
   getGarminConnectionStatusController,
   getGarminSyncMetricsController,
   listGarminRecoverySnapshotsController,
@@ -18,6 +19,7 @@ router.get("/garmin/status", requireAuth, getGarminConnectionStatusController);
 router.get("/garmin/metrics", requireAuth, getGarminSyncMetricsController);
 router.post("/garmin/connect", requireAuth, connectGarminController);
 router.post("/garmin/disconnect", requireAuth, disconnectGarminController);
+router.post("/garmin/activities/enrich", requireAuth, enrichGarminActivitiesController);
 router.delete("/garmin/data", requireAuth, purgeGarminDataController);
 router.post("/garmin/recovery/backfill", requireAuth, startGarminRecoveryBackfillController);
 router.post("/garmin/recovery/sync-recent", requireAuth, syncRecentGarminRecoveryController);

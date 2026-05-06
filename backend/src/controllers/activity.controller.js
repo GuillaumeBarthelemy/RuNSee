@@ -5,6 +5,26 @@ import {
   listActivities,
 } from "../repositories/activity.repository.js";
 import { enrichActivityByStravaId } from "../services/activityEnrichment.service.js";
+import { EXTERNAL_PROVIDER_CODES } from "../services/providers/externalProvider.constants.js";
+import { buildPublicGarminActivityEnrichment } from "../services/providers/garminActivityEnrichment.service.js";
+
+function buildActivityDetailResponse(activity) {
+  if (!activity) {
+    return null;
+  }
+
+  const providerEnrichments = Array.isArray(activity.providerEnrichments)
+    ? activity.providerEnrichments
+    : [];
+  const garminActivityEnrichment = providerEnrichments.find(
+    (enrichment) => enrichment.providerCode === EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL,
+  );
+
+  return {
+    ...activity,
+    garminActivityEnrichment: buildPublicGarminActivityEnrichment(garminActivityEnrichment),
+  };
+}
 
 export async function getActivities(req, res, next) {
   try {
@@ -37,7 +57,7 @@ export async function getActivityByStravaId(req, res, next) {
       });
     }
 
-    return res.json(activity);
+    return res.json(buildActivityDetailResponse(activity));
   } catch (error) {
     next(error);
   }
@@ -80,7 +100,7 @@ export async function updateActivityRpe(req, res, next) {
     });
 
     const updated = await getStoredActivityByStravaIdForUser(user.id, stravaActivityId);
-    return res.json(updated);
+    return res.json(buildActivityDetailResponse(updated));
   } catch (error) {
     next(error);
   }

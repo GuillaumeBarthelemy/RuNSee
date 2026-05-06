@@ -52,3 +52,8 @@ export async function getGarminRecoverySnapshots({ days = 56 } = {}) {
   });
   return response.data;
 }
+
+export async function enrichGarminActivities(payload = {}) {
+  const response = await api.post("/providers/garmin/activities/enrich", payload);
+  return response.data;
+}

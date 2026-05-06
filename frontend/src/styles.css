@@ -6617,8 +6617,27 @@ button.alert-banner-positive-item {
   font-style: italic;
 }
 
+.garmin-enrichment-action {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: rgba(248, 251, 255, 0.72);
+}
+
+.garmin-enrichment-action .button {
+  flex-shrink: 0;
+}
+
 @media (max-width: 760px) {
   .garmin-enrichment-panel { grid-template-columns: 1fr; }
+
+  .garmin-enrichment-action {
+    flex-direction: column;
+  }
 }
 
 /* --- PersonalPatternsCard (Phase D2) --------------------------------------- */

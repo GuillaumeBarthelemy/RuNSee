@@ -2,68 +2,48 @@
 
 ## Objectif actif
 
-**Refonte UX/UI complète RuNSee** (phases E → K), articulée autour :
-- Intégration homogène Garmin (pas de blocs dédiés)
-- Lisibilité visuelle (jauges, tones, barres au lieu de sparklines)
-- Mobile-first
-- Vocabulaire FR canonique unique (VFC, Allure ajustée, Dérive cardiaque, etc.)
+Finalisation de la stabilisation RunNSee autour de 4 priorites :
 
-## Décisions validées (séance 2026-05-05)
+1. securiser les fondations du repo et exclure les artefacts locaux/secrets ;
+2. completer la chaine SQLite vers PostgreSQL ;
+3. terminer Garmin Phase K : enrichir les activites Strava avec les metriques d'activite Garmin ;
+4. renforcer les garde-fous frontend sur les metriques Garmin d'activite.
 
-- **Sync Garmin Option B** : enrichissement activités Strava avec métriques Garmin (Training Effect, VO2max, Performance Condition, Recovery Time) — Phase K
-- **Tutoiement style coach** maintenu
-- **5 niveaux de tone** : très bon / bon / neutre / vigilance / alerte
-- **Sparklines remplacées** par MicroBars (barres horizontales)
-- **Verdict descriptif** ("Forme correcte, marge présente"), pas prescriptif
-- **Jauge Aptitude RuNSee** maison (recalcul transparent, pas affichage direct Training Readiness Garmin)
-- **GAP** : réplique Strava via formule Minetti (2002)
-- **Decoupling cardiaque** ajouté (vulgarisé "Dérive cardiaque")
-- **EPOC** ajouté (vulgarisé "Dette d'oxygène", niveau qualitatif)
-- **Settings** : 5 onglets (Compte / Connexions / Entraînement / Données / À propos)
-- **Glossaire** : page dédiée + tooltips compacts ≤ 80 caractères pour mobile
-- **Termes français** : VFC, Énergie, Allure ajustée, Dérive cardiaque, Dette d'oxygène, Aptitude
+## Etat realise dans cette passe
 
-## Roadmap (linéaire validée)
+- `.gitignore`, `backend/.gitignore`, `frontend/.gitignore`, `.dockerignore` backend/frontend renforces.
+- Artefacts locaux suivis par erreur retires de l'index Git : bases SQLite, `.env` frontend, logs runtime.
+- Migration SQLite locale appliquee jusqu'a schema a jour.
+- `tableDefinitions.js` couvre maintenant les 15 modeles Prisma actuels dans un ordre compatible FK.
+- Export SQLite valide avec les tables Garmin et settings recentes.
+- Import PostgreSQL durci : refus par defaut sans `--truncate` ou `--allow-append`, dry-run disponible, comparaison de comptage post-import.
+- Snapshot DB etendu : comptes des tables providers/settings + integrite Garmin.
+- Garmin Phase K cablee cote backend et frontend :
+  - bridge Node expose `fetchGarminActivities`.
+  - service `garminActivityEnrichment.service.js` recupere une fenetre courte, stocke le brut, matche prudemment Strava/Garmin et cree `ActivityProviderEnrichment`.
+  - endpoint `POST /providers/garmin/activities/enrich`.
+  - fiche activite : bouton de completion Garmin ciblee, sans backfill massif.
+  - reponse detail activite expose `garminActivityEnrichment`.
 
-| Phase | Statut | Objet | Effort |
-|---|---|---|---|
-| **E** — Audit UX | ✅ Commit `1334de7` | Docs `UX_AUDIT.md`, `GLOSSAIRE.md`, `UX_CHARTE.md` | 7-8 h |
-| **J** — Vocabulaire + glossaire | ✅ Commit `30b8d10` | Page `/glossaire` + GlossaryLink + InfoTooltip compact + renommages VFC/Énergie | 5 h |
-| **G** — Composants visuels | ✅ Commit `7002737` | MetricGauge, RangeBar, MicroBars, TrendChip, BandPositioner + tonePicker + VisualsPreviewPage | 13 h |
-| **F** — Refonte Dashboard | ✅ Commit `8485fd4` | TodayReadinessCard fusion (3 doublons → 1), verdict descriptif, MicroBars sur charge | 12 h |
-| **H** — GAP + Decoupling + EPOC | ✅ Commit `386f5b2` | Tests Vitest GAP, Decoupling Pa:Hr, EPOC vulgarisé, ActivityIntensityCard | 12 h |
-| **I** — Refonte Réglages 5 onglets | ✅ Commit `b708c7b` | TabbedSettings + 5 onglets routés par hash URL | 12 h |
-| **K** — Extension Garmin activités | ✅ Commit en cours (frontend ready, backend wiring TODO) | Bridge Python `fetch_activities`, helpers mapping, GarminEnrichmentPanel étendu | 10 h |
+## Decisions metier conservees
 
-## Fichiers de référence Phase E
+- Strava reste la source principale des activites.
+- Garmin non officiel sert uniquement d'enrichissement.
+- Pas de backfill massif Garmin activites depuis l'UI detail : ciblage par activite ou fenetre bornee max 180 jours.
+- Matching ambigu non applique automatiquement.
+- Donnees brutes provider conservees dans `ExternalProviderRawData`; donnees normalisees exposees via `ActivityProviderEnrichment`.
 
-- `docs/UX_AUDIT.md` — inventaire 72 composants + décisions par phase + suppressions/fusions
-- `docs/GLOSSAIRE.md` — 26 entrées canoniques avec références scientifiques
-- `docs/UX_CHARTE.md` — palette tones, typographie, breakpoints, composants visuels
+## Validations realisees
 
-## Erreurs résolues récemment
+- `backend`: `npm run prisma:generate`, `npx prisma validate`, `npm run prisma:pg:validate`, `npm run prisma:pg:generate`.
+- `backend`: `node --check` sur services, routes, controllers et scripts DB touches.
+- `frontend`: ESLint zero warning sur les fichiers touches.
+- `frontend`: `npm test -- --run` -> 139 tests verts.
+- `frontend`: `npm run build` OK.
+- DB: `npm run db:export:sqlite`, puis `npm run db:import:postgres -- --dry-run` OK.
 
-- Bug "Sommeil 0 / FC repos 0" — extracteurs sans predicate → corrigé Phase A (predicate > 0)
-- Bug mapping `RAW_RESOURCE_ID_TO_SOURCE_KEY` — révert (commit 666c98c) — l'ancien mapping était correct
-- Bug `averageOptional` incluait les 0 → corrigé (commit 2cbd168)
-- Sync `/sync/jobs/current` 404 → 200 `{ job: null }` (commit 89799a0)
-- Auto-purge sync jobs orphelins > 30 min (commit d241f76)
+## Points restant a valider manuellement
 
-## Validations restantes
-
-- [ ] Re-déclencher renormalize Garmin après commits 9bff7e5, 666c98c (mapping correct + predicate body battery)
-- [ ] Confirmer que FC repos et Body Battery se remplissent correctement après renormalize
-
-## Risques de régression principaux Phases F-K
-
-→ Voir `regression_risks.md` (mis à jour avec phases F-K).
-
-Synthèse :
-- `DashboardDecisionSummaryCard` (refonte F2) : **Moyen**
-- `TodayFormCards` (migration F3) : **Moyen**
-- `DynamicsGrid` (migration G) : **Moyen**
-- `GarminExperimentalCard` (migration I3) : **Moyen**
-- `ActivitySplitsCard`, `ActivityHeaderKpis`, `ActivityPerformanceStrip` (Phase H) : **Moyen**
-- `InfoTooltip` (Phase J) : **Moyen** (utilisé partout)
-
-Stratégie globale : snapshots tests Vitest avant migration, captures avant/après, anciens composants supprimés en dernier.
+- Test Garmin reel sur une activite Strava connue avec session Garmin connectee.
+- Verification d'un cas ambiguous : aucune association automatique ne doit etre appliquee.
+- Verification VM/prod apres push CI/CD : endpoint provider, fiche activite, onglet Garmin.

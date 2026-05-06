@@ -1,9 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+generated/
+
+# Runtime
+runtime/
+.tmp/
+*.log
+*.pid
+
+# Local databases
+*.db
+*.db.*
+*.sqlite
+*.sqlite3
+
+# Local env / secrets
+.env
+.env.*.local
+*.local
+
+# Test / coverage
+coverage/
+.vitest/
+
+# Archives / local deployment artifacts
 *.zip
 deployment/windows/runtime/
 deployment/postgresql/runtime/
 deployment/postgresql/backups/
 
-# Fichiers de handoff générés automatiquement
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Generated AI handoff files
 .ai/handoff_*.txt
 .ai/git_*.txt
 .ai/handoff_*.md

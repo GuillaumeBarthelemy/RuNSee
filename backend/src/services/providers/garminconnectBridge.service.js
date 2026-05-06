@@ -141,3 +141,12 @@ export async function fetchGarminRecoveryDays({ session, dates = [] }) {
     dates,
   });
 }
+
+export async function fetchGarminActivities({ session, startDate, endDate }) {
+  return runGarminconnectBridge({
+    operation: "fetch_activities",
+    session,
+    startDate,
+    endDate,
+  });
+}

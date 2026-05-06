@@ -373,6 +373,9 @@ export async function getStoredActivityByStravaIdForUser(appUserId, stravaActivi
         },
       },
     }),
+    include: {
+      providerEnrichments: true,
+    },
   });
 }
 
