@@ -126,6 +126,12 @@ export function buildRecoveryViewModel(snapshots) {
       bodyBattery: null,
       coverage: 0,
       confidenceLabel: "Pas de données",
+      readiness: {
+        score: null,
+        confidence: "Insuffisante",
+        coveredWeight: 0,
+        sourcesCount: 0,
+      },
     };
   }
 
@@ -199,7 +205,7 @@ export function buildRecoveryViewModel(snapshots) {
   //   - Plews et al. (2013), Sports Medicine
   //   - Buchheit (2014), Front Physiol
   //   - Le Meur et al. (2013), Med Sci Sports Exerc
-  const readiness = computeRunseeReadiness({ sleep, hrv, restingHr, stress, bodyBattery });
+  const readiness = computeRunseeReadiness({ sleep, hrv, restingHr, stress, bodyBattery, coverage });
 
   return {
     hasData: true,
@@ -226,9 +232,9 @@ export function buildRecoveryViewModel(snapshots) {
  *
  * Si une composante n'est pas calculable, son poids est redistribué.
  *
- * @returns {{ score: number|null, confidence: "Haute"|"Moyenne"|"Faible" }}
+ * @returns {{ score: number|null, confidence: "Haute"|"Moyenne"|"Faible"|"Insuffisante", coveredWeight: number, sourcesCount: number }}
  */
-function computeRunseeReadiness({ sleep, hrv, restingHr, stress, bodyBattery }) {
+function computeRunseeReadiness({ sleep, hrv, restingHr, stress, bodyBattery, coverage = 0 }) {
   const components = [
     { weight: 0.30, value: normalizeSleep(sleep) },
     { weight: 0.30, value: normalizeHrvDelta(hrv) },
@@ -239,20 +245,23 @@ function computeRunseeReadiness({ sleep, hrv, restingHr, stress, bodyBattery }) 
 
   const valid = components.filter((c) => c.value != null);
   if (valid.length === 0) {
-    return { score: null, confidence: "Faible" };
+    return { score: null, confidence: "Insuffisante", coveredWeight: 0, sourcesCount: 0 };
   }
 
   const totalWeight = valid.reduce((acc, c) => acc + c.weight, 0);
   const weightedSum = valid.reduce((acc, c) => acc + c.weight * c.value, 0);
   const score = Math.round((weightedSum / totalWeight) * 100);
+  const coveredWeight = Math.round(totalWeight * 100);
 
-  // Confiance basée sur le poids couvert
+  // Confiance basée sur le poids couvert, avec une limite si la couverture
+  // récente est trop faible. Le score reste calculable, mais moins affirmatif.
   let confidence;
-  if (totalWeight >= 0.85) confidence = "Haute";
-  else if (totalWeight >= 0.50) confidence = "Moyenne";
-  else confidence = "Faible";
+  if (totalWeight < 0.30) confidence = "Insuffisante";
+  else if (totalWeight < 0.50 || coverage < 30) confidence = "Faible";
+  else if (totalWeight < 0.85 || coverage < 80) confidence = "Moyenne";
+  else confidence = "Haute";
 
-  return { score, confidence };
+  return { score, confidence, coveredWeight, sourcesCount: valid.length };
 }
 
 function normalizeSleep(sleep) {

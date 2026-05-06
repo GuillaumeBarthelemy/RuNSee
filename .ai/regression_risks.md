@@ -1,5 +1,32 @@
 # Regression Risks
 
+## Risques surveilles dans la passe de fiabilisation
+
+### Healthcheck backend
+
+- Zone : `backend/src/app.js`.
+- Risque : certains consommateurs de `/health` attendaient uniquement `status: OK`.
+- Garde-fous presents : le statut reste `OK` quand la DB repond ; les URLs et origines existantes restent exposees.
+- Validation requise : verifier `/health` et `/db/health` sur local/prod apres deploiement.
+
+### Format d'erreur API
+
+- Zone : middleware d'erreur Express.
+- Risque : casser un client frontend qui lit encore `message/details`.
+- Garde-fous presents : `message` est conserve, `details` reste present pour les erreurs non 500 ; le nouvel objet `error` est additif.
+
+### Aptitude RunNSee
+
+- Zone : `frontend/src/utils/recoveryViewModel.js`.
+- Risque : changement de libelle de confiance visible sur donnees tres partielles.
+- Garde-fous presents : formule de score inchangee ; seule la qualification de confiance est rendue plus prudente.
+
+### Drift schemas Prisma
+
+- Zone : `backend/scripts/db/compare-prisma-schemas.js`.
+- Risque : faux positif si un champ est volontairement different entre SQLite et PostgreSQL.
+- Garde-fous presents : comparaison limitee aux blocs `model`, pas aux providers datasource/generator.
+
 ## Eleve
 
 ### Migration SQLite vers PostgreSQL

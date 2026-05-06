@@ -13,6 +13,7 @@ function makeSnapshot(snapshotDate, overrides = {}) {
     restingHr: 48,
     stressAvg: 30,
     bodyBatteryMorning: 70,
+    bodyBatteryMax: 78,
     bodyBatteryEnd: 45,
     sleepDurationSeconds: 27000,
     ...overrides,
@@ -153,6 +154,21 @@ describe("buildRecoveryViewModel", () => {
       const vm = buildRecoveryViewModel(snaps);
       expect(vm.sleep.latestValue).toBeNull();
     });
+
+    it("readiness is marked insufficient when no component is valid", () => {
+      const snaps = buildSnapshots(14, "2026-05-04", {
+        sleepScore: 0,
+        hrvAvgMs: 0,
+        restingHr: 0,
+        stressAvg: 0,
+        bodyBatteryMax: 0,
+      });
+      const vm = buildRecoveryViewModel(snaps);
+      expect(vm.readiness.score).toBeNull();
+      expect(vm.readiness.confidence).toBe("Insuffisante");
+      expect(vm.readiness.coveredWeight).toBe(0);
+      expect(vm.readiness.sourcesCount).toBe(0);
+    });
   });
 
   // Scenario 8 — unsorted input
@@ -164,6 +180,24 @@ describe("buildRecoveryViewModel", () => {
       const vmSorted = buildRecoveryViewModel(sorted);
       const vmShuffled = buildRecoveryViewModel(shuffled);
       expect(vmShuffled.sleep?.latestValue).toBe(vmSorted.sleep?.latestValue);
+    });
+  });
+
+  describe("readiness confidence", () => {
+    it("exposes source coverage for transparent UI copy", () => {
+      const vm = buildRecoveryViewModel(buildSnapshots(56));
+      expect(vm.readiness.coveredWeight).toBeGreaterThanOrEqual(80);
+      expect(vm.readiness.sourcesCount).toBeGreaterThanOrEqual(4);
+    });
+
+    it("does not claim high confidence when recent coverage is sparse", () => {
+      const sparse = buildSnapshots(56).map((s, i) => ({
+        ...s,
+        sleepScore: i % 2 === 0 ? 75 : 0,
+      }));
+      const vm = buildRecoveryViewModel(sparse);
+      expect(vm.coverage).toBe(50);
+      expect(vm.readiness.confidence).not.toBe("Haute");
     });
   });
 });

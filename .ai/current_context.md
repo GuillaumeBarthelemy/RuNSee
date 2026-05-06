@@ -1,5 +1,14 @@
 # Current Context
 
+## Mise a jour de fiabilisation en cours
+
+- Nouveau plan actif lu : `docs/runsee_plan_fiabilisation_frontend_backend_science_ux.md`.
+- Objectif de cette passe : finaliser les garde-fous frontend/backend sans modifier les calculs metier centraux.
+- Backend : route assistant existante montee sur `/assistant`, `/health` enrichi avec probe DB, reponse d'erreur standardisee en conservant le format legacy `message/details`.
+- Frontend : confiance de l'Aptitude RunNSee rendue plus explicite (`coveredWeight`, `sourcesCount`, statut `Insuffisante` quand aucune source exploitable).
+- Glossaire : libelle canonique `Aptitude RunNSee`, ancien `Aptitude RunSee` conserve en alias.
+- DB : ajout d'un controle `npm run db:compare-schemas` pour detecter une divergence de modeles Prisma SQLite/PostgreSQL.
+
 ## Objectif actif
 
 Finalisation de la stabilisation RunNSee autour de 4 priorites :

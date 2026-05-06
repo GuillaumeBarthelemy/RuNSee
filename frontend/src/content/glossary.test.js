@@ -31,6 +31,18 @@ describe("glossary entries", () => {
       expect(entry.short.length).toBeLessThanOrEqual(200);
     }
   });
+
+  it("contient les entrees canoniques pour la recuperation et les signaux avances", () => {
+    const keys = new Set(GLOSSARY_ENTRIES.map((entry) => entry.key));
+    [
+      "vfc",
+      "energyLevel",
+      "gap",
+      "aerobicDecoupling",
+      "epoc",
+      "trainingReadinessRunsee",
+    ].forEach((key) => expect(keys.has(key)).toBe(true));
+  });
 });
 
 describe("findGlossaryEntry", () => {
@@ -62,6 +74,13 @@ describe("findGlossaryEntry", () => {
     const fromTerm = findGlossaryEntry("Score sommeil");
     expect(fromTerm).not.toBeNull();
     expect(fromTerm.key).toBe("sleepScore");
+  });
+
+  it("retrouve l'ancien libelle Aptitude RunSee via alias", () => {
+    const fromAlias = findGlossaryEntry("Aptitude RunSee");
+    expect(fromAlias).not.toBeNull();
+    expect(fromAlias.key).toBe("trainingReadinessRunsee");
+    expect(fromAlias.term).toBe("Aptitude RunNSee");
   });
 
   it("est insensible a la casse", () => {

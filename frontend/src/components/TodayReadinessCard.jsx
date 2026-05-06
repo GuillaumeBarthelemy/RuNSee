@@ -150,7 +150,7 @@ function TodayReadinessCard({ snapshots = [] }) {
             max={100}
             tone={readinessScore != null ? readinessTone(readinessScore) : 3}
             unit="/ 100"
-            label="Aptitude RunSee"
+            label="Aptitude RunNSee"
             size="md"
           />
           <GlossaryLink termKey="trainingReadinessRunsee">

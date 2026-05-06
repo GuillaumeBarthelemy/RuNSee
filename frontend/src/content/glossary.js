@@ -218,14 +218,14 @@ export const GLOSSARY_ENTRIES = [
     category: "Recuperation",
     short: "Aptitude du jour selon Garmin (sommeil + VFC + charge).",
     definition:
-      "Score 0-100 calcule par Garmin / Firstbeat qui combine sommeil recent, VFC nocturne, charge des jours precedents et stress. Indique ta capacite a absorber une seance exigeante aujourd'hui. RunNSee affiche cette valeur lorsque Garmin la fournit, mais calcule egalement une Aptitude RunSee (recommandation transparente avec formule publique).",
+      "Score 0-100 calcule par Garmin / Firstbeat qui combine sommeil recent, VFC nocturne, charge des jours precedents et stress. Indique ta capacite a absorber une seance exigeante aujourd'hui. RunNSee affiche cette valeur lorsque Garmin la fournit, mais calcule egalement une Aptitude RunNSee (recommandation transparente avec formule publique).",
     reference: "Algorithme proprietaire Garmin / Firstbeat.",
     thresholds: "0-25 = faible (repos recommande). 25-50 = limitee (endurance facile). 50-75 = moderee (seance modere OK). 75-100 = haute (seance exigeante possible).",
   },
   {
     key: "trainingReadinessRunsee",
-    term: "Aptitude RunSee",
-    aliases: ["Readiness RunSee"],
+    term: "Aptitude RunNSee",
+    aliases: ["Readiness RunSee", "Aptitude RunSee"],
     category: "Recuperation",
     short: "Aptitude du jour calculee par RunSee, formule publique transparente.",
     definition:

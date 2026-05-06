@@ -1,5 +1,14 @@
 # Open Tasks
 
+## Termines dans la passe de fiabilisation frontend/backend/science/UX
+
+- [x] Monter la route backend assistant existante sur `/assistant`.
+- [x] Enrichir `/health` avec un probe Prisma et un timestamp sans exposer de secrets.
+- [x] Standardiser les erreurs backend avec un objet `error` tout en gardant le format legacy.
+- [x] Renforcer la confiance de l'Aptitude RunNSee selon le poids de sources et la couverture recente.
+- [x] Harmoniser le libelle canonique `Aptitude RunNSee` et garder l'ancien libelle en alias glossaire.
+- [x] Ajouter un controle de drift Prisma SQLite/PostgreSQL.
+
 ## Termines dans la derniere passe
 
 - [x] Securiser les ignore files et retirer de l'index les artefacts locaux/secrets/logs.

@@ -18,7 +18,8 @@
     "db:ensure:postgres": "node scripts/db/ensure-postgresql-databases.js",
     "db:export:sqlite": "node scripts/db/export-sqlite-dump.js",
     "db:import:postgres": "node scripts/db/import-postgresql-dump.js",
-    "db:snapshot": "node scripts/db/report-database-snapshot.js"
+    "db:snapshot": "node scripts/db/report-database-snapshot.js",
+    "db:compare-schemas": "node scripts/db/compare-prisma-schemas.js"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.6.0",
