@@ -23,7 +23,15 @@ try {
     Remove-Item -LiteralPath $resolvedOutput -Force
   }
 
+  $outputDir = Split-Path -Parent $resolvedOutput
+  if ($outputDir -and !(Test-Path -LiteralPath $outputDir)) {
+    New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+  }
+
   git archive --format=zip --output $resolvedOutput HEAD
+  if ($LASTEXITCODE -ne 0) {
+    throw "git archive a echoue avec le code $LASTEXITCODE."
+  }
 
   function Test-ForbiddenEntry {
     param([string]$EntryName)
