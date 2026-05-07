@@ -45,6 +45,13 @@ model UserRaceObjective {
   distanceMeters    Int
   // Allure cible saisie par l'utilisateur en s/km, optionnelle.
   targetPaceSecondsPerKm Int?
+  elevationGainMeters Int?
+  elevationLossMeters Int?
+  terrainType       String?
+  targetDurationSeconds Int?
+  longestClimbMeters Int?
+  longestDescentMeters Int?
+  priority          String?
   notes             String?
   isActive          Boolean   @default(true)
   archivedAt        DateTime?

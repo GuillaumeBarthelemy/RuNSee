@@ -41,6 +41,13 @@ model UserRaceObjective {
   raceDate               DateTime
   distanceMeters         Int
   targetPaceSecondsPerKm Int?
+  elevationGainMeters    Int?
+  elevationLossMeters    Int?
+  terrainType            String?
+  targetDurationSeconds  Int?
+  longestClimbMeters     Int?
+  longestDescentMeters   Int?
+  priority               String?
   notes                  String?
   isActive               Boolean   @default(true)
   archivedAt             DateTime?

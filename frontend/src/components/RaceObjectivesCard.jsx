@@ -39,6 +39,24 @@ function paceFromString(value) {
   return Number(match[1]) * 60 + Number(match[2]);
 }
 
+function durationToString(seconds) {
+  const safe = Math.round(Number(seconds) || 0);
+  if (safe <= 0) return "-";
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  return hours > 0 ? `${hours} h ${String(minutes).padStart(2, "0")}` : `${minutes} min`;
+}
+
+function durationFromString(value) {
+  const safe = String(value || "").trim();
+  if (!safe) return null;
+  const parts = safe.split(":").map((part) => Number(part));
+  if (parts.some((part) => !Number.isFinite(part))) return null;
+  if (parts.length === 2) return parts[0] * 3600 + parts[1] * 60;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return null;
+}
+
 const noop = () => {};
 
 export default function RaceObjectivesCard({
@@ -55,6 +73,13 @@ export default function RaceObjectivesCard({
   const [standardDistanceKey, setStandardDistanceKey] = useState("10k");
   const [customDistanceMeters, setCustomDistanceMeters] = useState("");
   const [targetPace, setTargetPace] = useState("");
+  const [elevationGainMeters, setElevationGainMeters] = useState("");
+  const [elevationLossMeters, setElevationLossMeters] = useState("");
+  const [terrainType, setTerrainType] = useState("");
+  const [targetDuration, setTargetDuration] = useState("");
+  const [longestClimbMeters, setLongestClimbMeters] = useState("");
+  const [longestDescentMeters, setLongestDescentMeters] = useState("");
+  const [priority, setPriority] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState("");
 
@@ -74,6 +99,12 @@ export default function RaceObjectivesCard({
       raceDate,
       standardDistanceKey: isCustom ? "" : standardDistanceKey,
       distanceMeters: isCustom ? Number(customDistanceMeters) : undefined,
+      elevationGainMeters: elevationGainMeters ? Number(elevationGainMeters) : undefined,
+      elevationLossMeters: elevationLossMeters ? Number(elevationLossMeters) : undefined,
+      terrainType: terrainType || undefined,
+      longestClimbMeters: longestClimbMeters ? Number(longestClimbMeters) : undefined,
+      longestDescentMeters: longestDescentMeters ? Number(longestDescentMeters) : undefined,
+      priority: priority || undefined,
       notes: notes.trim() || undefined,
     };
 
@@ -82,6 +113,14 @@ export default function RaceObjectivesCard({
       payload.targetPaceSecondsPerKm = targetPaceSeconds;
     } else if (targetPace.trim() && !targetPaceSeconds) {
       setFormError("Allure cible attendue au format MM:SS (ex. 4:50).");
+      return;
+    }
+
+    const targetDurationSeconds = durationFromString(targetDuration);
+    if (targetDurationSeconds) {
+      payload.targetDurationSeconds = targetDurationSeconds;
+    } else if (targetDuration.trim()) {
+      setFormError("Duree cible attendue au format H:MM ou H:MM:SS.");
       return;
     }
 
@@ -97,6 +136,13 @@ export default function RaceObjectivesCard({
       setStandardDistanceKey("10k");
       setCustomDistanceMeters("");
       setTargetPace("");
+      setElevationGainMeters("");
+      setElevationLossMeters("");
+      setTerrainType("");
+      setTargetDuration("");
+      setLongestClimbMeters("");
+      setLongestDescentMeters("");
+      setPriority("");
       setNotes("");
     } catch (error) {
       setFormError(error?.response?.data?.userMessage || error?.message || "Echec de l'enregistrement.");
@@ -190,6 +236,98 @@ export default function RaceObjectivesCard({
             />
           </label>
 
+          <label className="field">
+            <span className="field-label">D+ objectif (m)</span>
+            <input
+              className="field-input"
+              type="number"
+              min="0"
+              step="10"
+              value={elevationGainMeters}
+              placeholder="Ex. 850"
+              onChange={(event) => setElevationGainMeters(event.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span className="field-label">D- objectif (m)</span>
+            <input
+              className="field-input"
+              type="number"
+              min="0"
+              step="10"
+              value={elevationLossMeters}
+              placeholder="Ex. 850"
+              onChange={(event) => setElevationLossMeters(event.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span className="field-label">Terrain</span>
+            <select
+              className="field-input"
+              value={terrainType}
+              onChange={(event) => setTerrainType(event.target.value)}
+            >
+              <option value="">Non precise</option>
+              <option value="road">Route</option>
+              <option value="rolling">Trail roulant</option>
+              <option value="technical">Trail technique</option>
+              <option value="mountain">Trail montagne</option>
+            </select>
+          </label>
+
+          <label className="field">
+            <span className="field-label">Duree cible (H:MM)</span>
+            <input
+              className="field-input"
+              type="text"
+              value={targetDuration}
+              placeholder="Ex. 2:20"
+              onChange={(event) => setTargetDuration(event.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span className="field-label">Plus longue montee (m D+)</span>
+            <input
+              className="field-input"
+              type="number"
+              min="0"
+              step="10"
+              value={longestClimbMeters}
+              placeholder="Ex. 400"
+              onChange={(event) => setLongestClimbMeters(event.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span className="field-label">Plus longue descente (m D-)</span>
+            <input
+              className="field-input"
+              type="number"
+              min="0"
+              step="10"
+              value={longestDescentMeters}
+              placeholder="Ex. 350"
+              onChange={(event) => setLongestDescentMeters(event.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span className="field-label">Priorite</span>
+            <select
+              className="field-input"
+              value={priority}
+              onChange={(event) => setPriority(event.target.value)}
+            >
+              <option value="">Non precisee</option>
+              <option value="A">A - objectif principal</option>
+              <option value="B">B - objectif important</option>
+              <option value="C">C - course secondaire</option>
+            </select>
+          </label>
+
           <label className="field field-span-2">
             <span className="field-label">Notes (optionnel)</span>
             <input
@@ -222,6 +360,7 @@ export default function RaceObjectivesCard({
                 <th>Course</th>
                 <th>Date</th>
                 <th>Distance</th>
+                <th>Trail</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -236,6 +375,10 @@ export default function RaceObjectivesCard({
                   <td>{race.name}</td>
                   <td>{formatDate(race.raceDate)}</td>
                   <td>{formatDistance(race.distanceMeters)}</td>
+                  <td>
+                    {race.elevationGainMeters ? `${race.elevationGainMeters} m D+` : "-"}
+                    {race.targetDurationSeconds ? ` - ${durationToString(race.targetDurationSeconds)}` : ""}
+                  </td>
                   <td>
                     {race.isActive ? (
                       <button

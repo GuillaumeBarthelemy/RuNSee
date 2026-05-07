@@ -6,6 +6,8 @@ const STANDARD_RACE_KEYS = {
   halfMarathon: 21097.5,
   marathon: 42195,
 };
+const TERRAIN_TYPES = new Set(["road", "rolling", "technical", "mountain"]);
+const PRIORITIES = new Set(["A", "B", "C"]);
 
 function toNullableInteger(value, { min = 0, max = 1_000_000 } = {}) {
   if (value === undefined || value === null || value === "") {
@@ -74,11 +76,21 @@ function resolveDistanceMeters(input = {}) {
 }
 
 function sanitizeInput(input = {}) {
+  const terrainType = String(input.terrainType || "").trim();
+  const priority = String(input.priority || "").trim().toUpperCase();
+
   return {
     name: sanitizeName(input.name),
     raceDate: toDate(input.raceDate),
     distanceMeters: resolveDistanceMeters(input),
     targetPaceSecondsPerKm: toNullableInteger(input.targetPaceSecondsPerKm, { min: 120, max: 1200 }),
+    elevationGainMeters: toNullableInteger(input.elevationGainMeters, { min: 0, max: 30_000 }),
+    elevationLossMeters: toNullableInteger(input.elevationLossMeters, { min: 0, max: 30_000 }),
+    terrainType: TERRAIN_TYPES.has(terrainType) ? terrainType : null,
+    targetDurationSeconds: toNullableInteger(input.targetDurationSeconds, { min: 300, max: 200_000 }),
+    longestClimbMeters: toNullableInteger(input.longestClimbMeters, { min: 0, max: 5_000 }),
+    longestDescentMeters: toNullableInteger(input.longestDescentMeters, { min: 0, max: 5_000 }),
+    priority: PRIORITIES.has(priority) ? priority : null,
     notes: input.notes ? String(input.notes).slice(0, 500) : null,
   };
 }
@@ -92,6 +104,13 @@ function serializeRaceObjective(record = null) {
     raceDate: record.raceDate,
     distanceMeters: record.distanceMeters,
     targetPaceSecondsPerKm: record.targetPaceSecondsPerKm,
+    elevationGainMeters: record.elevationGainMeters,
+    elevationLossMeters: record.elevationLossMeters,
+    terrainType: record.terrainType,
+    targetDurationSeconds: record.targetDurationSeconds,
+    longestClimbMeters: record.longestClimbMeters,
+    longestDescentMeters: record.longestDescentMeters,
+    priority: record.priority,
     notes: record.notes,
     isActive: record.isActive,
     archivedAt: record.archivedAt,
