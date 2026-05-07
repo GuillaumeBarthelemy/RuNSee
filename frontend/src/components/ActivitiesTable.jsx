@@ -74,6 +74,24 @@ function persistReturnLocation(returnPath, anchorId) {
   );
 }
 
+function getActivityRouteId(activity) {
+  return activity?.id || activity?.stravaActivityId || activity?.sourceActivityId || "";
+}
+
+function getActivitySourceLabel(activity) {
+  const sourceProvider = String(activity?.sourceProvider || "strava").toLowerCase();
+  const hasGarmin = Array.isArray(activity?.providerEnrichments)
+    ? activity.providerEnrichments.some((enrichment) => String(enrichment?.providerCode || "").includes("garmin"))
+    : Boolean(activity?.hasExternalEnrichment);
+
+  if (sourceProvider === "garmin") {
+    const sport = String(activity?.sportType || activity?.type || "").toLowerCase();
+    return sport.includes("hike") ? "Garmin Â· Randonnee" : "Garmin";
+  }
+
+  return hasGarmin ? "Strava + Garmin" : "Strava";
+}
+
 export default function ActivitiesTable({
   activities = [],
   groupSports = true,
@@ -126,11 +144,12 @@ export default function ActivitiesTable({
   const pageItems = useMemo(() => buildPageItems(safePage, totalPages), [safePage, totalPages]);
 
   const openDetail = (activity) => {
-    if (!activity?.stravaActivityId) return;
+    const routeId = getActivityRouteId(activity);
+    if (!routeId) return;
 
-    const anchorId = `activity-row-${activity.stravaActivityId}`;
+    const anchorId = `activity-row-${routeId}`;
     persistReturnLocation(returnPath, anchorId);
-    navigate(`/activities/${activity.stravaActivityId}`, {
+    navigate(`/activities/${routeId}`, {
       state: {
         returnPath,
         returnHash: anchorId,
@@ -183,8 +202,9 @@ export default function ActivitiesTable({
               <tbody>
                 {rows.map((activity, index) => {
                   const key = activity?.id || activity?.stravaActivityId || activity?.name || `activity-${safePage}-${index}`;
-                  const anchorId = activity?.stravaActivityId ? `activity-row-${activity.stravaActivityId}` : undefined;
-                  const isClickable = Boolean(activity?.stravaActivityId);
+                  const routeId = getActivityRouteId(activity);
+                  const anchorId = routeId ? `activity-row-${routeId}` : undefined;
+                  const isClickable = Boolean(routeId);
 
                   return (
                     <tr
@@ -204,7 +224,7 @@ export default function ActivitiesTable({
                       <td>
                         <div className="activity-name-cell">
                           <strong>{activity.name || "-"}</strong>
-                          <span className="small-text">{activity?.stravaActivityId ? `#${activity.stravaActivityId}` : "-"}</span>
+                          <span className="small-text">{getActivitySourceLabel(activity)}</span>
                         </div>
                       </td>
                       <td>{getDisplaySportLabel(activity, { groupSports })}</td>

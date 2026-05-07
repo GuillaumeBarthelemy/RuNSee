@@ -53,6 +53,10 @@ function persistReturnLocation(returnPath) {
   );
 }
 
+function getActivityRouteId(activity) {
+  return activity?.id || activity?.stravaActivityId || activity?.sourceActivityId || "";
+}
+
 function RecentActivitiesCard({
   activities = [],
   returnPath = "/",
@@ -96,10 +100,11 @@ function RecentActivitiesCard({
                 type="button"
                 className="recent-activity-item"
                 onClick={() => {
-                  if (!activity?.stravaActivityId) return;
+                  const routeId = getActivityRouteId(activity);
+                  if (!routeId) return;
 
                   persistReturnLocation(returnPath);
-                  navigate(`/activities/${activity.stravaActivityId}`, {
+                  navigate(`/activities/${routeId}`, {
                     state: {
                       returnPath,
                       returnHash: "",

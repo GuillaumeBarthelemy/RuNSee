@@ -167,7 +167,7 @@ function isUsableGarminConnection(connection) {
 
 export async function queueGlobalSyncForUser(appUserId) {
   const activeJob = await getCurrentSyncJob(appUserId);
-  const periodDays = Number(env.garminconnectActivityEnrichmentGlobalDays || 30);
+  const periodDays = Number(env.garminActivitySyncRecentDays || env.garminconnectActivityEnrichmentGlobalDays || 30);
 
   if (activeJob) {
     return {
@@ -210,9 +210,17 @@ export async function queueGlobalSyncForUser(appUserId) {
 
   const job = await createSyncJob(appUserId, "global_incremental", "ui");
   startSyncJobInBackground(job.id);
+  const hasStrava = Boolean(stravaConnection);
+  const hasGarmin = isUsableGarminConnection(garminConnection);
+  const mode = hasStrava && hasGarmin
+    ? "strava_primary_garmin_enrichment_with_fallback"
+    : hasStrava
+      ? "strava_only"
+      : "garmin_primary";
 
   return {
     status: "running",
+    mode,
     message: "Synchronisation globale lancée.",
     job: {
       id: job.id,
@@ -221,11 +229,11 @@ export async function queueGlobalSyncForUser(appUserId) {
     },
     providers: {
       strava: stravaConnection ? buildQueuedProvider() : buildSkippedProvider("strava_not_connected"),
-      garminRecovery: isUsableGarminConnection(garminConnection)
+      garminRecovery: hasGarmin
         ? buildQueuedProvider()
         : buildSkippedProvider("garmin_not_connected"),
-      garminActivities: isUsableGarminConnection(garminConnection)
-        ? buildQueuedProvider({ periodDays })
+      garminActivities: hasGarmin
+        ? buildQueuedProvider({ periodDays, role: hasStrava ? "enrichment_and_fallback" : "primary" })
         : buildSkippedProvider("garmin_not_connected"),
     },
   };
@@ -323,11 +331,12 @@ async function executeGlobalIncrementalSyncJob(jobId) {
       resultJson: JSON.stringify({ providers }),
     });
     try {
-      const days = Number(env.garminconnectActivityEnrichmentGlobalDays || 30);
+      const days = Number(env.garminActivitySyncRecentDays || env.garminconnectActivityEnrichmentGlobalDays || 30);
       const result = await enrichGarminActivitiesForUser(job.appUserId, {
         mode: "recent_missing",
         days,
         triggerSource: "global_sync",
+        allowGarminOnly: true,
       });
       providers.garminActivities = {
         requested: true,
@@ -339,6 +348,9 @@ async function executeGlobalIncrementalSyncJob(jobId) {
         matched: result.matchedCount,
         ambiguous: result.ambiguousCount,
         notFound: result.notFoundCount,
+        garminOnlyCreated: result.garminOnlyCreatedCount,
+        garminOnlyUpdated: result.garminOnlyUpdatedCount,
+        unsupportedType: result.unsupportedTypeCount,
       };
     } catch (error) {
       providers.garminActivities = buildProviderResultFromError(error);
@@ -347,7 +359,13 @@ async function executeGlobalIncrementalSyncJob(jobId) {
 
   const warning = hasProviderError(providers);
   const result = {
-    mode: "global_incremental",
+    mode: stravaConnection && hasGarmin
+      ? "strava_primary_garmin_enrichment_with_fallback"
+      : stravaConnection
+        ? "strava_only"
+        : hasGarmin
+          ? "garmin_primary"
+          : "no_provider",
     providers,
   };
 

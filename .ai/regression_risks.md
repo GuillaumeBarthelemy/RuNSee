@@ -126,3 +126,26 @@
 - Zone : `frontend/src/utils/activityEnrichment.js`.
 - Risque : valeurs nulles, zero ou negatives masquees a tort.
 - Garde-fous presents : tests Vitest edge cases pour `performanceCondition`, TE a 0, recovery time, EPOC.
+
+## Multi-sources Strava/Garmin
+
+### Activites Garmin-only
+
+- Zone : `Activity`, `activity.repository.js`, `garminActivityEnrichment.service.js`, routes `/activities`.
+- Risque : casser les parcours historiques qui supposaient `athleteId` et `stravaActivityId` obligatoires.
+- Garde-fous presents : champs Strava conserves, identite canonique additive `sourceProvider/sourceActivityId`, filtres repository compatibles, badge source frontend.
+- Validation requise : ouvrir une activite Strava historique, une activite Strava enrichie Garmin et une activite Garmin-only.
+
+### Migration multi-source Activity
+
+- Zone : migrations `20260507190000_add_multisource_activity_foundation`.
+- Risque : migration sensible car `Activity` est au centre des analyses.
+- Garde-fous presents : donnees Strava historiques remplies avec `sourceProvider='strava'`, `sourceActivityId=stravaActivityId`, `sourceUrl` Strava ; contraintes uniques ajoutees sans supprimer les champs existants.
+- Validation requise : backup avant prod, `prisma migrate deploy`, comparaison schemas, compte activites avant/apres.
+
+### Fallback Garmin automatique
+
+- Zone : sync globale et enrichissement Garmin recent.
+- Risque : creer une activite Garmin-only a tort si un match Strava ambigu existe.
+- Garde-fous presents : aucun Garmin-only n'est cree quand le matching est `ambiguous`; le cas est journalise dans `ActivityProviderLink`.
+- Validation requise : tester deux activites proches le meme jour et verifier que le fallback ne cree pas de doublon.

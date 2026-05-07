@@ -60,6 +60,21 @@
 - [ ] Appliquer/valider l'import PostgreSQL sur une base cible de preprod ou prod uniquement avec backup et option explicite (`--truncate` ou `--allow-append`).
 - [ ] Verifier le deploiement CI/CD GitHub Actions vers la VM apres le push final.
 
+## Multi-sources Strava/Garmin
+
+- [x] Ajouter le socle DB multi-source sur `Activity`.
+- [x] Ajouter `ActivityProviderLink`.
+- [x] Ajouter `ProviderBackfillCursor`.
+- [x] Ajouter normalisation Garmin activity -> candidate canonique.
+- [x] Ajouter matching provider exact/probable/ambiguous/not_found.
+- [x] Autoriser la creation Garmin-only sur la sync Garmin recente si aucun match Strava fiable n'existe.
+- [x] Adapter `/sync/all` aux modes `strava_primary_garmin_enrichment_with_fallback`, `strava_only`, `garmin_primary`.
+- [x] Adapter la navigation liste/detail activite pour ne plus bloquer sans `stravaActivityId`.
+- [ ] Recette reelle Strava + Garmin avec une activite Garmin absente de Strava.
+- [ ] Recette Garmin seul apres migration en environnement de test.
+- [ ] Finaliser l'orchestration longue duree du backfill historique Garmin 180 j/h cote UI/admin.
+- [ ] Auditer les liens records/best efforts qui pointent encore prioritairement sur `stravaActivityId`.
+
 ## Dette hors scope
 
 - [ ] Backend sans configuration ESLint compatible ESLint 10 : les controles actuels reposent sur `node --check` et Prisma.

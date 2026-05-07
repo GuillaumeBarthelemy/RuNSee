@@ -44,6 +44,18 @@ function parseJsonSafe(value) {
   }
 }
 
+function getActivitySourceLabel(activity) {
+  const sourceProvider = String(activity?.sourceProvider || "strava").toLowerCase();
+  const hasGarmin = Boolean(activity?.garminActivityEnrichment || activity?.hasExternalEnrichment);
+
+  if (sourceProvider === "garmin") {
+    const sport = String(activity?.sportType || activity?.type || "").toLowerCase();
+    return sport.includes("hike") ? "Source : Garmin - Randonnee" : "Source : Garmin";
+  }
+
+  return hasGarmin ? "Source : Strava + Garmin" : "Source : Strava";
+}
+
 export default function ActivityDetailCard({
   activity = null,
   trainingAnalyticsSettings = null,
@@ -59,6 +71,7 @@ export default function ActivityDetailCard({
   const safeActivity = useMemo(() => activity || {}, [activity]);
   const detailedPayload = useMemo(() => parseJsonSafe(safeActivity.rawJson), [safeActivity.rawJson]);
   const hasDetailedPayload = Boolean(detailedPayload);
+  const canEnrichFromStrava = Boolean(safeActivity.stravaActivityId);
   const trainingInsights = useMemo(
     () => buildActivityTrainingInsights(safeActivity, trainingAnalyticsSettings),
     [safeActivity, trainingAnalyticsSettings],
@@ -69,12 +82,15 @@ export default function ActivityDetailCard({
       <header className="card-header-row activity-detail-header wrap-on-mobile">
         <div>
           <div className="detail-chip">{getDisplaySportLabel(safeActivity, { groupSports: false })}</div>
+          <div className="detail-chip detail-source-chip">{getActivitySourceLabel(safeActivity)}</div>
           <h2 className="card-title detail-title">{safeActivity.name || "Activite"}</h2>
           <p className="card-subtitle">{formatDate(safeActivity.startDateLocal || safeActivity.startDate)}</p>
         </div>
-        <button type="button" className="button button-dark" onClick={onEnrich} disabled={isEnriching}>
-          {isEnriching ? "Enrichissement en cours..." : "Enrichir depuis Strava"}
-        </button>
+        {canEnrichFromStrava ? (
+          <button type="button" className="button button-dark" onClick={onEnrich} disabled={isEnriching}>
+            {isEnriching ? "Enrichissement en cours..." : "Enrichir depuis Strava"}
+          </button>
+        ) : null}
       </header>
 
       <ActivityHeaderKpis activity={safeActivity} />

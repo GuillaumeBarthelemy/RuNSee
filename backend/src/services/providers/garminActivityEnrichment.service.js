@@ -8,6 +8,12 @@ import {
 import { findExternalProviderConnectionForUser } from "./externalProviderConnection.service.js";
 import { fetchGarminActivities } from "./garminconnectBridge.service.js";
 import { decryptProviderSessionPayload } from "./providerSessionCrypto.service.js";
+import {
+  buildCanonicalActivityDataFromGarmin,
+  isSupportedGarminActivityType,
+  normalizeGarminActivity as normalizeGarminActivityCandidate,
+} from "./garminActivityNormalizer.service.js";
+import { upsertCanonicalProviderActivity } from "../../repositories/activity.repository.js";
 
 const GARMIN_PROVIDER_CODE = EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL;
 const ACTIVITY_DATA_TYPE = EXTERNAL_PROVIDER_DATA_TYPES.ACTIVITY_DETAIL;
@@ -569,16 +575,69 @@ function summarizeMatchItem(rawActivity, normalizedActivity, match) {
   };
 }
 
+function mapLinkStatus(matchStatus) {
+  if (matchStatus === "matched_exact") {
+    return "exact";
+  }
+
+  if (matchStatus === "matched_tolerated") {
+    return "probable";
+  }
+
+  return matchStatus || "not_found";
+}
+
+async function upsertActivityProviderLink({
+  appUserId,
+  activityId = null,
+  normalizedActivity,
+  rawData = null,
+  matchStatus,
+  matchConfidence = null,
+}) {
+  if (!normalizedActivity?.providerActivityId) {
+    return null;
+  }
+
+  return prisma.activityProviderLink.upsert({
+    where: {
+      appUserId_provider_providerActivityId: {
+        appUserId,
+        provider: GARMIN_PROVIDER_CODE,
+        providerActivityId: normalizedActivity.providerActivityId,
+      },
+    },
+    create: {
+      appUserId,
+      activityId,
+      provider: GARMIN_PROVIDER_CODE,
+      providerActivityId: normalizedActivity.providerActivityId,
+      matchStatus,
+      matchConfidence,
+      matchedAt: new Date(),
+      rawDataId: rawData?.id || null,
+    },
+    update: {
+      activityId,
+      matchStatus,
+      matchConfidence,
+      matchedAt: new Date(),
+      rawDataId: rawData?.id || null,
+    },
+  });
+}
+
 export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
   const { session } = await requireConnectedGarminSession(appUserId);
   const period = await resolveEnrichmentPeriod(appUserId, payload);
   const dryRun = Boolean(payload.dryRun);
+  const allowGarminOnly = Boolean(payload.allowGarminOnly);
   const allStravaActivities = await listUserStravaActivities(appUserId, period);
   const stravaActivities = period.mode === "recent_missing"
     ? await filterAlreadyEnrichedActivities(appUserId, allStravaActivities, { force: payload.force })
     : allStravaActivities;
 
-  if (period.mode === "recent_missing" && stravaActivities.length === 0) {
+  if (period.mode === "recent_missing" && stravaActivities.length === 0 && !allowGarminOnly) {
     return {
       providerCode: GARMIN_PROVIDER_CODE,
       period: {
@@ -643,12 +702,15 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
   const items = [];
   let rawUpsertedCount = 0;
   let enrichmentUpsertedCount = 0;
+  let garminOnlyCreatedCount = 0;
+  let garminOnlyUpdatedCount = 0;
+  let unsupportedTypeCount = 0;
   let matchedCount = 0;
   let ambiguousCount = 0;
   let notFoundCount = 0;
 
   for (const rawActivity of rawActivities) {
-    const normalizedActivity = normalizeGarminActivity(rawActivity);
+    const normalizedActivity = normalizeGarminActivityCandidate(rawActivity);
 
     if (!normalizedActivity) {
       continue;
@@ -667,11 +729,73 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
 
     if (match.status === "ambiguous") {
       ambiguousCount += 1;
+      if (!dryRun) {
+        await upsertActivityProviderLink({
+          appUserId,
+          normalizedActivity,
+          rawData,
+          matchStatus: "ambiguous",
+          matchConfidence: match.candidate?.matchResult?.score || null,
+        });
+      }
       continue;
     }
 
     if (match.status === "not_found") {
       notFoundCount += 1;
+
+      if (!allowGarminOnly) {
+        continue;
+      }
+
+      if (!isSupportedGarminActivityType(rawActivity)) {
+        unsupportedTypeCount += 1;
+        if (!dryRun) {
+          await upsertActivityProviderLink({
+            appUserId,
+            normalizedActivity,
+            rawData,
+            matchStatus: "rejected",
+            matchConfidence: null,
+          });
+        }
+        continue;
+      }
+
+      const canonicalData = buildCanonicalActivityDataFromGarmin(appUserId, normalizedActivity, rawActivity);
+      if (!canonicalData) {
+        continue;
+      }
+
+      if (dryRun) {
+        continue;
+      }
+
+      const existing = await prisma.activity.findUnique({
+        where: {
+          appUserId_sourceProvider_sourceActivityId: {
+            appUserId,
+            sourceProvider: canonicalData.sourceProvider,
+            sourceActivityId: canonicalData.sourceActivityId,
+          },
+        },
+        select: { id: true },
+      });
+      const canonicalActivity = await upsertCanonicalProviderActivity(appUserId, canonicalData);
+      if (existing) {
+        garminOnlyUpdatedCount += 1;
+      } else {
+        garminOnlyCreatedCount += 1;
+      }
+
+      await upsertActivityProviderLink({
+        appUserId,
+        activityId: canonicalActivity.id,
+        normalizedActivity,
+        rawData,
+        matchStatus: "not_found",
+        matchConfidence: null,
+      });
       continue;
     }
 
@@ -693,6 +817,15 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
     if (enrichment) {
       enrichmentUpsertedCount += 1;
     }
+
+    await upsertActivityProviderLink({
+      appUserId,
+      activityId: match.candidate.stravaActivity.id,
+      normalizedActivity,
+      rawData,
+      matchStatus: mapLinkStatus(match.status),
+      matchConfidence: match.candidate.matchResult.score,
+    });
   }
 
   if (!dryRun) {
@@ -727,6 +860,9 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
     skippedAlreadyEnrichedCount: Math.max(0, allStravaActivities.length - stravaActivities.length),
     rawUpsertedCount,
     enrichmentUpsertedCount,
+    garminOnlyCreatedCount,
+    garminOnlyUpdatedCount,
+    unsupportedTypeCount,
     matchedCount,
     ambiguousCount,
     notFoundCount,

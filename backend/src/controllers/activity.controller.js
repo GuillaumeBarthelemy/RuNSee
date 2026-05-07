@@ -1,7 +1,7 @@
 import prisma from "../config/prisma.js";
 import { getRequiredAuthUser } from "../middleware/auth.middleware.js";
 import {
-  getStoredActivityByStravaIdForUser,
+  getStoredActivityByPublicIdForUser,
   listActivities,
 } from "../repositories/activity.repository.js";
 import { enrichActivityByStravaId } from "../services/activityEnrichment.service.js";
@@ -49,7 +49,7 @@ export async function getActivityByStravaId(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
     const { stravaActivityId } = req.params;
-    const activity = await getStoredActivityByStravaIdForUser(user.id, stravaActivityId);
+    const activity = await getStoredActivityByPublicIdForUser(user.id, stravaActivityId);
 
     if (!activity) {
       return res.status(404).json({
@@ -80,7 +80,7 @@ export async function updateActivityRpe(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
     const { stravaActivityId } = req.params;
-    const existingActivity = await getStoredActivityByStravaIdForUser(
+    const existingActivity = await getStoredActivityByPublicIdForUser(
       user.id,
       stravaActivityId,
     );
@@ -99,7 +99,7 @@ export async function updateActivityRpe(req, res, next) {
       },
     });
 
-    const updated = await getStoredActivityByStravaIdForUser(user.id, stravaActivityId);
+    const updated = await getStoredActivityByPublicIdForUser(user.id, stravaActivityId);
     return res.json(buildActivityDetailResponse(updated));
   } catch (error) {
     next(error);
@@ -110,7 +110,7 @@ export async function enrichActivity(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
     const { stravaActivityId } = req.params;
-    const existingActivity = await getStoredActivityByStravaIdForUser(
+    const existingActivity = await getStoredActivityByPublicIdForUser(
       user.id,
       stravaActivityId
     );
@@ -121,7 +121,13 @@ export async function enrichActivity(req, res, next) {
       });
     }
 
-    const result = await enrichActivityByStravaId(user.id, stravaActivityId);
+    if (!existingActivity.stravaActivityId) {
+      return res.status(409).json({
+        message: "Enrichissement Strava indisponible pour cette activite.",
+      });
+    }
+
+    const result = await enrichActivityByStravaId(user.id, existingActivity.stravaActivityId);
 
     return res.json(result);
   } catch (error) {

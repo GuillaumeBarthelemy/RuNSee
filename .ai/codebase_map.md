@@ -60,6 +60,16 @@ Monorepo `C:\Services\RuNSee` :
 - `ExternalProviderRawData` : brut provider deduplique.
 - `ExternalDailyRecoverySnapshot` : recovery quotidien normalise.
 - `ActivityProviderEnrichment` : enrichissement d'une activite Strava par provider externe.
+- `ActivityProviderLink` : trace de rapprochement provider vers activite canonique, y compris matchs ambigus sans merge.
+- `ProviderBackfillCursor` : curseur de backfill historique provider/resource.
+- `Activity.sourceProvider/sourceActivityId` : identite canonique multi-source, Strava restant prioritaire quand un match Garmin fiable existe.
+
+## Multi-sources activites
+
+- `src/services/providers/garminActivityNormalizer.service.js` : normalisation Garmin activity vers candidate canonique.
+- `src/services/providers/activityProviderMatching.service.js` : scoring exact/probable/ambiguous/not_found/rejected.
+- `garminActivityEnrichment.service.js` : enrichit Strava quand le match est fiable et peut creer une activite Garmin-only quand aucun match fiable n'existe.
+- `/sync/all` : retourne un mode provider-aware (`strava_primary_garmin_enrichment_with_fallback`, `strava_only`, `garmin_primary`, `no_provider`).
 
 ## Contraintes de conception
 

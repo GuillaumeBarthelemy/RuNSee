@@ -24,9 +24,27 @@ function applyStoredActivityIntegrityFilters(where = {}, { requireStartDate = fa
   const and = Array.isArray(where.AND) ? [...where.AND] : [];
 
   and.push({
-    stravaActivityId: {
-      notIn: INVALID_STORED_ACTIVITY_IDS,
-    },
+    OR: [
+      {
+        sourceProvider: {
+          not: "strava",
+        },
+      },
+      {
+        AND: [
+          {
+            stravaActivityId: {
+              not: null,
+            },
+          },
+          {
+            stravaActivityId: {
+              notIn: INVALID_STORED_ACTIVITY_IDS,
+            },
+          },
+        ],
+      },
+    ],
   });
 
   if (requireStartDate) {
@@ -51,15 +69,22 @@ function buildWhereClause(filters = {}) {
   }
 
   if (filters.appUserId) {
-    where.athlete = {
-      is: {
-        connection: {
+    where.OR = [
+      {
+        appUserId: filters.appUserId,
+      },
+      {
+        athlete: {
           is: {
-            appUserId: filters.appUserId,
+            connection: {
+              is: {
+                appUserId: filters.appUserId,
+              },
+            },
           },
         },
       },
-    };
+    ];
   }
 
   if (filters.type) {
@@ -91,6 +116,11 @@ function mapActivityData(activity, athleteId, isDetailed = false) {
   return {
     athleteId,
     stravaActivityId,
+    sourceProvider: "strava",
+    sourceActivityId: stravaActivityId,
+    sourcePriority: "primary",
+    sourceSyncedAt: new Date(),
+    sourceUrl: `https://www.strava.com/activities/${stravaActivityId}`,
     resourceState: activity.resource_state ?? null,
     externalId: activity.external_id ?? null,
     uploadId: activity.upload_id ? String(activity.upload_id) : null,
@@ -154,6 +184,21 @@ function mapActivityData(activity, athleteId, isDetailed = false) {
   };
 }
 
+async function getAppUserIdForAthlete(athleteId) {
+  const athlete = await prisma.athlete.findUnique({
+    where: { id: athleteId },
+    select: {
+      connection: {
+        select: {
+          appUserId: true,
+        },
+      },
+    },
+  });
+
+  return athlete?.connection?.appUserId || null;
+}
+
 function buildSummaryActivityCreateData(activity, athleteId) {
   return {
     ...mapActivityData(activity, athleteId, false),
@@ -202,6 +247,7 @@ function buildDetailedActivityUpdateData(activity, athleteId, existingActivity =
 
 export async function upsertSummaryActivity(activity, athleteId) {
   const stravaActivityId = getRequiredStravaActivityId(activity);
+  const appUserId = await getAppUserIdForAthlete(athleteId);
   const existingActivity = await prisma.activity.findUnique({
     where: {
       stravaActivityId
@@ -214,8 +260,14 @@ export async function upsertSummaryActivity(activity, athleteId) {
       detailsFetchedAt: true,
     }
   });
-  const createData = buildSummaryActivityCreateData(activity, athleteId);
-  const updateData = buildSummaryActivityUpdateData(activity, athleteId, existingActivity);
+  const createData = {
+    ...buildSummaryActivityCreateData(activity, athleteId),
+    appUserId,
+  };
+  const updateData = {
+    ...buildSummaryActivityUpdateData(activity, athleteId, existingActivity),
+    appUserId,
+  };
   const savedActivity = await prisma.activity.upsert({
     where: {
       stravaActivityId
@@ -232,6 +284,7 @@ export async function upsertSummaryActivity(activity, athleteId) {
 
 export async function upsertDetailedActivity(activity, athleteId) {
   const stravaActivityId = getRequiredStravaActivityId(activity);
+  const appUserId = await getAppUserIdForAthlete(athleteId);
   const existingActivity = await prisma.activity.findUnique({
     where: {
       stravaActivityId
@@ -242,8 +295,14 @@ export async function upsertDetailedActivity(activity, athleteId) {
       summaryFetchedAt: true,
     }
   });
-  const createData = buildDetailedActivityCreateData(activity, athleteId);
-  const updateData = buildDetailedActivityUpdateData(activity, athleteId, existingActivity);
+  const createData = {
+    ...buildDetailedActivityCreateData(activity, athleteId),
+    appUserId,
+  };
+  const updateData = {
+    ...buildDetailedActivityUpdateData(activity, athleteId, existingActivity),
+    appUserId,
+  };
   const savedActivity = await prisma.activity.upsert({
     where: {
       stravaActivityId
@@ -331,8 +390,12 @@ export async function listActivitiesMissingDetails(filters = {}, options = {}) {
     },
     select: {
       id: true,
+      appUserId: true,
       athleteId: true,
       stravaActivityId: true,
+      sourceProvider: true,
+      sourceActivityId: true,
+      sourcePriority: true,
       startDate: true,
       startDateLocal: true,
       name: true,
@@ -379,6 +442,34 @@ export async function getStoredActivityByStravaIdForUser(appUserId, stravaActivi
   });
 }
 
+export async function getStoredActivityByPublicIdForUser(appUserId, publicActivityId) {
+  const candidate = String(publicActivityId || "").trim();
+
+  if (!candidate) {
+    return null;
+  }
+
+  return prisma.activity.findFirst({
+    where: applyStoredActivityIntegrityFilters({
+      OR: [
+        {
+          id: candidate,
+        },
+        {
+          stravaActivityId: candidate,
+        },
+        {
+          sourceActivityId: candidate,
+        },
+      ],
+      appUserId,
+    }),
+    include: {
+      providerEnrichments: true,
+    },
+  });
+}
+
 export async function getLatestStoredActivity(athleteId) {
   return prisma.activity.findFirst({
     where: applyStoredActivityIntegrityFilters(
@@ -389,8 +480,12 @@ export async function getLatestStoredActivity(athleteId) {
     ),
     select: {
       id: true,
+      appUserId: true,
       athleteId: true,
       stravaActivityId: true,
+      sourceProvider: true,
+      sourceActivityId: true,
+      sourcePriority: true,
       startDate: true,
       name: true,
       type: true,
@@ -409,8 +504,12 @@ export async function getLatestStoredActivityForUser(appUserId) {
     }),
     select: {
       id: true,
+      appUserId: true,
       athleteId: true,
       stravaActivityId: true,
+      sourceProvider: true,
+      sourceActivityId: true,
+      sourcePriority: true,
       startDate: true,
       name: true,
       type: true,
@@ -420,4 +519,33 @@ export async function getLatestStoredActivityForUser(appUserId) {
       startDate: "desc",
     },
   });
+}
+
+export async function upsertCanonicalProviderActivity(appUserId, providerActivityData) {
+  if (!appUserId || !providerActivityData?.sourceProvider || !providerActivityData?.sourceActivityId) {
+    const error = new Error("Canonical provider activity is missing its source identity.");
+    error.code = "INVALID_PROVIDER_ACTIVITY_IDENTITY";
+    throw error;
+  }
+
+  const savedActivity = await prisma.activity.upsert({
+    where: {
+      appUserId_sourceProvider_sourceActivityId: {
+        appUserId,
+        sourceProvider: providerActivityData.sourceProvider,
+        sourceActivityId: providerActivityData.sourceActivityId,
+      },
+    },
+    create: {
+      ...providerActivityData,
+      appUserId,
+    },
+    update: {
+      ...providerActivityData,
+      appUserId,
+      updatedAt: new Date(),
+    },
+  });
+
+  return savedActivity;
 }

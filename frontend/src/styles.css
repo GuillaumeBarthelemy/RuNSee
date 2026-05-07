@@ -7720,3 +7720,7 @@ button.alert-banner-positive-item {
     grid-template-columns: 1fr;
   }
 }
+/* Multi-source activity badges */
+.detail-source-chip {
+  margin-top: 0.35rem;
+}

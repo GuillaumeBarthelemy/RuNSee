@@ -25,6 +25,10 @@ const INFO_BLOCKS = [
 
 const noop = () => {};
 
+function getActivityRouteId(activity) {
+  return activity?.id || activity?.stravaActivityId || activity?.sourceActivityId || "";
+}
+
 export default function ActivityRpeCard({ activity = null, onUpdated = noop }) {
   const initialRpe = activity?.userRpe ?? "";
   const [selectedRpe, setSelectedRpe] = useState(initialRpe);
@@ -34,9 +38,11 @@ export default function ActivityRpeCard({ activity = null, onUpdated = noop }) {
 
   useEffect(() => {
     setSelectedRpe(activity?.userRpe ?? "");
-  }, [activity?.userRpe, activity?.stravaActivityId]);
+  }, [activity?.userRpe, activity?.id, activity?.stravaActivityId, activity?.sourceActivityId]);
 
-  if (!activity?.stravaActivityId) {
+  const routeId = getActivityRouteId(activity);
+
+  if (!routeId) {
     return null;
   }
 
@@ -47,7 +53,7 @@ export default function ActivityRpeCard({ activity = null, onUpdated = noop }) {
 
     try {
       const payload = selectedRpe === "" ? null : Number(selectedRpe);
-      const updated = await updateActivityRpe(activity.stravaActivityId, payload);
+      const updated = await updateActivityRpe(routeId, payload);
       setStatusMessage(payload === null ? "RPE efface." : `RPE enregistre : ${payload}.`);
       onUpdated(updated);
     } catch (error) {

@@ -82,3 +82,13 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Sync globale : `/sync/all` cree un job `global_incremental` sequentiel qui lance Strava incremental, Garmin recuperation recente puis Garmin activites recentes bornees.
 - Garmin activites global : enrichissement recent en mode `recent_missing`, fenetre configuree par `GARMIN_ACTIVITY_ENRICHMENT_GLOBAL_DAYS` avec plafond applicatif a 30 jours.
 - Documentation : convention d'archive standardisee sur `docs/old/`.
+
+## Plan multi-sources Strava/Garmin avec fallback Garmin
+
+- Nouveau plan traite : `docs/runsee_plan_multisource_garmin_fallback_v2.md`, archive ensuite sous `docs/old/`.
+- Modele : `Activity` porte maintenant une identite canonique multi-source (`appUserId`, `sourceProvider`, `sourceActivityId`, `sourcePriority`) en conservant `stravaActivityId` pour compatibilite.
+- Modele : ajout de `ActivityProviderLink` pour tracer les matchs provider et de `ProviderBackfillCursor` pour preparer le backfill Garmin historique par fenetres.
+- Backend Garmin : ajout d'un normaliseur d'activites Garmin et d'un scorer de matching provider reutilisable.
+- Sync globale : Garmin activites recentes peut maintenant creer des activites Garmin-only quand aucun match Strava fiable n'existe et que le cas n'est pas ambigu.
+- Frontend : les listes et fiches activites utilisent un identifiant stable (`id` puis fallback source/Strava) et affichent un badge source Strava/Garmin.
+- Documentation : ajout de `docs/MULTI_SOURCE_AUDIT.md` et `docs/MULTI_SOURCE_ARCHITECTURE.md`.

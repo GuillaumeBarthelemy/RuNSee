@@ -178,6 +178,22 @@ const env = {
     30,
     Math.max(1, parseNumber(process.env.GARMIN_ACTIVITY_ENRICHMENT_GLOBAL_DAYS, 30)),
   ),
+  garminActivitySyncRecentDays: Math.min(
+    30,
+    Math.max(1, parseNumber(process.env.GARMIN_ACTIVITY_SYNC_RECENT_DAYS, 30)),
+  ),
+  garminBackfillWindowDays: Math.max(
+    30,
+    parseNumber(process.env.GARMIN_BACKFILL_WINDOW_DAYS, 180),
+  ),
+  garminBackfillMinIntervalMinutes: Math.max(
+    15,
+    parseNumber(process.env.GARMIN_BACKFILL_MIN_INTERVAL_MINUTES, 60),
+  ),
+  garminBackfillMaxWindowsPerRun: Math.max(
+    1,
+    parseNumber(process.env.GARMIN_BACKFILL_MAX_WINDOWS_PER_RUN, 1),
+  ),
   stravaApprovalPrompt:
     String(process.env.STRAVA_APPROVAL_PROMPT || "force").trim() || "force",
   stravaScope:

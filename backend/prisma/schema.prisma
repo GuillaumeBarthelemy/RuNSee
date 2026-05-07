@@ -30,6 +30,9 @@ model AppUser {
   providerRawData ExternalProviderRawData[]
   recoverySnapshots ExternalDailyRecoverySnapshot[]
   activityProviderEnrichments ActivityProviderEnrichment[]
+  activities Activity[]
+  activityProviderLinks ActivityProviderLink[]
+  providerBackfillCursors ProviderBackfillCursor[]
 }
 
 // Course objectif planifiee par l'utilisateur, utilisee pour le countdown
@@ -176,10 +179,20 @@ model Athlete {
 
 model Activity {
   id                    String    @id @default(cuid())
-  athleteId             String
-  athlete               Athlete   @relation(fields: [athleteId], references: [id])
+  appUserId             String?
+  appUser               AppUser?  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  athleteId             String?
+  athlete               Athlete?  @relation(fields: [athleteId], references: [id])
 
-  stravaActivityId      String    @unique
+  stravaActivityId      String?   @unique
+  sourceProvider        String    @default("strava")
+  sourceActivityId      String    @default("")
+  sourcePriority        String    @default("primary")
+  sourceCreatedAt       DateTime?
+  sourceUpdatedAt       DateTime?
+  sourceSyncedAt        DateTime?
+  sourceUrl             String?
+  hasExternalEnrichment Boolean   @default(false)
   resourceState         Int?
   externalId            String?
   uploadId              String?
@@ -252,11 +265,15 @@ model Activity {
   userRpeUpdatedAt      DateTime?
 
   providerEnrichments   ActivityProviderEnrichment[]
+  providerLinks         ActivityProviderLink[]
 
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  @@unique([appUserId, sourceProvider, sourceActivityId])
+  @@index([appUserId, startDate])
   @@index([athleteId, startDate])
+  @@index([sourceProvider, startDate])
 }
 
 model ExternalProviderConnection {
@@ -360,6 +377,50 @@ model ActivityProviderEnrichment {
   @@unique([activityId, providerCode])
   @@index([appUserId, providerCode, status])
   @@index([providerCode, providerActivityId])
+}
+
+model ActivityProviderLink {
+  id                 String    @id @default(cuid())
+  appUserId          String
+  appUser            AppUser   @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  activityId         String?
+  activity           Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  provider           String
+  providerActivityId String
+  matchStatus        String
+  matchConfidence    Float?
+  matchedAt          DateTime?
+  rawDataId          String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([appUserId, provider, providerActivityId])
+  @@index([activityId, provider])
+  @@index([appUserId, provider, matchStatus])
+}
+
+model ProviderBackfillCursor {
+  id                      String    @id @default(cuid())
+  appUserId               String
+  appUser                 AppUser   @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  provider                String
+  resourceType            String
+  status                  String    @default("idle")
+  nextWindowEndDate       DateTime?
+  oldestFetchedDate       DateTime?
+  windowDays              Int       @default(180)
+  lastRunAt               DateTime?
+  lastSuccessAt           DateTime?
+  lastErrorCode           String?
+  lastErrorMessage        String?
+  totalWindowsProcessed   Int       @default(0)
+  totalActivitiesImported Int       @default(0)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@unique([appUserId, provider, resourceType])
+  @@index([provider, resourceType, status])
+  @@index([nextWindowEndDate])
 }
 
 model SyncJob {
