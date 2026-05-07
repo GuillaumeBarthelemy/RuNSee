@@ -8,6 +8,7 @@
  */
 
 function toNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
@@ -26,7 +27,7 @@ function toNumber(value) {
  */
 export function classifyTrainingEffect(value) {
   const v = toNumber(value);
-  if (v == null || v <= 0) return null;
+  if (v == null || v < 0) return null;
   if (v < 1) return { label: "Aucun effet", tone: 3 };
   if (v < 2) return { label: "Récupération active", tone: 2 };
   if (v < 3) return { label: "Maintien", tone: 3 };
@@ -105,6 +106,7 @@ export function buildActivityEnrichmentModel(rawGarminActivity) {
     recoveryHeartRate: recoveryHr,
     recoveryTime,
     epoc,
+    matchStatus: rawGarminActivity.status || null,
   };
 }
 

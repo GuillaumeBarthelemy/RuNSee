@@ -10,11 +10,11 @@ import {
 describe("classifyTrainingEffect", () => {
   it("retourne null sur valeur invalide", () => {
     expect(classifyTrainingEffect(null)).toBeNull();
-    expect(classifyTrainingEffect(0)).toBeNull();
     expect(classifyTrainingEffect(-1)).toBeNull();
   });
 
   it("classe les paliers Firstbeat", () => {
+    expect(classifyTrainingEffect(0).label).toBe("Aucun effet");
     expect(classifyTrainingEffect(0.5).label).toBe("Aucun effet");
     expect(classifyTrainingEffect(1.5).label).toBe("Récupération active");
     expect(classifyTrainingEffect(2.5).label).toBe("Maintien");

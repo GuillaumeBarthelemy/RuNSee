@@ -41,13 +41,35 @@ function Row({ label, value, hint = null, toneClass = "" }) {
 
 const noop = () => {};
 
+function MatchStatusRow({ status = "" }) {
+  const labels = {
+    matched_exact: "Correspondance Garmin fiable",
+    matched_tolerated: "Correspondance Garmin probable",
+    ambiguous: "Correspondance Garmin ambigue - aucune donnee appliquee",
+    not_found: "Aucune seance Garmin correspondante trouvee",
+    error: "Erreur Garmin temporaire",
+  };
+
+  const tone = status === "ambiguous" || status === "error" ? "tone-warning" : "";
+  return (
+    <Row
+      label="Matching"
+      value={labels[status] || "Statut Garmin non precise"}
+      toneClass={tone}
+    />
+  );
+}
+
 function resolveActivityEnrichmentModel(activityEnrichment) {
   if (!activityEnrichment) {
     return null;
   }
 
   if (activityEnrichment.normalized) {
-    return buildActivityEnrichmentModel(activityEnrichment.normalized);
+    return buildActivityEnrichmentModel({
+      ...activityEnrichment.normalized,
+      status: activityEnrichment.status || activityEnrichment.normalized.status,
+    });
   }
 
   if (
@@ -67,7 +89,7 @@ function EnrichmentAction({ onEnrichActivity = noop, isEnrichingActivity = false
       <div>
         <h3 className="subcard-title">Metriques Garmin de seance</h3>
         <p className="muted">
-          Recupere uniquement la sortie Garmin proche de cette activite Strava. Aucun backfill massif n'est lance.
+          Recherche uniquement la sortie Garmin proche de cette activite Strava. Aucun backfill massif n'est lance.
         </p>
       </div>
       <button
@@ -76,7 +98,7 @@ function EnrichmentAction({ onEnrichActivity = noop, isEnrichingActivity = false
         onClick={onEnrichActivity}
         disabled={isEnrichingActivity}
       >
-        {isEnrichingActivity ? "Recherche Garmin..." : "Completer cette seance"}
+        {isEnrichingActivity ? "Recherche Garmin..." : "Rechercher les metriques Garmin de cette seance"}
       </button>
     </div>
   );
@@ -204,14 +226,15 @@ function ActivityEnrichmentBlock({
     recoveryHeartRate,
     recoveryTime,
     epoc,
+    matchStatus,
   } = enrichment;
-  const hasAny = aerobicTrainingEffect?.value
-    || anaerobicTrainingEffect?.value
-    || vo2max
+  const hasAny = aerobicTrainingEffect?.value != null
+    || anaerobicTrainingEffect?.value != null
+    || vo2max != null
     || performanceCondition?.value != null
-    || recoveryHeartRate
-    || recoveryTime
-    || epoc;
+    || recoveryHeartRate != null
+    || recoveryTime != null
+    || epoc != null;
 
   if (!hasAny) {
     return (
@@ -228,6 +251,8 @@ function ActivityEnrichmentBlock({
     <div className="garmin-enrichment-group garmin-enrichment-activity-group">
       <h3 className="subcard-title">Metriques Garmin de seance</h3>
 
+      {matchStatus ? <MatchStatusRow status={matchStatus} /> : null}
+
       {aerobicTrainingEffect?.classification ? (
         <Row
           label="Effet aerobie"
@@ -237,7 +262,7 @@ function ActivityEnrichmentBlock({
         />
       ) : null}
 
-      {anaerobicTrainingEffect?.classification && anaerobicTrainingEffect.value > 0 ? (
+      {anaerobicTrainingEffect?.classification ? (
         <Row
           label="Effet anaerobie"
           value={`${anaerobicTrainingEffect.value.toFixed(1)} / 5`}
@@ -246,7 +271,7 @@ function ActivityEnrichmentBlock({
         />
       ) : null}
 
-      {vo2max ? <Row label="VO2max seance" value={`${vo2max.toFixed(1)} mL/kg/min`} /> : null}
+      {vo2max != null ? <Row label="VO2max estimee Garmin" value={`${vo2max.toFixed(1)} mL/kg/min`} /> : null}
 
       {performanceCondition?.classification ? (
         <Row
@@ -257,15 +282,15 @@ function ActivityEnrichmentBlock({
         />
       ) : null}
 
-      {recoveryHeartRate ? <Row label="FC a la recup (-1 min)" value={`-${recoveryHeartRate} bpm`} /> : null}
+      {recoveryHeartRate != null ? <Row label="Recuperation cardiaque Garmin" value={`${recoveryHeartRate} bpm`} /> : null}
 
-      {recoveryTime ? <Row label="Temps de recuperation" value={formatRecoveryTime(recoveryTime) || "-"} /> : null}
+      {recoveryTime != null ? <Row label="Temps de recuperation Garmin" value={formatRecoveryTime(recoveryTime) || "-"} /> : null}
 
-      {epoc ? (
+      {epoc != null ? (
         <Row
-          label="EPOC"
+          label="EPOC Garmin brut"
           value={`${Math.round(epoc)} ml/kg`}
-          hint="Dette physiologique estimee par Garmin"
+          hint="Estimation Garmin de dette d'oxygene"
         />
       ) : null}
     </div>

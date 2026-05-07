@@ -48,6 +48,11 @@ function ActivityDetailTabs({
 }) {
   const [activeTab, setActiveTab] = useState(getStoredTab);
   const description = String(activity?.description || "").trim();
+  const canShowGarminTab = Boolean(
+    garminSnapshot
+      || garminActivityEnrichment
+      || onGarminActivityEnrich !== noop,
+  );
 
   const tabs = useMemo(() => {
     const nextTabs = [
@@ -78,7 +83,7 @@ function ActivityDetailTabs({
       },
     ];
 
-    if (garminSnapshot !== undefined) {
+    if (canShowGarminTab) {
       nextTabs.push({
         id: "garmin",
         label: "Garmin",
@@ -112,6 +117,7 @@ function ActivityDetailTabs({
     garminActivityEnrichment,
     garminRecoveryContext,
     garminSnapshot,
+    canShowGarminTab,
     isGarminActivityEnriching,
     onActivityUpdated,
     onGarminActivityEnrich,

@@ -58,7 +58,7 @@ export function classifyEpoc(valueRawMlKg) {
       level: "Élevé",
       tone: 4,
       recoveryHoursLabel: "≈ 24 h",
-      description: "Bloc dense, prévois une journée plus calme avant la prochaine intensité.",
+      description: "Bloc dense, une journee plus calme peut etre pertinente avant la prochaine intensite.",
       hasData: true,
     };
   }
@@ -67,7 +67,7 @@ export function classifyEpoc(valueRawMlKg) {
     level: "Très élevé",
     tone: 5,
     recoveryHoursLabel: "≥ 36 h",
-    description: "Effort très exigeant, prends 1 à 2 jours de récupération active avant de relancer.",
+    description: "Effort tres exigeant, 1 a 2 jours faciles peuvent etre pertinents avant de relancer.",
     hasData: true,
   };
 }
