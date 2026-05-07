@@ -10,13 +10,54 @@ function CurrentAccountPanel({
   isPending = false,
   isSyncing = false,
   canSync = false,
+  providerStatuses = {},
+  providerStatusLoading = false,
+  providerStatusError = "",
 }) {
   const safeAccount = account || buildCurrentAccountModel();
   const syncButtonLabel = isSyncing
     ? "Synchronisation en cours"
-    : safeAccount.stravaConnected
-      ? "Synchroniser Strava"
-      : "Connecter Strava d'abord";
+    : canSync
+      ? "Synchroniser Strava et Garmin"
+      : "Connecte Strava ou Garmin d'abord";
+  const stravaStatus = providerStatuses?.strava || {};
+  const garminStatus = providerStatuses?.garmin || {};
+  const providerItems = [
+    { key: "strava", short: "S", label: "Strava", status: stravaStatus.status, connected: stravaStatus.connected },
+    { key: "garmin", short: "G", label: "Garmin", status: garminStatus.status, connected: garminStatus.connected },
+  ];
+
+  const getProviderTone = (provider) => {
+    if (providerStatusLoading || provider.status === "unknown") {
+      return "is-pending";
+    }
+    if (["error", "expired"].includes(provider.status)) {
+      return "is-error";
+    }
+    if (["syncing", "connecting", "mfa_required"].includes(provider.status)) {
+      return "is-warning";
+    }
+    return provider.connected ? "is-connected" : "is-pending";
+  };
+
+  const getProviderLabel = (provider) => {
+    if (providerStatusLoading || provider.status === "unknown") {
+      return `${provider.label} en verification`;
+    }
+    if (provider.connected) {
+      return `${provider.label} connecte`;
+    }
+    if (provider.status === "error") {
+      return `${provider.label} en erreur`;
+    }
+    if (provider.status === "expired") {
+      return `${provider.label} expire`;
+    }
+    if (provider.status === "syncing") {
+      return `${provider.label} en synchronisation`;
+    }
+    return `${provider.label} non connecte`;
+  };
 
   return (
     <section className="sidebar-account-card">
@@ -46,6 +87,23 @@ function CurrentAccountPanel({
           <span className="sidebar-account-identifier">{safeAccount.identifier}</span>
         </div>
       </div>
+
+      <div className="sidebar-provider-row" aria-label="Statut des sources connectees">
+        {providerItems.map((provider) => (
+          <span
+            key={provider.key}
+            className={`sidebar-provider-pill ${getProviderTone(provider)}`.trim()}
+            title={getProviderLabel(provider)}
+          >
+            <span className="sidebar-provider-short">{provider.short}</span>
+            <span className="sidebar-provider-dot" aria-hidden="true" />
+            <span className="sidebar-provider-label">{getProviderLabel(provider)}</span>
+          </span>
+        ))}
+      </div>
+      {providerStatusError ? (
+        <p className="sidebar-provider-error">{providerStatusError}</p>
+      ) : null}
 
       <div className="sidebar-account-meta-row">
         <span className="sidebar-account-meta-label">Dernier rafraichissement</span>

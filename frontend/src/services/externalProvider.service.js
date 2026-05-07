@@ -1,5 +1,10 @@
 import api from "./api.js";
 
+export async function getProviderStatuses() {
+  const response = await api.get("/providers/status");
+  return response.data;
+}
+
 export async function getGarminConnectionStatus() {
   const response = await api.get("/providers/garmin/status");
   return response.data;

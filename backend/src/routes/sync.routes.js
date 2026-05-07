@@ -2,6 +2,7 @@ import express from "express";
 import {
   queueHistoricalSync,
   queueIncrementalSync,
+  queueGlobalSync,
   queueDetailBackfill,
   getCurrentJob,
   getJobById,
@@ -15,6 +16,7 @@ const router = express.Router();
 router.post("/jobs/historical", requireAuth, queueHistoricalSync);
 router.post("/jobs/incremental", requireAuth, queueIncrementalSync);
 router.post("/jobs/detail-backfill", requireAuth, queueDetailBackfill);
+router.post("/all", requireAuth, queueGlobalSync);
 router.get("/jobs/current", requireAuth, getCurrentJob);
 router.get("/jobs/:jobId", requireAuth, getJobById);
 router.get("/jobs", requireAuth, getJobs);

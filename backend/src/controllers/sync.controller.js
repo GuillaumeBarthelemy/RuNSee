@@ -5,6 +5,7 @@ import {
   listSyncJobs,
   getSyncSummary,
   queueSyncJobForUser,
+  queueGlobalSyncForUser,
 } from "../services/sync/syncJob.service.js";
 
 export async function queueHistoricalSync(req, res, next) {
@@ -32,6 +33,17 @@ export async function queueIncrementalSync(req, res, next) {
       status: job.status,
       message: "Synchronisation incrementale lancee en arriere-plan.",
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function queueGlobalSync(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await queueGlobalSyncForUser(user.id);
+
+    return res.status(result.status === "already_running" ? 200 : 202).json(result);
   } catch (error) {
     next(error);
   }

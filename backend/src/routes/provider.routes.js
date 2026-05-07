@@ -5,6 +5,7 @@ import {
   enrichGarminActivitiesController,
   getGarminConnectionStatusController,
   getGarminSyncMetricsController,
+  getProviderStatusesController,
   listGarminRecoverySnapshotsController,
   purgeGarminDataController,
   renormalizeGarminRecoveryController,
@@ -15,6 +16,7 @@ import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
+router.get("/status", requireAuth, getProviderStatusesController);
 router.get("/garmin/status", requireAuth, getGarminConnectionStatusController);
 router.get("/garmin/metrics", requireAuth, getGarminSyncMetricsController);
 router.post("/garmin/connect", requireAuth, connectGarminController);

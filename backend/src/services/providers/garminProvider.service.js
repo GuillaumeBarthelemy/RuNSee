@@ -8,6 +8,7 @@ import {
   findExternalProviderConnectionForUser,
   upsertExternalProviderConnectionState,
 } from "./externalProviderConnection.service.js";
+import { findActiveConnectionForUser } from "../strava/stravaConnection.service.js";
 import { loginGarminconnect } from "./garminconnectBridge.service.js";
 import {
   buildGarminConnectionWithRecoveryStatus,
@@ -137,6 +138,52 @@ function resolveGarminErrorStatus(result = {}) {
 export async function getGarminConnectionStatus(appUserId) {
   const connection = await findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE);
   return buildGarminConnectionWithRecoveryStatus(appUserId, connection);
+}
+
+function buildStravaProviderStatus(connection) {
+  const connected = Boolean(connection?.isActive);
+
+  return {
+    providerCode: EXTERNAL_PROVIDER_CODES.STRAVA,
+    connected,
+    status: connected ? EXTERNAL_PROVIDER_STATUSES.CONNECTED : EXTERNAL_PROVIDER_STATUSES.DISCONNECTED,
+    displayName: connection?.athlete
+      ? [connection.athlete.firstname, connection.athlete.lastname].filter(Boolean).join(" ")
+      : "",
+    accountIdentifier: connection?.athlete?.username || connection?.stravaAthleteId || "",
+    connectedAt: connection?.connectedAt || null,
+    lastSyncAt: null,
+    lastErrorCode: "",
+    lastErrorMessage: "",
+    lastErrorAt: null,
+  };
+}
+
+function buildGarminProviderStatus(connection, recoveryBackfill = {}) {
+  const summary = buildExternalProviderConnectionSummary(connection);
+  const lastRecoverySyncAt = summary.lastSyncAt || recoveryBackfill.lastSyncedAt || null;
+
+  return {
+    ...summary,
+    providerCode: GARMIN_PROVIDER_CODE,
+    lastRecoverySyncAt,
+    recoveryBackfill,
+  };
+}
+
+export async function getProviderStatusesForUser(appUserId) {
+  const [stravaConnection, garminConnection, garminRecoveryBackfill] = await Promise.all([
+    findActiveConnectionForUser(appUserId, { includeAthlete: true }),
+    findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE),
+    getGarminRecoveryBackfillStatus(appUserId),
+  ]);
+
+  return {
+    providers: {
+      strava: buildStravaProviderStatus(stravaConnection),
+      garmin: buildGarminProviderStatus(garminConnection, garminRecoveryBackfill),
+    },
+  };
 }
 
 export async function connectGarminForUser(appUserId, payload = {}) {

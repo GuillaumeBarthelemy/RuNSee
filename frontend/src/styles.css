@@ -7517,3 +7517,154 @@ button.alert-banner-positive-item {
 .admin-about-references li {
   margin-bottom: 4px;
 }
+/* Trail + provider status additions */
+.sidebar-provider-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.sidebar-provider-pill {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.78);
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 800;
+  gap: 0.28rem;
+  letter-spacing: 0.04em;
+  padding: 0.24rem 0.48rem;
+  text-transform: uppercase;
+}
+
+.sidebar-provider-dot {
+  background: #94a3b8;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.16);
+  height: 0.42rem;
+  width: 0.42rem;
+}
+
+.sidebar-provider-pill.is-connected .sidebar-provider-dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+}
+
+.sidebar-provider-pill.is-warning .sidebar-provider-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
+
+.sidebar-provider-pill.is-error .sidebar-provider-dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.sidebar-provider-short {
+  display: none;
+}
+
+.sidebar-provider-error {
+  color: #fecaca;
+  font-size: 0.7rem;
+  margin: 0.35rem 0 0;
+}
+
+.dashboard-trail-context {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 1rem;
+  display: grid;
+  gap: 0.22rem;
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+}
+
+.dashboard-trail-context-warning,
+.dashboard-trail-context-danger {
+  background: rgba(255, 247, 237, 0.82);
+  border-color: rgba(249, 115, 22, 0.28);
+}
+
+.dashboard-trail-context-label {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trail-metric-grid,
+.trail-stat-grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin-top: 1rem;
+}
+
+.trail-specificity-card .insight-banner,
+.trail-card .insight-banner {
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.95rem;
+  color: #0f2442;
+  margin-top: 0.9rem;
+  padding: 0.85rem 1rem;
+}
+
+.trail-specificity-card .insight-banner-warning {
+  background: rgba(255, 247, 237, 0.9);
+  border-color: rgba(249, 115, 22, 0.28);
+}
+
+.status-danger {
+  background: rgba(254, 226, 226, 0.9);
+  color: #991b1b;
+}
+
+.trail-metric,
+.trail-stat {
+  background: rgba(248, 250, 252, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.9rem;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem;
+}
+
+.trail-metric span,
+.trail-stat span {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.trail-metric strong,
+.trail-stat strong {
+  color: #0f2442;
+  font-size: 1.15rem;
+}
+
+.trail-metric small,
+.trail-stat small,
+.trail-caution {
+  color: #64748b;
+}
+
+.trail-caution {
+  margin-top: 1rem;
+}
+
+@media (max-width: 760px) {
+  .sidebar-provider-label {
+    display: none;
+  }
+
+  .sidebar-provider-short {
+    display: inline;
+  }
+}

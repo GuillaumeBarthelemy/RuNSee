@@ -2,6 +2,7 @@ import { getRequiredAuthUser } from "../middleware/auth.middleware.js";
 import {
   connectGarminForUser,
   disconnectGarminForUser,
+  getProviderStatusesForUser,
   getGarminConnectionStatus,
   getGarminSyncMetrics,
   purgeGarminDataForUser,
@@ -18,6 +19,17 @@ export async function getGarminConnectionStatusController(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
     const result = await getGarminConnectionStatus(user.id);
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getProviderStatusesController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await getProviderStatusesForUser(user.id);
 
     return res.json(result);
   } catch (error) {

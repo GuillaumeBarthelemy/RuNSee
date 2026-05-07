@@ -10,6 +10,11 @@ export async function startIncrementalSync() {
   return response.data;
 }
 
+export async function startGlobalSync() {
+  const response = await api.post("/sync/all");
+  return response.data;
+}
+
 export async function startDetailBackfill() {
   const response = await api.post("/sync/jobs/detail-backfill");
   return response.data;

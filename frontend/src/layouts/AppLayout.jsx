@@ -4,14 +4,16 @@ import AppBrand from "../components/AppBrand.jsx";
 import CurrentAccountPanel from "../components/CurrentAccountPanel.jsx";
 import AppNavigation from "../components/AppNavigation.jsx";
 import useAuth from "../hooks/useAuth.js";
+import useProviderStatuses from "../hooks/useProviderStatuses.js";
 import useRunSeeData from "../hooks/useRunSeeData.js";
-import { startHistoricalSync, startIncrementalSync } from "../services/sync.service.js";
+import { startGlobalSync } from "../services/sync.service.js";
 import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
 
 export default function AppLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { athlete, summary, currentJob, isBusy, reload, setError } = useRunSeeData({ includeActivities: false });
+  const providerStatuses = useProviderStatuses();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSyncLaunching, setIsSyncLaunching] = useState(false);
 
@@ -19,8 +21,12 @@ export default function AppLayout() {
     () => buildCurrentAccountModel({ user, athlete, summary }),
     [athlete, summary, user],
   );
-  const canSync = Boolean(user?.stravaConnected || athlete);
-  const hasImportedActivities = Number(summary?.totalActivities || 0) > 0;
+  const canSync = Boolean(
+    providerStatuses.providers?.strava?.connected
+      || providerStatuses.providers?.garmin?.connected
+      || user?.stravaConnected
+      || athlete,
+  );
 
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
@@ -40,28 +46,27 @@ export default function AppLayout() {
       return;
     }
 
-    setError("");
-    setIsSyncLaunching(true);
+      setError("");
+      setIsSyncLaunching(true);
 
     try {
-      if (hasImportedActivities) {
-        await startIncrementalSync();
-      } else {
-        await startHistoricalSync();
+      const result = await startGlobalSync();
+      if (result?.status === "already_running" && result?.message) {
+        setError(result.message);
       }
-
+      await providerStatuses.refresh();
       await reload({ includeActivities: false });
     } catch (error) {
       const message =
         error?.response?.data?.userMessage ||
         error?.response?.data?.message ||
         error?.message ||
-        "Impossible de lancer la synchronisation Strava.";
+        "Impossible de lancer la synchronisation globale.";
       setError(message);
     } finally {
       setIsSyncLaunching(false);
     }
-  }, [canSync, hasImportedActivities, isBusy, reload, setError]);
+  }, [canSync, isBusy, providerStatuses, reload, setError]);
 
   return (
     <div className="app-shell">
@@ -75,6 +80,9 @@ export default function AppLayout() {
             isPending={isLoggingOut}
             isSyncing={Boolean(isBusy || isSyncLaunching || ["queued", "running"].includes(currentJob?.status))}
             canSync={canSync}
+            providerStatuses={providerStatuses.providers}
+            providerStatusLoading={providerStatuses.isLoading}
+            providerStatusError={providerStatuses.error}
           />
           <span className="app-sidebar-label">Navigation</span>
         </div>
