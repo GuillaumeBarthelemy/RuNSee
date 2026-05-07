@@ -15,6 +15,8 @@
     "prisma:pg:migrate:dev": "prisma migrate dev --config prisma.postgresql.config.ts",
     "prisma:pg:migrate:deploy": "prisma migrate deploy --config prisma.postgresql.config.ts",
     "prisma:pg:studio": "prisma studio --config prisma.postgresql.config.ts",
+    "pretest": "prisma generate",
+    "test": "node --test",
     "db:ensure:postgres": "node scripts/db/ensure-postgresql-databases.js",
     "db:export:sqlite": "node scripts/db/export-sqlite-dump.js",
     "db:import:postgres": "node scripts/db/import-postgresql-dump.js",

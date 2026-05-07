@@ -29,6 +29,17 @@ function toNumber(value) {
   return Number.isFinite(numeric) ? numeric : null;
 }
 
+function firstNumber(...values) {
+  for (const value of values) {
+    const numeric = toNumber(value);
+    if (numeric !== null) {
+      return numeric;
+    }
+  }
+
+  return null;
+}
+
 function parseDate(value) {
   if (!value) {
     return null;
@@ -118,6 +129,25 @@ function getGarminDurationSeconds(rawActivity) {
   return toNumber(rawActivity?.movingDuration)
     || toNumber(rawActivity?.duration)
     || toNumber(rawActivity?.elapsedDuration);
+}
+
+function getGarminRecoveryTimeHours(rawActivity) {
+  const hours = firstNumber(rawActivity?.recoveryTimeInHours);
+  if (hours !== null) {
+    return hours;
+  }
+
+  const minutes = firstNumber(rawActivity?.recoveryTimeMinutes);
+  if (minutes !== null) {
+    return minutes / 60;
+  }
+
+  const seconds = firstNumber(rawActivity?.recoveryTimeSeconds);
+  if (seconds !== null) {
+    return seconds / 3600;
+  }
+
+  return firstNumber(rawActivity?.recoveryTime);
 }
 
 function normalizeSportText(value) {
@@ -216,15 +246,15 @@ function normalizeGarminActivity(rawActivity) {
     averageRunCadence: toNumber(rawActivity.averageRunCadence),
     averagePower: toNumber(rawActivity.averagePower),
     maxPower: toNumber(rawActivity.maxPower),
-    aerobicTrainingEffect: toNumber(rawActivity.aerobicTrainingEffect || rawActivity.aerobicTrainingEffectScore),
+    aerobicTrainingEffect: firstNumber(rawActivity.aerobicTrainingEffect, rawActivity.aerobicTrainingEffectScore),
     aerobicTrainingEffectMessage: rawActivity.aerobicTrainingEffectMessage || null,
-    anaerobicTrainingEffect: toNumber(rawActivity.anaerobicTrainingEffect || rawActivity.anaerobicTrainingEffectScore),
+    anaerobicTrainingEffect: firstNumber(rawActivity.anaerobicTrainingEffect, rawActivity.anaerobicTrainingEffectScore),
     anaerobicTrainingEffectMessage: rawActivity.anaerobicTrainingEffectMessage || null,
     trainingEffectLabel: rawActivity.trainingEffectLabel || null,
     vO2MaxValue: toNumber(rawActivity.vO2MaxValue),
     performanceCondition: toNumber(rawActivity.performanceCondition),
     recoveryHeartRate: toNumber(rawActivity.recoveryHeartRate),
-    recoveryTime: toNumber(rawActivity.recoveryTime),
+    recoveryTime: getGarminRecoveryTimeHours(rawActivity),
     trainingLoad: toNumber(rawActivity.trainingLoad),
     trainingStressScore: toNumber(rawActivity.trainingStressScore),
     intensityFactor: toNumber(rawActivity.intensityFactor),
@@ -531,6 +561,9 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
   }
 
   const rawActivities = Array.isArray(bridgeResult.activities) ? bridgeResult.activities : [];
+  const fieldCoverage = bridgeResult.fieldCoverage && typeof bridgeResult.fieldCoverage === "object"
+    ? bridgeResult.fieldCoverage
+    : {};
   const stravaActivities = await listUserStravaActivities(appUserId, period);
   const items = [];
   let rawUpsertedCount = 0;
@@ -596,7 +629,6 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
         },
       },
       data: {
-        lastSyncAt: new Date(),
         lastErrorCode: null,
         lastErrorMessage: null,
         lastErrorAt: null,
@@ -621,6 +653,7 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
     matchedCount,
     ambiguousCount,
     notFoundCount,
+    fieldCoverage,
     items,
   };
 }
@@ -640,3 +673,10 @@ export async function getGarminActivityEnrichmentForActivity(appUserId, activity
 export function buildPublicGarminActivityEnrichment(enrichment) {
   return serializeActivityEnrichment(enrichment);
 }
+
+export {
+  findBestStravaMatch,
+  getGarminRecoveryTimeHours,
+  normalizeGarminActivity,
+  scoreGarminMatch,
+};

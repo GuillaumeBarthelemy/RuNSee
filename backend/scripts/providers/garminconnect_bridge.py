@@ -536,6 +536,10 @@ def fetch_activities(request: dict) -> dict:
             "trainingEffectLabel",
             "performanceCondition",
             "recoveryHeartRate",
+            "recoveryTime",
+            "recoveryTimeInHours",
+            "recoveryTimeMinutes",
+            "recoveryTimeSeconds",
             "minActivityLapDuration",
             "averagePower",
             "maxPower",
@@ -550,16 +554,21 @@ def fetch_activities(request: dict) -> dict:
         )
 
         activities = []
+        field_coverage = {}
         for raw in raw_activities or []:
             if not isinstance(raw, dict):
                 continue
             kept = {key: raw.get(key) for key in kept_keys if key in raw}
+            for key, value in kept.items():
+                if value is not None:
+                    field_coverage[key] = field_coverage.get(key, 0) + 1
             activities.append(kept)
 
         return {
             "status": "success",
             "activities": activities,
             "count": len(activities),
+            "fieldCoverage": field_coverage,
         }
 
 
