@@ -19,6 +19,7 @@ Monorepo `C:\Services\RuNSee` :
 - `src/services/providers/garminActivityEnrichment.service.js` : enrichissement activites Garmin -> Strava.
 - `src/services/providers/garminconnectBridge.service.js` : subprocess Python.
 - `scripts/providers/garminconnect_bridge.py` : operations `login`, `fetch_recovery_days`, `fetch_activities`.
+- `src/services/providers/garminActivityEnrichment.service.test.js` : tests purs matching Garmin/Strava et normalisation Garmin.
 - `repositories/activity.repository.js` : acces Activity, inclut maintenant `providerEnrichments` sur detail user.
 
 ## Frontend critique
@@ -35,7 +36,10 @@ Monorepo `C:\Services\RuNSee` :
 - `scripts/db/tableDefinitions.js` : liste ordonnee des 15 modeles.
 - `scripts/db/export-sqlite-dump.js` : dump JSON SQLite.
 - `scripts/db/import-postgresql-dump.js` : import PostgreSQL avec dry-run et garde-fous.
+- `scripts/db/compare-prisma-schemas.js` : detection de drift entre modeles Prisma SQLite et PostgreSQL.
 - `scripts/db/report-database-snapshot.js` : snapshot counts + integrite Garmin.
+- `deployment/scripts/Export-RunSeeSourceArchive.ps1` : archive source propre via `git archive`.
+- `deployment/postgresql/scripts/validate-green-stack.ps1` : validation GREEN publique ou authentifiee selon cookie fourni.
 
 ## Modeles provider importants
 

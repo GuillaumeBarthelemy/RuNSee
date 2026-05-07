@@ -9,6 +9,18 @@
 - [x] Harmoniser le libelle canonique `Aptitude RunNSee` et garder l'ancien libelle en alias glossaire.
 - [x] Ajouter un controle de drift Prisma SQLite/PostgreSQL.
 
+## Termines dans la stabilisation pre-ajouts
+
+- [x] Ajouter `.gitattributes` et un script d'archive source propre.
+- [x] Rendre `validate-green-stack.ps1` compatible avec checks publics sans session et checks authentifies avec cookie.
+- [x] Conserver les champs Garmin `recoveryTime*` dans le bridge activite.
+- [x] Normaliser `recoveryTime` Garmin en heures cote backend.
+- [x] Ne plus deplacer `ExternalProviderConnection.lastSyncAt` lors d'un enrichissement activite Garmin.
+- [x] Ajouter un diagnostic non sensible `fieldCoverage` sur les activites Garmin recuperees.
+- [x] Clarifier les libelles Garmin dans l'onglet activite.
+- [x] Durcir le preflight de l'import PostgreSQL.
+- [x] Ajouter des tests backend purs sur matching et normalisation Garmin.
+
 ## Termines dans la derniere passe
 
 - [x] Securiser les ignore files et retirer de l'index les artefacts locaux/secrets/logs.
@@ -29,7 +41,7 @@
 - [ ] Verifier qu'un cas ambigu ne cree pas d'association automatique.
 - [ ] Verifier que les metriques affichees dans l'onglet Garmin correspondent au payload Garmin reel.
 - [ ] Appliquer/valider l'import PostgreSQL sur une base cible de preprod ou prod uniquement avec backup et option explicite (`--truncate` ou `--allow-append`).
-- [ ] Pousser le commit et surveiller la CI/CD GitHub Actions vers la VM.
+- [ ] Verifier le deploiement CI/CD GitHub Actions vers la VM apres le push final.
 
 ## Dette hors scope
 

@@ -27,6 +27,24 @@
 - Risque : faux positif si un champ est volontairement different entre SQLite et PostgreSQL.
 - Garde-fous presents : comparaison limitee aux blocs `model`, pas aux providers datasource/generator.
 
+### Validation GREEN auth-aware
+
+- Zone : `deployment/postgresql/scripts/validate-green-stack.ps1`.
+- Risque : croire que les parcours authentifies sont valides alors qu'aucun cookie n'a ete fourni.
+- Garde-fous presents : sortie explicite `authenticatedChecks = SKIPPED` sans `-SessionCookie`; routes protegees testees seulement avec cookie.
+
+### Garmin activity recovery time
+
+- Zone : bridge Python et `garminActivityEnrichment.service.js`.
+- Risque : mauvaise unite de temps de recuperation si Garmin change les champs exposes.
+- Garde-fous presents : priorite explicite heures > minutes > secondes > champ brut, tests backend purs.
+
+### Timestamp Garmin recovery
+
+- Zone : `garminActivityEnrichment.service.js`.
+- Risque : une completion activite masque une recovery sync attendue.
+- Garde-fous presents : l'enrichissement activite ne met plus a jour `ExternalProviderConnection.lastSyncAt`.
+
 ## Eleve
 
 ### Migration SQLite vers PostgreSQL
