@@ -16,9 +16,9 @@ export default function AccountSecurityCard({
     <section className="card">
       <div className="card-header-row wrap-on-mobile">
         <div>
-          <h2 className="card-title">Securite et sessions</h2>
+          <h2 className="card-title">Sécurité et sessions</h2>
           <p className="card-subtitle">
-            Session actuelle, deconnexion et liaison Strava du compte RunNSee connecte.
+            Session actuelle, déconnexion et liaison Strava du compte RunNSee connecté.
           </p>
         </div>
         <span className={`status-pill ${stravaConnected ? "status-success" : "status-idle"}`}>
@@ -28,8 +28,8 @@ export default function AccountSecurityCard({
 
       <div className="inline-meta-grid">
         <span><strong>Session</strong> {safeAccount.sessionLabel || "Ce navigateur"}</span>
-        <span><strong>Role</strong> {safeAccount.roleLabel || "Proprietaire"}</span>
-        <span><strong>Derniere connexion</strong> {formatAccountDate(safeAccount.lastLoginAt)}</span>
+        <span><strong>Rôle</strong> {safeAccount.roleLabel || "Propriétaire"}</span>
+        <span><strong>Dernière connexion</strong> {formatAccountDate(safeAccount.lastLoginAt)}</span>
       </div>
 
       <div className="grid two-columns top-gap-sm">
@@ -41,24 +41,24 @@ export default function AccountSecurityCard({
 
         <div className="metric-card compact-metric">
           <span className="metric-label">Connexion Strava</span>
-          <div className="metric-value small-metric">{stravaConnected ? "Liee" : "Non liee"}</div>
+          <div className="metric-value small-metric">{stravaConnected ? "Liée" : "Non liée"}</div>
           <div className="metric-secondary">
             {stravaConnected
-              ? "Le compte Strava actif est rattache a cet utilisateur RunNSee."
-              : "Liaison optionnelle a faire depuis le bouton Connecter Strava."}
+              ? "Le compte Strava actif est rattaché à cet utilisateur RunNSee."
+              : "Liaison optionnelle à faire depuis le bouton Connecter Strava."}
           </div>
         </div>
 
         <div className="metric-card compact-metric">
           <span className="metric-label">Authentification</span>
           <div className="metric-value small-metric">E-mail + mot de passe</div>
-          <div className="metric-secondary">Connexion RunNSee classique, independante de Strava.</div>
+          <div className="metric-secondary">Connexion RunNSee classique, indépendante de Strava.</div>
         </div>
 
         <div className="metric-card compact-metric">
           <span className="metric-label">Protection</span>
-          <div className="metric-value small-metric">Sessions securisees</div>
-          <div className="metric-secondary">Le mot de passe est stocke cote serveur et la session est signee par cookie.</div>
+          <div className="metric-value small-metric">Sessions sécurisées</div>
+          <div className="metric-secondary">Le mot de passe est stocké côté serveur et la session est signée par cookie.</div>
         </div>
       </div>
 
@@ -72,15 +72,15 @@ export default function AccountSecurityCard({
           onClick={onDisconnectStrava}
           disabled={isPending || !stravaConnected}
         >
-          Delier Strava
+          Délier Strava
         </button>
         <button type="button" className="button button-dark" onClick={onLogout} disabled={isPending}>
-          Se deconnecter
+          Se déconnecter
         </button>
       </div>
 
       <p className="small-text top-gap-sm">
-        Les autres sessions et le reset de mot de passe complet pourront etre enrichis ensuite sans changer le coeur du modele.
+        Les autres sessions et le reset de mot de passe complet pourront être enrichis ensuite sans changer le cœur du modèle.
       </p>
     </section>
   );

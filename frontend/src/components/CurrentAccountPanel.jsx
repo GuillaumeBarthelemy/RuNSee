@@ -18,7 +18,7 @@ function CurrentAccountPanel({
   const syncButtonLabel = isSyncing
     ? "Synchronisation en cours"
     : canSync
-      ? "Synchroniser Strava et Garmin"
+      ? "Synchroniser Strava, Garmin récupération et activités Garmin récentes"
       : "Connecte Strava ou Garmin d'abord";
   const stravaStatus = providerStatuses?.strava || {};
   const garminStatus = providerStatuses?.garmin || {};
@@ -42,31 +42,27 @@ function CurrentAccountPanel({
 
   const getProviderLabel = (provider) => {
     if (providerStatusLoading || provider.status === "unknown") {
-      return `${provider.label} en verification`;
+      return `${provider.label} en vérification`;
     }
     if (provider.connected) {
-      return `${provider.label} connecte`;
+      return `${provider.label} connecté`;
     }
     if (provider.status === "error") {
       return `${provider.label} en erreur`;
     }
     if (provider.status === "expired") {
-      return `${provider.label} expire`;
+      return `${provider.label} expiré`;
     }
     if (provider.status === "syncing") {
       return `${provider.label} en synchronisation`;
     }
-    return `${provider.label} non connecte`;
+    return `${provider.label} non connecté`;
   };
 
   return (
     <section className="sidebar-account-card">
       <div className="sidebar-account-head">
         <span className="sidebar-account-kicker">Compte actif</span>
-        <span className={`sidebar-account-status ${safeAccount.stravaConnected ? "is-connected" : "is-pending"}`.trim()}>
-          <span className="sidebar-account-status-dot" aria-hidden="true" />
-          {safeAccount.stravaStatusLabel}
-        </span>
       </div>
 
       <div className="sidebar-account-main">
@@ -88,12 +84,13 @@ function CurrentAccountPanel({
         </div>
       </div>
 
-      <div className="sidebar-provider-row" aria-label="Statut des sources connectees">
+      <div className="sidebar-provider-row" aria-label="Statut des sources connectées">
         {providerItems.map((provider) => (
           <span
             key={provider.key}
             className={`sidebar-provider-pill ${getProviderTone(provider)}`.trim()}
             title={getProviderLabel(provider)}
+            aria-label={getProviderLabel(provider)}
           >
             <span className="sidebar-provider-short">{provider.short}</span>
             <span className="sidebar-provider-dot" aria-hidden="true" />
@@ -106,7 +103,7 @@ function CurrentAccountPanel({
       ) : null}
 
       <div className="sidebar-account-meta-row">
-        <span className="sidebar-account-meta-label">Dernier rafraichissement</span>
+        <span className="sidebar-account-meta-label">Dernier rafraîchissement</span>
         <strong className="sidebar-account-meta-value">{formatAccountDate(safeAccount.lastSyncAt)}</strong>
       </div>
 
@@ -130,7 +127,7 @@ function CurrentAccountPanel({
           onClick={onLogout}
           disabled={isPending}
         >
-          Se deconnecter
+          Se déconnecter
         </button>
       </div>
     </section>

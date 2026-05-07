@@ -37,16 +37,19 @@
 ## A faire / validation manuelle
 
 - [x] Ajouter les statuts Strava/Garmin dans le layout global.
-- [x] Ajouter la synchronisation globale Strava incremental + Garmin recovery recent.
+- [x] Ajouter la synchronisation globale Strava incremental + Garmin recovery recent + Garmin activites recentes bornees.
 - [x] Ajouter le socle de calcul trail prudent avec tests frontend.
 - [x] Ajouter le contexte trail minimal dans Aujourd'hui.
 - [x] Ajouter la lecture trail conditionnelle sur le detail activite.
 - [x] Ajouter la carte Specificite trail dans Analytics.
 - [x] Ajouter les champs trail optionnels sur les objectifs course.
 - [x] Ajouter les entrees glossaire trail.
-- [ ] Appliquer la nouvelle migration `20260507123000_add_trail_race_objective_fields` sur les environnements cibles.
+- [x] Appliquer la nouvelle migration `20260507123000_add_trail_race_objective_fields` sur les environnements cibles.
 - [ ] Tester `POST /sync/all` avec Strava seul, Garmin seul, puis les deux connectes.
+- [ ] Verifier que le job `global_incremental` enrichit bien les activites Garmin recentes apres l'import Strava incremental.
+- [ ] Verifier que `GARMIN_ACTIVITY_ENRICHMENT_GLOBAL_DAYS` reste borne a 30 jours et ne lance aucun backfill massif.
 - [ ] Verifier visuellement la sidebar provider sur mobile et ecran etroit.
+- [ ] Verifier visuellement la nouvelle carte `Lecture du jour` sur mobile et ecran etroit.
 - [ ] Ouvrir une activite route plate : l'onglet Trail ne doit pas apparaitre.
 - [ ] Ouvrir une activite vallonnee/trail enrichie : l'onglet Trail doit apparaitre avec D+/D- et vigilance prudente.
 - [ ] Creer un objectif trail et verifier sa persistance en DB.

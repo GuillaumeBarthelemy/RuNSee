@@ -11,17 +11,24 @@
 
 ### Synchronisation globale
 
-- Zone : `POST /sync/all`, `queueGlobalSyncForUser`.
-- Risque : relancer un historique Strava ou un backfill Garmin activite non borne.
-- Garde-fous presents : Strava incremental uniquement, Garmin recovery recent uniquement, Garmin activites `skipped`.
-- Validation requise : tester avec Strava/Garmin connectes et verifier les sync individuelles existantes.
+- Zone : `POST /sync/all`, `queueGlobalSyncForUser`, job `global_incremental`.
+- Risque : relancer un historique Strava, masquer une erreur provider partielle ou lancer un backfill Garmin activite non borne.
+- Garde-fous presents : Strava incremental uniquement, Garmin recovery recent, Garmin activites en mode `recent_missing` plafonne a 30 jours, erreurs provider isolees dans `resultJson`.
+- Validation requise : tester avec Strava seul, Garmin seul, les deux connectes, puis verifier les sync individuelles existantes.
 
 ### Lecture trail
 
 - Zone : `trailProfile.js`, `DashboardDecisionSummaryCard`, `ActivityTrailCard`, `TrailSpecificityCard`.
-- Risque : afficher une conclusion trail sur une sortie route plate ou avec altitude fragile.
-- Garde-fous presents : affichage conditionnel, qualite altitude, wording prudent, tests Vitest.
-- Validation requise : tester une activite plate, une sortie vallonnee et une activite sans `rawJson`.
+- Risque : afficher une conclusion trail sur une sortie route plate ou donner trop de poids au trail dans Aujourd'hui.
+- Garde-fous presents : affichage conditionnel, qualite altitude, wording prudent, contexte trail integre a la decision du jour sans bloc analytique lourd.
+- Validation requise : tester une activite plate, une sortie vallonnee, une activite sans `rawJson`, puis la carte Lecture du jour sur mobile.
+
+### Sidebar providers
+
+- Zone : `CurrentAccountPanel`, `useProviderStatuses`, `GET /providers/status`.
+- Risque : perdre la lisibilite des sources connectees ou rendre le bouton sync ambigu.
+- Garde-fous presents : une seule ligne provider, labels `aria-label` explicites, Strava et Garmin au meme niveau visuel.
+- Validation requise : verifier Strava/Garmin connectes, un seul provider connecte, erreur provider et affichage etroit.
 
 ### Objectifs trail optionnels
 

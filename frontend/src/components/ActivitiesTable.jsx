@@ -83,8 +83,8 @@ export default function ActivitiesTable({
   pageSize = 20,
   onPageChange = noop,
   onPageSizeChange = noop,
-  title = "Activites",
-  subtitle = "Clic sur une ligne pour ouvrir sa fiche detail puis revenir exactement au bon endroit.",
+  title = "Activités",
+  subtitle = "Clic sur une ligne pour ouvrir sa fiche détail puis revenir exactement au bon endroit.",
   returnPath = "/activities",
 }) {
   const navigate = useNavigate();
@@ -164,7 +164,7 @@ export default function ActivitiesTable({
       </div>
 
       {!rows.length ? (
-        <div className="empty-state">Aucune activite disponible pour les filtres selectionnes.</div>
+        <div className="empty-state">Aucune activité disponible pour les filtres sélectionnés.</div>
       ) : (
         <>
           <div className="table-wrapper">
@@ -172,7 +172,7 @@ export default function ActivitiesTable({
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Activite</th>
+                  <th>Activité</th>
                   <th>Sport</th>
                   <th>Distance</th>
                   <th>Temps</th>

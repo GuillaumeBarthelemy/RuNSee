@@ -1,4 +1,5 @@
 import prisma from "../../config/prisma.js";
+import env from "../../config/env.js";
 import {
   executeHistoricalSyncJob,
   executeIncrementalSyncJob,
@@ -21,6 +22,7 @@ import {
   EXTERNAL_PROVIDER_STATUSES,
 } from "../providers/externalProvider.constants.js";
 import { syncRecentGarminRecoveryForUser } from "../providers/garminRecoveryBackfill.service.js";
+import { enrichGarminActivitiesForUser } from "../providers/garminActivityEnrichment.service.js";
 
 const ACTIVE_JOB_STATUSES = ["queued", "running"];
 const runningJobs = new Set();
@@ -63,7 +65,7 @@ async function failStaleJobsForUser(appUserId) {
     },
     data: {
       status: "failed",
-      finishedAt: new Date(),
+      endedAt: new Date(),
       message: "Job interrompu (timeout > 30 min sans completion).",
     },
   });
@@ -107,7 +109,9 @@ export async function createSyncJob(appUserId, jobType, triggerSource = "ui") {
   }
 
   await assertNoActiveSyncJob(appUserId);
-  await requireActiveConnectionForUser(appUserId);
+  if (jobType !== "global_incremental") {
+    await requireActiveConnectionForUser(appUserId);
+  }
 
   return prisma.syncJob.create({
     data: {
@@ -135,6 +139,14 @@ function buildSkippedProvider(reason) {
   };
 }
 
+function buildQueuedProvider(extra = {}) {
+  return {
+    requested: true,
+    status: "queued",
+    ...extra,
+  };
+}
+
 function buildFailedProvider(error) {
   return {
     requested: true,
@@ -143,8 +155,19 @@ function buildFailedProvider(error) {
   };
 }
 
+function isUsableGarminConnection(connection) {
+  return Boolean(
+    connection?.encryptedSession
+      && [
+        EXTERNAL_PROVIDER_STATUSES.CONNECTED,
+        EXTERNAL_PROVIDER_STATUSES.SYNCING,
+      ].includes(connection.status),
+  );
+}
+
 export async function queueGlobalSyncForUser(appUserId) {
   const activeJob = await getCurrentSyncJob(appUserId);
+  const periodDays = Number(env.garminconnectActivityEnrichmentGlobalDays || 30);
 
   if (activeJob) {
     return {
@@ -162,7 +185,7 @@ export async function queueGlobalSyncForUser(appUserId) {
           reason: "strava_sync_active",
         },
         garminRecovery: buildSkippedProvider("global_sync_waiting_for_strava_job"),
-        garminActivities: buildSkippedProvider("manual_activity_context_required"),
+        garminActivities: buildSkippedProvider("global_sync_already_running"),
       },
     };
   }
@@ -171,63 +194,182 @@ export async function queueGlobalSyncForUser(appUserId) {
     findActiveConnectionForUser(appUserId),
     findExternalProviderConnectionForUser(appUserId, EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL),
   ]);
-  const providers = {
-    strava: buildSkippedProvider("strava_not_connected"),
-    garminRecovery: buildSkippedProvider("garmin_not_connected"),
-    garminActivities: buildSkippedProvider("manual_activity_context_required"),
-  };
-  let stravaJob = null;
 
-  if (stravaConnection) {
-    try {
-      stravaJob = await queueSyncJobForUser(appUserId, "incremental", "global_sync");
-      providers.strava = {
-        requested: true,
-        status: stravaJob.status || "queued",
-        jobId: stravaJob.id,
-      };
-    } catch (error) {
-      providers.strava = buildFailedProvider(error);
-    }
+  if (!stravaConnection && !isUsableGarminConnection(garminConnection)) {
+    return {
+      status: "completed",
+      message: "Aucune source connectée à synchroniser.",
+      job: null,
+      providers: {
+        strava: buildSkippedProvider("strava_not_connected"),
+        garminRecovery: buildSkippedProvider("garmin_not_connected"),
+        garminActivities: buildSkippedProvider("garmin_not_connected"),
+      },
+    };
   }
 
-  if (
-    garminConnection?.encryptedSession
-    && [
-      EXTERNAL_PROVIDER_STATUSES.CONNECTED,
-      EXTERNAL_PROVIDER_STATUSES.SYNCING,
-    ].includes(garminConnection.status)
-  ) {
-    try {
-      const garminResult = await syncRecentGarminRecoveryForUser(appUserId, { triggerSource: "global_sync" });
-      providers.garminRecovery = {
-        requested: true,
-        status: "completed",
-        message: garminResult?.message || "Synchronisation Garmin recente terminee.",
-        recoveryBackfill: garminResult?.recoveryBackfill || null,
-      };
-    } catch (error) {
-      providers.garminRecovery = buildFailedProvider(error);
-    }
-  }
+  const job = await createSyncJob(appUserId, "global_incremental", "ui");
+  startSyncJobInBackground(job.id);
 
   return {
-    status: stravaJob ? "running" : "completed",
-    message: stravaJob
-      ? "Synchronisation globale lancee. Strava continue en arriere-plan ; Garmin a ete traite de facon bornee."
-      : "Synchronisation globale traitee avec les sources disponibles.",
-    job: stravaJob
-      ? {
-          id: stravaJob.id,
-          status: stravaJob.status,
-          type: stravaJob.jobType,
-        }
-      : null,
-    providers,
+    status: "running",
+    message: "Synchronisation globale lancée.",
+    job: {
+      id: job.id,
+      status: job.status,
+      type: job.jobType,
+    },
+    providers: {
+      strava: stravaConnection ? buildQueuedProvider() : buildSkippedProvider("strava_not_connected"),
+      garminRecovery: isUsableGarminConnection(garminConnection)
+        ? buildQueuedProvider()
+        : buildSkippedProvider("garmin_not_connected"),
+      garminActivities: isUsableGarminConnection(garminConnection)
+        ? buildQueuedProvider({ periodDays })
+        : buildSkippedProvider("garmin_not_connected"),
+    },
   };
 }
 
+async function updateGlobalJob(jobId, data = {}) {
+  return prisma.syncJob.update({
+    where: { id: jobId },
+    data,
+  });
+}
+
+function buildProviderResultFromError(error) {
+  return {
+    requested: true,
+    status: "error",
+    reason: error?.userMessage || error?.message || "Provider indisponible.",
+  };
+}
+
+function hasProviderError(providers = {}) {
+  return Object.values(providers).some((provider) => provider?.status === "error");
+}
+
+async function executeGlobalIncrementalSyncJob(jobId) {
+  const job = await prisma.syncJob.findUnique({ where: { id: jobId } });
+
+  if (!job) {
+    const error = new Error("Sync job not found.");
+    error.httpStatus = 404;
+    error.userMessage = "Job de synchronisation introuvable.";
+    throw error;
+  }
+
+  await updateGlobalJob(jobId, {
+    status: "running",
+    startedAt: new Date(),
+    message: "Synchronisation globale en cours : Strava, Garmin récupération puis activités récentes.",
+    progressPercent: 5,
+  });
+
+  const providers = {
+    strava: buildSkippedProvider("strava_not_connected"),
+    garminRecovery: buildSkippedProvider("garmin_not_connected"),
+    garminActivities: buildSkippedProvider("garmin_not_connected"),
+  };
+  const [stravaConnection, garminConnection] = await Promise.all([
+    findActiveConnectionForUser(job.appUserId),
+    findExternalProviderConnectionForUser(job.appUserId, EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL),
+  ]);
+  const hasGarmin = isUsableGarminConnection(garminConnection);
+
+  if (stravaConnection) {
+    await updateGlobalJob(jobId, {
+      message: "Synchronisation globale : lecture Strava en cours.",
+      progressPercent: 15,
+    });
+    try {
+      const result = await executeIncrementalSyncJob(jobId);
+      providers.strava = {
+        requested: true,
+        status: "success",
+        activitiesSeen: result.activitiesSeen,
+        activitiesInserted: result.activitiesInserted,
+        activitiesUpdated: result.activitiesUpdated,
+        detailsFetched: result.detailsFetched,
+      };
+    } catch (error) {
+      providers.strava = buildProviderResultFromError(error);
+    }
+  }
+
+  if (hasGarmin) {
+    await updateGlobalJob(jobId, {
+      status: "running",
+      message: "Synchronisation globale : récupération Garmin récente.",
+      progressPercent: 58,
+      resultJson: JSON.stringify({ providers }),
+    });
+    try {
+      const result = await syncRecentGarminRecoveryForUser(job.appUserId, { triggerSource: "global_sync" });
+      providers.garminRecovery = {
+        requested: true,
+        status: "success",
+        message: result?.message || "Récupération Garmin récente synchronisée.",
+        recoveryBackfill: result?.recoveryBackfill || null,
+      };
+    } catch (error) {
+      providers.garminRecovery = buildProviderResultFromError(error);
+    }
+
+    await updateGlobalJob(jobId, {
+      message: "Synchronisation globale : métriques Garmin des activités récentes.",
+      progressPercent: 78,
+      resultJson: JSON.stringify({ providers }),
+    });
+    try {
+      const days = Number(env.garminconnectActivityEnrichmentGlobalDays || 30);
+      const result = await enrichGarminActivitiesForUser(job.appUserId, {
+        mode: "recent_missing",
+        days,
+        triggerSource: "global_sync",
+      });
+      providers.garminActivities = {
+        requested: true,
+        status: "success",
+        periodDays: days,
+        fetched: result.fetchedCount,
+        candidates: result.stravaCandidateCount,
+        skippedAlreadyEnriched: result.skippedAlreadyEnrichedCount,
+        matched: result.matchedCount,
+        ambiguous: result.ambiguousCount,
+        notFound: result.notFoundCount,
+      };
+    } catch (error) {
+      providers.garminActivities = buildProviderResultFromError(error);
+    }
+  }
+
+  const warning = hasProviderError(providers);
+  const result = {
+    mode: "global_incremental",
+    providers,
+  };
+
+  await updateGlobalJob(jobId, {
+    status: "success",
+    endedAt: new Date(),
+    progressPercent: 100,
+    message: warning
+      ? "Synchronisation globale terminée avec une alerte sur une source."
+      : "Synchronisation globale terminée.",
+    resultJson: JSON.stringify(result),
+    errorDetails: warning ? JSON.stringify({ providers }) : null,
+  });
+
+  return result;
+}
+
 async function dispatchSyncJob(job) {
+  if (job.jobType === "global_incremental") {
+    return executeGlobalIncrementalSyncJob(job.id);
+  }
+
   if (job.jobType === "historical") {
     return executeHistoricalSyncJob(job.id);
   }

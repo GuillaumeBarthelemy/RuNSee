@@ -174,6 +174,10 @@ const env = {
     7,
     Math.max(1, parseNumber(process.env.GARMINCONNECT_RECENT_SYNC_DAYS, 4)),
   ),
+  garminconnectActivityEnrichmentGlobalDays: Math.min(
+    30,
+    Math.max(1, parseNumber(process.env.GARMIN_ACTIVITY_ENRICHMENT_GLOBAL_DAYS, 30)),
+  ),
   stravaApprovalPrompt:
     String(process.env.STRAVA_APPROVAL_PROMPT || "force").trim() || "force",
   stravaScope:

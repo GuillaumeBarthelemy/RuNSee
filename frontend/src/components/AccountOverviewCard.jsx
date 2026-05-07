@@ -17,7 +17,7 @@ export default function AccountOverviewCard({
       <div className="card-header-row wrap-on-mobile">
         <div>
           <h2 className="card-title">Compte actif</h2>
-          <p className="card-subtitle">Profil actuellement utilise dans RuNSee.</p>
+          <p className="card-subtitle">Profil actuellement utilisé dans RuNSee.</p>
         </div>
         <span className={`status-pill ${safeAccount.stravaConnected ? "status-success" : "status-idle"}`}>
           {safeAccount.stravaStatusLabel}
@@ -42,7 +42,7 @@ export default function AccountOverviewCard({
             {safeAccount.location ? ` - ${safeAccount.location}` : ""}
           </p>
           <div className="inline-meta-grid top-gap-sm">
-            <span><strong>Role</strong> {safeAccount.roleLabel || "-"}</span>
+            <span><strong>Rôle</strong> {safeAccount.roleLabel || "-"}</span>
             <span><strong>Langue</strong> {safeAccount.localeLabel || "-"}</span>
             <span><strong>Fuseau</strong> {safeAccount.timezoneLabel || "-"}</span>
           </div>
@@ -57,15 +57,15 @@ export default function AccountOverviewCard({
         </div>
 
         <div className="metric-card compact-metric">
-          <span className="metric-label">Derniere synchro</span>
+          <span className="metric-label">Dernière synchro</span>
           <div className="metric-value medium-metric">{formatAccountDate(safeAccount.lastSyncAt)}</div>
-          <div className="metric-secondary">Derniere mise a jour connue des donnees locales.</div>
+          <div className="metric-secondary">Dernière mise à jour connue des données locales.</div>
         </div>
 
         <div className="metric-card compact-metric">
           <span className="metric-label">Membre depuis</span>
           <div className="metric-value medium-metric">{formatAccountDate(safeAccount.joinedAt)}</div>
-          <div className="metric-secondary">Date de creation ou premiere connexion disponible.</div>
+          <div className="metric-secondary">Date de création ou première connexion disponible.</div>
         </div>
       </div>
 
@@ -79,10 +79,10 @@ export default function AccountOverviewCard({
           onClick={onDisconnectStrava}
           disabled={isPending || !stravaConnected}
         >
-          Delier Strava
+          Délier Strava
         </button>
         <button type="button" className="button button-dark" onClick={onLogout} disabled={isPending}>
-          Se deconnecter
+          Se déconnecter
         </button>
       </div>
     </section>

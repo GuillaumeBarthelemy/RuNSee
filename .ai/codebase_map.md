@@ -15,10 +15,10 @@ Monorepo `C:\Services\RuNSee` :
 - `src/routes/provider.routes.js` : routes Garmin non officiel.
 - `src/controllers/provider.controller.js` : controllers providers.
 - `GET /providers/status` : statut public filtre Strava/Garmin pour layout global.
-- `POST /sync/all` : sync globale prudente, Strava incremental + Garmin recovery recent.
+- `POST /sync/all` : sync globale sequentielle via job `global_incremental`, Strava incremental + Garmin recovery recent + Garmin activites recentes bornees.
 - `src/services/providers/garminProvider.service.js` : connexion Garmin, MFA, purge, metriques sync.
 - `src/services/providers/garminRecoveryBackfill.service.js` : recuperation recovery quotidienne.
-- `src/services/providers/garminActivityEnrichment.service.js` : enrichissement activites Garmin -> Strava.
+- `src/services/providers/garminActivityEnrichment.service.js` : enrichissement activites Garmin -> Strava, incluant le mode global borne `recent_missing`.
 - `src/services/providers/garminconnectBridge.service.js` : subprocess Python.
 - `scripts/providers/garminconnect_bridge.py` : operations `login`, `fetch_recovery_days`, `fetch_activities`.
 - `src/services/providers/garminActivityEnrichment.service.test.js` : tests purs matching Garmin/Strava et normalisation Garmin.
@@ -32,6 +32,8 @@ Monorepo `C:\Services\RuNSee` :
 - `components/ActivityTrailCard.jsx` : lecture trail conditionnelle sur le detail activite.
 - `components/TrailSpecificityCard.jsx` : synthese trail dans Analytics.
 - `components/GarminEnrichmentPanel.jsx` : recovery snapshot + metriques Garmin de seance.
+- `components/CurrentAccountPanel.jsx` : zone compte sidebar, statuts Strava/Garmin sans doublon et bouton de sync globale.
+- `components/DashboardDecisionSummaryCard.jsx` : Lecture du jour, verdict/action/vigilance/signaux cles avec contexte trail integre.
 - `hooks/useProviderStatuses.js` : appel consolide des statuts Strava/Garmin.
 - `utils/trailProfile.js` : calculs trail purs (terrain, D+/D-, temps pente, charge descente).
 - `utils/activityEnrichment.js` : mapping stable des metriques Garmin par activite.

@@ -298,8 +298,8 @@ export function buildTrailContextSummary(activities = [], options = {}) {
 
   let tone = "neutral";
   let context = hasRecentTrail
-    ? `Specificite trail recente : ${Math.round(elevationGain7d)} m D+ et ${Math.round(elevationLoss7d)} m D-.`
-    : "Objectif ou contexte trail detecte, sans grosse exposition recente.";
+    ? `Contexte trail : ${Math.round(elevationGain7d)} m D+ et ${Math.round(elevationLoss7d)} m D- sur 7 jours.`
+    : "Objectif ou contexte trail détecté, sans grosse exposition récente.";
   let vigilance = "";
 
   if (hasHighDownhillLoad) {
@@ -307,11 +307,11 @@ export function buildTrailContextSummary(activities = [], options = {}) {
     vigilance = "Vigilance : limite les descentes rapides aujourd'hui.";
   } else if (elevationGain7d >= 1200) {
     tone = "warning";
-    vigilance = "Vigilance : bloc vallonne recent, garde une intensite maitrisee.";
+    vigilance = "Vigilance : bloc vallonné récent, garde une intensité maîtrisée.";
   } else if (hasActiveTrailObjective) {
     context = hasRecentTrail
       ? context
-      : "Specificite trail a suivre par rapport a ton objectif.";
+      : "Spécificité trail à suivre par rapport à ton objectif.";
   }
 
   return {

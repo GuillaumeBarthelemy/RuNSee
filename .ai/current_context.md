@@ -73,3 +73,12 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Analytics : nouvelle carte `Specificite trail` sur la selection filtree.
 - Objectifs : les courses peuvent porter des champs trail optionnels (D+, D-, terrain, duree cible, montee/descente longue, priorite).
 - Glossaire : entrees trail ajoutees pour D+, D-, D+/km, VAM, charge descente et specificite trail.
+
+## Correctif post Trail + providers + sync globale
+
+- Nouveau plan traite : `docs/runsee_plan_correctif_post_trail_provider_sync.md`, archive ensuite sous `docs/old/`.
+- Sidebar compte : le statut Strava historique du header est retire ; Strava et Garmin sont affiches une seule fois au meme niveau dans les pastilles provider.
+- `Lecture du jour` : la carte est reorganisee en verdict, action du jour, vigilance et signaux cles ; le contexte trail est integre a la decision au lieu d'un bloc analytique separe.
+- Sync globale : `/sync/all` cree un job `global_incremental` sequentiel qui lance Strava incremental, Garmin recuperation recente puis Garmin activites recentes bornees.
+- Garmin activites global : enrichissement recent en mode `recent_missing`, fenetre configuree par `GARMIN_ACTIVITY_ENRICHMENT_GLOBAL_DAYS` avec plafond applicatif a 30 jours.
+- Documentation : convention d'archive standardisee sur `docs/old/`.

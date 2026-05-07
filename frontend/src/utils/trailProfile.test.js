@@ -55,7 +55,7 @@ describe("trailProfile", () => {
     });
 
     expect(summary.shouldShow).toBe(true);
-    expect(summary.context).toContain("Specificite trail");
+    expect(summary.context).toContain("Contexte trail");
   });
 
   it("aggrege une selection Analytics", () => {

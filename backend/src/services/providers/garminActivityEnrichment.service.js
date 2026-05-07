@@ -393,11 +393,54 @@ async function resolveEnrichmentPeriod(appUserId, payload = {}) {
     };
   }
 
+  if (payload.mode === "recent_missing") {
+    const days = Math.min(
+      DEFAULT_LOOKBACK_DAYS,
+      Math.max(1, Number(payload.days || DEFAULT_LOOKBACK_DAYS)),
+    );
+    const endDate = new Date();
+    const startDate = addDays(endDate, -(days - 1));
+
+    return {
+      ...clampDateRange(startDate, endDate),
+      stravaActivityId: "",
+      targeted: false,
+      mode: "recent_missing",
+      days,
+    };
+  }
+
   return {
     ...clampDateRange(payload.startDate, payload.endDate),
     stravaActivityId: "",
     targeted: false,
+    mode: "period",
   };
+}
+
+async function filterAlreadyEnrichedActivities(appUserId, stravaActivities = [], options = {}) {
+  if (options.force || !stravaActivities.length) {
+    return stravaActivities;
+  }
+
+  const enrichments = await prisma.activityProviderEnrichment.findMany({
+    where: {
+      appUserId,
+      providerCode: GARMIN_PROVIDER_CODE,
+      activityId: {
+        in: stravaActivities.map((activity) => activity.id),
+      },
+      status: {
+        in: ["matched_exact", "matched_tolerated"],
+      },
+    },
+    select: {
+      activityId: true,
+    },
+  });
+  const enrichedActivityIds = new Set(enrichments.map((enrichment) => enrichment.activityId));
+
+  return stravaActivities.filter((activity) => !enrichedActivityIds.has(activity.id));
 }
 
 async function upsertRawGarminActivity(appUserId, rawActivity, normalizedActivity) {
@@ -530,6 +573,39 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
   const { session } = await requireConnectedGarminSession(appUserId);
   const period = await resolveEnrichmentPeriod(appUserId, payload);
   const dryRun = Boolean(payload.dryRun);
+  const allStravaActivities = await listUserStravaActivities(appUserId, period);
+  const stravaActivities = period.mode === "recent_missing"
+    ? await filterAlreadyEnrichedActivities(appUserId, allStravaActivities, { force: payload.force })
+    : allStravaActivities;
+
+  if (period.mode === "recent_missing" && stravaActivities.length === 0) {
+    return {
+      providerCode: GARMIN_PROVIDER_CODE,
+      period: {
+        startDate: period.startDate,
+        endDate: period.endDate,
+        targeted: period.targeted,
+        stravaActivityId: null,
+        maxLookbackDays: MAX_LOOKBACK_DAYS,
+        mode: period.mode,
+        days: period.days,
+      },
+      dryRun,
+      fetchedCount: 0,
+      stravaCandidateCount: 0,
+      stravaCandidateTotalCount: allStravaActivities.length,
+      skippedAlreadyEnrichedCount: allStravaActivities.length,
+      rawUpsertedCount: 0,
+      enrichmentUpsertedCount: 0,
+      matchedCount: 0,
+      ambiguousCount: 0,
+      notFoundCount: 0,
+      fieldCoverage: {},
+      items: [],
+      skippedReason: "no_recent_missing_strava_activity",
+    };
+  }
+
   const bridgeResult = await fetchGarminActivities({
     session,
     startDate: period.startDate,
@@ -564,7 +640,6 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
   const fieldCoverage = bridgeResult.fieldCoverage && typeof bridgeResult.fieldCoverage === "object"
     ? bridgeResult.fieldCoverage
     : {};
-  const stravaActivities = await listUserStravaActivities(appUserId, period);
   const items = [];
   let rawUpsertedCount = 0;
   let enrichmentUpsertedCount = 0;
@@ -648,6 +723,8 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
     dryRun,
     fetchedCount: rawActivities.length,
     stravaCandidateCount: stravaActivities.length,
+    stravaCandidateTotalCount: allStravaActivities.length,
+    skippedAlreadyEnrichedCount: Math.max(0, allStravaActivities.length - stravaActivities.length),
     rawUpsertedCount,
     enrichmentUpsertedCount,
     matchedCount,

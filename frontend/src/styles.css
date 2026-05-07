@@ -169,7 +169,7 @@ select {
 }
 
 .sidebar-account-head {
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
 }
 
@@ -7666,5 +7666,57 @@ button.alert-banner-positive-item {
 
   .sidebar-provider-short {
     display: inline;
+  }
+}
+
+/* === Correctifs post trail/providers : Lecture du jour === */
+.dashboard-decision-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(240px, 0.75fr);
+  gap: 14px;
+  margin: 14px 0 4px;
+}
+
+.dashboard-decision-layout .dashboard-verdict {
+  margin: 0;
+}
+
+.dashboard-today-action,
+.dashboard-caution,
+.dashboard-signal-panel {
+  border: 1px solid rgba(53, 88, 134, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.58);
+  padding: 12px;
+}
+
+.dashboard-today-action,
+.dashboard-caution {
+  display: grid;
+  gap: 5px;
+}
+
+.dashboard-today-action strong {
+  color: var(--color-text-primary);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.dashboard-caution span:last-child {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dashboard-signal-panel {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (max-width: 820px) {
+  .dashboard-decision-layout {
+    grid-template-columns: 1fr;
   }
 }

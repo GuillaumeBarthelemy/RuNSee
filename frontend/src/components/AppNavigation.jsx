@@ -34,8 +34,8 @@ const NAV_ITEMS = [
   },
   {
     to: "/activities",
-    label: "Activites",
-    shortLabel: "Activites",
+    label: "Activités",
+    shortLabel: "Activités",
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 6h10M7 12h10M7 18h10M4 6h.01M4 12h.01M4 18h.01" />
@@ -44,8 +44,8 @@ const NAV_ITEMS = [
   },
   {
     to: "/admin",
-    label: "Reglages",
-    shortLabel: "Reglages",
+    label: "Réglages",
+    shortLabel: "Réglages",
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-7 8a7 7 0 0 1 14 0" />
