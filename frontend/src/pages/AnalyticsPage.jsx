@@ -7,6 +7,7 @@ import PerformanceTrendChart from "../components/PerformanceTrendChart.jsx";
 import PeriodComparisonSection from "../components/PeriodComparisonSection.jsx";
 import RollingLoadChart from "../components/RollingLoadChart.jsx";
 import TrainingSummaryKpiGrid from "../components/TrainingSummaryKpiGrid.jsx";
+import TrailSpecificityCard from "../components/TrailSpecificityCard.jsx";
 import WeeklyVolumeChart from "../components/WeeklyVolumeChart.jsx";
 import ZoneLoadDistributionCard from "../components/ZoneLoadDistributionCard.jsx";
 import { SHARED_FILTER_COPY } from "../content/analyticsCopy.js";
@@ -44,6 +45,7 @@ import {
 import { buildLoadDynamicsProfile } from "../utils/loadDynamics.js";
 import { buildRecoveryCorrelationDataset } from "../utils/recoveryCorrelations.js";
 import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
+import { buildTrailAnalyticsSummary } from "../utils/trailProfile.js";
 
 function addDays(date, days) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
@@ -241,6 +243,11 @@ export default function AnalyticsPage() {
       56,
     ),
     [recoverySnapshots, trainingLoadModel.chartData],
+  );
+
+  const trailAnalytics = useMemo(
+    () => buildTrailAnalyticsSummary(analyticsActivities),
+    [analyticsActivities],
   );
 
   const scopeLabel = filters.sportGroup === "all" ? "tous les sports" : filters.sportGroup;
@@ -519,6 +526,20 @@ export default function AnalyticsPage() {
             insight={intensityNarrative}
           />
         </div>
+
+        {trailAnalytics.hasData ? (
+          <div className="section analysis-section-shell">
+            <div className="analysis-section-intro">
+              <span className="eyebrow analysis-section-kicker">Trail</span>
+              <h2 className="card-title">Specificite trail</h2>
+              <p className="card-subtitle">Lecture terrain et charge musculaire potentielle.</p>
+            </div>
+            <TrailSpecificityCard
+              model={trailAnalytics}
+              info={TRAINING_MVP_SECTION_INFO.trailSpecificity}
+            />
+          </div>
+        ) : null}
 
         <div className="section analysis-section-shell">
           <div className="analysis-section-intro">

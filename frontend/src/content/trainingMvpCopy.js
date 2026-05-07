@@ -136,6 +136,11 @@ export const TRAINING_MVP_SECTION_INFO = {
       "Foster (1998) ; Coggan & Allen (2019) ; Halson (2014) sur la prevention de la surcharge.",
     glossaryKey: "tsb",
   }),
+  trailSpecificity: buildInfoBlocks({
+    role: "Lire la specificite terrain de ta selection : denivele, descente et temps passe en pente.",
+    calculation: "RunNSee utilise le D+, le D- et les splits enrichis quand ils existent. Sans altitude fiable, la lecture reste indicative.",
+    interpretation: "Une forte charge descente signale une fatigue musculaire possible, meme avec une FC moyenne moderee.",
+  }),
   loadChart: buildInfoBlocks({
     role: "Te permettre de lire en meme temps ta charge du jour, ta base de fond, ta fatigue recente et ta fraicheur.",
     calculation:

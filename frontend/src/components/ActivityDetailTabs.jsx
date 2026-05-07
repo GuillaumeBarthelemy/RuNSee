@@ -3,8 +3,10 @@ import ActivityMapCard from "./ActivityMapCard.jsx";
 import ActivityRecoveryContextCard from "./ActivityRecoveryContextCard.jsx";
 import ActivityRpeCard from "./ActivityRpeCard.jsx";
 import ActivitySplitsCard from "./ActivitySplitsCard.jsx";
+import ActivityTrailCard from "./ActivityTrailCard.jsx";
 import GarminEnrichmentPanel from "./GarminEnrichmentPanel.jsx";
 import IntraSessionInsightsCard from "./IntraSessionInsightsCard.jsx";
+import { buildTrailProfile } from "../utils/trailProfile.js";
 
 const STORAGE_KEY = "runsee-activity-tab";
 const DEFAULT_TAB = "intra";
@@ -48,6 +50,7 @@ function ActivityDetailTabs({
 }) {
   const [activeTab, setActiveTab] = useState(getStoredTab);
   const description = String(activity?.description || "").trim();
+  const trailProfile = useMemo(() => buildTrailProfile(activity || {}), [activity]);
   const canShowGarminTab = Boolean(
     garminSnapshot
       || garminActivityEnrichment
@@ -83,6 +86,14 @@ function ActivityDetailTabs({
       },
     ];
 
+    if (trailProfile.hasTrailContext) {
+      nextTabs.push({
+        id: "trail",
+        label: "Lecture trail",
+        render: () => <ActivityTrailCard activity={activity} />,
+      });
+    }
+
     if (canShowGarminTab) {
       nextTabs.push({
         id: "garmin",
@@ -117,6 +128,7 @@ function ActivityDetailTabs({
     garminActivityEnrichment,
     garminRecoveryContext,
     garminSnapshot,
+    trailProfile.hasTrailContext,
     canShowGarminTab,
     isGarminActivityEnriching,
     onActivityUpdated,

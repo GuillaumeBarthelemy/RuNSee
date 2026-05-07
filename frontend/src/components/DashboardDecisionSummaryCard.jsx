@@ -31,6 +31,7 @@ export default function DashboardDecisionSummaryCard({
   title = "Lecture du jour",
   subtitle = "Forme, fatigue récente et sens de charge — à lire avant de choisir ta prochaine séance.",
   info = [],
+  trailContext = null,
 }) {
   const safeModel = model || {};
   const decisionMeta = safeModel.decisionMeta || {};
@@ -83,6 +84,14 @@ export default function DashboardDecisionSummaryCard({
       </div>
 
       {/* 3 pills Forme / Fatigue / Charge (sans Recovery, géré par TodayReadinessCard) */}
+      {trailContext?.shouldShow ? (
+        <div className={`dashboard-trail-context dashboard-trail-context-${trailContext.tone || "neutral"}`.trim()}>
+          <span className="dashboard-trail-context-label">Contexte trail</span>
+          <strong>{trailContext.context}</strong>
+          {trailContext.vigilance ? <span>{trailContext.vigilance}</span> : null}
+        </div>
+      ) : null}
+
       <div className="decision-pill-grid">
         <DecisionPill
           label="Forme du moment"

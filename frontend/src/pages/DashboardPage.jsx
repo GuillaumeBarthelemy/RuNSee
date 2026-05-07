@@ -31,6 +31,7 @@ import {
   buildDashboardDecisionSummary,
   decorateRecentActivities,
 } from "../utils/performanceNarratives.js";
+import { buildTrailContextSummary } from "../utils/trailProfile.js";
 
 const TODAY_PERIOD_PRESET = "7d";
 const TODAY_VOLUME_VIEW_MODE = "rolling";
@@ -171,6 +172,14 @@ export default function DashboardPage() {
   const dashboardDecisionModel = useMemo(
     () => buildDashboardDecisionSummary(trainingLoadModel, trendLoadModel, { recoverySnapshots }),
     [recoverySnapshots, trainingLoadModel, trendLoadModel],
+  );
+
+  const trailContext = useMemo(
+    () => buildTrailContextSummary(dashboardScopeActivities, {
+      referenceDate: todayRange.end,
+      activeRace,
+    }),
+    [activeRace, dashboardScopeActivities, todayRange.end],
   );
 
   const loadVarianceModel = useMemo(
@@ -363,6 +372,7 @@ export default function DashboardPage() {
           <DashboardDecisionSummaryCard
             model={dashboardDecisionModel}
             info={TRAINING_MVP_SECTION_INFO.decisionSummary}
+            trailContext={trailContext}
           />
         </div>
 

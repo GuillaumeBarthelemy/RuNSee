@@ -302,6 +302,60 @@ export const GLOSSARY_ENTRIES = [
       "Indicateur meta qui combine la taille de l'echantillon (nombre de jours / activites disponibles) et la coherence des signaux (concordance entre VFC, FC repos, sommeil). Si la Confiance est Faible, ne sur-interprete pas le verdict ou les patterns affiches : c'est qu'on n'a pas encore assez de donnees pour etre categorique.",
     thresholds: "Haute = echantillon suffisant + signaux concordants. Moyenne = donnees partielles. Faible = echantillon trop petit ou signaux contradictoires.",
   },
+  {
+    key: "trailElevationGain",
+    term: "D+",
+    aliases: ["Denivele positif", "Elevation gain"],
+    category: "Trail",
+    short: "Denivele positif cumule pendant une sortie.",
+    definition:
+      "Le D+ additionne les metres montes pendant une sortie. En trail, il explique une part importante de la charge mecanique et du temps d'effort.",
+  },
+  {
+    key: "trailElevationLoss",
+    term: "D-",
+    aliases: ["Denivele negatif", "Elevation loss"],
+    category: "Trail",
+    short: "Denivele negatif cumule pendant une sortie.",
+    definition:
+      "Le D- additionne les metres descendus. Il peut creer une fatigue musculaire importante, surtout quadriceps et tendons, meme quand la FC reste moderee.",
+  },
+  {
+    key: "elevationDensity",
+    term: "D+ / km",
+    aliases: ["Densite de denivele"],
+    category: "Trail",
+    short: "Metres montes par kilometre.",
+    definition:
+      "Le D+ / km compare des sorties de distances differentes. Plus il est haut, plus le terrain est montagneux ou vertical.",
+  },
+  {
+    key: "vam",
+    term: "VAM",
+    aliases: ["Vitesse ascensionnelle moyenne"],
+    category: "Trail",
+    short: "Metres de montee par heure.",
+    definition:
+      "La VAM mesure ta vitesse verticale en montee. Elle est utile sur les longues montees continues, moins sur les sorties tres roulantes.",
+  },
+  {
+    key: "downhillLoad",
+    term: "Charge descente",
+    aliases: ["Charge musculaire descente"],
+    category: "Trail",
+    short: "Vigilance musculaire liee au D- recent.",
+    definition:
+      "Repere RunNSee qui signale une exposition recente aux descentes. Il reste qualitatif : technicite, fatigue et surface peuvent fortement changer le cout reel.",
+  },
+  {
+    key: "trailSpecificity",
+    term: "Specificite trail",
+    aliases: ["Preparation trail"],
+    category: "Trail",
+    short: "Alignement recent avec les exigences terrain.",
+    definition:
+      "Lecture de ton exposition recente au denivele, aux descentes et aux sorties vallonnees par rapport a une pratique trail ou un objectif trail.",
+  },
 ];
 
 export const GLOSSARY_CATEGORIES = [
@@ -312,6 +366,7 @@ export const GLOSSARY_CATEGORIES = [
   "Recuperation",
   "Intra-seance",
   "Subjectif",
+  "Trail",
 ];
 
 /**
