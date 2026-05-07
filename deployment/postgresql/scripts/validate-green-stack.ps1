@@ -1,7 +1,8 @@
 param(
   [string]$BackendBaseUrl = "http://127.0.0.1:3001",
   [string]$FrontendBaseUrl = "http://127.0.0.1:5174",
-  [string]$ExpectedDatabase = "postgresql"
+  [string]$ExpectedDatabase = "postgresql",
+  [string]$SessionCookie = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -9,18 +10,20 @@ $ErrorActionPreference = "Stop"
 function Get-JsonResponse {
   param(
     [Parameter(Mandatory = $true)]
-    [string]$Url
+    [string]$Url,
+    [hashtable]$Headers = @{}
   )
 
-  $response = Invoke-WebRequest -UseBasicParsing -Uri $Url
+  $response = Invoke-WebRequest -UseBasicParsing -Uri $Url -Headers $Headers
   return $response.Content | ConvertFrom-Json
 }
 
 $health = Get-JsonResponse -Url "$BackendBaseUrl/health"
 $dbHealth = Get-JsonResponse -Url "$BackendBaseUrl/db/health"
-$athlete = Get-JsonResponse -Url "$BackendBaseUrl/athlete/me"
-$summary = Get-JsonResponse -Url "$BackendBaseUrl/sync/summary"
 $frontendResponse = Invoke-WebRequest -UseBasicParsing -Uri $FrontendBaseUrl
+$authenticatedChecks = "SKIPPED"
+$athlete = $null
+$summary = $null
 
 if ($health.status -ne "OK") {
   throw "Backend healthcheck invalide."
@@ -34,8 +37,18 @@ if ($dbHealth.database -ne $ExpectedDatabase) {
   throw "Provider DB inattendu: $($dbHealth.database)"
 }
 
-if (-not $athlete.stravaAthleteId) {
-  throw "Athlete courant introuvable sur la pile GREEN."
+if ($SessionCookie.Trim()) {
+  $authHeaders = @{
+    Cookie = $SessionCookie.Trim()
+  }
+  $athlete = Get-JsonResponse -Url "$BackendBaseUrl/athlete/me" -Headers $authHeaders
+  $summary = Get-JsonResponse -Url "$BackendBaseUrl/sync/summary" -Headers $authHeaders
+
+  if (-not $athlete.stravaAthleteId) {
+    throw "Athlete courant introuvable sur la pile GREEN."
+  }
+
+  $authenticatedChecks = "OK"
 }
 
 if (-not ($frontendResponse.Content -match "<!doctype html>|<!DOCTYPE html>")) {
@@ -51,10 +64,12 @@ if (-not ($frontendResponse.Content -match "/assets/")) {
 }
 
 $result = [ordered]@{
+  publicChecks = "OK"
+  authenticatedChecks = $authenticatedChecks
   backendStatus = $health.status
   database = $dbHealth.database
-  athleteId = $athlete.stravaAthleteId
-  totalActivities = $summary.totalActivities
+  athleteId = if ($athlete) { $athlete.stravaAthleteId } else { $null }
+  totalActivities = if ($summary) { $summary.totalActivities } else { $null }
   frontendStatusCode = $frontendResponse.StatusCode
   frontendMode = "preview"
 }
