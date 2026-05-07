@@ -2,6 +2,34 @@
 
 ## Risques surveilles dans la passe de fiabilisation
 
+### Statuts providers dans le layout
+
+- Zone : `CurrentAccountPanel`, `useProviderStatuses`, `GET /providers/status`.
+- Risque : surcharge visuelle de la sidebar ou exposition involontaire de secrets.
+- Garde-fous presents : reponse provider filtree, pas de token/session, pastilles compactes desktop/mobile.
+- Validation requise : verifier sidebar sur desktop, ecran etroit et mobile.
+
+### Synchronisation globale
+
+- Zone : `POST /sync/all`, `queueGlobalSyncForUser`.
+- Risque : relancer un historique Strava ou un backfill Garmin activite non borne.
+- Garde-fous presents : Strava incremental uniquement, Garmin recovery recent uniquement, Garmin activites `skipped`.
+- Validation requise : tester avec Strava/Garmin connectes et verifier les sync individuelles existantes.
+
+### Lecture trail
+
+- Zone : `trailProfile.js`, `DashboardDecisionSummaryCard`, `ActivityTrailCard`, `TrailSpecificityCard`.
+- Risque : afficher une conclusion trail sur une sortie route plate ou avec altitude fragile.
+- Garde-fous presents : affichage conditionnel, qualite altitude, wording prudent, tests Vitest.
+- Validation requise : tester une activite plate, une sortie vallonnee et une activite sans `rawJson`.
+
+### Objectifs trail optionnels
+
+- Zone : schemas Prisma, migrations `20260507123000_add_trail_race_objective_fields`, `RaceObjectivesCard`.
+- Risque : migration non appliquee en prod ou formulaire trop dense en admin.
+- Garde-fous presents : champs nullable, objectifs route conserves, serializers retrocompatibles.
+- Validation requise : appliquer migration avant usage prod, creer/reactiver/archiver un objectif route et trail.
+
 ### Healthcheck backend
 
 - Zone : `backend/src/app.js`.

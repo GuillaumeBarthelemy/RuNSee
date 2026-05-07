@@ -60,3 +60,16 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Test Garmin reel sur une activite Strava connue avec session Garmin connectee.
 - Verification d'un cas ambiguous : aucune association automatique ne doit etre appliquee.
 - Verification VM/prod apres push CI/CD : endpoint provider, fiche activite, onglet Garmin.
+
+## Plan Trail + statuts providers + sync globale
+
+- Nouveau plan execute : `docs/runsee_plan_trail_sync_global_codex_v2.md`.
+- Backend : ajout de `GET /providers/status` pour exposer un etat filtre Strava/Garmin sans secret.
+- Backend : ajout de `POST /sync/all`, orchestration prudente Strava incremental + Garmin recovery recent ; Garmin activity enrichment reste volontairement skippe hors contexte activite.
+- Frontend layout : le panneau compte affiche maintenant les pastilles Strava/Garmin et un bouton de synchronisation globale compact.
+- Trail : ajout du socle `trailProfile.js` avec classification terrain prudente, D+/D-/km, temps montee/descente, charge descente et qualite altitude.
+- Aujourd'hui : le contexte trail reste minimal et conditionnel dans la synthese decisionnelle.
+- Detail activite : onglet `Lecture trail` affiche uniquement si le profil terrain est pertinent.
+- Analytics : nouvelle carte `Specificite trail` sur la selection filtree.
+- Objectifs : les courses peuvent porter des champs trail optionnels (D+, D-, terrain, duree cible, montee/descente longue, priorite).
+- Glossaire : entrees trail ajoutees pour D+, D-, D+/km, VAM, charge descente et specificite trail.

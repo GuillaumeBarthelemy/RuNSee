@@ -14,6 +14,8 @@ Monorepo `C:\Services\RuNSee` :
 - `src/app.js` : montage routes Express.
 - `src/routes/provider.routes.js` : routes Garmin non officiel.
 - `src/controllers/provider.controller.js` : controllers providers.
+- `GET /providers/status` : statut public filtre Strava/Garmin pour layout global.
+- `POST /sync/all` : sync globale prudente, Strava incremental + Garmin recovery recent.
 - `src/services/providers/garminProvider.service.js` : connexion Garmin, MFA, purge, metriques sync.
 - `src/services/providers/garminRecoveryBackfill.service.js` : recuperation recovery quotidienne.
 - `src/services/providers/garminActivityEnrichment.service.js` : enrichissement activites Garmin -> Strava.
@@ -27,9 +29,18 @@ Monorepo `C:\Services\RuNSee` :
 - `pages/ActivityDetailPage.jsx` : charge detail activite, snapshots Garmin, action enrichment Garmin ciblee.
 - `components/ActivityDetailCard.jsx` : compose la fiche activite.
 - `components/ActivityDetailTabs.jsx` : onglets Carte/Splits/Intra/RPE/Garmin.
+- `components/ActivityTrailCard.jsx` : lecture trail conditionnelle sur le detail activite.
+- `components/TrailSpecificityCard.jsx` : synthese trail dans Analytics.
 - `components/GarminEnrichmentPanel.jsx` : recovery snapshot + metriques Garmin de seance.
+- `hooks/useProviderStatuses.js` : appel consolide des statuts Strava/Garmin.
+- `utils/trailProfile.js` : calculs trail purs (terrain, D+/D-, temps pente, charge descente).
 - `utils/activityEnrichment.js` : mapping stable des metriques Garmin par activite.
 - `services/externalProvider.service.js` : appels API providers.
+
+## Objectifs course
+
+- `UserRaceObjective` porte maintenant des champs trail optionnels : D+, D-, terrain, duree cible, montee/descente longue, priorite.
+- Migration a appliquer : `20260507123000_add_trail_race_objective_fields` (SQLite et PostgreSQL).
 
 ## Scripts DB
 
