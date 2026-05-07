@@ -21,6 +21,22 @@ function formatStatus(expected, actual) {
   return expected === actual ? "OK" : "MISMATCH";
 }
 
+function formatImportAction(dumpCount, postgresCount, truncate) {
+  if (truncate) {
+    return "TRUNCATE+INSERT";
+  }
+
+  if (postgresCount === 0 && dumpCount > 0) {
+    return "INSERT";
+  }
+
+  if (postgresCount === 0 && dumpCount === 0) {
+    return "NOOP";
+  }
+
+  return "REFUSED";
+}
+
 function resolveInputPath() {
   const requested = getArgValue("--input") || getPositionalArgs()[0] || "";
 
@@ -83,6 +99,28 @@ async function loadDump(inputPath) {
   return parsed;
 }
 
+async function readPostgresCounts(client) {
+  const counts = {};
+
+  for (const table of TABLES) {
+    const result = await client.query(`SELECT COUNT(*)::int AS count FROM "${table.name}";`);
+    counts[table.name] = Number(result.rows[0]?.count || 0);
+  }
+
+  return counts;
+}
+
+function printPreflightReport(dumpCounts, postgresCounts, truncate) {
+  console.log("Table                         Dump     PostgreSQL before     Action");
+  for (const table of TABLES) {
+    const dumpCount = dumpCounts[table.name];
+    const postgresCount = postgresCounts[table.name] || 0;
+    console.log(
+      `${table.name.padEnd(30)} ${String(dumpCount).padStart(7)} ${String(postgresCount).padStart(21)}     ${formatImportAction(dumpCount, postgresCount, truncate)}`
+    );
+  }
+}
+
 async function main() {
   const inputPath = resolveInputPath();
   const dump = await loadDump(inputPath);
@@ -107,20 +145,6 @@ async function main() {
     counts[table.name] = rows.length;
   }
 
-  if (dryRun) {
-    console.log(`POSTGRES_IMPORT_DRY_RUN_OK ${inputPath}`);
-    for (const [tableName, count] of Object.entries(counts)) {
-      console.log(`${tableName}: ${count}`);
-    }
-    return;
-  }
-
-  if (!truncate && !allowAppend) {
-    throw new Error(
-      "Refusing PostgreSQL import without --truncate. Use --truncate for a controlled refresh or --allow-append only when the target database is known empty."
-    );
-  }
-
   const databaseUrl = String(process.env.DATABASE_URL || "");
 
   if (!databaseUrl.startsWith("postgresql:") && !databaseUrl.startsWith("postgres:")) {
@@ -136,6 +160,34 @@ async function main() {
   await client.connect();
 
   try {
+    const postgresCountsBefore = await readPostgresCounts(client);
+    const targetHasData = Object.values(postgresCountsBefore).some((count) => count > 0);
+
+    printPreflightReport(counts, postgresCountsBefore, truncate);
+
+    if (dryRun) {
+      console.log(`POSTGRES_IMPORT_DRY_RUN_OK ${inputPath}`);
+      return;
+    }
+
+    if (!truncate && !allowAppend && targetHasData) {
+      throw new Error(
+        "Import refused: target PostgreSQL database is not empty. Use --truncate for a controlled refresh. Incremental merge is not supported."
+      );
+    }
+
+    if (!truncate && allowAppend && targetHasData) {
+      throw new Error(
+        "Import refused: --allow-append is only allowed when all target PostgreSQL tables are empty. Incremental merge is not supported."
+      );
+    }
+
+    if (!truncate && !allowAppend) {
+      throw new Error(
+        "Refusing PostgreSQL import without --truncate or --allow-append. Incremental merge is not supported."
+      );
+    }
+
     await client.query("BEGIN");
 
     if (truncate) {

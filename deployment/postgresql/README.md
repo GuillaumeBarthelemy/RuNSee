@@ -211,6 +211,11 @@ Importer dans PostgreSQL:
 npm run db:import:postgres -- --input .tmp\prod-export.json
 ```
 
+Important: l'import SQLite vers PostgreSQL est un import complet, pas une
+synchronisation incrementale. Sur une base cible non vide, utiliser `--truncate`
+pour un rafraichissement controle. L'option `--allow-append` n'est acceptee que
+si toutes les tables cibles PostgreSQL sont vides.
+
 Recharger une base PostgreSQL videe au prealable:
 
 ```powershell
