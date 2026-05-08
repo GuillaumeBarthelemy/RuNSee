@@ -179,3 +179,5 @@
 - Risque : regression sur les jobs Strava incrementaux individuels.
 - Garde-fous presents : option `manageJobLifecycle=false` utilisee uniquement par `/sync/all`; les jobs incrementaux directs conservent leur lifecycle historique.
 - Validation requise : tester une sync incrementale simple puis une sync globale.
+- Validation automatisee de review : tests backend/frontend/build/Prisma OK et dry-run doublons prod a 0.
+- Risque residuel : une nouvelle sync globale Strava + Garmin doit encore etre lancee en session utilisateur pour confirmer qu'aucun doublon n'est recree en conditions reelles.

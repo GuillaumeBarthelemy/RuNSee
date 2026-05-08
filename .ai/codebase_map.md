@@ -56,6 +56,7 @@ Monorepo `C:\Services\RuNSee` :
 - `scripts/db/report-database-snapshot.js` : snapshot counts + integrite Garmin.
 - `scripts/db/detect-provider-activity-duplicates.js` : detection dry-run des doublons Strava/Garmin par utilisateur.
 - `scripts/db/repair-provider-activity-duplicates.js` : soft-merge explicite Garmin -> Strava, sans suppression physique.
+- `docs/old/runsee_review_finale.md` : plan de controle final post-correctif Garmin/Strava et criteres de baseline stable.
 - `deployment/scripts/Export-RunSeeSourceArchive.ps1` : archive source propre via `git archive`.
 - `deployment/postgresql/scripts/validate-green-stack.ps1` : validation GREEN publique ou authentifiee selon cookie fourni.
 

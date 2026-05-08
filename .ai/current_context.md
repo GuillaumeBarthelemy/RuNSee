@@ -122,3 +122,13 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Verification post-merge : detection dry-run a 0 doublon, 923 activites Strava actives, 0 Garmin actif visible, 29 liens/enrichissements Garmin conserves.
 - Controle volumes recent : les jours 27/04-06/05 ne sont plus doubles dans les lectures `isMerged=false`.
 - API publique `/db/health` OK ; `/activities` reste protegee par session, donc la validation visuelle finale doit etre faite avec un navigateur authentifie.
+
+## Review finale post-correctif Garmin/Strava
+
+- Plan de controle traite : `docs/runsee_review_finale.md`, archive sous `docs/old/runsee_review_finale.md`.
+- Git : diff applicatif nul avant review, seul le plan etait non suivi ; archive source generee via `git archive` depuis `HEAD`.
+- Backend : Prisma SQLite/PostgreSQL valides, schemas alignes, tests backend verts (15/15), `node --check` OK sur `src/app.js` et `src/server.js`.
+- Frontend : tests Vitest verts (148/148) et build Vite OK.
+- Prod : dry-run doublons toujours a 0 ; controle DB confirme 923 activites actives, 29 merged, 0 merged sans cible, 0 Strava merged, 0 Garmin actif.
+- Review code : `activity.repository.js` exclut `isMerged=false` sur les lectures courantes ; `activityProviderMatching.service.js` conserve les statuts exact/probable/ambiguous/not_found/rejected ; `/sync/all` utilise `manageJobLifecycle=false` pour eviter la fin prematuree du job global.
+- Baseline stable non taggee a ce stade : la validation visuelle authentifiee et le dry-run apres une nouvelle sync globale restent ouverts.
