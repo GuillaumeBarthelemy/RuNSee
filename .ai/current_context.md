@@ -178,3 +178,5 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Compteurs cumules apres 2 fenetres : 349 activites Garmin lues, 256 matchees Strava, 2 Garmin-only creees, 0 ambigu, 90 rejetees.
 - Dry-run doublons apres fenetre 2 : `duplicateCount=0`.
 - Les logs des deux fenetres indiquent maintenant `duplicateCountAfterWindow=0`; le log de la fenetre 1 a ete corrige apres validation du dry-run residuel, car il avait ete ecrit avant le correctif `??`.
+- Commit documentaire de validation : `40fadd1`, CI/CD GitHub Actions verte et deploiement VM OK.
+- Archive review regeneree depuis `HEAD` propre : `runsee-source-review.zip`, 910592 octets, generee le 2026-05-08 23:09:41.
