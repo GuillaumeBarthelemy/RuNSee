@@ -82,6 +82,8 @@
 - [x] Corriger le matching UTC/local qui empechait la detection effective des doublons Garmin/Strava.
 - [x] Valider en base que les doublons recents Garmin/Strava ne sont plus visibles dans les lectures `isMerged=false`.
 - [x] Executer la review finale post-correctif : backend/frontend/build/Prisma/dry-run prod OK.
+- [x] Durcir le statut `exact` du matching Garmin/Strava pour ne pas dependre uniquement de l'heure.
+- [x] Verifier les enrichissements Garmin post-merge : aucun enrichment perdu sur les activites merged.
 - [ ] Valider visuellement la page Activites en session utilisateur apres refresh complet.
 - [ ] Tester une nouvelle synchronisation Strava + Garmin et confirmer que le compteur de doublons reste a 0.
 - [ ] Creer le tag stable `runsee-stable-YYYYMMDD-garmin-dedup` apres validation visuelle et sync globale post-correctif.

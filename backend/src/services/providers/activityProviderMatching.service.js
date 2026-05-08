@@ -8,6 +8,10 @@ const EXACT_WINDOW_MS = 2 * 60 * 1000;
 const PROBABLE_WINDOW_MS = 10 * 60 * 1000;
 const POSSIBLE_WINDOW_MS = 20 * 60 * 1000;
 const AMBIGUOUS_SCORE_DELTA = 8;
+const EXACT_DISTANCE_RATIO = 0.02;
+const EXACT_DURATION_RATIO = 0.02;
+const EXACT_ELEVATION_RATIO = 0.10;
+const EXACT_HEART_RATE_DELTA = 3;
 
 function toNumber(value) {
   const numeric = Number(value);
@@ -144,9 +148,18 @@ export function scoreProviderActivityMatch(activity, providerActivity) {
   const sportScore = 10;
   const strongMetricBonus = strongMetrics ? 10 : 0;
   const score = Math.max(0, timeScore + distanceScore + durationScore + elevationScore + heartRateScore + sportScore + strongMetricBonus);
+  const isExactMatch = Boolean(
+    deltaMs <= EXACT_WINDOW_MS
+      && distanceRatio !== null
+      && durationRatio !== null
+      && distanceRatio <= EXACT_DISTANCE_RATIO
+      && durationRatio <= EXACT_DURATION_RATIO
+      && (elevationRatio === null || elevationRatio <= EXACT_ELEVATION_RATIO)
+      && (heartRateDelta === null || heartRateDelta <= EXACT_HEART_RATE_DELTA),
+  );
 
   return {
-    status: deltaMs <= EXACT_WINDOW_MS ? "exact" : "probable",
+    status: isExactMatch ? "exact" : "probable",
     score: Math.round(score * 10) / 10,
     deltaSeconds: Math.round(deltaMs / 1000),
     distanceRatio,

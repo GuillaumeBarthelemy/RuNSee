@@ -132,3 +132,12 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Prod : dry-run doublons toujours a 0 ; controle DB confirme 923 activites actives, 29 merged, 0 merged sans cible, 0 Strava merged, 0 Garmin actif.
 - Review code : `activity.repository.js` exclut `isMerged=false` sur les lectures courantes ; `activityProviderMatching.service.js` conserve les statuts exact/probable/ambiguous/not_found/rejected ; `/sync/all` utilise `manageJobLifecycle=false` pour eviter la fin prematuree du job global.
 - Baseline stable non taggee a ce stade : la validation visuelle authentifiee et le dry-run apres une nouvelle sync globale restent ouverts.
+
+## Review code post-dedup et durcissement matching exact
+
+- Plan traite : `docs/runsee_review_code_post_dedup.md`, archive sous `docs/old/runsee_review_code_post_dedup.md`.
+- Correction appliquee : le statut provider `exact` exige maintenant un timestamp proche ET des ecarts distance/duree de grade exact ; les matches proches mais moins stricts restent `probable/matched_tolerated`.
+- Tests adaptes : un cas proche avec duree differente d'environ une minute reste matche, mais n'est plus surclasse en exact.
+- Verification enrichissements post-merge prod : 0 enrichment Garmin reste attache a une activite merged, 0 cible Strava sans enrichment, 0 mismatch de providerActivityId sur les cibles.
+- Route `DELETE /providers/garmin/data` conservee comme action admin hardening existante : elle exige `PURGE_GARMIN`, est authentifiee et ne supprime pas les activites Strava ; elle reste a considerer comme action destructive Garmin.
+- Archive de review source a regenerer apres commit final depuis `git archive`.

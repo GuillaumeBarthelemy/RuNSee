@@ -172,6 +172,8 @@
 - Validation requise : controler le rapport JSON avant tout apply et verifier les liens `ActivityProviderLink` apres reparation.
 - Validation prod realisee : 29 doublons Garmin/Strava detectes en `exact`, 29 soft-merges appliques, detection residuelle a 0, 29 lignes Garmin conservees avec `isMerged=true`.
 - Point de vigilance ajoute : toujours comparer les timestamps provider en UTC (`startDate`) avant le local (`startDateLocal`) pour eviter les faux ecarts de fuseau horaire.
+- Garde-fou ajoute : `exact` ne depend plus uniquement de l'ecart temporel ; distance et duree doivent aussi rester dans une tolerance stricte. Les cas proches moins parfaits restent `probable`.
+- Route purge Garmin : action destructive admin conservee avec confirmation explicite `PURGE_GARMIN`; ne pas l'exposer hors administration ni l'utiliser comme mecanisme de merge/nettoyage d'activites.
 
 ### Lifecycle sync globale
 

@@ -46,7 +46,7 @@ describe("Garmin activity matching", () => {
     assert.equal(match.status, "matched_tolerated");
   });
 
-  it("matches probable when names differ and duration differs by one minute", () => {
+  it("keeps a close activity probable when the duration difference is not exact-grade", () => {
     const match = findBestStravaMatch(
       {
         ...GARMIN_BASE,
@@ -59,7 +59,7 @@ describe("Garmin activity matching", () => {
         movingTime: 2400,
       }],
     );
-    assert.equal(match.status, "matched_exact");
+    assert.equal(match.status, "matched_tolerated");
   });
 
   it("keeps a probable match with a wider time offset when metrics are strong", () => {
