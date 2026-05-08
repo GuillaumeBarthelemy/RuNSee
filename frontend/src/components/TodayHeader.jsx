@@ -57,10 +57,10 @@ function formatActivitySummary(activityCount = 0, totalCount = 0) {
   const safeTotalCount = Math.max(0, Number(totalCount) || 0);
 
   if (safeTotalCount > 0 && safeTotalCount !== safeActivityCount) {
-    return `${safeActivityCount} / ${safeTotalCount} activites`;
+    return `${safeActivityCount} / ${safeTotalCount} activités`;
   }
 
-  return `${safeActivityCount} activite${safeActivityCount > 1 ? "s" : ""}`;
+  return `${safeActivityCount} activité${safeActivityCount > 1 ? "s" : ""}`;
 }
 
 function TodayHeader({
@@ -69,33 +69,42 @@ function TodayHeader({
   date = new Date(),
   rangeLabel = "",
   sportGroup = "all",
+  defaultSportGroup = "Course à pied / trail",
   availableSports = [],
   activityCount = 0,
   totalCount = 0,
   onSportChange = noop,
+  onSportReset = noop,
 }) {
   const firstName = getFirstName(athlete);
   const raceCountdown = activeRace ? formatRaceCountdown(activeRace) : null;
   const sports = Array.isArray(availableSports) ? availableSports : [];
+  const isFiltered = sportGroup !== defaultSportGroup;
+  const scopeLabel = sportGroup === "all" ? "Tous les sports" : sportGroup;
 
   return (
     <section className="card today-header-card">
       <div className="today-header-copy">
         <span className="section-kicker">Aujourd'hui</span>
         <h2 className="today-header-title">
-          {firstName ? `${firstName}, voici ton point du jour` : "Pilotage du jour"}
+          {firstName ? `Bonjour ${firstName}` : "Bonjour"}
         </h2>
-        <p className="card-subtitle today-header-date">{formatLongDate(date)}</p>
+        <p className="card-subtitle today-header-date">
+          {formatLongDate(date)} · Lecture sur 7 jours
+        </p>
         <div className="today-header-context" aria-label="Contexte de lecture">
-          <span className="filter-chip">7 jours glissants</span>
-          {rangeLabel ? <span className="filter-chip">{rangeLabel}</span> : null}
+          <span className="filter-chip">Périmètre : {scopeLabel}</span>
           <span className="filter-chip">{formatActivitySummary(activityCount, totalCount)}</span>
+          {rangeLabel ? <span className="filter-chip">{rangeLabel}</span> : null}
+          {isFiltered ? (
+            <span className="filter-chip today-filter-active">Lecture filtrée : {scopeLabel}</span>
+          ) : null}
         </div>
       </div>
 
       <div className="today-header-side">
         <label className="today-scope-panel">
-          <span className="today-scope-label">Perimetre sport</span>
+          <span className="today-scope-label">Périmètre sport</span>
           <select
             className="today-scope-select"
             value={sportGroup}
@@ -108,7 +117,12 @@ function TodayHeader({
               </option>
             ))}
           </select>
-          <span className="today-scope-meta">La periode reste fixe sur les 7 derniers jours.</span>
+          <span className="today-scope-meta">La période reste fixe sur les 7 derniers jours.</span>
+          {isFiltered ? (
+            <button className="button button-outline today-scope-reset" type="button" onClick={onSportReset}>
+              Réinitialiser
+            </button>
+          ) : null}
         </label>
 
         {activeRace && raceCountdown ? (

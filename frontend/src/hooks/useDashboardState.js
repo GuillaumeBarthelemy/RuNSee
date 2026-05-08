@@ -39,7 +39,6 @@ const DEFAULT_STATE = {
     analyticsVolumeGrouping: "rolling",
     analyticsWeeklyViewMode: "rolling",
     analyticsHeartRateDistributionMetric: "load",
-    todaySportGroup: DEFAULT_SPORT_GROUP,
     heartRateMax: "",
     heartRateZone1Max: "",
     heartRateZone2Max: "",
@@ -198,13 +197,15 @@ function loadState(storageKey) {
     const sharedPeriod = resolveSharedPeriod(parsed?.options || {}, parsed?.filters || {}, { isLegacyState });
     const volumeGrouping = parsed?.options?.analyticsVolumeGrouping
       || (parsed?.options?.analyticsWeeklyViewMode === "calendar" ? "calendar" : "rolling");
+    const parsedOptions = { ...(parsed.options || {}) };
+    delete parsedOptions.todaySportGroup;
 
     const nextState = {
       schemaVersion: STATE_SCHEMA_VERSION,
       filters: { ...DEFAULT_STATE.filters, ...(parsed.filters || {}), sportGroup },
       options: {
         ...DEFAULT_STATE.options,
-        ...(parsed.options || {}),
+        ...parsedOptions,
         ...sharedPeriod,
         analyticsVolumeGrouping: volumeGrouping,
       },

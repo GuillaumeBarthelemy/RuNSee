@@ -1,13 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardDecisionSummaryCard from "../components/DashboardDecisionSummaryCard.jsx";
-import RecentActivitiesCard from "../components/RecentActivitiesCard.jsx";
-import TodayReadinessCard from "../components/TodayReadinessCard.jsx";
 import TodayAlertBanner from "../components/TodayAlertBanner.jsx";
-import TodayFormCards from "../components/TodayFormCards.jsx";
 import TodayHeader from "../components/TodayHeader.jsx";
-import TodaySecondaryRow from "../components/TodaySecondaryRow.jsx";
-import TodaySnapshotToday from "../components/TodaySnapshotToday.jsx";
-import TodayVolumeStrip from "../components/TodayVolumeStrip.jsx";
+import TodaySevenDaySummary from "../components/TodaySevenDaySummary.jsx";
+import TodayUsefulActivities from "../components/TodayUsefulActivities.jsx";
 import { TRAINING_MVP_SECTION_INFO } from "../content/trainingMvpCopy.js";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import useRaceObjectives from "../hooks/useRaceObjectives.js";
@@ -36,6 +32,7 @@ import { buildTrailContextSummary } from "../utils/trailProfile.js";
 const TODAY_PERIOD_PRESET = "7d";
 const TODAY_VOLUME_VIEW_MODE = "rolling";
 const RECOVERY_SNAPSHOT_DAYS = 56;
+const DEFAULT_TODAY_SPORT_GROUP = RUN_SPORT_GROUP_LABEL;
 
 function toDate(value) {
   if (!value) {
@@ -63,13 +60,13 @@ export default function DashboardPage() {
     safeActivities,
     options,
     trainingAnalyticsSettings,
-    setOption,
     reload,
   } = useActivityViewModel({
     includeActivities: true,
   });
   const { activeRace } = useRaceObjectives();
   const [recoverySnapshotData, setRecoverySnapshotData] = useState(null);
+  const [todaySportGroupSelection, setTodaySportGroupSelection] = useState(DEFAULT_TODAY_SPORT_GROUP);
 
   useEffect(() => {
     let ignore = false;
@@ -101,10 +98,12 @@ export default function DashboardPage() {
     () => getAvailableSportGroups(safeActivities, { groupSports: true }),
     [safeActivities],
   );
-  const requestedTodaySportGroup = options.todaySportGroup || RUN_SPORT_GROUP_LABEL;
+  const requestedTodaySportGroup = todaySportGroupSelection || DEFAULT_TODAY_SPORT_GROUP;
   const todaySportGroup = requestedTodaySportGroup === "all" || todayAvailableSports.includes(requestedTodaySportGroup)
     ? requestedTodaySportGroup
-    : "all";
+    : todayAvailableSports.includes(DEFAULT_TODAY_SPORT_GROUP)
+      ? DEFAULT_TODAY_SPORT_GROUP
+      : "all";
 
   const dashboardFilters = useMemo(
     () => ({
@@ -330,7 +329,11 @@ export default function DashboardPage() {
   );
 
   const handleTodaySportChange = (value) => {
-    setOption("todaySportGroup", value || RUN_SPORT_GROUP_LABEL);
+    setTodaySportGroupSelection(value || DEFAULT_TODAY_SPORT_GROUP);
+  };
+
+  const handleTodaySportReset = () => {
+    setTodaySportGroupSelection(DEFAULT_TODAY_SPORT_GROUP);
   };
 
   const handleSyncStrava = async () => {
@@ -342,11 +345,11 @@ export default function DashboardPage() {
     <AppShell
       eyebrow="Aujourd'hui"
       title="Pilotage du jour"
-      subtitle={`Lecture fixe sur 7 jours glissants, avec perimetre sport ajustable.`}
+      subtitle="Lecture fixe sur 7 jours glissants, avec périmètre sport ajustable."
       account={account}
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
-      {isLoading && !dashboardActivities.length ? <div className="card section">Chargement des activites...</div> : null}
+      {isLoading && !dashboardActivities.length ? <div className="card section">Chargement des activités...</div> : null}
 
       <div className="dashboard-page-stack">
         <div className="section">
@@ -356,10 +359,12 @@ export default function DashboardPage() {
             date={todayRange.end}
             rangeLabel={todayRange.label}
             sportGroup={todaySportGroup}
+            defaultSportGroup={DEFAULT_TODAY_SPORT_GROUP}
             availableSports={todayAvailableSports}
             activityCount={dashboardActivities.length}
             totalCount={todayPeriodActivities.length}
             onSportChange={handleTodaySportChange}
+            onSportReset={handleTodaySportReset}
           />
         </div>
 
@@ -376,45 +381,20 @@ export default function DashboardPage() {
           />
         </div>
 
-        {recoverySnapshots.length > 0 ? (
-          <div className="section">
-            <TodayReadinessCard snapshots={recoverySnapshots} />
-          </div>
-        ) : null}
-
         <div className="section">
-          <TodayFormCards
-            loadModel={trainingLoadModel}
-            trendLoadModel={trendLoadModel}
-          />
-        </div>
-
-        <div className="section">
-          <TodayVolumeStrip weeklySummary={weeklySummary} />
-        </div>
-
-        <div className="section">
-          <TodaySecondaryRow
+          <TodaySevenDaySummary
             weeklySummary={weeklySummary}
-            loadVarianceModel={loadVarianceModel}
+            decisionModel={dashboardDecisionModel}
+            recoverySnapshots={recoverySnapshots}
+            trailContext={trailContext}
           />
         </div>
 
         <div className="section">
-          <TodaySnapshotToday
-            activities={broaderRecentActivities}
+          <TodayUsefulActivities
+            activities={broaderRecentActivities.length ? broaderRecentActivities : recentActivities}
             referenceDate={todayRange.end}
-            trainingAnalyticsSettings={trainingAnalyticsSettings}
-          />
-        </div>
-
-        <div className="section">
-          <RecentActivitiesCard
-            activities={recentActivities}
-            limit={3}
             returnPath="/"
-            title="Activites recentes"
-            subtitle="Les dernieres seances utiles a relire avant de decider la suite du bloc : type estime, charge, dominante d'intensite et contexte rapide."
             info={TRAINING_MVP_SECTION_INFO.recentActivities}
           />
         </div>

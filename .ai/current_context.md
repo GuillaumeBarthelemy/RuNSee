@@ -92,3 +92,12 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Sync globale : Garmin activites recentes peut maintenant creer des activites Garmin-only quand aucun match Strava fiable n'existe et que le cas n'est pas ambigu.
 - Frontend : les listes et fiches activites utilisent un identifiant stable (`id` puis fallback source/Strava) et affichent un badge source Strava/Garmin.
 - Documentation : ajout de `docs/MULTI_SOURCE_AUDIT.md` et `docs/MULTI_SOURCE_ARCHITECTURE.md`.
+
+## Correctif UX Aujourd'hui
+
+- Nouveau plan traite : `docs/runsee_plan_correctif_ux_aujourdhui.md`, a archiver sous `docs/old/`.
+- Aujourd'hui reste une lecture fixe sur 7 jours glissants ; seul le perimetre sport est ajustable localement.
+- Le filtre sport d'Aujourd'hui n'est plus persiste dans le state dashboard long terme ; il revient par defaut sur `Course a pied / trail` et affiche un chip + reset lorsqu'il est modifie.
+- La page Aujourd'hui est ramenee a 4 blocs majeurs : header compact, lecture du jour, synthese 7 jours, activites a relire.
+- Les anciens blocs empiles (`TodayReadinessCard`, `TodayFormCards`, `TodayVolumeStrip`, `TodaySecondaryRow`, `TodaySnapshotToday`, `RecentActivitiesCard`) ne sont plus rendus dans Aujourd'hui ; leurs informations utiles sont fusionnees.
+- Le trail reste un contexte/vigilance dans Aujourd'hui ; les analyses detaillees restent dans Activite, Analytics et Objectifs.

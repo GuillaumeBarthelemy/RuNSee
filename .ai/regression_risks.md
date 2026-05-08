@@ -23,6 +23,20 @@
 - Garde-fous presents : affichage conditionnel, qualite altitude, wording prudent, contexte trail integre a la decision du jour sans bloc analytique lourd.
 - Validation requise : tester une activite plate, une sortie vallonnee, une activite sans `rawJson`, puis la carte Lecture du jour sur mobile.
 
+### Aujourd'hui compact
+
+- Zone : `DashboardPage`, `TodayHeader`, `DashboardDecisionSummaryCard`, `TodaySevenDaySummary`, `TodayUsefulActivities`.
+- Risque : perdre une information utile de pilotage en retirant l'empilement historique des cartes Aujourd'hui.
+- Garde-fous presents : les calculs sous-jacents restent inchanges ; les signaux recovery/charge/volume/trail sont fusionnes dans la decision ou la synthese 7 jours.
+- Validation requise : verifier desktop/mobile, filtre actif/reset, affichage sans recovery Garmin et activite Garmin-only.
+
+### Filtre sport Aujourd'hui
+
+- Zone : `useDashboardState`, `useActivityViewModel`, `DashboardPage`.
+- Risque : une ancienne valeur `todaySportGroup` stockee en localStorage biaise la lecture quotidienne.
+- Garde-fous presents : suppression de la valeur des defaults persistants, sanitation du state charge, et etat local dans Aujourd'hui.
+- Validation requise : refresh navigateur et nouvelle session doivent revenir au perimetre Course a pied / trail.
+
 ### Sidebar providers
 
 - Zone : `CurrentAccountPanel`, `useProviderStatuses`, `GET /providers/status`.

@@ -75,6 +75,17 @@
 - [ ] Finaliser l'orchestration longue duree du backfill historique Garmin 180 j/h cote UI/admin.
 - [ ] Auditer les liens records/best efforts qui pointent encore prioritairement sur `stravaActivityId`.
 
+## Correctif UX Aujourd'hui
+
+- [x] Rendre le filtre sport Aujourd'hui local et non persiste durablement.
+- [x] Ajouter un chip de filtre actif et une action de reinitialisation.
+- [x] Recentrer Aujourd'hui sur 4 blocs : header, decision, synthese 7 jours, activites a relire.
+- [x] Fusionner les informations recovery/forme/volume dans une synthese compacte.
+- [x] Remplacer la pile d'activites recentes par 3 activites utiles a relire, compatibles multi-sources.
+- [x] Garder le trail comme contexte/vigilance, sans bloc analytique independant dans Aujourd'hui.
+- [ ] Recette visuelle Aujourd'hui desktop/mobile apres deploiement CI/CD.
+- [ ] Tester le filtre Aujourd'hui sur refresh/nouvelle session avec Course a pied / trail par defaut.
+
 ## Dette hors scope
 
 - [ ] Backend sans configuration ESLint compatible ESLint 10 : les controles actuels reposent sur `node --check` et Prisma.

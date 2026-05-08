@@ -28,7 +28,6 @@ const DEFAULT_OPTIONS = {
   analyticsVolumeGrouping: "rolling",
   analyticsWeeklyViewMode: "rolling",
   analyticsHeartRateDistributionMetric: "load",
-  todaySportGroup: DEFAULT_SPORT_GROUP,
   heartRateMax: "",
   heartRateZone1Max: "",
   heartRateZone2Max: "",

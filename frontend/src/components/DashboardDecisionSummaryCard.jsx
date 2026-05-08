@@ -1,6 +1,6 @@
 import InfoTooltip from "./InfoTooltip.jsx";
 
-function DecisionPill({ label, value, detail, tone = "neutral" }) {
+function DecisionPill({ label = "", value = "", detail = "", tone = "neutral" }) {
   return (
     <div className={`decision-pill decision-pill-${tone}`.trim()}>
       <span className="decision-pill-label">{label}</span>
@@ -10,7 +10,7 @@ function DecisionPill({ label, value, detail, tone = "neutral" }) {
   );
 }
 
-function VerdictChip({ label }) {
+function VerdictChip({ label = "" }) {
   return <span className="verdict-chip">{label}</span>;
 }
 
@@ -75,10 +75,44 @@ function buildEvidence(model = {}, trailContext = null) {
   return [...new Set(evidence.filter(Boolean))].slice(0, 5);
 }
 
+function buildDecisionPills(model = {}, trailContext = null) {
+  const pills = [
+    {
+      label: "Aptitude",
+      value: model.form?.label || "Indéterminée",
+      detail: model.form?.detail || "Pas assez de données",
+      tone: model.form?.tone,
+    },
+    {
+      label: "Fatigue",
+      value: model.fatigue?.label || "Indéterminée",
+      detail: model.fatigue?.detail || "Pas assez de données",
+      tone: model.fatigue?.tone,
+    },
+    {
+      label: "Charge",
+      value: model.charge?.label || "À lire",
+      detail: model.charge?.detail || "Pas assez de données",
+      tone: model.charge?.tone,
+    },
+  ];
+
+  if (trailContext?.shouldShow) {
+    pills.push({
+      label: "Trail",
+      value: trailContext.label || "Contexte actif",
+      detail: trailContext.context || trailContext.vigilance || "Signal trail récent intégré à la lecture.",
+      tone: trailContext.tone === "danger" ? "negative" : trailContext.tone === "warning" ? "warning" : "neutral",
+    });
+  }
+
+  return pills.slice(0, 4);
+}
+
 export default function DashboardDecisionSummaryCard({
   model = {},
   title = "Lecture du jour",
-  subtitle = "Forme, fatigue récente et sens de charge — à lire avant de choisir ta prochaine séance.",
+  subtitle = "Forme, fatigue récente et sens de charge, à lire avant de choisir ta prochaine séance.",
   info = [],
   trailContext = null,
 }) {
@@ -91,6 +125,7 @@ export default function DashboardDecisionSummaryCard({
   const todayAction = buildTodayAction(safeModel, trailContext);
   const caution = buildCaution(safeModel, trailContext);
   const visibleChips = buildEvidence(safeModel, trailContext);
+  const decisionPills = buildDecisionPills(safeModel, trailContext);
 
   return (
     <section className="card dashboard-decision-card">
@@ -146,24 +181,15 @@ export default function DashboardDecisionSummaryCard({
       </div>
 
       <div className="decision-pill-grid">
-        <DecisionPill
-          label="Forme du moment"
-          value={safeModel.form?.label || "Indéterminée"}
-          detail={safeModel.form?.detail || "Pas assez de données"}
-          tone={safeModel.form?.tone}
-        />
-        <DecisionPill
-          label="Fatigue récente"
-          value={safeModel.fatigue?.label || "Indéterminée"}
-          detail={safeModel.fatigue?.detail || "Pas assez de données"}
-          tone={safeModel.fatigue?.tone}
-        />
-        <DecisionPill
-          label="Charge"
-          value={safeModel.charge?.label || "À lire"}
-          detail={safeModel.charge?.detail || "Pas assez de données"}
-          tone={safeModel.charge?.tone}
-        />
+        {decisionPills.map((pill) => (
+          <DecisionPill
+            key={pill.label}
+            label={pill.label}
+            value={pill.value}
+            detail={pill.detail}
+            tone={pill.tone}
+          />
+        ))}
       </div>
     </section>
   );
