@@ -173,4 +173,8 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Premiere fenetre reelle traitee : 2025-11-10 -> 2026-05-08, 186 activites Garmin lues, 144 matchees Strava, 2 Garmin-only creees puis soft-mergees si doublon, 39 rejetees/non supportees, 0 ambigu.
 - Dry-run doublons apres fenetre 1 : `duplicateCount=0`.
 - Pause/reprise validee : statut `paused` puis `running`, prochaine fenetre planifiee 2025-05-14 -> 2025-11-09, prochain lancement apres le delai minimal.
-- Point ouvert : validation de la deuxieme fenetre automatique apres expiration de `nextRunNotBefore`.
+- Validation immediate de la fenetre 2 effectuee sans activer `force` : le curseur a ete rendu eligible puis `runDueGarminActivityBackfillWindows()` a traite une seule fenetre via le chemin scheduler existant.
+- Deuxieme fenetre reelle traitee : 2025-05-14 -> 2025-11-09, 163 activites Garmin lues, 112 matchees Strava, 0 Garmin-only creee, 0 ambigu, 51 rejetees/non supportees, `duplicateCountAfterWindow=0`.
+- Compteurs cumules apres 2 fenetres : 349 activites Garmin lues, 256 matchees Strava, 2 Garmin-only creees, 0 ambigu, 90 rejetees.
+- Dry-run doublons apres fenetre 2 : `duplicateCount=0`.
+- Les logs des deux fenetres indiquent maintenant `duplicateCountAfterWindow=0`; le log de la fenetre 1 a ete corrige apres validation du dry-run residuel, car il avait ete ecrit avant le correctif `??`.

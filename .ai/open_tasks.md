@@ -97,11 +97,13 @@
 - [x] Encadrer `run-window force` derriere `GARMIN_BACKFILL_ALLOW_FORCE_RUN=false` par defaut.
 - [x] Supprimer les snapshots `.ai` obsoletes (`git_status`, `handoff_*`, `repo_files`) pour eviter un faux etat agent.
 - [x] Recette reelle : lancer le backfill historique Garmin et verifier une seule fenetre immediate.
-- [ ] Recette reelle : verifier la reprise automatique apres le delai minimal.
+- [x] Recette reelle : verifier la reprise automatique via le chemin scheduler (`runDueGarminActivityBackfillWindows`) sans activer `force`.
 - [x] Recette reelle : verifier pause/reprise et absence de doublons apres fenetre 1.
 - [x] Appliquer la migration `20260508195000_add_provider_backfill_window_logs` sur les environnements cibles avant usage reel du backfill historique.
 - [x] Definir explicitement `GARMIN_BACKFILL_MIN_DATE` en production pour eviter une exploration historique inutilement longue.
-- [ ] Valider la fenetre 2 automatique Garmin : logs, compteurs, dry-run doublons a 0, absence de double comptage UI.
+- [x] Valider la fenetre 2 Garmin : logs, compteurs et dry-run doublons a 0.
+- [ ] Valider visuellement apres fenetre 2 : Activites, Aujourd'hui, Analytics, absence de double comptage UI.
+- [ ] Laisser le backfill poursuivre automatiquement jusqu'a `GARMIN_BACKFILL_MIN_DATE` seulement si la validation visuelle reste OK.
 
 ## Correctif UX Aujourd'hui
 
