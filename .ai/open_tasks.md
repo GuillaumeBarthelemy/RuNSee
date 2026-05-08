@@ -96,11 +96,12 @@
 - [x] Tenter un soft-merge non destructif immediat si un doublon apparait apres fenetre, puis bloquer le curseur si le controle residuel n'est pas a 0.
 - [x] Encadrer `run-window force` derriere `GARMIN_BACKFILL_ALLOW_FORCE_RUN=false` par defaut.
 - [x] Supprimer les snapshots `.ai` obsoletes (`git_status`, `handoff_*`, `repo_files`) pour eviter un faux etat agent.
-- [ ] Recette reelle : lancer le backfill historique Garmin depuis Admin et verifier une seule fenetre immediate.
+- [x] Recette reelle : lancer le backfill historique Garmin et verifier une seule fenetre immediate.
 - [ ] Recette reelle : verifier la reprise automatique apres le delai minimal.
-- [ ] Recette reelle : verifier pause/reprise et absence de doublons apres nouvelle synchronisation.
-- [ ] Appliquer la migration `20260508195000_add_provider_backfill_window_logs` sur les environnements cibles avant usage reel du backfill historique.
-- [ ] Definir explicitement `GARMIN_BACKFILL_MIN_DATE` en production pour eviter une exploration historique inutilement longue.
+- [x] Recette reelle : verifier pause/reprise et absence de doublons apres fenetre 1.
+- [x] Appliquer la migration `20260508195000_add_provider_backfill_window_logs` sur les environnements cibles avant usage reel du backfill historique.
+- [x] Definir explicitement `GARMIN_BACKFILL_MIN_DATE` en production pour eviter une exploration historique inutilement longue.
+- [ ] Valider la fenetre 2 automatique Garmin : logs, compteurs, dry-run doublons a 0, absence de double comptage UI.
 
 ## Correctif UX Aujourd'hui
 

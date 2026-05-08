@@ -163,3 +163,14 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Apres ecriture, si un doublon Garmin/Strava apparait, un soft-merge non destructif est tente immediatement ; le curseur ne progresse que si le controle residuel revient a 0.
 - `run-window force` est desactive par defaut et ne fonctionne que si `GARMIN_BACKFILL_ALLOW_FORCE_RUN=true`.
 - Les snapshots `.ai/git_status*` et `.ai/handoff*` obsoletes ont ete supprimes pour eviter de propager un faux etat Git.
+
+## Recette controlee backfill Garmin - fenetre 1
+
+- Plan traite : `docs/runsee_plan_suite_backfill_garmin.md`, archive ensuite sous `docs/old/`.
+- Production alignee sur le commit `d4e612d` avant recette ; migration `ProviderBackfillWindowLog` deja appliquee.
+- Variables prod explicites : `GARMIN_BACKFILL_WINDOW_DAYS=180`, `GARMIN_BACKFILL_MIN_INTERVAL_MINUTES=60`, `GARMIN_BACKFILL_MAX_WINDOWS_PER_RUN=1`, `GARMIN_BACKFILL_SCAN_INTERVAL_MINUTES=10`, `GARMIN_BACKFILL_ALLOW_FORCE_RUN=false`, `GARMIN_BACKFILL_MIN_DATE=2015-01-01`.
+- Dry-run doublons initial prod : `duplicateCount=0`.
+- Premiere fenetre reelle traitee : 2025-11-10 -> 2026-05-08, 186 activites Garmin lues, 144 matchees Strava, 2 Garmin-only creees puis soft-mergees si doublon, 39 rejetees/non supportees, 0 ambigu.
+- Dry-run doublons apres fenetre 1 : `duplicateCount=0`.
+- Pause/reprise validee : statut `paused` puis `running`, prochaine fenetre planifiee 2025-05-14 -> 2025-11-09, prochain lancement apres le delai minimal.
+- Point ouvert : validation de la deuxieme fenetre automatique apres expiration de `nextRunNotBefore`.

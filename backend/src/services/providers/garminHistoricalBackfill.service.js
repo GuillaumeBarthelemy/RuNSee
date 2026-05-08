@@ -696,7 +696,7 @@ export async function runGarminActivityBackfillWindowForUser(appUserId, options 
       garminOnlyUpdatedCount: summary.garminOnlyUpdatedCount,
       ambiguousCount: summary.ambiguousCount,
       rejectedCount: summary.unsupportedTypeCount,
-      duplicateCountAfterWindow: repairedDuplicateReport?.duplicateCount || duplicateReport.duplicateCount || 0,
+      duplicateCountAfterWindow: repairedDuplicateReport?.duplicateCount ?? duplicateReport.duplicateCount ?? 0,
       resultJson: buildWindowResultJson({
         preflightSummary,
         summary,
