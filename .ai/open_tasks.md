@@ -78,7 +78,11 @@
 - [ ] Recette reelle Strava + Garmin avec une activite Garmin absente de Strava.
 - [ ] Recette Garmin seul apres migration en environnement de test.
 - [ ] Finaliser l'orchestration longue duree du backfill historique Garmin 180 j/h cote UI/admin.
-- [ ] Executer le script de detection de doublons en prod/preprod, valider le dry-run, puis appliquer si le rapport est coherent.
+- [x] Executer le script de detection de doublons en prod, valider le dry-run, puis appliquer si le rapport est coherent.
+- [x] Corriger le matching UTC/local qui empechait la detection effective des doublons Garmin/Strava.
+- [x] Valider en base que les doublons recents Garmin/Strava ne sont plus visibles dans les lectures `isMerged=false`.
+- [ ] Valider visuellement la page Activites en session utilisateur apres refresh complet.
+- [ ] Tester une nouvelle synchronisation Strava + Garmin et confirmer que le compteur de doublons reste a 0.
 
 ## Correctif UX Aujourd'hui
 

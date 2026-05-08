@@ -112,3 +112,13 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Les lectures repository excluent les activites fusionnees et les profils trail peuvent utiliser le D- stocke en fallback.
 - `/sync/all` ne laisse plus le job global etre marque success par la sous-sync Strava avant la fin des etapes Garmin.
 - Frontend : liens activites importants centralises sur un identifiant public canonique compatible Strava/Garmin-only.
+
+## Recette post soft-merge doublons Garmin/Strava
+
+- Correctif supplementaire deploye : le matching provider compare maintenant `startDate` UTC avant `startDateLocal`, ce qui evite un decalage artificiel de 2 h entre Strava et Garmin.
+- CI/CD VM vert sur le commit `8eff8fd`.
+- Dry-run prod apres correctif : 29 doublons Garmin/Strava detectes, tous en statut `exact`, scores >= 91,9.
+- Soft-merge prod applique : 29/29 activites Garmin marquees `isMerged=true`, aucune suppression physique.
+- Verification post-merge : detection dry-run a 0 doublon, 923 activites Strava actives, 0 Garmin actif visible, 29 liens/enrichissements Garmin conserves.
+- Controle volumes recent : les jours 27/04-06/05 ne sont plus doubles dans les lectures `isMerged=false`.
+- API publique `/db/health` OK ; `/activities` reste protegee par session, donc la validation visuelle finale doit etre faite avec un navigateur authentifie.

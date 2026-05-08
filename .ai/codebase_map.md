@@ -74,7 +74,7 @@ Monorepo `C:\Services\RuNSee` :
 ## Multi-sources activites
 
 - `src/services/providers/garminActivityNormalizer.service.js` : normalisation Garmin activity vers candidate canonique.
-- `src/services/providers/activityProviderMatching.service.js` : scoring exact/probable/ambiguous/not_found/rejected.
+- `src/services/providers/activityProviderMatching.service.js` : scoring exact/probable/ambiguous/not_found/rejected ; compare les dates UTC en priorite pour eviter les faux ecarts `startDateLocal`.
 - `garminActivityEnrichment.service.js` : enrichit Strava quand le match est fiable et peut creer une activite Garmin-only quand aucun match fiable n'existe.
 - `/sync/all` : retourne un mode provider-aware (`strava_primary_garmin_enrichment_with_fallback`, `strava_only`, `garmin_primary`, `no_provider`).
 - `frontend/src/utils/activityLinks.js` : construction d'identifiants/liens publics multi-source pour les composants UI.

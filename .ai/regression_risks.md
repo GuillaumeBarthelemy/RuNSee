@@ -170,6 +170,8 @@
 - Risque : masquer une activite Garmin-only legitime si le matching est trop permissif.
 - Garde-fous presents : detection dry-run par defaut, seuil de score configurable, reparation exige `--apply --confirm=merge-provider-duplicates`, aucune suppression physique.
 - Validation requise : controler le rapport JSON avant tout apply et verifier les liens `ActivityProviderLink` apres reparation.
+- Validation prod realisee : 29 doublons Garmin/Strava detectes en `exact`, 29 soft-merges appliques, detection residuelle a 0, 29 lignes Garmin conservees avec `isMerged=true`.
+- Point de vigilance ajoute : toujours comparer les timestamps provider en UTC (`startDate`) avant le local (`startDateLocal`) pour eviter les faux ecarts de fuseau horaire.
 
 ### Lifecycle sync globale
 
