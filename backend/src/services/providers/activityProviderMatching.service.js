@@ -86,7 +86,7 @@ function buildDifferenceRatio(a, b) {
 }
 
 export function scoreProviderActivityMatch(activity, providerActivity) {
-  const activityStartDate = parseDate(activity?.startDateLocal || activity?.startDate);
+  const activityStartDate = parseDate(activity?.startDate || activity?.startDateLocal);
   const providerStartDate = parseDate(providerActivity?.startDate) || getGarminStartDate(providerActivity);
 
   if (!activityStartDate || !providerStartDate) {
