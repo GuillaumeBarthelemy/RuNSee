@@ -46,6 +46,9 @@ function applyStoredActivityIntegrityFilters(where = {}, { requireStartDate = fa
       },
     ],
   });
+  and.push({
+    isMerged: false,
+  });
 
   if (requireStartDate) {
     and.push({
@@ -141,6 +144,7 @@ function mapActivityData(activity, athleteId, isDetailed = false) {
     movingTime: activity.moving_time ?? null,
     elapsedTime: activity.elapsed_time ?? null,
     totalElevationGain: activity.total_elevation_gain ?? null,
+    totalElevationLoss: activity.total_elevation_loss ?? activity.elevation_loss ?? null,
 
     startLatlngJson: toJsonOrNull(activity.start_latlng),
     endLatlngJson: toJsonOrNull(activity.end_latlng),

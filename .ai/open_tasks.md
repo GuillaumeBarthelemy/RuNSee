@@ -70,10 +70,15 @@
 - [x] Autoriser la creation Garmin-only sur la sync Garmin recente si aucun match Strava fiable n'existe.
 - [x] Adapter `/sync/all` aux modes `strava_primary_garmin_enrichment_with_fallback`, `strava_only`, `garmin_primary`.
 - [x] Adapter la navigation liste/detail activite pour ne plus bloquer sans `stravaActivityId`.
+- [x] Renforcer le matching Strava/Garmin contre les doublons inter-provider.
+- [x] Ajouter une detection dry-run des doublons Strava/Garmin.
+- [x] Ajouter une reparation explicite par soft-merge Garmin -> Strava.
+- [x] Exclure les activites fusionnees des lectures courantes.
+- [x] Corriger le lifecycle du job global pour ne pas terminer avant Garmin.
 - [ ] Recette reelle Strava + Garmin avec une activite Garmin absente de Strava.
 - [ ] Recette Garmin seul apres migration en environnement de test.
 - [ ] Finaliser l'orchestration longue duree du backfill historique Garmin 180 j/h cote UI/admin.
-- [ ] Auditer les liens records/best efforts qui pointent encore prioritairement sur `stravaActivityId`.
+- [ ] Executer le script de detection de doublons en prod/preprod, valider le dry-run, puis appliquer si le rapport est coherent.
 
 ## Correctif UX Aujourd'hui
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import InfoTooltip from "./InfoTooltip.jsx";
 import { updateActivityRpe } from "../services/activity.service.js";
+import { getActivityPublicId } from "../utils/activityLinks.js";
 
 const RPE_OPTIONS = [
   { value: 1, label: "1 - Tres tres facile" },
@@ -25,10 +26,6 @@ const INFO_BLOCKS = [
 
 const noop = () => {};
 
-function getActivityRouteId(activity) {
-  return activity?.id || activity?.stravaActivityId || activity?.sourceActivityId || "";
-}
-
 export default function ActivityRpeCard({ activity = null, onUpdated = noop }) {
   const initialRpe = activity?.userRpe ?? "";
   const [selectedRpe, setSelectedRpe] = useState(initialRpe);
@@ -40,7 +37,7 @@ export default function ActivityRpeCard({ activity = null, onUpdated = noop }) {
     setSelectedRpe(activity?.userRpe ?? "");
   }, [activity?.userRpe, activity?.id, activity?.stravaActivityId, activity?.sourceActivityId]);
 
-  const routeId = getActivityRouteId(activity);
+  const routeId = getActivityPublicId(activity);
 
   if (!routeId) {
     return null;

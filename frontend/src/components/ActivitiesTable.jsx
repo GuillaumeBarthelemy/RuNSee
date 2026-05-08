@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDisplaySportLabel } from "../utils/activityAggregations.js";
+import { getActivityPublicId } from "../utils/activityLinks.js";
 
 const ALLOWED_PAGE_SIZES = [10, 20, 50, 100];
 const noop = () => {};
@@ -74,10 +75,6 @@ function persistReturnLocation(returnPath, anchorId) {
   );
 }
 
-function getActivityRouteId(activity) {
-  return activity?.id || activity?.stravaActivityId || activity?.sourceActivityId || "";
-}
-
 function getActivitySourceLabel(activity) {
   const sourceProvider = String(activity?.sourceProvider || "strava").toLowerCase();
   const hasGarmin = Array.isArray(activity?.providerEnrichments)
@@ -86,7 +83,7 @@ function getActivitySourceLabel(activity) {
 
   if (sourceProvider === "garmin") {
     const sport = String(activity?.sportType || activity?.type || "").toLowerCase();
-    return sport.includes("hike") ? "Garmin Â· Randonnee" : "Garmin";
+    return sport.includes("hike") ? "Garmin · Randonnée" : "Garmin";
   }
 
   return hasGarmin ? "Strava + Garmin" : "Strava";
@@ -144,7 +141,7 @@ export default function ActivitiesTable({
   const pageItems = useMemo(() => buildPageItems(safePage, totalPages), [safePage, totalPages]);
 
   const openDetail = (activity) => {
-    const routeId = getActivityRouteId(activity);
+    const routeId = getActivityPublicId(activity);
     if (!routeId) return;
 
     const anchorId = `activity-row-${routeId}`;
@@ -202,7 +199,7 @@ export default function ActivitiesTable({
               <tbody>
                 {rows.map((activity, index) => {
                   const key = activity?.id || activity?.stravaActivityId || activity?.name || `activity-${safePage}-${index}`;
-                  const routeId = getActivityRouteId(activity);
+                  const routeId = getActivityPublicId(activity);
                   const anchorId = routeId ? `activity-row-${routeId}` : undefined;
                   const isClickable = Boolean(routeId);
 

@@ -30,6 +30,7 @@ Le chantier multi-sources impose donc une transition progressive : conserver la 
 
 ## Risques residuels
 
-- Certains composants utilitaires utilisent encore `stravaActivityId` pour des liens vers les records ou enrichissements Strava. Ils restent compatibles avec Strava, mais devront etre audites si Garmin-only devient majoritaire.
+- Les principaux liens frontend utilisent maintenant un identifiant public canonique (`Activity.id`, puis fallback source/Strava) pour rester compatibles Strava enrichi et Garmin-only. Les routes gardent un nom historique cote parametre pour compatibilite.
 - Les activites Garmin-only n'ont pas de lien Strava externe, pas de kudos/commentaires/segments Strava, et certains blocs doivent rester en etat partiel.
 - Le backfill historique complet est prepare cote modele, mais son orchestration UI longue duree reste a finaliser avant usage massif.
+- Les doublons existants doivent etre verifies avec `backend/scripts/db/detect-provider-activity-duplicates.js`, puis repares seulement via le script explicite de soft-merge.

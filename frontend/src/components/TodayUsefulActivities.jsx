@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDisplaySportLabel } from "../utils/activityAggregations.js";
+import { getActivityPublicId } from "../utils/activityLinks.js";
 import { formatPace } from "../utils/activityInsights.js";
 import InfoTooltip from "./InfoTooltip.jsx";
 
@@ -64,10 +65,6 @@ function formatPaceFromActivity(activity = {}) {
   return formatPace(movingTime / distanceKm);
 }
 
-function getActivityRouteId(activity = {}) {
-  return activity.id || activity.stravaActivityId || activity.sourceActivityId || "";
-}
-
 function getSourceLabel(activity = {}) {
   const source = String(activity.provider || activity.sourceProvider || activity.source || "").toLowerCase();
   const hasGarmin = Boolean(activity.garminActivityId || activity.garminEnrichmentStatus || source.includes("garmin"));
@@ -81,7 +78,7 @@ function getSourceLabel(activity = {}) {
 }
 
 function scoreActivity(activity = {}) {
-  const elevationGain = toNumber(activity.elevationGain);
+  const elevationGain = toNumber(activity.elevationGain ?? activity.totalElevationGain);
   const sportLabel = getDisplaySportLabel(activity, { groupSports: true }).toLowerCase();
   const loadTone = activity.loadBandTone || "neutral";
   const intensityTone = activity.dominantIntensityTone || "neutral";
@@ -140,7 +137,7 @@ function TodayUsefulActivities({
   const navigate = useNavigate();
   const selectedActivities = useMemo(
     () => (Array.isArray(activities) ? activities : [])
-      .filter((activity) => getActivityRouteId(activity))
+      .filter((activity) => getActivityPublicId(activity))
       .map((activity, index) => ({ activity, index, score: scoreActivity(activity) }))
       .sort((left, right) => {
         if (right.score !== left.score) return right.score - left.score;
@@ -173,7 +170,7 @@ function TodayUsefulActivities({
       ) : (
         <div className="today-useful-list">
           {selectedActivities.map((activity) => {
-            const routeId = getActivityRouteId(activity);
+            const routeId = getActivityPublicId(activity);
             const metrics = [
               formatDistance(activity.distance),
               formatDuration(activity.movingTime),

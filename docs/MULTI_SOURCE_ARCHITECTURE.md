@@ -31,6 +31,19 @@ Sources actuelles :
 - Si aucun match fiable n'existe et que le match n'est pas ambigu, une activite Garmin-only peut etre creee.
 - Si le match est ambigu, RunNSee ne merge pas et ne cree pas de doublon automatiquement.
 - Les types Garmin inclus sont course, trail, tapis, piste et randonnee.
+- Le matching s'appuie sur heure de depart, distance, duree, D+, FC moyenne et compatibilite sport. Le nom de seance n'est jamais bloquant.
+- Une activite Garmin deja liee ne doit pas recreer une activite Garmin-only lors d'une synchronisation suivante.
+
+## Doublons inter-provider
+
+La reparation des doublons Strava/Garmin est volontairement non destructive :
+
+- `isMerged = true` masque l'activite doublon des lectures courantes ;
+- `mergedIntoActivityId` conserve la cible canonique ;
+- `ActivityProviderLink` garde la trace du rapprochement Garmin -> Strava ;
+- les scripts DB fonctionnent en dry-run par defaut et exigent un `--confirm` explicite pour appliquer.
+
+Le champ `totalElevationLoss` devient le stockage canonique du D- quand une source le fournit. Les calculs trail utilisent d'abord les segments, puis ce champ de synthese en fallback.
 
 ## Sync globale
 

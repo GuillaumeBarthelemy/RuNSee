@@ -141,7 +141,7 @@ function buildActivityName(rawActivity, typeKey, startDate) {
   }
 
   const dateLabel = startDate ? startDate.toISOString().slice(0, 10) : "date inconnue";
-  return `${typeKey.includes("hiking") ? "Randonnee Garmin" : "Course Garmin"} - ${dateLabel}`;
+  return `${typeKey.includes("hiking") ? "Randonnée Garmin" : "Course Garmin"} - ${dateLabel}`;
 }
 
 export function normalizeGarminActivity(rawActivity) {
@@ -225,6 +225,7 @@ export function buildCanonicalActivityDataFromGarmin(appUserId, normalizedActivi
     movingTime: normalizedActivity.movingDuration || normalizedActivity.duration,
     elapsedTime: normalizedActivity.elapsedDuration || normalizedActivity.duration,
     totalElevationGain: normalizedActivity.elevationGain,
+    totalElevationLoss: normalizedActivity.elevationLoss,
     averageSpeed: normalizedActivity.averageSpeed,
     maxSpeed: normalizedActivity.maxSpeed,
     averageCadence: normalizedActivity.averageRunCadence,

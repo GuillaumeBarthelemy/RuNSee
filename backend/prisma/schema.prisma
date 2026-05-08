@@ -193,6 +193,9 @@ model Activity {
   sourceSyncedAt        DateTime?
   sourceUrl             String?
   hasExternalEnrichment Boolean   @default(false)
+  isMerged              Boolean   @default(false)
+  mergedIntoActivityId  String?
+  mergedAt              DateTime?
   resourceState         Int?
   externalId            String?
   uploadId              String?
@@ -213,6 +216,7 @@ model Activity {
   movingTime            Int?
   elapsedTime           Int?
   totalElevationGain    Float?
+  totalElevationLoss    Float?
 
   startLatlngJson       String?
   endLatlngJson         String?
@@ -274,6 +278,8 @@ model Activity {
   @@index([appUserId, startDate])
   @@index([athleteId, startDate])
   @@index([sourceProvider, startDate])
+  @@index([appUserId, isMerged])
+  @@index([mergedIntoActivityId])
 }
 
 model ExternalProviderConnection {

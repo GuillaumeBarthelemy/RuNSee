@@ -342,7 +342,8 @@ export async function executeHistoricalSyncJob(jobId) {
   }
 }
 
-export async function executeIncrementalSyncJob(jobId) {
+export async function executeIncrementalSyncJob(jobId, options = {}) {
+  const manageJobLifecycle = options.manageJobLifecycle !== false;
   const { job, connection } = await getJobWithConnection(jobId);
   const accessToken = await getValidAccessToken(connection);
 
@@ -357,11 +358,13 @@ export async function executeIncrementalSyncJob(jobId) {
 
   const requestedAfterEpoch = computeIncrementalAfterEpoch(baseCursorEpoch);
 
-  await markJobRunning(
-    jobId,
-    "Synchronisation incrementale en cours",
-    requestedAfterEpoch ? String(requestedAfterEpoch) : null
-  );
+  if (manageJobLifecycle) {
+    await markJobRunning(
+      jobId,
+      "Synchronisation incrementale en cours",
+      requestedAfterEpoch ? String(requestedAfterEpoch) : null
+    );
+  }
 
   let page = 1;
   const perPage = 100;
@@ -432,16 +435,20 @@ export async function executeIncrementalSyncJob(jobId) {
       ...counters,
     };
 
-    await markJobSuccess(
-      jobId,
-      `Synchronisation incrementale terminee. Activites vues : ${counters.activitiesSeen}.`,
-      result
-    );
+    if (manageJobLifecycle) {
+      await markJobSuccess(
+        jobId,
+        `Synchronisation incrementale terminee. Activites vues : ${counters.activitiesSeen}.`,
+        result
+      );
+    }
 
     return result;
   } catch (error) {
     const mapped = buildStravaError(error);
-    await markJobFailed(jobId, mapped);
+    if (manageJobLifecycle) {
+      await markJobFailed(jobId, mapped);
+    }
     throw mapped;
   }
 }

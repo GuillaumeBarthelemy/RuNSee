@@ -6,6 +6,7 @@ import {
 
 const EXACT_WINDOW_MS = 2 * 60 * 1000;
 const PROBABLE_WINDOW_MS = 10 * 60 * 1000;
+const POSSIBLE_WINDOW_MS = 20 * 60 * 1000;
 const AMBIGUOUS_SCORE_DELTA = 8;
 
 function toNumber(value) {
@@ -40,6 +41,24 @@ function isHikeLikeSport(value) {
   return sport.includes("hike") || sport.includes("hiking") || sport.includes("randon");
 }
 
+function getElevationGain(activity = {}) {
+  return toNumber(
+    activity.totalElevationGain
+      ?? activity.elevationGain
+      ?? activity.__elevationGain
+      ?? activity.elevationGainMeters,
+  );
+}
+
+function getAverageHeartrate(activity = {}) {
+  return toNumber(
+    activity.averageHeartrate
+      ?? activity.averageHR
+      ?? activity.averageHr
+      ?? activity.average_heart_rate,
+  );
+}
+
 export function areProviderSportsCompatible(activity, providerActivity) {
   const activitySport = activity?.sportType || activity?.type;
   const providerSport = providerActivity?.sportType || providerActivity?.type || providerActivity?.activityType;
@@ -68,7 +87,7 @@ function buildDifferenceRatio(a, b) {
 
 export function scoreProviderActivityMatch(activity, providerActivity) {
   const activityStartDate = parseDate(activity?.startDateLocal || activity?.startDate);
-  const providerStartDate = providerActivity?.startDate || getGarminStartDate(providerActivity);
+  const providerStartDate = parseDate(providerActivity?.startDate) || getGarminStartDate(providerActivity);
 
   if (!activityStartDate || !providerStartDate) {
     return null;
@@ -76,7 +95,7 @@ export function scoreProviderActivityMatch(activity, providerActivity) {
 
   const deltaMs = Math.abs(providerStartDate.getTime() - activityStartDate.getTime());
 
-  if (deltaMs > PROBABLE_WINDOW_MS) {
+  if (deltaMs > POSSIBLE_WINDOW_MS) {
     return null;
   }
 
@@ -95,16 +114,36 @@ export function scoreProviderActivityMatch(activity, providerActivity) {
   const providerDuration = providerActivity?.duration ?? providerActivity?.movingDuration ?? getGarminDurationSeconds(providerActivity);
   const distanceRatio = buildDifferenceRatio(activity?.distance, providerDistance);
   const durationRatio = buildDifferenceRatio(activity?.movingTime, providerDuration);
+  const elevationRatio = buildDifferenceRatio(getElevationGain(activity), getElevationGain(providerActivity));
+  const activityHr = getAverageHeartrate(activity);
+  const providerHr = getAverageHeartrate(providerActivity);
+  const heartRateDelta = activityHr !== null && providerHr !== null ? Math.abs(activityHr - providerHr) : null;
 
-  if ((distanceRatio !== null && distanceRatio > 0.15) || (durationRatio !== null && durationRatio > 0.20)) {
+  if ((distanceRatio !== null && distanceRatio > 0.08) || (durationRatio !== null && durationRatio > 0.10)) {
     return null;
   }
 
-  const timeScore = 50 * (1 - deltaMs / PROBABLE_WINDOW_MS);
-  const distanceScore = distanceRatio === null ? 12 : 25 * (1 - Math.min(1, distanceRatio / 0.15));
-  const durationScore = durationRatio === null ? 8 : 15 * (1 - Math.min(1, durationRatio / 0.20));
+  const strongMetrics = Boolean(
+    distanceRatio !== null
+      && durationRatio !== null
+      && distanceRatio <= 0.03
+      && durationRatio <= 0.05
+      && (elevationRatio === null || elevationRatio <= 0.10)
+      && (heartRateDelta === null || heartRateDelta <= 3),
+  );
+
+  if (deltaMs > PROBABLE_WINDOW_MS && !strongMetrics) {
+    return null;
+  }
+
+  const timeScore = 42 * (1 - Math.min(deltaMs, PROBABLE_WINDOW_MS) / PROBABLE_WINDOW_MS);
+  const distanceScore = distanceRatio === null ? 10 : 24 * (1 - Math.min(1, distanceRatio / 0.08));
+  const durationScore = durationRatio === null ? 8 : 18 * (1 - Math.min(1, durationRatio / 0.10));
+  const elevationScore = elevationRatio === null ? 0 : 8 * (1 - Math.min(1, elevationRatio / 0.20));
+  const heartRateScore = heartRateDelta === null ? 0 : 8 * (1 - Math.min(1, heartRateDelta / 12));
   const sportScore = 10;
-  const score = Math.max(0, timeScore + distanceScore + durationScore + sportScore);
+  const strongMetricBonus = strongMetrics ? 10 : 0;
+  const score = Math.max(0, timeScore + distanceScore + durationScore + elevationScore + heartRateScore + sportScore + strongMetricBonus);
 
   return {
     status: deltaMs <= EXACT_WINDOW_MS ? "exact" : "probable",
@@ -112,6 +151,8 @@ export function scoreProviderActivityMatch(activity, providerActivity) {
     deltaSeconds: Math.round(deltaMs / 1000),
     distanceRatio,
     durationRatio,
+    elevationRatio,
+    heartRateDelta,
   };
 }
 

@@ -43,6 +43,15 @@ function getElevationGainMeters(activity = {}) {
   ));
 }
 
+function getElevationLossMeters(activity = {}) {
+  return Math.max(0, toNumber(
+    activity.totalElevationLoss
+      ?? activity.total_elevation_loss
+      ?? activity.elevationLoss
+      ?? activity.__elevationLoss,
+  ));
+}
+
 function normalizeSegment(segment = {}) {
   const distanceMeters = toNumber(segment.distance);
   const durationSeconds = toNumber(segment.moving_time ?? segment.movingTime ?? segment.elapsed_time ?? segment.elapsedTime);
@@ -226,10 +235,11 @@ export function buildTrailProfile(activity = {}) {
   const distanceKm = getDistanceKm(activity);
   const durationSeconds = getDurationSeconds(activity);
   const storedElevationGain = getElevationGainMeters(activity);
+  const storedElevationLoss = getElevationLossMeters(activity);
   const segments = getSegments(activity);
   const segmentSummary = buildSegmentSummary(segments);
   const elevationGain = segmentSummary.elevationGain > 0 ? segmentSummary.elevationGain : storedElevationGain;
-  const elevationLoss = segmentSummary.elevationLoss;
+  const elevationLoss = segmentSummary.elevationLoss > 0 ? segmentSummary.elevationLoss : storedElevationLoss;
   const elevationGainPerKm = distanceKm > 0 ? elevationGain / distanceKm : 0;
   const elevationLossPerKm = distanceKm > 0 ? elevationLoss / distanceKm : 0;
   const terrain = classifyTerrain(elevationGainPerKm, distanceKm);

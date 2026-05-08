@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDisplaySportLabel } from "../utils/activityAggregations.js";
+import { getActivityPublicId } from "../utils/activityLinks.js";
 import { formatPace } from "../utils/activityInsights.js";
 import InfoTooltip from "./InfoTooltip.jsx";
 
@@ -53,10 +54,6 @@ function persistReturnLocation(returnPath) {
   );
 }
 
-function getActivityRouteId(activity) {
-  return activity?.id || activity?.stravaActivityId || activity?.sourceActivityId || "";
-}
-
 function RecentActivitiesCard({
   activities = [],
   returnPath = "/",
@@ -100,7 +97,7 @@ function RecentActivitiesCard({
                 type="button"
                 className="recent-activity-item"
                 onClick={() => {
-                  const routeId = getActivityRouteId(activity);
+                  const routeId = getActivityPublicId(activity);
                   if (!routeId) return;
 
                   persistReturnLocation(returnPath);

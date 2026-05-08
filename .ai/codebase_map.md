@@ -54,6 +54,8 @@ Monorepo `C:\Services\RuNSee` :
 - `scripts/db/import-postgresql-dump.js` : import PostgreSQL avec dry-run et garde-fous.
 - `scripts/db/compare-prisma-schemas.js` : detection de drift entre modeles Prisma SQLite et PostgreSQL.
 - `scripts/db/report-database-snapshot.js` : snapshot counts + integrite Garmin.
+- `scripts/db/detect-provider-activity-duplicates.js` : detection dry-run des doublons Strava/Garmin par utilisateur.
+- `scripts/db/repair-provider-activity-duplicates.js` : soft-merge explicite Garmin -> Strava, sans suppression physique.
 - `deployment/scripts/Export-RunSeeSourceArchive.ps1` : archive source propre via `git archive`.
 - `deployment/postgresql/scripts/validate-green-stack.ps1` : validation GREEN publique ou authentifiee selon cookie fourni.
 
@@ -66,6 +68,8 @@ Monorepo `C:\Services\RuNSee` :
 - `ActivityProviderLink` : trace de rapprochement provider vers activite canonique, y compris matchs ambigus sans merge.
 - `ProviderBackfillCursor` : curseur de backfill historique provider/resource.
 - `Activity.sourceProvider/sourceActivityId` : identite canonique multi-source, Strava restant prioritaire quand un match Garmin fiable existe.
+- `Activity.isMerged/mergedIntoActivityId/mergedAt` : soft-merge non destructif pour masquer un doublon provider repare.
+- `Activity.totalElevationLoss` : D- canonique quand une source le fournit.
 
 ## Multi-sources activites
 
@@ -73,6 +77,7 @@ Monorepo `C:\Services\RuNSee` :
 - `src/services/providers/activityProviderMatching.service.js` : scoring exact/probable/ambiguous/not_found/rejected.
 - `garminActivityEnrichment.service.js` : enrichit Strava quand le match est fiable et peut creer une activite Garmin-only quand aucun match fiable n'existe.
 - `/sync/all` : retourne un mode provider-aware (`strava_primary_garmin_enrichment_with_fallback`, `strava_only`, `garmin_primary`, `no_provider`).
+- `frontend/src/utils/activityLinks.js` : construction d'identifiants/liens publics multi-source pour les composants UI.
 
 ## Contraintes de conception
 

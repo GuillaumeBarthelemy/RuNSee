@@ -16,6 +16,8 @@ const STRAVA_BASE = {
   startDateLocal: "2026-05-04T10:00:00.000Z",
   distance: 10000,
   movingTime: 2400,
+  totalElevationGain: 45,
+  averageHeartrate: 144,
 };
 
 const GARMIN_BASE = {
@@ -25,6 +27,8 @@ const GARMIN_BASE = {
   startTimeLocal: "2026-05-04T10:00:30.000Z",
   distance: 10020,
   movingDuration: 2410,
+  elevationGain: 45,
+  averageHR: 144,
 };
 
 describe("Garmin activity matching", () => {
@@ -37,6 +41,35 @@ describe("Garmin activity matching", () => {
   it("matches tolerated when the activity is close but not exact", () => {
     const match = findBestStravaMatch(
       { ...GARMIN_BASE, startTimeLocal: "2026-05-04T10:05:00.000Z" },
+      [STRAVA_BASE],
+    );
+    assert.equal(match.status, "matched_tolerated");
+  });
+
+  it("matches probable when names differ and duration differs by one minute", () => {
+    const match = findBestStravaMatch(
+      {
+        ...GARMIN_BASE,
+        activityName: "Aubagne Trail",
+        movingDuration: 2460,
+      },
+      [{
+        ...STRAVA_BASE,
+        name: "Trail en soiree",
+        movingTime: 2400,
+      }],
+    );
+    assert.equal(match.status, "matched_exact");
+  });
+
+  it("keeps a probable match with a wider time offset when metrics are strong", () => {
+    const match = findBestStravaMatch(
+      {
+        ...GARMIN_BASE,
+        startTimeLocal: "2026-05-04T10:18:00.000Z",
+        distance: 10010,
+        movingDuration: 2405,
+      },
       [STRAVA_BASE],
     );
     assert.equal(match.status, "matched_tolerated");
@@ -62,6 +95,15 @@ describe("Garmin activity matching", () => {
   it("refuses duration that differs too much", () => {
     const score = scoreGarminMatch(STRAVA_BASE, { ...GARMIN_BASE, movingDuration: 1700 });
     assert.equal(score, null);
+  });
+
+  it("rejects incompatible hike versus run instead of matching loosely", () => {
+    const score = scoreGarminMatch(STRAVA_BASE, {
+      ...GARMIN_BASE,
+      activityType: { typeKey: "hiking" },
+    });
+    assert.equal(score.status, "rejected");
+    assert.equal(score.reason, "type_incompatible");
   });
 });
 

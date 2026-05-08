@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { getActivityPublicId } from "../utils/activityLinks.js";
 import { buildActivityTrainingInsights, formatTrainingLoadValue } from "../utils/trainingMetrics.js";
 
 function toNumber(value) {
@@ -48,7 +49,7 @@ function formatDuration(activity = {}) {
 }
 
 function getActivityId(activity = {}) {
-  return activity.stravaActivityId || activity.id || activity.activityId || "";
+  return getActivityPublicId(activity) || activity.activityId || "";
 }
 
 function getActivityTitle(activity = {}) {

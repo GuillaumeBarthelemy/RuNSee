@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { formatMetricValue } from "../utils/activityAggregations.js";
 import { formatPace } from "../utils/activityInsights.js";
+import { buildActivityDetailPath, getActivityPublicId } from "../utils/activityLinks.js";
 import InfoTooltip from "./InfoTooltip.jsx";
 
 function formatDate(value) {
@@ -71,23 +72,37 @@ function EffortList({
         <div className="effort-list top-gap-sm">
           {safeItems.map((item) => {
             const activity = item.activity || {};
+            const detailPath = buildActivityDetailPath(activity);
             const value = metric === "pace"
               ? formatPace(item.value)
               : formatMetricValue(item.value, metric);
-
-            return (
-              <Link
-                key={activity?.stravaActivityId || `${title}-${activity?.id || activity?.name}`}
-                className="effort-item"
-                to={`/activities/${activity?.stravaActivityId}`}
-                state={{ returnPath, returnHash: "" }}
-                onClick={() => persistReturnLocation(returnPath)}
-              >
+            const content = (
+              <>
                 <div className="effort-item-main">
                   <strong>{activity?.name || "Activite"}</strong>
                   <span className="small-text">{formatDate(activity?.startDate || activity?.startDateLocal)}</span>
                 </div>
                 <div className="effort-item-value">{value}</div>
+              </>
+            );
+
+            if (!detailPath) {
+              return (
+                <div key={getActivityPublicId(activity) || `${title}-${activity?.name}`} className="effort-item effort-item-static">
+                  {content}
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={getActivityPublicId(activity) || `${title}-${activity?.name}`}
+                className="effort-item"
+                to={detailPath}
+                state={{ returnPath, returnHash: "" }}
+                onClick={() => persistReturnLocation(returnPath)}
+              >
+                {content}
               </Link>
             );
           })}
@@ -124,7 +139,9 @@ function RecordList({
         <div className="effort-list top-gap-sm">
           {safeItems.map((item) => {
             const activity = item.activity || {};
-            const hasLink = Boolean(item.isAvailable && activity?.stravaActivityId);
+            const detailPath = buildActivityDetailPath(activity);
+            const publicId = getActivityPublicId(activity);
+            const hasLink = Boolean(item.isAvailable && detailPath);
             const metadata = item.isAvailable
               ? [
                   activity?.name || null,
@@ -156,9 +173,9 @@ function RecordList({
 
             return (
               <Link
-                key={item.recordKey || activity?.stravaActivityId}
+                key={item.recordKey || publicId}
                 className="effort-item"
-                to={`/activities/${activity?.stravaActivityId}`}
+                to={detailPath}
                 state={{ returnPath, returnHash: "" }}
                 onClick={() => persistReturnLocation(returnPath)}
               >
@@ -219,7 +236,7 @@ export default function BestEffortsPanel({
         />
         <RecordList
           title="Records"
-          subtitle="Repères absolus 5 km, 10 km, semi et marathon raccordes a la bonne course support."
+          subtitle="Repères absolus 5 km, 10 km, semi et marathon raccordés à la bonne course support."
           info={definitions.records}
           items={efforts.records}
           returnPath={returnPath}

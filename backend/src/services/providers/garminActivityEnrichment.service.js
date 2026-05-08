@@ -13,6 +13,10 @@ import {
   isSupportedGarminActivityType,
   normalizeGarminActivity as normalizeGarminActivityCandidate,
 } from "./garminActivityNormalizer.service.js";
+import {
+  findBestActivityProviderMatch,
+  scoreProviderActivityMatch,
+} from "./activityProviderMatching.service.js";
 import { upsertCanonicalProviderActivity } from "../../repositories/activity.repository.js";
 
 const GARMIN_PROVIDER_CODE = EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL;
@@ -20,8 +24,6 @@ const ACTIVITY_DATA_TYPE = EXTERNAL_PROVIDER_DATA_TYPES.ACTIVITY_DETAIL;
 const DEFAULT_LOOKBACK_DAYS = 30;
 const MAX_LOOKBACK_DAYS = 180;
 const TARGET_WINDOW_DAYS = 1;
-const MATCH_WINDOW_MS = 10 * 60 * 1000;
-const AMBIGUOUS_SCORE_DELTA = 8;
 
 function buildHttpError(message, userMessage, httpStatus = 400) {
   const error = new Error(message);
@@ -156,80 +158,6 @@ function getGarminRecoveryTimeHours(rawActivity) {
   return firstNumber(rawActivity?.recoveryTime);
 }
 
-function normalizeSportText(value) {
-  if (typeof value === "object" && value !== null) {
-    return normalizeSportText(value.typeKey || value.typeId || value.name || value.displayName);
-  }
-
-  return String(value || "").trim().toLowerCase();
-}
-
-function isRunLikeSport(value) {
-  const sport = normalizeSportText(value);
-  return sport.includes("run") || sport.includes("trail") || sport.includes("course");
-}
-
-function areSportsCompatible(stravaActivity, garminActivity) {
-  const stravaSport = stravaActivity?.sportType || stravaActivity?.type;
-  const garminSport = garminActivity?.activityType;
-
-  if (!stravaSport || !garminSport) {
-    return true;
-  }
-
-  return isRunLikeSport(stravaSport) === isRunLikeSport(garminSport);
-}
-
-function buildDifferenceRatio(a, b) {
-  const left = toNumber(a);
-  const right = toNumber(b);
-
-  if (!left || !right || left <= 0 || right <= 0) {
-    return null;
-  }
-
-  return Math.abs(left - right) / Math.max(left, right);
-}
-
-function scoreGarminMatch(stravaActivity, garminActivity) {
-  const stravaStartDate = parseDate(stravaActivity?.startDateLocal || stravaActivity?.startDate);
-  const garminStartDate = getGarminStartDate(garminActivity);
-
-  if (!stravaStartDate || !garminStartDate) {
-    return null;
-  }
-
-  const deltaMs = Math.abs(garminStartDate.getTime() - stravaStartDate.getTime());
-
-  if (deltaMs > MATCH_WINDOW_MS) {
-    return null;
-  }
-
-  const distanceRatio = buildDifferenceRatio(stravaActivity?.distance, getGarminDistanceMeters(garminActivity));
-  const durationRatio = buildDifferenceRatio(stravaActivity?.movingTime, getGarminDurationSeconds(garminActivity));
-
-  if ((distanceRatio !== null && distanceRatio > 0.15) || (durationRatio !== null && durationRatio > 0.20)) {
-    return null;
-  }
-
-  if (!areSportsCompatible(stravaActivity, garminActivity)) {
-    return null;
-  }
-
-  const timeScore = 50 * (1 - deltaMs / MATCH_WINDOW_MS);
-  const distanceScore = distanceRatio === null ? 12 : 25 * (1 - Math.min(1, distanceRatio / 0.15));
-  const durationScore = durationRatio === null ? 8 : 15 * (1 - Math.min(1, durationRatio / 0.20));
-  const sportScore = areSportsCompatible(stravaActivity, garminActivity) ? 10 : 0;
-  const score = Math.max(0, timeScore + distanceScore + durationScore + sportScore);
-
-  return {
-    score: Math.round(score * 10) / 10,
-    deltaSeconds: Math.round(deltaMs / 1000),
-    distanceRatio,
-    durationRatio,
-  };
-}
-
 function normalizeGarminActivity(rawActivity) {
   if (!rawActivity || typeof rawActivity !== "object") {
     return null;
@@ -330,6 +258,8 @@ async function listUserStravaActivities(appUserId, { startDate, endDate, stravaA
   return prisma.activity.findMany({
     where: {
       ...(stravaActivityId ? { stravaActivityId: String(stravaActivityId) } : {}),
+      sourceProvider: "strava",
+      isMerged: false,
       startDate: {
         gte: new Date(`${startDate}T00:00:00.000Z`),
         lte: new Date(`${endDate}T23:59:59.999Z`),
@@ -526,38 +456,51 @@ async function upsertActivityProviderEnrichment({
   });
 }
 
+async function findExistingGarminProviderLink(appUserId, normalizedActivity) {
+  if (!normalizedActivity?.providerActivityId) {
+    return null;
+  }
+
+  return prisma.activityProviderLink.findUnique({
+    where: {
+      appUserId_provider_providerActivityId: {
+        appUserId,
+        provider: GARMIN_PROVIDER_CODE,
+        providerActivityId: normalizedActivity.providerActivityId,
+      },
+    },
+    select: {
+      activityId: true,
+      matchStatus: true,
+      matchConfidence: true,
+    },
+  });
+}
+
+function scoreGarminMatch(stravaActivity, garminActivity) {
+  return scoreProviderActivityMatch(stravaActivity, garminActivity);
+}
+
 function findBestStravaMatch(garminActivity, stravaActivities) {
-  const candidates = stravaActivities
-    .map((stravaActivity) => ({
-      stravaActivity,
-      matchResult: scoreGarminMatch(stravaActivity, garminActivity),
-    }))
-    .filter((candidate) => candidate.matchResult)
-    .sort((left, right) => right.matchResult.score - left.matchResult.score);
-
-  const best = candidates[0] || null;
-
-  if (!best) {
-    return {
-      status: "not_found",
-      candidate: null,
-      candidates,
-    };
-  }
-
-  const second = candidates[1] || null;
-  if (second && best.matchResult.score - second.matchResult.score < AMBIGUOUS_SCORE_DELTA) {
-    return {
-      status: "ambiguous",
-      candidate: best,
-      candidates,
-    };
-  }
+  const match = findBestActivityProviderMatch(garminActivity, stravaActivities);
 
   return {
-    status: best.matchResult.deltaSeconds <= 60 ? "matched_exact" : "matched_tolerated",
-    candidate: best,
-    candidates,
+    ...match,
+    status: match.status === "exact"
+      ? "matched_exact"
+      : match.status === "probable"
+        ? "matched_tolerated"
+        : match.status,
+    candidate: match.candidate
+      ? {
+          stravaActivity: match.candidate.activity,
+          matchResult: match.candidate.matchResult,
+        }
+      : null,
+    candidates: (match.candidates || []).map((candidate) => ({
+      stravaActivity: candidate.activity,
+      matchResult: candidate.matchResult,
+    })),
   };
 }
 
@@ -618,7 +561,7 @@ async function upsertActivityProviderLink({
       rawDataId: rawData?.id || null,
     },
     update: {
-      activityId,
+      ...(activityId ? { activityId } : {}),
       matchStatus,
       matchConfidence,
       matchedAt: new Date(),
@@ -746,6 +689,16 @@ export async function enrichGarminActivitiesForUser(appUserId, payload = {}) {
 
       if (!allowGarminOnly) {
         continue;
+      }
+
+      const existingProviderLink = dryRun
+        ? null
+        : await findExistingGarminProviderLink(appUserId, normalizedActivity);
+
+      if (existingProviderLink) {
+        if (existingProviderLink.activityId || existingProviderLink.matchStatus === "ambiguous") {
+          continue;
+        }
       }
 
       if (!isSupportedGarminActivityType(rawActivity)) {

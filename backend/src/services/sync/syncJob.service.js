@@ -292,7 +292,7 @@ async function executeGlobalIncrementalSyncJob(jobId) {
       progressPercent: 15,
     });
     try {
-      const result = await executeIncrementalSyncJob(jobId);
+      const result = await executeIncrementalSyncJob(jobId, { manageJobLifecycle: false });
       providers.strava = {
         requested: true,
         status: "success",

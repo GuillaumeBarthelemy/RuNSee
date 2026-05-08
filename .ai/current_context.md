@@ -101,3 +101,14 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - La page Aujourd'hui est ramenee a 4 blocs majeurs : header compact, lecture du jour, synthese 7 jours, activites a relire.
 - Les anciens blocs empiles (`TodayReadinessCard`, `TodayFormCards`, `TodayVolumeStrip`, `TodaySecondaryRow`, `TodaySnapshotToday`, `RecentActivitiesCard`) ne sont plus rendus dans Aujourd'hui ; leurs informations utiles sont fusionnees.
 - Le trail reste un contexte/vigilance dans Aujourd'hui ; les analyses detaillees restent dans Activite, Analytics et Objectifs.
+
+## Correctif doublons Strava/Garmin et stabilisation multi-source
+
+- Nouveau plan traite : `docs/runsee_correctif_doublons.md`, archive ensuite sous `docs/old/`.
+- Matching Strava/Garmin renforce : fenetre possible 20 min si les metriques sont fortes, controle distance/duree/D+/FC, sport compatible, nom non bloquant.
+- Garmin-only securise : une activite Garmin deja liee ou ambigue ne recree pas de fallback canonique.
+- Duplicats existants : ajout de scripts dry-run/apply pour detecter puis soft-merger Garmin vers Strava sans suppression physique.
+- `Activity` porte maintenant `isMerged`, `mergedIntoActivityId`, `mergedAt` et `totalElevationLoss`.
+- Les lectures repository excluent les activites fusionnees et les profils trail peuvent utiliser le D- stocke en fallback.
+- `/sync/all` ne laisse plus le job global etre marque success par la sous-sync Strava avant la fin des etapes Garmin.
+- Frontend : liens activites importants centralises sur un identifiant public canonique compatible Strava/Garmin-only.

@@ -161,5 +161,19 @@
 
 - Zone : sync globale et enrichissement Garmin recent.
 - Risque : creer une activite Garmin-only a tort si un match Strava ambigu existe.
-- Garde-fous presents : aucun Garmin-only n'est cree quand le matching est `ambiguous`; le cas est journalise dans `ActivityProviderLink`.
+- Garde-fous presents : aucun Garmin-only n'est cree quand le matching est `ambiguous`; le cas est journalise dans `ActivityProviderLink`. Une activite Garmin deja liee ne recree pas un fallback lors d'une sync suivante.
 - Validation requise : tester deux activites proches le meme jour et verifier que le fallback ne cree pas de doublon.
+
+### Reparation de doublons provider
+
+- Zone : `Activity.isMerged`, scripts `detect-provider-activity-duplicates.js` et `repair-provider-activity-duplicates.js`.
+- Risque : masquer une activite Garmin-only legitime si le matching est trop permissif.
+- Garde-fous presents : detection dry-run par defaut, seuil de score configurable, reparation exige `--apply --confirm=merge-provider-duplicates`, aucune suppression physique.
+- Validation requise : controler le rapport JSON avant tout apply et verifier les liens `ActivityProviderLink` apres reparation.
+
+### Lifecycle sync globale
+
+- Zone : `executeGlobalIncrementalSyncJob`, `executeIncrementalSyncJob`.
+- Risque : regression sur les jobs Strava incrementaux individuels.
+- Garde-fous presents : option `manageJobLifecycle=false` utilisee uniquement par `/sync/all`; les jobs incrementaux directs conservent leur lifecycle historique.
+- Validation requise : tester une sync incrementale simple puis une sync globale.

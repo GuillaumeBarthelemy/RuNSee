@@ -1,4 +1,5 @@
 import { buildAerobicDecouplingProfile } from "./intraSessionMetrics.js";
+import { getActivityPublicId } from "./activityLinks.js";
 import { isRunLikeActivity } from "./activityInsights.js";
 
 const DAY_MS = 86400000;
@@ -110,7 +111,7 @@ function getActivityDate(activity = {}) {
 }
 
 function getActivityId(activity = {}) {
-  return activity.stravaActivityId || activity.id || activity.activityId || "";
+  return getActivityPublicId(activity) || activity.activityId || "";
 }
 
 function getActivityDurationMinutes(activity = {}) {
