@@ -20,6 +20,7 @@ Monorepo `C:\Services\RuNSee` :
 - `src/services/providers/garminRecoveryBackfill.service.js` : recuperation recovery quotidienne.
 - `src/services/providers/garminActivityEnrichment.service.js` : enrichissement activites Garmin -> Strava, incluant le mode global borne `recent_missing`.
 - `src/services/providers/garminHistoricalBackfill.service.js` : orchestration du backfill historique Garmin activites par fenetres 180 j, pause/reprise et scheduler.
+- `ProviderBackfillWindowLog` : journal persistant par fenetre Garmin, utilise pour les compteurs Admin et les diagnostics d'erreur/doublon.
 - `src/services/providers/providerActivityDuplicateDetection.service.js` : detection reutilisable des doublons actifs Strava/Garmin basee sur le matching provider.
 - `src/services/providers/garminconnectBridge.service.js` : subprocess Python.
 - `scripts/providers/garminconnect_bridge.py` : operations `login`, `fetch_recovery_days`, `fetch_activities`.
@@ -71,6 +72,7 @@ Monorepo `C:\Services\RuNSee` :
 - `ActivityProviderEnrichment` : enrichissement d'une activite Strava par provider externe.
 - `ActivityProviderLink` : trace de rapprochement provider vers activite canonique, y compris matchs ambigus sans merge.
 - `ProviderBackfillCursor` : curseur de backfill historique provider/resource.
+- `ProviderBackfillWindowLog` : historique auditable des fenetres de backfill, avec compteurs, statut, erreurs et resume JSON redige.
 - `Activity.sourceProvider/sourceActivityId` : identite canonique multi-source, Strava restant prioritaire quand un match Garmin fiable existe.
 - `Activity.isMerged/mergedIntoActivityId/mergedAt` : soft-merge non destructif pour masquer un doublon provider repare.
 - `Activity.totalElevationLoss` : D- canonique quand une source le fournit.

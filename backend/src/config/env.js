@@ -200,6 +200,10 @@ const env = {
   ),
   garminBackfillMinDate:
     String(process.env.GARMIN_BACKFILL_MIN_DATE || "").trim(),
+  garminBackfillAllowForceRun: parseBoolean(
+    process.env.GARMIN_BACKFILL_ALLOW_FORCE_RUN,
+    false,
+  ),
   stravaApprovalPrompt:
     String(process.env.STRAVA_APPROVAL_PROMPT || "force").trim() || "force",
   stravaScope:

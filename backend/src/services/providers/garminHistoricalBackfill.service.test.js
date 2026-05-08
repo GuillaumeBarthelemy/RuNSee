@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   calculateGarminBackfillWindow,
   calculatePreviousGarminWindowEndDate,
+  resolveGarminBackfillForceRun,
 } from "./garminHistoricalBackfill.service.js";
 
 describe("Garmin historical activity backfill windows", () => {
@@ -21,5 +22,11 @@ describe("Garmin historical activity backfill windows", () => {
     assert.equal(previousEnd.toISOString().slice(0, 10), "2025-11-09");
     assert.equal(nextWindow.startDate.toISOString().slice(0, 10), "2025-05-14");
     assert.equal(nextWindow.endDate.toISOString().slice(0, 10), "2025-11-09");
+  });
+
+  it("denies forced windows unless the server setting explicitly allows them", () => {
+    assert.equal(resolveGarminBackfillForceRun(true, false), false);
+    assert.equal(resolveGarminBackfillForceRun(false, true), false);
+    assert.equal(resolveGarminBackfillForceRun(true, true), true);
   });
 });

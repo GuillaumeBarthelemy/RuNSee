@@ -123,10 +123,13 @@
 
 - Zone : `garminHistoricalBackfill.service.js`, `ProviderBackfillCursor`, endpoints `/providers/garmin/activities/backfill/*`, Admin Garmin.
 - Risque : recréer des doublons Garmin/Strava si le backfill ne reutilise pas le matching stabilise.
-- Garde-fous presents : traitement par `garminActivityEnrichment.service.js`, controle `detectProviderActivityDuplicates` apres chaque fenetre, arret en `error` si doublon detecte.
+- Garde-fous presents : traitement par `garminActivityEnrichment.service.js`, controle `detectProviderActivityDuplicates` avant chaque fenetre, tentative de soft-merge non destructif apres fenetre si un doublon apparait, arret en `error` si le controle residuel n'est pas a 0.
+- Risque : compteurs Admin trompeurs apres refresh si seuls les extras de reponse sont utilises.
+- Garde-fous presents : `ProviderBackfillWindowLog` persiste les compteurs par fenetre et le statut public les agrege depuis la base.
 - Risque : saturer Garmin si les fenetres sont trop frequentes.
-- Garde-fous presents : fenetre bornee par `GARMIN_BACKFILL_WINDOW_DAYS`, intervalle minimal par `GARMIN_BACKFILL_MIN_INTERVAL_MINUTES`, scheduler borne par `GARMIN_BACKFILL_MAX_WINDOWS_PER_RUN`.
+- Garde-fous presents : fenetre bornee par `GARMIN_BACKFILL_WINDOW_DAYS`, intervalle minimal par `GARMIN_BACKFILL_MIN_INTERVAL_MINUTES`, scheduler borne par `GARMIN_BACKFILL_MAX_WINDOWS_PER_RUN`, execution forcee desactivee par defaut via `GARMIN_BACKFILL_ALLOW_FORCE_RUN=false`.
 - Validation requise : lancer une fenetre reelle, verifier les compteurs, puis confirmer que le dry-run doublons reste a 0.
+- Limite connue : le verrou d'execution reste en memoire process ; il est adapte a la VM mono-instance actuelle, mais necessiterait un lock DB en multi-instance.
 
 ### Matching Strava/Garmin
 

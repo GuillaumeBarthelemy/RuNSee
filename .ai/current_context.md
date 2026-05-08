@@ -153,3 +153,13 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Verification enrichissements post-merge prod : 0 enrichment Garmin reste attache a une activite merged, 0 cible Strava sans enrichment, 0 mismatch de providerActivityId sur les cibles.
 - Route `DELETE /providers/garmin/data` conservee comme action admin hardening existante : elle exige `PURGE_GARMIN`, est authentifiee et ne supprime pas les activites Strava ; elle reste a considerer comme action destructive Garmin.
 - Archive de review source a regenerer apres commit final depuis `git archive`.
+
+## Stabilisation pre-usage reel du backfill historique Garmin
+
+- Plan traite : `docs/runsee_review_backfill_garmin_derniere_version.md`, archive ensuite sous `docs/old/`.
+- Ajout de `ProviderBackfillWindowLog` (SQLite + PostgreSQL) pour historiser chaque fenetre Garmin : dates, statut, compteurs, erreur, doublons detectes et resultat JSON redige.
+- Le statut Admin ne depend plus uniquement des extras de la derniere requete : les compteurs `matched`, `Garmin-only`, `ambiguous` et `rejected` sont recalcules depuis les logs persistants.
+- Le backfill controle les doublons avant ecriture ; si un doublon actif existe deja, la fenetre est bloquee et le curseur passe en `error` sans avancer.
+- Apres ecriture, si un doublon Garmin/Strava apparait, un soft-merge non destructif est tente immediatement ; le curseur ne progresse que si le controle residuel revient a 0.
+- `run-window force` est desactive par defaut et ne fonctionne que si `GARMIN_BACKFILL_ALLOW_FORCE_RUN=true`.
+- Les snapshots `.ai/git_status*` et `.ai/handoff*` obsoletes ont ete supprimes pour eviter de propager un faux etat Git.

@@ -127,6 +127,10 @@ function buildNextWindow(cursor) {
 
 function buildPublicCursor(cursor, extras = {}) {
   const nextRunNotBefore = getNextRunNotBefore(cursor);
+  const totalMatched = Number(extras.totalMatched ?? extras.matched ?? 0);
+  const totalGarminOnlyCreated = Number(extras.totalGarminOnlyCreated ?? extras.createdGarminOnly ?? 0);
+  const totalAmbiguous = Number(extras.totalAmbiguous ?? extras.ambiguous ?? 0);
+  const totalRejected = Number(extras.totalRejected ?? extras.rejected ?? 0);
 
   return {
     provider: "garmin",
@@ -144,13 +148,52 @@ function buildPublicCursor(cursor, extras = {}) {
     totals: {
       windowsProcessed: Number(cursor?.totalWindowsProcessed || 0),
       activitiesImported: Number(cursor?.totalActivitiesImported || 0),
-      matched: Number(extras.matched || 0),
-      createdGarminOnly: Number(extras.createdGarminOnly || 0),
-      ambiguous: Number(extras.ambiguous || 0),
-      rejected: Number(extras.rejected || 0),
+      matched: totalMatched,
+      createdGarminOnly: totalGarminOnlyCreated,
+      ambiguous: totalAmbiguous,
+      rejected: totalRejected,
     },
     ...extras,
   };
+}
+
+async function getBackfillLogSummary(cursor) {
+  if (!cursor?.id) {
+    return {};
+  }
+
+  const [aggregate, latestLog] = await Promise.all([
+    prisma.providerBackfillWindowLog.aggregate({
+      where: { cursorId: cursor.id },
+      _sum: {
+        matchedCount: true,
+        garminOnlyCreatedCount: true,
+        ambiguousCount: true,
+        rejectedCount: true,
+      },
+    }),
+    prisma.providerBackfillWindowLog.findFirst({
+      where: { cursorId: cursor.id },
+      orderBy: { startedAt: "desc" },
+    }),
+  ]);
+
+  const summary = {
+    totalMatched: Number(aggregate._sum.matchedCount || 0),
+    totalGarminOnlyCreated: Number(aggregate._sum.garminOnlyCreatedCount || 0),
+    totalAmbiguous: Number(aggregate._sum.ambiguousCount || 0),
+    totalRejected: Number(aggregate._sum.rejectedCount || 0),
+    latestWindowStatus: latestLog?.status || null,
+  };
+
+  if (latestLog) {
+    summary.lastWindow = {
+      startDate: formatDate(latestLog.windowStartDate),
+      endDate: formatDate(latestLog.windowEndDate),
+    };
+  }
+
+  return summary;
 }
 
 async function getOrCreateCursor(appUserId) {
@@ -219,6 +262,10 @@ function isWindowDue(cursor, { force = false } = {}) {
   return !nextRunNotBefore || nextRunNotBefore.getTime() <= Date.now();
 }
 
+export function resolveGarminBackfillForceRun(requestedForce, allowForce = env.garminBackfillAllowForceRun) {
+  return Boolean(requestedForce && allowForce);
+}
+
 function summarizeWindowResult(result = {}) {
   return {
     fetchedCount: Number(result.fetchedCount || 0),
@@ -232,9 +279,153 @@ function summarizeWindowResult(result = {}) {
   };
 }
 
+function buildWindowResultJson(payload = {}) {
+  return JSON.stringify(payload, (key, value) => {
+    if (key.toLowerCase().includes("session") || key.toLowerCase().includes("token")) {
+      return "[redacted]";
+    }
+
+    return value;
+  });
+}
+
+async function createWindowLog({ cursor, window, status = "running" }) {
+  return prisma.providerBackfillWindowLog.create({
+    data: {
+      cursorId: cursor.id,
+      appUserId: cursor.appUserId,
+      provider: GARMIN_PROVIDER_CODE,
+      resourceType: RESOURCE_TYPE,
+      windowStartDate: window.startDate,
+      windowEndDate: window.endDate,
+      status,
+    },
+  });
+}
+
+async function updateWindowLog(logId, data = {}) {
+  if (!logId) {
+    return null;
+  }
+
+  return prisma.providerBackfillWindowLog.update({
+    where: { id: logId },
+    data: {
+      ...data,
+      endedAt: data.endedAt || new Date(),
+    },
+  });
+}
+
+async function softMergeDetectedDuplicates(duplicateReport = {}) {
+  const duplicates = Array.isArray(duplicateReport.duplicates) ? duplicateReport.duplicates : [];
+  const results = [];
+
+  for (const duplicate of duplicates) {
+    const appUserId = duplicate.appUserId;
+    const stravaActivityId = duplicate.stravaActivity?.id;
+    const garminActivityId = duplicate.garminActivity?.id;
+    const providerActivityId = String(duplicate.garminActivity?.sourceActivityId || "").trim();
+
+    if (!appUserId || !stravaActivityId || !garminActivityId || !providerActivityId) {
+      results.push({
+        status: "skipped",
+        reason: "missing_duplicate_identity",
+      });
+      continue;
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const garminEnrichment = await tx.activityProviderEnrichment.findUnique({
+        where: {
+          activityId_providerCode: {
+            activityId: garminActivityId,
+            providerCode: GARMIN_PROVIDER_CODE,
+          },
+        },
+      });
+
+      if (garminEnrichment) {
+        const existingStravaEnrichment = await tx.activityProviderEnrichment.findUnique({
+          where: {
+            activityId_providerCode: {
+              activityId: stravaActivityId,
+              providerCode: GARMIN_PROVIDER_CODE,
+            },
+          },
+          select: { id: true },
+        });
+
+        if (!existingStravaEnrichment) {
+          await tx.activityProviderEnrichment.update({
+            where: { id: garminEnrichment.id },
+            data: {
+              activityId: stravaActivityId,
+              status: duplicate.status === "exact" ? "matched_exact" : "matched_tolerated",
+              matchConfidence: duplicate.score,
+              matchedAt: new Date(),
+            },
+          });
+        }
+      }
+
+      await tx.activityProviderLink.upsert({
+        where: {
+          appUserId_provider_providerActivityId: {
+            appUserId,
+            provider: GARMIN_PROVIDER_CODE,
+            providerActivityId,
+          },
+        },
+        create: {
+          appUserId,
+          activityId: stravaActivityId,
+          provider: GARMIN_PROVIDER_CODE,
+          providerActivityId,
+          matchStatus: duplicate.status,
+          matchConfidence: duplicate.score,
+          matchedAt: new Date(),
+        },
+        update: {
+          activityId: stravaActivityId,
+          matchStatus: duplicate.status,
+          matchConfidence: duplicate.score,
+          matchedAt: new Date(),
+        },
+      });
+
+      await tx.activity.update({
+        where: { id: garminActivityId },
+        data: {
+          isMerged: true,
+          mergedIntoActivityId: stravaActivityId,
+          mergedAt: new Date(),
+          sourcePriority: "merged",
+        },
+      });
+
+      return {
+        status: "merged",
+        garminActivityId,
+        stravaActivityId,
+        score: duplicate.score,
+      };
+    });
+
+    results.push(result);
+  }
+
+  return {
+    attemptedCount: duplicates.length,
+    mergedCount: results.filter((result) => result.status === "merged").length,
+    results,
+  };
+}
+
 export async function getGarminActivityBackfillStatusForUser(appUserId) {
   const cursor = await getOrCreateCursor(appUserId);
-  return buildPublicCursor(cursor);
+  const logSummary = await getBackfillLogSummary(cursor);
+  return buildPublicCursor(cursor, logSummary);
 }
 
 export async function startGarminActivityBackfillForUser(appUserId) {
@@ -268,7 +459,7 @@ export async function startGarminActivityBackfillForUser(appUserId) {
   });
 
   setTimeout(() => {
-    runGarminActivityBackfillWindowForUser(appUserId, { triggerSource: "manual-start", force: true })
+    runGarminActivityBackfillWindowForUser(appUserId, { triggerSource: "manual-start" })
       .catch((error) => {
         console.error("Garmin historical activity backfill first window failed:", {
           userRef: appUserId.slice(0, 8),
@@ -328,6 +519,9 @@ export async function resumeGarminActivityBackfillForUser(appUserId) {
 export async function runGarminActivityBackfillWindowForUser(appUserId, options = {}) {
   await requireConnectedGarmin(appUserId);
   const lockKey = String(appUserId);
+  const requestedForce = Boolean(options.force);
+  const force = resolveGarminBackfillForceRun(requestedForce);
+  let windowLog = null;
 
   if (runningWindows.has(lockKey)) {
     return {
@@ -350,7 +544,15 @@ export async function runGarminActivityBackfillWindowForUser(appUserId, options 
       };
     }
 
-    if (!isWindowDue(cursor, { force: Boolean(options.force) })) {
+    if (requestedForce && !env.garminBackfillAllowForceRun) {
+      return {
+        message: "Execution forcee Garmin desactivee cote serveur.",
+        backfill: buildPublicCursor(cursor, { forceDenied: true }),
+        skipped: true,
+      };
+    }
+
+    if (!isWindowDue(cursor, { force })) {
       return {
         message: "Prochaine tranche Garmin pas encore due.",
         backfill: buildPublicCursor(cursor),
@@ -361,6 +563,7 @@ export async function runGarminActivityBackfillWindowForUser(appUserId, options 
     const window = calculateGarminBackfillWindow(cursor.nextWindowEndDate || new Date(), cursor.windowDays);
     const windowStartKey = formatDate(window.startDate);
     const windowEndKey = formatDate(window.endDate);
+    windowLog = await createWindowLog({ cursor, window });
 
     await prisma.providerBackfillCursor.update({
       where: { id: cursor.id },
@@ -371,6 +574,40 @@ export async function runGarminActivityBackfillWindowForUser(appUserId, options 
       },
     });
 
+    const duplicatePreflight = await detectProviderActivityDuplicates({ appUserId, minScore: 70 });
+    if (duplicatePreflight.duplicateCount > 0) {
+      await updateWindowLog(windowLog.id, {
+        status: "error",
+        duplicateCountAfterWindow: duplicatePreflight.duplicateCount,
+        resultJson: buildWindowResultJson({ duplicatePreflight }),
+        errorCode: "PROVIDER_DUPLICATE_PREFLIGHT",
+        errorMessage: `${duplicatePreflight.duplicateCount} doublon(s) Garmin/Strava actif(s) detecte(s) avant tranche.`,
+      });
+
+      const errorCursor = await prisma.providerBackfillCursor.update({
+        where: { id: cursor.id },
+        data: {
+          status: "error",
+          lastErrorCode: "PROVIDER_DUPLICATE_PREFLIGHT",
+          lastErrorMessage: `${duplicatePreflight.duplicateCount} doublon(s) Garmin/Strava actif(s) detecte(s) avant tranche.`,
+        },
+      });
+
+      return {
+        message: "Import historique Garmin bloque : doublons actifs detectes avant ecriture.",
+        backfill: buildPublicCursor(errorCursor, { duplicateReport: duplicatePreflight }),
+      };
+    }
+
+    const preflightResult = await enrichGarminActivitiesForUser(appUserId, {
+      startDate: windowStartKey,
+      endDate: windowEndKey,
+      allowGarminOnly: true,
+      force: true,
+      dryRun: true,
+    });
+    const preflightSummary = summarizeWindowResult(preflightResult);
+
     const result = await enrichGarminActivitiesForUser(appUserId, {
       startDate: windowStartKey,
       endDate: windowEndKey,
@@ -379,21 +616,50 @@ export async function runGarminActivityBackfillWindowForUser(appUserId, options 
     });
     const summary = summarizeWindowResult(result);
     const duplicateReport = await detectProviderActivityDuplicates({ appUserId, minScore: 70 });
+    let repairedDuplicateReport = null;
+    let duplicateRepair = null;
 
     if (duplicateReport.duplicateCount > 0) {
+      duplicateRepair = await softMergeDetectedDuplicates(duplicateReport);
+      repairedDuplicateReport = await detectProviderActivityDuplicates({ appUserId, minScore: 70 });
+    }
+
+    if (repairedDuplicateReport?.duplicateCount > 0) {
+      await updateWindowLog(windowLog.id, {
+        status: "error",
+        fetchedCount: summary.fetchedCount,
+        rawUpsertedCount: summary.rawUpsertedCount,
+        matchedCount: summary.matchedCount,
+        garminOnlyCreatedCount: summary.garminOnlyCreatedCount,
+        garminOnlyUpdatedCount: summary.garminOnlyUpdatedCount,
+        ambiguousCount: summary.ambiguousCount,
+        rejectedCount: summary.unsupportedTypeCount,
+        duplicateCountAfterWindow: repairedDuplicateReport.duplicateCount,
+        resultJson: buildWindowResultJson({
+          preflightSummary,
+          summary,
+          duplicateReport,
+          duplicateRepair,
+          repairedDuplicateReport,
+        }),
+        errorCode: "PROVIDER_DUPLICATE_DETECTED",
+        errorMessage: `${repairedDuplicateReport.duplicateCount} doublon(s) Garmin/Strava detecte(s) apres tranche.`,
+      });
+
       const errorCursor = await prisma.providerBackfillCursor.update({
         where: { id: cursor.id },
         data: {
           status: "error",
           lastErrorCode: "PROVIDER_DUPLICATE_DETECTED",
-          lastErrorMessage: `${duplicateReport.duplicateCount} doublon(s) Garmin/Strava detecte(s) apres tranche.`,
+          lastErrorMessage: `${repairedDuplicateReport.duplicateCount} doublon(s) Garmin/Strava detecte(s) apres tranche.`,
         },
       });
 
       return {
         message: "Import historique Garmin arrete pour proteger les donnees : doublons detectes.",
         backfill: buildPublicCursor(errorCursor, {
-          duplicateReport,
+          duplicateReport: repairedDuplicateReport,
+          duplicateRepair,
           matched: summary.matchedCount,
           createdGarminOnly: summary.garminOnlyCreatedCount,
           ambiguous: summary.ambiguousCount,
@@ -421,6 +687,23 @@ export async function runGarminActivityBackfillWindowForUser(appUserId, options 
         },
       },
     });
+    await updateWindowLog(windowLog.id, {
+      status: completed ? "completed" : "success",
+      fetchedCount: summary.fetchedCount,
+      rawUpsertedCount: summary.rawUpsertedCount,
+      matchedCount: summary.matchedCount,
+      garminOnlyCreatedCount: summary.garminOnlyCreatedCount,
+      garminOnlyUpdatedCount: summary.garminOnlyUpdatedCount,
+      ambiguousCount: summary.ambiguousCount,
+      rejectedCount: summary.unsupportedTypeCount,
+      duplicateCountAfterWindow: repairedDuplicateReport?.duplicateCount || duplicateReport.duplicateCount || 0,
+      resultJson: buildWindowResultJson({
+        preflightSummary,
+        summary,
+        duplicateReport,
+        duplicateRepair,
+      }),
+    });
 
     return {
       message: completed
@@ -437,11 +720,19 @@ export async function runGarminActivityBackfillWindowForUser(appUserId, options 
         rejected: summary.unsupportedTypeCount,
         windowResult: summary,
         duplicateReport,
+        duplicateRepair,
         triggerSource: options.triggerSource || "manual",
       }),
     };
   } catch (error) {
     const cursor = await getOrCreateCursor(appUserId);
+    await updateWindowLog(windowLog?.id, {
+      status: "error",
+      errorCode: error?.code || error?.name || "GARMIN_BACKFILL_WINDOW_FAILED",
+      errorMessage: error?.userMessage || error?.message || "Erreur Garmin pendant l'import historique.",
+      resultJson: buildWindowResultJson({ error: sanitizeError(error) }),
+    });
+
     const updatedCursor = await prisma.providerBackfillCursor.update({
       where: { id: cursor.id },
       data: {

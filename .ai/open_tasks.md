@@ -91,9 +91,16 @@
 - [x] Ajouter les endpoints start/status/pause/resume du backfill historique Garmin activites.
 - [x] Ajouter le scheduler automatique de reprise des fenetres Garmin historiques.
 - [x] Reutiliser la detection de doublons provider apres chaque fenetre Garmin.
+- [x] Ajouter une table de logs persistants `ProviderBackfillWindowLog` pour fiabiliser les compteurs apres refresh.
+- [x] Bloquer une fenetre Garmin si des doublons actifs existent deja avant ecriture.
+- [x] Tenter un soft-merge non destructif immediat si un doublon apparait apres fenetre, puis bloquer le curseur si le controle residuel n'est pas a 0.
+- [x] Encadrer `run-window force` derriere `GARMIN_BACKFILL_ALLOW_FORCE_RUN=false` par defaut.
+- [x] Supprimer les snapshots `.ai` obsoletes (`git_status`, `handoff_*`, `repo_files`) pour eviter un faux etat agent.
 - [ ] Recette reelle : lancer le backfill historique Garmin depuis Admin et verifier une seule fenetre immediate.
 - [ ] Recette reelle : verifier la reprise automatique apres le delai minimal.
 - [ ] Recette reelle : verifier pause/reprise et absence de doublons apres nouvelle synchronisation.
+- [ ] Appliquer la migration `20260508195000_add_provider_backfill_window_logs` sur les environnements cibles avant usage reel du backfill historique.
+- [ ] Definir explicitement `GARMIN_BACKFILL_MIN_DATE` en production pour eviter une exploration historique inutilement longue.
 
 ## Correctif UX Aujourd'hui
 
