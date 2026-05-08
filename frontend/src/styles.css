@@ -5226,8 +5226,42 @@ body.modal-open {
   color: var(--color-text-primary);
 }
 
+/* Garmin historical activity backfill */
+.garmin-activity-backfill-panel {
+  border-color: rgba(255, 115, 22, 0.26);
+}
+
+.garmin-backfill-window-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.garmin-backfill-window-grid > div {
+  border: 1px solid rgba(53, 88, 134, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.64);
+  padding: 0.75rem;
+}
+
+.garmin-backfill-window-grid strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--color-text-primary);
+}
+
 @media (max-width: 1080px) {
   .garmin-experimental-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .garmin-backfill-window-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .garmin-backfill-window-grid {
     grid-template-columns: 1fr;
   }
 }

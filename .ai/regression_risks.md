@@ -119,6 +119,15 @@
 - Garde-fous presents : fenetre courte, max 180 jours, pas de backfill massif depuis la fiche, erreurs 429/expired propagees, brut stocke separement.
 - Validation requise : test manuel avec compte Garmin reel et activite connue.
 
+### Backfill historique Garmin activites
+
+- Zone : `garminHistoricalBackfill.service.js`, `ProviderBackfillCursor`, endpoints `/providers/garmin/activities/backfill/*`, Admin Garmin.
+- Risque : recréer des doublons Garmin/Strava si le backfill ne reutilise pas le matching stabilise.
+- Garde-fous presents : traitement par `garminActivityEnrichment.service.js`, controle `detectProviderActivityDuplicates` apres chaque fenetre, arret en `error` si doublon detecte.
+- Risque : saturer Garmin si les fenetres sont trop frequentes.
+- Garde-fous presents : fenetre bornee par `GARMIN_BACKFILL_WINDOW_DAYS`, intervalle minimal par `GARMIN_BACKFILL_MIN_INTERVAL_MINUTES`, scheduler borne par `GARMIN_BACKFILL_MAX_WINDOWS_PER_RUN`.
+- Validation requise : lancer une fenetre reelle, verifier les compteurs, puis confirmer que le dry-run doublons reste a 0.
+
 ### Matching Strava/Garmin
 
 - Zone : `garminActivityEnrichment.service.js`.

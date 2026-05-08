@@ -118,6 +118,18 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Correctif supplementaire deploye : le matching provider compare maintenant `startDate` UTC avant `startDateLocal`, ce qui evite un decalage artificiel de 2 h entre Strava et Garmin.
 - CI/CD VM vert sur le commit `8eff8fd`.
 - Dry-run prod apres correctif : 29 doublons Garmin/Strava detectes, tous en statut `exact`, scores >= 91,9.
+
+## Backfill historique Garmin activites
+
+- Nouveau chantier traite : `docs/runsee_chantier_backfill_garmin.md`, archive ensuite sous `docs/old/`.
+- Baseline de depart conservee : tag `runsee-stable-post-garmin-dedup`.
+- Le backfill historique Garmin utilise `ProviderBackfillCursor` existant, sans migration Prisma.
+- Le backfill est lance manuellement depuis Admin, puis poursuivi automatiquement par scheduler backend.
+- Chaque fenetre couvre au maximum `GARMIN_BACKFILL_WINDOW_DAYS` jours, par defaut 180.
+- Le delai minimal entre deux fenetres est `GARMIN_BACKFILL_MIN_INTERVAL_MINUTES`, par defaut 60 minutes.
+- Le traitement reutilise `garminActivityEnrichment.service.js` et le matching stabilise `activityProviderMatching.service.js`.
+- Apres chaque fenetre, un controle anti-doublon reutilise la logique de detection provider et met le curseur en erreur si un doublon actif est detecte.
+- L'UI Admin expose le statut, les fenetres, les compteurs, la pause et la reprise.
 - Soft-merge prod applique : 29/29 activites Garmin marquees `isMerged=true`, aucune suppression physique.
 - Verification post-merge : detection dry-run a 0 doublon, 923 activites Strava actives, 0 Garmin actif visible, 29 liens/enrichissements Garmin conserves.
 - Controle volumes recent : les jours 27/04-06/05 ne sont plus doubles dans les lectures `isMerged=false`.

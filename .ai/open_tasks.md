@@ -87,6 +87,13 @@
 - [ ] Valider visuellement la page Activites en session utilisateur apres refresh complet.
 - [ ] Tester une nouvelle synchronisation Strava + Garmin et confirmer que le compteur de doublons reste a 0.
 - [ ] Creer le tag stable `runsee-stable-YYYYMMDD-garmin-dedup` apres validation visuelle et sync globale post-correctif.
+- [x] Ajouter l'orchestration longue duree du backfill historique Garmin 180 j/h cote backend et Admin.
+- [x] Ajouter les endpoints start/status/pause/resume du backfill historique Garmin activites.
+- [x] Ajouter le scheduler automatique de reprise des fenetres Garmin historiques.
+- [x] Reutiliser la detection de doublons provider apres chaque fenetre Garmin.
+- [ ] Recette reelle : lancer le backfill historique Garmin depuis Admin et verifier une seule fenetre immediate.
+- [ ] Recette reelle : verifier la reprise automatique apres le delai minimal.
+- [ ] Recette reelle : verifier pause/reprise et absence de doublons apres nouvelle synchronisation.
 
 ## Correctif UX Aujourd'hui
 

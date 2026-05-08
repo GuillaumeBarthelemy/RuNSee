@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import GarminExperimentalCard from "../components/GarminExperimentalCard.jsx";
+import GarminActivityBackfillCard from "../components/GarminActivityBackfillCard.jsx";
 import PhysiologicalProfileCard from "../components/PhysiologicalProfileCard.jsx";
 import RaceObjectivesCard from "../components/RaceObjectivesCard.jsx";
 import StravaAppSettingsCard from "../components/StravaAppSettingsCard.jsx";
@@ -19,10 +20,14 @@ import AppShell from "../layouts/AppShell.jsx";
 import {
   connectGarmin,
   disconnectGarmin,
+  getGarminActivityBackfillStatus,
   getGarminConnectionStatus,
   getGarminSyncMetrics,
+  pauseGarminActivityBackfill,
   purgeGarminData,
   renormalizeGarminRecovery,
+  resumeGarminActivityBackfill,
+  startGarminActivityBackfill,
   startGarminRecoveryBackfill,
   syncRecentGarminRecovery,
 } from "../services/externalProvider.service.js";
@@ -65,8 +70,10 @@ export default function AdminPage() {
   const [isGarminSyncSubmitting, setIsGarminSyncSubmitting] = useState(false);
   const [isGarminPurgeSubmitting, setIsGarminPurgeSubmitting] = useState(false);
   const [isGarminRenormalizeSubmitting, setIsGarminRenormalizeSubmitting] = useState(false);
+  const [isGarminActivityBackfillSubmitting, setIsGarminActivityBackfillSubmitting] = useState(false);
   const [garminConnection, setGarminConnection] = useState(null);
   const [garminRecoveryBackfill, setGarminRecoveryBackfill] = useState(null);
+  const [garminActivityBackfill, setGarminActivityBackfill] = useState(null);
   const [garminMetrics, setGarminMetrics] = useState(null);
   const [trainingSettingsOverride, setTrainingSettingsOverride] = useState(null);
   const [trainingSettingsHistoryOverride, setTrainingSettingsHistoryOverride] = useState(null);
@@ -125,6 +132,15 @@ export default function AdminPage() {
     }
   }, []);
 
+  const loadGarminActivityBackfill = useCallback(async () => {
+    try {
+      const result = await getGarminActivityBackfillStatus();
+      setGarminActivityBackfill(result || null);
+    } catch {
+      setGarminActivityBackfill(null);
+    }
+  }, []);
+
   const handleConnectStrava = useCallback(() => {
     if (!stravaApp?.personalAppConfigured && !stravaApp?.sharedAppAvailable) {
       safeSetError("Ajoute d'abord ton application Strava personnelle pour connecter ce compte.");
@@ -159,23 +175,33 @@ export default function AdminPage() {
   useEffect(() => {
     loadGarminConnection().catch(() => {});
     loadGarminMetrics().catch(() => {});
-  }, [loadGarminConnection, loadGarminMetrics]);
+    loadGarminActivityBackfill().catch(() => {});
+  }, [loadGarminActivityBackfill, loadGarminConnection, loadGarminMetrics]);
 
   useEffect(() => {
     const isRecoveryRunning = Boolean(
       garminRecoveryBackfill?.isRunning || garminConnection?.status === "syncing",
     );
 
-    if (!isRecoveryRunning) {
+    const isActivityBackfillRunning = garminActivityBackfill?.status === "running";
+
+    if (!isRecoveryRunning && !isActivityBackfillRunning) {
       return undefined;
     }
 
     const timer = window.setInterval(() => {
       loadGarminConnection().catch(() => {});
-    }, 5000);
+      loadGarminActivityBackfill().catch(() => {});
+    }, 15000);
 
     return () => window.clearInterval(timer);
-  }, [garminConnection?.status, garminRecoveryBackfill?.isRunning, loadGarminConnection]);
+  }, [
+    garminActivityBackfill?.status,
+    garminConnection?.status,
+    garminRecoveryBackfill?.isRunning,
+    loadGarminActivityBackfill,
+    loadGarminConnection,
+  ]);
 
   useEffect(() => {
     const authStatus = String(searchParams.get("auth") || "").trim();
@@ -473,6 +499,67 @@ export default function AdminPage() {
     }
   }, [loadGarminMetrics, safeSetError]);
 
+  const handleStartGarminActivityBackfill = useCallback(async () => {
+    if (!garminConnection?.connected) {
+      safeSetError("Connecte Garmin avant de lancer l'import historique des activites.");
+      return;
+    }
+
+    safeSetError("");
+    setActionNotice("");
+    setIsGarminActivityBackfillSubmitting(true);
+
+    try {
+      const result = await startGarminActivityBackfill();
+      setGarminActivityBackfill(result?.backfill || null);
+      setActionNotice(result?.message || "Import historique Garmin lance.");
+      window.setTimeout(() => {
+        loadGarminActivityBackfill().catch(() => {});
+      }, 2500);
+    } catch (error) {
+      safeSetError(extractErrorMessage(error, "Erreur lors du lancement de l'import historique Garmin."));
+    } finally {
+      setIsGarminActivityBackfillSubmitting(false);
+    }
+  }, [garminConnection?.connected, loadGarminActivityBackfill, safeSetError]);
+
+  const handlePauseGarminActivityBackfill = useCallback(async () => {
+    safeSetError("");
+    setActionNotice("");
+    setIsGarminActivityBackfillSubmitting(true);
+
+    try {
+      const result = await pauseGarminActivityBackfill();
+      setGarminActivityBackfill(result?.backfill || null);
+      setActionNotice(result?.message || "Import historique Garmin mis en pause.");
+    } catch (error) {
+      safeSetError(extractErrorMessage(error, "Erreur lors de la mise en pause Garmin."));
+    } finally {
+      setIsGarminActivityBackfillSubmitting(false);
+    }
+  }, [safeSetError]);
+
+  const handleResumeGarminActivityBackfill = useCallback(async () => {
+    if (!garminConnection?.connected) {
+      safeSetError("Reconnecte Garmin avant de reprendre l'import historique.");
+      return;
+    }
+
+    safeSetError("");
+    setActionNotice("");
+    setIsGarminActivityBackfillSubmitting(true);
+
+    try {
+      const result = await resumeGarminActivityBackfill();
+      setGarminActivityBackfill(result?.backfill || null);
+      setActionNotice(result?.message || "Import historique Garmin repris.");
+    } catch (error) {
+      safeSetError(extractErrorMessage(error, "Erreur lors de la reprise Garmin."));
+    } finally {
+      setIsGarminActivityBackfillSubmitting(false);
+    }
+  }, [garminConnection?.connected, safeSetError]);
+
   const handleSaveTrainingAnalyticsSettings = useCallback(async (payload) => {
     safeSetError("");
     setInfoNotice("");
@@ -562,6 +649,14 @@ export default function AdminPage() {
               onSyncRecentRecovery={handleSyncRecentGarminRecovery}
               onRenormalizeRecovery={handleRenormalizeGarmin}
               onPurgeGarminData={handlePurgeGarminData}
+            />
+            <GarminActivityBackfillCard
+              backfill={garminActivityBackfill}
+              isConnected={Boolean(garminConnection?.connected)}
+              isPending={isGarminActivityBackfillSubmitting}
+              onStart={handleStartGarminActivityBackfill}
+              onPause={handlePauseGarminActivityBackfill}
+              onResume={handleResumeGarminActivityBackfill}
             />
           </section>
           <section className="section admin-strava-section">

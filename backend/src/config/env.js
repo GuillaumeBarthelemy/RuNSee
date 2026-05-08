@@ -194,6 +194,12 @@ const env = {
     1,
     parseNumber(process.env.GARMIN_BACKFILL_MAX_WINDOWS_PER_RUN, 1),
   ),
+  garminBackfillScanIntervalMinutes: Math.max(
+    5,
+    parseNumber(process.env.GARMIN_BACKFILL_SCAN_INTERVAL_MINUTES, 10),
+  ),
+  garminBackfillMinDate:
+    String(process.env.GARMIN_BACKFILL_MIN_DATE || "").trim(),
   stravaApprovalPrompt:
     String(process.env.STRAVA_APPROVAL_PROMPT || "force").trim() || "force",
   stravaScope:

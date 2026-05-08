@@ -62,3 +62,23 @@ export async function enrichGarminActivities(payload = {}) {
   const response = await api.post("/providers/garmin/activities/enrich", payload);
   return response.data;
 }
+
+export async function getGarminActivityBackfillStatus() {
+  const response = await api.get("/providers/garmin/activities/backfill/status");
+  return response.data;
+}
+
+export async function startGarminActivityBackfill() {
+  const response = await api.post("/providers/garmin/activities/backfill/start", {});
+  return response.data;
+}
+
+export async function pauseGarminActivityBackfill() {
+  const response = await api.post("/providers/garmin/activities/backfill/pause", {});
+  return response.data;
+}
+
+export async function resumeGarminActivityBackfill() {
+  const response = await api.post("/providers/garmin/activities/backfill/resume", {});
+  return response.data;
+}

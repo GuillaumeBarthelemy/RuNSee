@@ -19,6 +19,8 @@ Monorepo `C:\Services\RuNSee` :
 - `src/services/providers/garminProvider.service.js` : connexion Garmin, MFA, purge, metriques sync.
 - `src/services/providers/garminRecoveryBackfill.service.js` : recuperation recovery quotidienne.
 - `src/services/providers/garminActivityEnrichment.service.js` : enrichissement activites Garmin -> Strava, incluant le mode global borne `recent_missing`.
+- `src/services/providers/garminHistoricalBackfill.service.js` : orchestration du backfill historique Garmin activites par fenetres 180 j, pause/reprise et scheduler.
+- `src/services/providers/providerActivityDuplicateDetection.service.js` : detection reutilisable des doublons actifs Strava/Garmin basee sur le matching provider.
 - `src/services/providers/garminconnectBridge.service.js` : subprocess Python.
 - `scripts/providers/garminconnect_bridge.py` : operations `login`, `fetch_recovery_days`, `fetch_activities`.
 - `src/services/providers/garminActivityEnrichment.service.test.js` : tests purs matching Garmin/Strava et normalisation Garmin.
@@ -32,6 +34,7 @@ Monorepo `C:\Services\RuNSee` :
 - `components/ActivityTrailCard.jsx` : lecture trail conditionnelle sur le detail activite.
 - `components/TrailSpecificityCard.jsx` : synthese trail dans Analytics.
 - `components/GarminEnrichmentPanel.jsx` : recovery snapshot + metriques Garmin de seance.
+- `components/GarminActivityBackfillCard.jsx` : carte Admin pour lancer, suivre, mettre en pause et reprendre le backfill historique Garmin activites.
 - `components/CurrentAccountPanel.jsx` : zone compte sidebar, statuts Strava/Garmin sans doublon et bouton de sync globale.
 - `components/DashboardDecisionSummaryCard.jsx` : Lecture du jour, verdict/action/vigilance/signaux cles avec contexte trail integre.
 - `components/TodayHeader.jsx` : header compact Aujourd'hui, filtre sport local avec chip actif et reset.

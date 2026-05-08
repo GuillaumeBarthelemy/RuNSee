@@ -9,6 +9,13 @@ import {
 } from "../services/providers/garminProvider.service.js";
 import { enrichGarminActivitiesForUser } from "../services/providers/garminActivityEnrichment.service.js";
 import {
+  getGarminActivityBackfillStatusForUser,
+  pauseGarminActivityBackfillForUser,
+  resumeGarminActivityBackfillForUser,
+  runGarminActivityBackfillWindowForUser,
+  startGarminActivityBackfillForUser,
+} from "../services/providers/garminHistoricalBackfill.service.js";
+import {
   listGarminRecoverySnapshotsForUser,
   renormalizeGarminRecoverySnapshotsForUser,
   startGarminRecoveryBackfillForUser,
@@ -85,6 +92,64 @@ export async function enrichGarminActivitiesController(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
     const result = await enrichGarminActivitiesForUser(user.id, req.body || {});
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getGarminActivityBackfillStatusController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await getGarminActivityBackfillStatusForUser(user.id);
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function startGarminActivityBackfillController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await startGarminActivityBackfillForUser(user.id);
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function pauseGarminActivityBackfillController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await pauseGarminActivityBackfillForUser(user.id);
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function resumeGarminActivityBackfillController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await resumeGarminActivityBackfillForUser(user.id);
+
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function runGarminActivityBackfillWindowController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await runGarminActivityBackfillWindowForUser(user.id, {
+      triggerSource: "manual-run-window",
+      force: Boolean(req.body?.force),
+    });
 
     return res.json(result);
   } catch (error) {
