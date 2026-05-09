@@ -1,4 +1,5 @@
 import { memo } from "react";
+import AnalysisConfidenceBadge from "./AnalysisConfidenceBadge.jsx";
 import InfoTooltip from "./InfoTooltip.jsx";
 
 function formatDate(value) {
@@ -43,7 +44,7 @@ const INFO_BLOCKS = [
   { label: "Pour aller plus loin", text: "Mujika I (2010), Intense training: the key to optimal performance before and during the taper. Bosquet et al. (2007), Effects of tapering on performance: a meta-analysis." },
 ];
 
-function RaceCountdownCard({ profile = {} }) {
+function RaceCountdownCard({ profile = {}, confidence = null }) {
   if (!profile?.hasRace) {
     return (
       <section className="card race-countdown-card race-countdown-empty">
@@ -75,11 +76,14 @@ function RaceCountdownCard({ profile = {} }) {
             {race.notes ? ` ${race.notes}` : ""}
           </p>
         </div>
-        <div className="race-countdown-summary">
-          <span className="race-countdown-summary-label">{phase?.label || "Phase"}</span>
-          <strong className="race-countdown-summary-value">
-            {daysToRace > 0 ? `J-${daysToRace}` : daysToRace === 0 ? "Jour J" : `J+${Math.abs(daysToRace)}`}
-          </strong>
+        <div className="race-countdown-header-actions">
+          <AnalysisConfidenceBadge confidence={confidence} compact />
+          <div className="race-countdown-summary">
+            <span className="race-countdown-summary-label">{phase?.label || "Phase"}</span>
+            <strong className="race-countdown-summary-value">
+              {daysToRace > 0 ? `J-${daysToRace}` : daysToRace === 0 ? "Jour J" : `J+${Math.abs(daysToRace)}`}
+            </strong>
+          </div>
         </div>
       </div>
 

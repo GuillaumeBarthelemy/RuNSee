@@ -1,4 +1,5 @@
 import InfoTooltip from "./InfoTooltip.jsx";
+import AnalysisConfidenceBadge from "./AnalysisConfidenceBadge.jsx";
 
 function DecisionPill({ label = "", value = "", detail = "", tone = "neutral" }) {
   return (
@@ -115,6 +116,7 @@ export default function DashboardDecisionSummaryCard({
   subtitle = "Forme, fatigue récente et sens de charge, à lire avant de choisir ta prochaine séance.",
   info = [],
   trailContext = null,
+  confidence = null,
 }) {
   const safeModel = model || {};
   const decisionMeta = safeModel.decisionMeta || {};
@@ -138,6 +140,7 @@ export default function DashboardDecisionSummaryCard({
           <p className="card-subtitle">{subtitle}</p>
           {safeModel.horizonLabel ? <p className="small-text">{safeModel.horizonLabel}</p> : null}
         </div>
+        <AnalysisConfidenceBadge confidence={confidence} compact />
       </div>
 
       <div className="dashboard-decision-layout">

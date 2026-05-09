@@ -13,6 +13,7 @@ import { startIncrementalSync } from "../services/sync.service.js";
 import { filterActivities, getAvailableSportGroups, RUN_SPORT_GROUP_LABEL } from "../utils/activityAggregations.js";
 import { buildActivityItems, buildBestEffortRecords, buildRegularitySummary } from "../utils/activityInsights.js";
 import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
+import { buildTodayConfidence } from "../utils/analysisConfidence.js";
 import { buildAnalyticsDateRange } from "../utils/analyticsPeriods.js";
 import { buildLoadDynamicsProfile } from "../utils/loadDynamics.js";
 import { buildVdotProfile } from "../utils/runningPerformance.js";
@@ -171,6 +172,17 @@ export default function DashboardPage() {
   const dashboardDecisionModel = useMemo(
     () => buildDashboardDecisionSummary(trainingLoadModel, trendLoadModel, { recoverySnapshots }),
     [recoverySnapshots, trainingLoadModel, trendLoadModel],
+  );
+
+  const todayConfidence = useMemo(
+    () => buildTodayConfidence({
+      activities: dashboardActivities,
+      loadModel: trainingLoadModel,
+      recoverySnapshots,
+      referenceDate: todayRange.end,
+      duplicateFree: true,
+    }),
+    [dashboardActivities, recoverySnapshots, todayRange.end, trainingLoadModel],
   );
 
   const trailContext = useMemo(
@@ -378,6 +390,7 @@ export default function DashboardPage() {
             model={dashboardDecisionModel}
             info={TRAINING_MVP_SECTION_INFO.decisionSummary}
             trailContext={trailContext}
+            confidence={todayConfidence}
           />
         </div>
 

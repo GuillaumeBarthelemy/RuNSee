@@ -2,6 +2,44 @@
 
 Ce journal trace les recettes reellement executees. Il evite de rouvrir les memes controles a chaque plan.
 
+## 2026-05-09 - Score de confiance des analyses
+
+### Contexte
+
+- Branche : `main`
+- Plan utilise : `docs/plans/active/runsee_chantier_score_confiance_analyses.md`
+- Responsable : CODEX
+
+### Tests techniques
+
+| Test | Resultat | Preuve |
+|---|---|---|
+| `npx vitest run src/utils/analysisConfidence.test.js --run` | OK | 8/8 |
+| `npm test -- --run` frontend | OK | 156/156 |
+| `npm run build` frontend | OK | Vite build OK |
+| ESLint fichiers touches | OK | `--max-warnings 0` |
+| Backend Prisma generate/validate | OK | SQLite + PostgreSQL valides |
+| `npm run db:compare-schemas` backend | OK | 18 modeles alignes |
+| `npm test` backend | OK | 21/21 |
+| `node --check src/app.js` / `src/server.js` | OK | Syntax OK |
+| `git diff --check` | OK | Aucun whitespace bloquant |
+
+### Recette metier
+
+| Domaine | Test | Resultat | Commentaire |
+|---|---|---|---|
+| Aujourd'hui | Badge confiance decisionnelle | OK technique | Injection dans la synthese decisionnelle, sans changer les calculs |
+| Analytics | Qualite periode analysee | OK technique | Badge compact apres filtres + reutilisation trail |
+| Performance | Potentiel route et objectif | OK technique | Badges VDOT/route et objectif course |
+| Detail activite trail | Donnees trail disponibles | OK technique | Badge compact dans la carte trail |
+| Fallbacks | Donnees manquantes | OK | Niveau `insufficient` teste si objectif absent |
+
+### Decision
+
+```text
+GO technique. Une validation visuelle authentifiee reste conseillee sur desktop/mobile avant de considerer le chantier comme baseline UX stable.
+```
+
 ## 2026-05-09 - Validation UI post-backfill Garmin et Go poursuite
 
 ### Contexte

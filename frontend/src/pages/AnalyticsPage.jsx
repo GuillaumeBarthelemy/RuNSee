@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import AnalyticsFiltersBar from "../components/AnalyticsFiltersBar.jsx";
+import AnalysisConfidenceBadge from "../components/AnalysisConfidenceBadge.jsx";
 import RecoveryVsLoadChart from "../components/RecoveryVsLoadChart.jsx";
 import DynamicsGrid from "../components/DynamicsGrid.jsx";
 import MonthlyVolumeChart from "../components/MonthlyVolumeChart.jsx";
@@ -21,6 +22,7 @@ import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import AppShell from "../layouts/AppShell.jsx";
 import { buildMonthlySeries, filterActivities } from "../utils/activityAggregations.js";
 import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
+import { buildAnalyticsConfidence } from "../utils/analysisConfidence.js";
 import {
   buildCriticalSpeed,
   buildRegularitySummary,
@@ -249,6 +251,16 @@ export default function AnalyticsPage() {
     () => buildTrailAnalyticsSummary(analyticsActivities),
     [analyticsActivities],
   );
+  const analyticsConfidence = useMemo(
+    () => buildAnalyticsConfidence({
+      activities: analyticsScopeActivities,
+      periodActivities: analyticsActivities,
+      trailModel: trailAnalytics,
+      recoverySnapshots,
+      referenceDate: sharedRange.end,
+    }),
+    [analyticsActivities, analyticsScopeActivities, recoverySnapshots, sharedRange.end, trailAnalytics],
+  );
 
   const scopeLabel = filters.sportGroup === "all" ? "tous les sports" : filters.sportGroup;
   const searchNote = filters.search ? ` Recherche active : "${filters.search}".` : "";
@@ -364,6 +376,10 @@ export default function AnalyticsPage() {
           onReset={handleResetSharedFilters}
           scopeNote={scopeNote}
         />
+      </div>
+
+      <div className="section">
+        <AnalysisConfidenceBadge confidence={analyticsConfidence} />
       </div>
 
       <div className="analysis-page-stack">
@@ -537,6 +553,7 @@ export default function AnalyticsPage() {
             <TrailSpecificityCard
               model={trailAnalytics}
               info={TRAINING_MVP_SECTION_INFO.trailSpecificity}
+              confidence={analyticsConfidence}
             />
           </div>
         ) : null}

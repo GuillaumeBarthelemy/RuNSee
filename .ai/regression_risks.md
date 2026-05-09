@@ -161,6 +161,13 @@
 
 ## Faible
 
+### Score de confiance des analyses
+
+- Zone : `analysisConfidence.js`, `AnalysisConfidenceBadge.jsx`, pages Aujourd'hui/Analytics/Performance/Trail.
+- Risque : transformer un indicateur de qualite de donnees en verite physiologique ou en score de performance.
+- Garde-fous presents : libelles qualitatifs, details en tooltip, aucune modification des calculs metier, tests sur niveaux `high/medium/insufficient`.
+- Validation requise : recette visuelle authentifiee sur desktop/mobile pour verifier lisibilite, positionnement et absence de surcharge.
+
 ### Mapping Garmin frontend
 
 - Zone : `frontend/src/utils/activityEnrichment.js`.

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import AnalyticsFiltersBar from "../components/AnalyticsFiltersBar.jsx";
+import AnalysisConfidenceBadge from "../components/AnalysisConfidenceBadge.jsx";
 import BestEffortsPanel from "../components/BestEffortsPanel.jsx";
 import PerformancePhysioCard from "../components/PerformancePhysioCard.jsx";
 import PersonalPatternsCard from "../components/PersonalPatternsCard.jsx";
@@ -15,6 +16,10 @@ import { enrichActivity } from "../services/activity.service.js";
 import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
 import { filterActivities } from "../utils/activityAggregations.js";
 import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
+import {
+  buildObjectiveConfidence,
+  buildPerformanceConfidence,
+} from "../utils/analysisConfidence.js";
 import {
   buildBestEfforts,
   buildBestEffortRecords,
@@ -160,6 +165,15 @@ export default function PerformancePage() {
     }),
     [bestEfforts.records, sharedRange.end],
   );
+  const performanceConfidence = useMemo(
+    () => buildPerformanceConfidence({
+      activities: performanceScopeActivities,
+      vdotProfile,
+      bestEfforts,
+      referenceDate: sharedRange.end,
+    }),
+    [bestEfforts, performanceScopeActivities, sharedRange.end, vdotProfile],
+  );
 
   const raceProfile = useMemo(() => {
     if (!activeRace) {
@@ -176,6 +190,16 @@ export default function PerformancePage() {
       referenceDate: sharedRange.end,
     });
   }, [activeRace, performanceScopeActivities, sharedRange.end, trainingAnalyticsSettings, trainingLoadModel]);
+  const objectiveConfidence = useMemo(
+    () => buildObjectiveConfidence({
+      race: activeRace,
+      profile: raceProfile,
+      activities: performanceScopeActivities,
+      recoverySnapshots,
+      referenceDate: sharedRange.end,
+    }),
+    [activeRace, performanceScopeActivities, raceProfile, recoverySnapshots, sharedRange.end],
+  );
 
   const recordEnrichmentCandidates = useMemo(
     () => findRecordEnrichmentCandidates(performanceScopeActivities, { limitPerRecord: 1 }),
@@ -287,11 +311,16 @@ export default function PerformancePage() {
         />
       </div>
 
+      <div className="section">
+        <AnalysisConfidenceBadge confidence={performanceConfidence} />
+      </div>
+
       <div className="analysis-page-stack">
         <div className="section">
           <VdotProfileCard
             profile={vdotProfile}
             info={TRAINING_MVP_KPI_INFO.vdotProfile || TRAINING_MVP_SECTION_INFO.advancedSignals}
+            confidence={performanceConfidence}
           />
         </div>
 
@@ -318,7 +347,7 @@ export default function PerformancePage() {
 
         <div className="section">
           {raceProfile?.hasRace ? (
-            <RaceCountdownCard profile={raceProfile} />
+            <RaceCountdownCard profile={raceProfile} confidence={objectiveConfidence} />
           ) : (
             <RaceObjectiveCallToAction />
           )}

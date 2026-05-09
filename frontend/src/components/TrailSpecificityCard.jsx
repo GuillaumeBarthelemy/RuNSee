@@ -1,4 +1,5 @@
 import { memo } from "react";
+import AnalysisConfidenceBadge from "./AnalysisConfidenceBadge.jsx";
 import InfoTooltip from "./InfoTooltip.jsx";
 
 function formatDuration(seconds) {
@@ -28,6 +29,7 @@ function TrailSpecificityCard({
   model = {},
   title = "Specificite trail",
   info = [],
+  confidence = null,
 }) {
   const safeModel = model || {};
 
@@ -41,6 +43,7 @@ function TrailSpecificityCard({
           </div>
           <p className="card-subtitle">Denivele, temps en pente et exposition descente sur la selection.</p>
         </div>
+        <AnalysisConfidenceBadge confidence={confidence} compact />
       </div>
 
       <div className={`insight-banner insight-banner-${safeModel.downhillTone || "neutral"}`.trim()}>

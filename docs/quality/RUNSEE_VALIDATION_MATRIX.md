@@ -8,6 +8,7 @@
 | Matching Garmin/Strava | 2026-05-09 | `main` | OK | Dry-run prod a 0 apres validation UI (`scannedActivities=928`) |
 | Soft-merge doublons | 2026-05-09 | `c33608d` | OK | Soft-merge non destructif valide sur fenetre 1 |
 | Backfill Garmin | 2026-05-09 | `main` | GO surveille | Poursuite automatique autorisee apres validation UI et dry-run prod a 0 |
+| Score confiance analyses | 2026-05-09 | `main` | OK technique | Moteur pur teste, badges integres Aujourd'hui/Analytics/Performance/Trail ; validation visuelle authentifiee conseillee |
 | Aujourd'hui | 2026-05-09 | `main` | OK visuel | Recette utilisateur post-fenetre 2 : pas de double comptage visible remonte |
 | Activites | 2026-05-09 | `main` | OK visuel | Recette utilisateur post-fenetre 2 : doublons non observes |
 | Analytics | 2026-05-09 | `main` | OK visuel | Recette utilisateur post-fenetre 2 : volumes/charges coherents visuellement |

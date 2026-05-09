@@ -9,6 +9,7 @@
 - [ ] Surveiller la prochaine fenetre automatique du backfill Garmin historique.
 - [ ] Relancer `detect-provider-activity-duplicates.js` en production apres la prochaine fenetre importante.
 - [ ] Confirmer que le backfill poursuit jusqu'a `GARMIN_BACKFILL_MIN_DATE` sans status `error`.
+- [ ] Valider visuellement les nouveaux badges de confiance sur Aujourd'hui, Analytics, Performance et detail activite trail en session authentifiee.
 - [ ] Tester `POST /sync/all` avec Strava seul, Garmin seul, puis les deux connectes lors d'une prochaine recette globale.
 - [ ] Verifier visuellement la sidebar provider et Aujourd'hui sur mobile/ecran etroit.
 - [ ] Revalider un objectif trail si un nouvel objectif critique est cree.
@@ -18,7 +19,7 @@
 - [ ] Completer des tests backend providers plus larges si une strategie de tests backend avec mocks DB est ajoutee.
 - [ ] Ajouter des tests workflow backfill avec repository mocke pour couvrir start/pause/resume et preflight/post-window duplicats de bout en bout.
 - [ ] Valider l'import PostgreSQL sur une base cible uniquement avec backup et option explicite (`--truncate` ou `--allow-append`).
-- [ ] Preparer le prochain chantier produit recommande : score de confiance / qualite des analyses.
+- [x] Preparer et implementer le chantier produit recommande : score de confiance / qualite des analyses.
 - [ ] Backend sans configuration ESLint compatible ESLint 10 : les controles actuels reposent sur `node --check`, Prisma et `npm test`.
 
 ## Termines recemment

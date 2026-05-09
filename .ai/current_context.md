@@ -137,6 +137,18 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - CI/CD VM vert sur le commit `8eff8fd`.
 - Dry-run prod apres correctif : 29 doublons Garmin/Strava detectes, tous en statut `exact`, scores >= 91,9.
 
+## Score de confiance des analyses
+
+- Nouveau chantier traite : `docs/plans/active/runsee_chantier_score_confiance_analyses.md`, a archiver sous `docs/plans/old/` apres commit.
+- Nouveau moteur pur : `frontend/src/utils/analysisConfidence.js`.
+- Le score ne cree pas de KPI physiologique ; il qualifie la solidite de lecture selon les donnees disponibles, manquantes ou partielles.
+- Niveaux exposes : `high`, `medium`, `low`, `insufficient`, rendus comme confiance elevee/moyenne/faible ou insuffisante.
+- Nouveau composant UI : `frontend/src/components/AnalysisConfidenceBadge.jsx`, compact et utilisable dans les headers.
+- Integrations faites : synthese Aujourd'hui, Analytics, Performance route/objectif, specificite trail et detail activite trail.
+- Tests purs ajoutes : `frontend/src/utils/analysisConfidence.test.js`.
+- Documentation modele : `docs/architecture/ANALYSIS_CONFIDENCE_MODEL.md`.
+- Limite volontaire : le score reste qualitatif et ne remplace pas les calculs metier existants ; il doit aider a lire les incertitudes sans sur-vendre la precision.
+
 ## Backfill historique Garmin activites
 
 - Nouveau chantier traite : `docs/plans/old/runsee_chantier_backfill_garmin.md`, archive ensuite sous `docs/plans/old/`.

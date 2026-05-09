@@ -1,4 +1,6 @@
 import { memo, useMemo } from "react";
+import AnalysisConfidenceBadge from "./AnalysisConfidenceBadge.jsx";
+import { buildActivityTrailConfidence } from "../utils/analysisConfidence.js";
 import { buildTrailProfile } from "../utils/trailProfile.js";
 
 function formatDuration(seconds) {
@@ -26,11 +28,18 @@ function Metric({ label, value, detail = "" }) {
 
 function ActivityTrailCard({ activity = null }) {
   const profile = useMemo(() => buildTrailProfile(activity || {}), [activity]);
+  const confidence = useMemo(
+    () => buildActivityTrailConfidence({ activity: activity || {}, trailProfile: profile }),
+    [activity, profile],
+  );
 
   if (!profile.hasData) {
     return (
       <section className="subcard trail-card">
-        <h3 className="subcard-title">Lecture trail</h3>
+        <div className="card-header-row wrap-on-mobile align-center">
+          <h3 className="subcard-title">Lecture trail</h3>
+          <AnalysisConfidenceBadge confidence={confidence} compact />
+        </div>
         <p className="muted">{profile.dataQuality?.label || "Donnees altitude insuffisantes."}</p>
       </section>
     );
@@ -39,7 +48,10 @@ function ActivityTrailCard({ activity = null }) {
   if (!profile.hasTrailContext) {
     return (
       <section className="subcard trail-card">
-        <h3 className="subcard-title">Lecture trail</h3>
+        <div className="card-header-row wrap-on-mobile align-center">
+          <h3 className="subcard-title">Lecture trail</h3>
+          <AnalysisConfidenceBadge confidence={confidence} compact />
+        </div>
         <p className="muted">Profil plutot route ou peu vallonne : aucune lecture trail detaillee n'est ajoutee.</p>
       </section>
     );
@@ -52,9 +64,12 @@ function ActivityTrailCard({ activity = null }) {
           <h3 className="subcard-title">Lecture trail</h3>
           <p className="muted">{profile.message}</p>
         </div>
-        <span className={`status-pill status-${profile.downhillLoad.tone === "danger" ? "danger" : "idle"}`.trim()}>
-          Charge descente {profile.downhillLoad.label}
-        </span>
+        <div className="trail-card-actions">
+          <AnalysisConfidenceBadge confidence={confidence} compact />
+          <span className={`status-pill status-${profile.downhillLoad.tone === "danger" ? "danger" : "idle"}`.trim()}>
+            Charge descente {profile.downhillLoad.label}
+          </span>
+        </div>
       </div>
 
       <div className="trail-metric-grid">

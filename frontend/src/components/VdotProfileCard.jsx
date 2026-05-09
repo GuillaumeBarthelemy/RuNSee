@@ -1,4 +1,5 @@
 import { memo } from "react";
+import AnalysisConfidenceBadge from "./AnalysisConfidenceBadge.jsx";
 import InfoTooltip from "./InfoTooltip.jsx";
 import { formatPace } from "../utils/activityInsights.js";
 
@@ -98,13 +99,13 @@ function RacePredictionRow({ entry }) {
   );
 }
 
-function VdotProfileCard({ profile = {}, info = [] }) {
+function VdotProfileCard({ profile = {}, info = [], confidence = null }) {
   const safeProfile = profile || {};
   const hasData = Boolean(safeProfile.hasData);
   const vo2maxLabel = formatVdotValue(safeProfile.vo2maxEstimate ?? safeProfile.vdot);
   const levelLabel = safeProfile.level?.label || "-";
   const tone = safeProfile.level?.tone || "neutral";
-  const confidence = safeProfile.confidence || {};
+  const profileConfidence = safeProfile.confidence || {};
 
   const paces = Array.isArray(safeProfile.roadPaces) ? safeProfile.roadPaces : [];
   const raceRows = Array.isArray(safeProfile.raceRows) ? safeProfile.raceRows : [];
@@ -123,14 +124,15 @@ function VdotProfileCard({ profile = {}, info = [] }) {
           {safeProfile.message ? <p className="small-text">{safeProfile.message}</p> : null}
         </div>
         <div className="vdot-summary-row">
+          <AnalysisConfidenceBadge confidence={confidence} compact />
           <div className={`vdot-summary vdot-summary-${tone}`.trim()}>
             <span className="vdot-summary-label">VDOT perf.</span>
             <strong className="vdot-summary-value">{vo2maxLabel}</strong>
             <span className="small-text">VO2max equivalent</span>
           </div>
-          <div className={`vdot-summary vdot-summary-${confidence.tone || "neutral"}`.trim()}>
+          <div className={`vdot-summary vdot-summary-${profileConfidence.tone || "neutral"}`.trim()}>
             <span className="vdot-summary-label">Confiance</span>
-            <strong className="vdot-summary-value">{confidence.label || "-"}</strong>
+            <strong className="vdot-summary-value">{profileConfidence.label || "-"}</strong>
             <span className="small-text">{levelLabel}</span>
           </div>
         </div>

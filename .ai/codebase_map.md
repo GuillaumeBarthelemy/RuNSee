@@ -50,12 +50,15 @@ Monorepo `C:\Services\RuNSee` :
 - `components/GarminActivityBackfillCard.jsx` : carte Admin pour lancer, suivre, mettre en pause et reprendre le backfill historique Garmin activites.
 - `components/CurrentAccountPanel.jsx` : zone compte sidebar, statuts Strava/Garmin sans doublon et bouton de sync globale.
 - `components/DashboardDecisionSummaryCard.jsx` : Lecture du jour, verdict/action/vigilance/signaux cles avec contexte trail integre.
+- `components/AnalysisConfidenceBadge.jsx` : badge compact de qualite/confiance d'analyse, reutilise dans Aujourd'hui, Analytics, Performance et Trail.
 - `components/TodayHeader.jsx` : header compact Aujourd'hui, filtre sport local avec chip actif et reset.
 - `components/TodaySevenDaySummary.jsx` : synthese compacte 7 jours (recuperation, charge, volume, trail) sans graphe lourd.
 - `components/TodayUsefulActivities.jsx` : selection de 3 activites utiles a relire, compatible identite multi-source.
 - `hooks/useProviderStatuses.js` : appel consolide des statuts Strava/Garmin.
 - `utils/trailProfile.js` : calculs trail purs (terrain, D+/D-, temps pente, charge descente).
 - `utils/activityEnrichment.js` : mapping stable des metriques Garmin par activite.
+- `utils/analysisConfidence.js` : moteur pur de score qualitatif de confiance des analyses ; ne modifie pas les KPI, qualifie les limites de donnees.
+- `utils/analysisConfidence.test.js` : tests Vitest purs du moteur de confiance.
 - `services/externalProvider.service.js` : appels API providers.
 
 ## Objectifs course
