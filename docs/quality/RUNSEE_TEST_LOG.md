@@ -2,6 +2,49 @@
 
 Ce journal trace les recettes reellement executees. Il evite de rouvrir les memes controles a chaque plan.
 
+## 2026-05-09 - Validation UI post-backfill Garmin et Go poursuite
+
+### Contexte
+
+- Branche : `main`
+- Plan utilise : `docs/plans/active/runsee_analyse_actualisee_plan_suite.md`
+- Responsable : CODEX
+- Validation visuelle : realisee et confirmee par l'utilisateur en session authentifiee.
+
+### Tests techniques
+
+| Test | Resultat | Preuve |
+|---|---|---|
+| Dry-run doublons prod | OK | `scannedActivities=928`, `duplicateCount=0` |
+| Dry-run doublons local | OK | `scannedActivities=890`, `duplicateCount=0` |
+| Backend tests | OK | `npm test` apres ajout des tests scheduler backfill |
+| Frontend tests | OK | `npm test -- --run` |
+| Frontend build | OK | `npm run build` |
+
+### Recette metier
+
+| Domaine | Test | Resultat | Commentaire |
+|---|---|---|---|
+| Activites | Validation visuelle post-fenetre 2 | OK | Recette utilisateur : doublons Garmin/Strava non observes |
+| Aujourd'hui | Double comptage volume/charge | OK | Recette utilisateur : pas d'anomalie visible remontee |
+| Analytics | Volumes, charges, D+/D- | OK | Recette utilisateur : pas de double comptage visible remonte |
+| Performance | Liens et records | OK | Recette utilisateur : pas d'anomalie visible remontee |
+| Objectifs | Impact backfill | OK conditionnel | Aucun blocage signale pendant la recette visuelle |
+| Backfill scheduler | Selection des fenetres dues | OK | Le scheduler ne laisse plus une fenetre non due bloquer une fenetre eligible dans le meme lot |
+
+### Decision
+
+```text
+GO pour laisser la poursuite automatique du backfill Garmin selon le scheduler et les intervalles configures.
+Condition de surveillance : conserver le dry-run doublons a 0 et stopper si une anomalie UI ou provider reapparait.
+```
+
+### Suite
+
+- Surveiller la prochaine fenetre automatique.
+- Relancer un dry-run doublons apres la prochaine fenetre.
+- Ne poser un tag stable final que lorsque le backfill historique sera suffisamment avance ou termine selon `GARMIN_BACKFILL_MIN_DATE`.
+
 ## 2026-05-09 - Backfill Garmin, fenetres 1 et 2
 
 ### Contexte
@@ -33,7 +76,7 @@ Ce journal trace les recettes reellement executees. Il evite de rouvrir les meme
 | Backfill Garmin | Fenetre 2 via scheduler | OK | 2025-05-14 -> 2025-11-09, 163 activites lues, 112 matchees, 0 Garmin-only, 51 rejetees |
 | Doublons provider | Dry-run apres fenetre 2 | OK | `duplicateCount=0` |
 | Logs backfill | Compteurs persistants | OK | 2 logs, `duplicateCountAfterWindow=0` sur les deux fenetres |
-| UI | Validation visuelle apres fenetre 2 | A completer | Activites / Aujourd'hui / Analytics a verifier en session authentifiee |
+| UI | Validation visuelle apres fenetre 2 | OK | Voir entree `2026-05-09 - Validation UI post-backfill Garmin et Go poursuite` |
 
 ### Archive de review
 
@@ -49,16 +92,16 @@ Ce journal trace les recettes reellement executees. Il evite de rouvrir les meme
 
 | Anomalie | Gravite | Decision |
 |---|---|---|
-| Validation visuelle UI post-fenetre 2 non faite | P1 | Garder ouverte dans `.ai/open_tasks.md` |
+| Validation visuelle UI post-fenetre 2 non faite | P1 | Cloturee par recette utilisateur du 2026-05-09 |
 
 ### Decision
 
 ```text
 GO technique backfill fenetres 1 et 2.
-GO poursuite automatique uniquement apres validation visuelle UI.
+GO poursuite automatique confirme apres validation visuelle UI et dry-run prod a 0.
 ```
 
 ### Suite
 
-- Verifier visuellement Activites, Aujourd'hui et Analytics apres fenetre 2.
-- Laisser la poursuite automatique jusqu'a `GARMIN_BACKFILL_MIN_DATE` uniquement si la validation visuelle reste OK.
+- Surveiller les prochaines fenetres automatiques jusqu'a `GARMIN_BACKFILL_MIN_DATE`.
+- Relancer le dry-run doublons apres chaque fenetre importante.

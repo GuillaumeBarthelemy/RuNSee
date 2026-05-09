@@ -253,17 +253,31 @@ function shouldCompleteBackfill({ windowStartDate, nextWindowEndDate, fetchedCou
   return windowStartDate <= getEmptyHistoryCutoffDate();
 }
 
-function isWindowDue(cursor, { force = false } = {}) {
+function isWindowDue(cursor, { force = false, now = new Date() } = {}) {
   if (force) {
     return true;
   }
 
   const nextRunNotBefore = getNextRunNotBefore(cursor);
-  return !nextRunNotBefore || nextRunNotBefore.getTime() <= Date.now();
+  return !nextRunNotBefore || nextRunNotBefore.getTime() <= now.getTime();
 }
 
 export function resolveGarminBackfillForceRun(requestedForce, allowForce = env.garminBackfillAllowForceRun) {
   return Boolean(requestedForce && allowForce);
+}
+
+export function isGarminBackfillWindowDue(cursor, options = {}) {
+  return isWindowDue(cursor, options);
+}
+
+export function selectDueGarminBackfillCursors(cursors = [], options = {}) {
+  const maxWindowsPerRun = Math.max(1, Number(options.maxWindowsPerRun || env.garminBackfillMaxWindowsPerRun || 1));
+  const now = options.now || new Date();
+
+  return cursors
+    .filter((cursor) => cursor?.status === "running")
+    .filter((cursor) => isWindowDue(cursor, { now }))
+    .slice(0, maxWindowsPerRun);
 }
 
 function summarizeWindowResult(result = {}) {
@@ -769,6 +783,8 @@ export async function runDueGarminActivityBackfillWindows() {
   isSweepRunning = true;
 
   try {
+    const maxWindowsPerRun = env.garminBackfillMaxWindowsPerRun;
+    const candidateLimit = Math.max(maxWindowsPerRun * 10, maxWindowsPerRun);
     const cursors = await prisma.providerBackfillCursor.findMany({
       where: {
         provider: GARMIN_PROVIDER_CODE,
@@ -779,18 +795,14 @@ export async function runDueGarminActivityBackfillWindows() {
         { lastRunAt: "asc" },
         { updatedAt: "asc" },
       ],
-      take: env.garminBackfillMaxWindowsPerRun,
+      take: candidateLimit,
     });
+    const dueCursors = selectDueGarminBackfillCursors(cursors, { maxWindowsPerRun });
 
     let processedCount = 0;
-    let skippedCount = 0;
+    let skippedCount = cursors.length - dueCursors.length;
 
-    for (const cursor of cursors) {
-      if (!isWindowDue(cursor)) {
-        skippedCount += 1;
-        continue;
-      }
-
+    for (const cursor of dueCursors) {
       const result = await runGarminActivityBackfillWindowForUser(cursor.appUserId, {
         triggerSource: "scheduler",
       });
@@ -806,6 +818,7 @@ export async function runDueGarminActivityBackfillWindows() {
       processedCount,
       skippedCount,
       candidateCount: cursors.length,
+      dueCandidateCount: dueCursors.length,
     };
   } finally {
     isSweepRunning = false;

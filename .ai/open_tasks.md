@@ -1,132 +1,32 @@
 # Open Tasks
 
-## Cadre qualite permanent
+## Actif / bloquant
 
-- [x] Creer le dossier `docs/quality/` avec quality gate, test log, matrice de validation et checklist release.
-- [x] Reorganiser la documentation : architecture, decisions, operations, plans actifs, plans archives et releases.
-- [x] Archiver les anciens plans depuis `docs/old/` vers `docs/plans/old/`.
-- [x] Ajouter les ADR initiaux multi-source Strava/Garmin, backfill Garmin et quality gate.
-- [x] Ajouter `docs/README.md` et `.ai/README.md` pour cadrer l'usage durable de la documentation.
-- [ ] Tenir `docs/quality/RUNSEE_TEST_LOG.md` et `docs/quality/RUNSEE_VALIDATION_MATRIX.md` a jour a chaque futur chantier.
-- [ ] Completer la validation visuelle authentifiee post backfill Garmin : Activites, Aujourd'hui, Analytics, absence de double comptage UI.
+- Aucun blocage ouvert au 2026-05-09 apres validation visuelle post-fenetre 2 et dry-run prod `duplicateCount=0`.
 
-## Termines dans la passe de fiabilisation frontend/backend/science/UX
+## Actif / non bloquant
 
-- [x] Monter la route backend assistant existante sur `/assistant`.
-- [x] Enrichir `/health` avec un probe Prisma et un timestamp sans exposer de secrets.
-- [x] Standardiser les erreurs backend avec un objet `error` tout en gardant le format legacy.
-- [x] Renforcer la confiance de l'Aptitude RunNSee selon le poids de sources et la couverture recente.
-- [x] Harmoniser le libelle canonique `Aptitude RunNSee` et garder l'ancien libelle en alias glossaire.
-- [x] Ajouter un controle de drift Prisma SQLite/PostgreSQL.
+- [ ] Surveiller la prochaine fenetre automatique du backfill Garmin historique.
+- [ ] Relancer `detect-provider-activity-duplicates.js` en production apres la prochaine fenetre importante.
+- [ ] Confirmer que le backfill poursuit jusqu'a `GARMIN_BACKFILL_MIN_DATE` sans status `error`.
+- [ ] Tester `POST /sync/all` avec Strava seul, Garmin seul, puis les deux connectes lors d'une prochaine recette globale.
+- [ ] Verifier visuellement la sidebar provider et Aujourd'hui sur mobile/ecran etroit.
+- [ ] Revalider un objectif trail si un nouvel objectif critique est cree.
 
-## Termines dans la stabilisation pre-ajouts
+## Dette / hors scope non bloquant
 
-- [x] Ajouter `.gitattributes` et un script d'archive source propre.
-- [x] Rendre `validate-green-stack.ps1` compatible avec checks publics sans session et checks authentifies avec cookie.
-- [x] Conserver les champs Garmin `recoveryTime*` dans le bridge activite.
-- [x] Normaliser `recoveryTime` Garmin en heures cote backend.
-- [x] Ne plus deplacer `ExternalProviderConnection.lastSyncAt` lors d'un enrichissement activite Garmin.
-- [x] Ajouter un diagnostic non sensible `fieldCoverage` sur les activites Garmin recuperees.
-- [x] Clarifier les libelles Garmin dans l'onglet activite.
-- [x] Durcir le preflight de l'import PostgreSQL.
-- [x] Ajouter des tests backend purs sur matching et normalisation Garmin.
+- [ ] Completer des tests backend providers plus larges si une strategie de tests backend avec mocks DB est ajoutee.
+- [ ] Ajouter des tests workflow backfill avec repository mocke pour couvrir start/pause/resume et preflight/post-window duplicats de bout en bout.
+- [ ] Valider l'import PostgreSQL sur une base cible uniquement avec backup et option explicite (`--truncate` ou `--allow-append`).
+- [ ] Preparer le prochain chantier produit recommande : score de confiance / qualite des analyses.
+- [ ] Backend sans configuration ESLint compatible ESLint 10 : les controles actuels reposent sur `node --check`, Prisma et `npm test`.
 
-## Termines dans la derniere passe
+## Termines recemment
 
-- [x] Securiser les ignore files et retirer de l'index les artefacts locaux/secrets/logs.
-- [x] Appliquer les migrations SQLite locales et regenerer Prisma.
-- [x] Completer `backend/scripts/db/tableDefinitions.js` pour toutes les tables actuelles.
-- [x] Durcir `import-postgresql-dump.js` : dry-run, garde-fou truncate/append, comparaison de comptage.
-- [x] Etendre `report-database-snapshot.js` aux tables Garmin/settings et indicateurs d'integrite.
-- [x] Ajouter le service backend Garmin activites ciblees.
-- [x] Ajouter `POST /providers/garmin/activities/enrich`.
-- [x] Exposer l'enrichissement Garmin dans le detail activite.
-- [x] Ajouter l'action frontend de completion Garmin sur la fiche activite.
-- [x] Ajouter tests edge cases Garmin `activityEnrichment`.
-
-## A faire / validation manuelle
-
-- [x] Ajouter les statuts Strava/Garmin dans le layout global.
-- [x] Ajouter la synchronisation globale Strava incremental + Garmin recovery recent + Garmin activites recentes bornees.
-- [x] Ajouter le socle de calcul trail prudent avec tests frontend.
-- [x] Ajouter le contexte trail minimal dans Aujourd'hui.
-- [x] Ajouter la lecture trail conditionnelle sur le detail activite.
-- [x] Ajouter la carte Specificite trail dans Analytics.
-- [x] Ajouter les champs trail optionnels sur les objectifs course.
-- [x] Ajouter les entrees glossaire trail.
-- [x] Appliquer la nouvelle migration `20260507123000_add_trail_race_objective_fields` sur les environnements cibles.
-- [ ] Tester `POST /sync/all` avec Strava seul, Garmin seul, puis les deux connectes.
-- [ ] Verifier que le job `global_incremental` enrichit bien les activites Garmin recentes apres l'import Strava incremental.
-- [ ] Verifier que `GARMIN_ACTIVITY_ENRICHMENT_GLOBAL_DAYS` reste borne a 30 jours et ne lance aucun backfill massif.
-- [ ] Verifier visuellement la sidebar provider sur mobile et ecran etroit.
-- [ ] Verifier visuellement la nouvelle carte `Lecture du jour` sur mobile et ecran etroit.
-- [ ] Ouvrir une activite route plate : l'onglet Trail ne doit pas apparaitre.
-- [ ] Ouvrir une activite vallonnee/trail enrichie : l'onglet Trail doit apparaitre avec D+/D- et vigilance prudente.
-- [ ] Creer un objectif trail et verifier sa persistance en DB.
-- [ ] Tester l'enrichissement Garmin sur une activite reelle apres connexion Garmin.
-- [ ] Verifier que `ActivityProviderEnrichment.status` vaut `matched_exact` ou `matched_tolerated` quand le matching est fiable.
-- [ ] Verifier qu'un cas ambigu ne cree pas d'association automatique.
-- [ ] Verifier que les metriques affichees dans l'onglet Garmin correspondent au payload Garmin reel.
-- [ ] Appliquer/valider l'import PostgreSQL sur une base cible de preprod ou prod uniquement avec backup et option explicite (`--truncate` ou `--allow-append`).
-- [ ] Verifier le deploiement CI/CD GitHub Actions vers la VM apres le push final.
-
-## Multi-sources Strava/Garmin
-
-- [x] Ajouter le socle DB multi-source sur `Activity`.
-- [x] Ajouter `ActivityProviderLink`.
-- [x] Ajouter `ProviderBackfillCursor`.
-- [x] Ajouter normalisation Garmin activity -> candidate canonique.
-- [x] Ajouter matching provider exact/probable/ambiguous/not_found.
-- [x] Autoriser la creation Garmin-only sur la sync Garmin recente si aucun match Strava fiable n'existe.
-- [x] Adapter `/sync/all` aux modes `strava_primary_garmin_enrichment_with_fallback`, `strava_only`, `garmin_primary`.
-- [x] Adapter la navigation liste/detail activite pour ne plus bloquer sans `stravaActivityId`.
-- [x] Renforcer le matching Strava/Garmin contre les doublons inter-provider.
-- [x] Ajouter une detection dry-run des doublons Strava/Garmin.
-- [x] Ajouter une reparation explicite par soft-merge Garmin -> Strava.
-- [x] Exclure les activites fusionnees des lectures courantes.
-- [x] Corriger le lifecycle du job global pour ne pas terminer avant Garmin.
-- [ ] Recette reelle Strava + Garmin avec une activite Garmin absente de Strava.
-- [ ] Recette Garmin seul apres migration en environnement de test.
-- [ ] Finaliser l'orchestration longue duree du backfill historique Garmin 180 j/h cote UI/admin.
-- [x] Executer le script de detection de doublons en prod, valider le dry-run, puis appliquer si le rapport est coherent.
-- [x] Corriger le matching UTC/local qui empechait la detection effective des doublons Garmin/Strava.
-- [x] Valider en base que les doublons recents Garmin/Strava ne sont plus visibles dans les lectures `isMerged=false`.
-- [x] Executer la review finale post-correctif : backend/frontend/build/Prisma/dry-run prod OK.
-- [x] Durcir le statut `exact` du matching Garmin/Strava pour ne pas dependre uniquement de l'heure.
-- [x] Verifier les enrichissements Garmin post-merge : aucun enrichment perdu sur les activites merged.
-- [ ] Valider visuellement la page Activites en session utilisateur apres refresh complet.
-- [ ] Tester une nouvelle synchronisation Strava + Garmin et confirmer que le compteur de doublons reste a 0.
-- [ ] Creer le tag stable `runsee-stable-YYYYMMDD-garmin-dedup` apres validation visuelle et sync globale post-correctif.
-- [x] Ajouter l'orchestration longue duree du backfill historique Garmin 180 j/h cote backend et Admin.
-- [x] Ajouter les endpoints start/status/pause/resume du backfill historique Garmin activites.
-- [x] Ajouter le scheduler automatique de reprise des fenetres Garmin historiques.
-- [x] Reutiliser la detection de doublons provider apres chaque fenetre Garmin.
-- [x] Ajouter une table de logs persistants `ProviderBackfillWindowLog` pour fiabiliser les compteurs apres refresh.
-- [x] Bloquer une fenetre Garmin si des doublons actifs existent deja avant ecriture.
-- [x] Tenter un soft-merge non destructif immediat si un doublon apparait apres fenetre, puis bloquer le curseur si le controle residuel n'est pas a 0.
-- [x] Encadrer `run-window force` derriere `GARMIN_BACKFILL_ALLOW_FORCE_RUN=false` par defaut.
-- [x] Supprimer les snapshots `.ai` obsoletes (`git_status`, `handoff_*`, `repo_files`) pour eviter un faux etat agent.
-- [x] Recette reelle : lancer le backfill historique Garmin et verifier une seule fenetre immediate.
-- [x] Recette reelle : verifier la reprise automatique via le chemin scheduler (`runDueGarminActivityBackfillWindows`) sans activer `force`.
-- [x] Recette reelle : verifier pause/reprise et absence de doublons apres fenetre 1.
-- [x] Appliquer la migration `20260508195000_add_provider_backfill_window_logs` sur les environnements cibles avant usage reel du backfill historique.
-- [x] Definir explicitement `GARMIN_BACKFILL_MIN_DATE` en production pour eviter une exploration historique inutilement longue.
-- [x] Valider la fenetre 2 Garmin : logs, compteurs et dry-run doublons a 0.
-- [ ] Valider visuellement apres fenetre 2 : Activites, Aujourd'hui, Analytics, absence de double comptage UI.
-- [ ] Laisser le backfill poursuivre automatiquement jusqu'a `GARMIN_BACKFILL_MIN_DATE` seulement si la validation visuelle reste OK.
-
-## Correctif UX Aujourd'hui
-
-- [x] Rendre le filtre sport Aujourd'hui local et non persiste durablement.
-- [x] Ajouter un chip de filtre actif et une action de reinitialisation.
-- [x] Recentrer Aujourd'hui sur 4 blocs : header, decision, synthese 7 jours, activites a relire.
-- [x] Fusionner les informations recovery/forme/volume dans une synthese compacte.
-- [x] Remplacer la pile d'activites recentes par 3 activites utiles a relire, compatibles multi-sources.
-- [x] Garder le trail comme contexte/vigilance, sans bloc analytique independant dans Aujourd'hui.
-- [ ] Recette visuelle Aujourd'hui desktop/mobile apres deploiement CI/CD.
-- [ ] Tester le filtre Aujourd'hui sur refresh/nouvelle session avec Course a pied / trail par defaut.
-
-## Dette hors scope
-
-- [ ] Backend sans configuration ESLint compatible ESLint 10 : les controles actuels reposent sur `node --check` et Prisma.
-- [ ] Tests automatises backend providers a creer plus tard si une strategie test backend est ajoutee.
+- [x] Creer le cadre qualite permanent (`docs/quality`, ADR, releases, plans actifs/archives).
+- [x] Archiver les anciens plans sous `docs/plans/old/`.
+- [x] Valider les fenetres Garmin reelles 1 et 2.
+- [x] Valider visuellement apres fenetre 2 : Activites, Aujourd'hui, Analytics, Performance.
+- [x] Executer le dry-run doublons prod apres validation visuelle : `duplicateCount=0`.
+- [x] Autoriser la poursuite automatique surveillee du backfill Garmin.
+- [x] Durcir la selection scheduler des fenetres backfill dues.

@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import {
   calculateGarminBackfillWindow,
   calculatePreviousGarminWindowEndDate,
+  isGarminBackfillWindowDue,
   resolveGarminBackfillForceRun,
+  selectDueGarminBackfillCursors,
 } from "./garminHistoricalBackfill.service.js";
 
 describe("Garmin historical activity backfill windows", () => {
@@ -28,5 +30,58 @@ describe("Garmin historical activity backfill windows", () => {
     assert.equal(resolveGarminBackfillForceRun(true, false), false);
     assert.equal(resolveGarminBackfillForceRun(false, true), false);
     assert.equal(resolveGarminBackfillForceRun(true, true), true);
+  });
+
+  it("respects the minimal interval before running a new window", () => {
+    const now = new Date("2026-05-09T10:00:00.000Z");
+
+    assert.equal(isGarminBackfillWindowDue({
+      status: "running",
+      lastRunAt: "2026-05-09T09:30:00.000Z",
+    }, { now }), false);
+
+    assert.equal(isGarminBackfillWindowDue({
+      status: "running",
+      lastRunAt: "2026-05-09T08:30:00.000Z",
+    }, { now }), true);
+  });
+
+  it("selects due cursors without letting an early non-due cursor block the batch", () => {
+    const now = new Date("2026-05-09T10:00:00.000Z");
+    const selected = selectDueGarminBackfillCursors([
+      {
+        id: "not-due",
+        status: "running",
+        lastRunAt: "2026-05-09T09:30:00.000Z",
+      },
+      {
+        id: "due-1",
+        status: "running",
+        lastRunAt: "2026-05-09T08:30:00.000Z",
+      },
+      {
+        id: "paused",
+        status: "paused",
+        lastRunAt: "2026-05-09T07:00:00.000Z",
+      },
+      {
+        id: "due-2",
+        status: "running",
+        lastRunAt: null,
+      },
+    ], { maxWindowsPerRun: 1, now });
+
+    assert.deepEqual(selected.map((cursor) => cursor.id), ["due-1"]);
+  });
+
+  it("limits the scheduler batch to the configured maximum number of windows", () => {
+    const now = new Date("2026-05-09T10:00:00.000Z");
+    const selected = selectDueGarminBackfillCursors([
+      { id: "due-1", status: "running", lastRunAt: null },
+      { id: "due-2", status: "running", lastRunAt: null },
+      { id: "due-3", status: "running", lastRunAt: null },
+    ], { maxWindowsPerRun: 2, now });
+
+    assert.deepEqual(selected.map((cursor) => cursor.id), ["due-1", "due-2"]);
   });
 });

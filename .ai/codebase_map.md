@@ -31,7 +31,7 @@ Monorepo `C:\Services\RuNSee` :
 - `src/services/providers/garminProvider.service.js` : connexion Garmin, MFA, purge, metriques sync.
 - `src/services/providers/garminRecoveryBackfill.service.js` : recuperation recovery quotidienne.
 - `src/services/providers/garminActivityEnrichment.service.js` : enrichissement activites Garmin -> Strava, incluant le mode global borne `recent_missing`.
-- `src/services/providers/garminHistoricalBackfill.service.js` : orchestration du backfill historique Garmin activites par fenetres 180 j, pause/reprise et scheduler.
+- `src/services/providers/garminHistoricalBackfill.service.js` : orchestration du backfill historique Garmin activites par fenetres 180 j, pause/reprise et scheduler ; expose aussi des helpers purs pour tester l'eligibilite des fenetres dues.
 - `ProviderBackfillWindowLog` : journal persistant par fenetre Garmin, utilise pour les compteurs Admin et les diagnostics d'erreur/doublon.
 - `src/services/providers/providerActivityDuplicateDetection.service.js` : detection reutilisable des doublons actifs Strava/Garmin basee sur le matching provider.
 - `src/services/providers/garminconnectBridge.service.js` : subprocess Python.

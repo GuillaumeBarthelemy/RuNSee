@@ -1,5 +1,14 @@
 # Current Context
 
+## Validation post-backfill Garmin
+
+- Plan traite : `docs/plans/active/runsee_analyse_actualisee_plan_suite.md`, a archiver sous `docs/plans/old/` apres commit.
+- Recette visuelle post-fenetre 2 confirmee par l'utilisateur en session authentifiee : Activites, Aujourd'hui, Analytics et Performance sans anomalie visible remontee.
+- Dry-run doublons provider execute en production : `scannedActivities=928`, `duplicateCount=0`.
+- Decision : GO surveille pour laisser le backfill Garmin poursuivre automatiquement selon le scheduler et les intervalles configures.
+- Durcissement ajoute : le scheduler selectionne maintenant les fenetres dues apres avoir charge un lot de candidats, afin qu'une fenetre non due ne bloque pas une fenetre eligible.
+- Suite a surveiller : prochaine fenetre automatique, puis dry-run doublons a 0 avant toute baseline/tag stable final.
+
 ## Cadre qualite permanent
 
 - Plan qualite traite puis archive sous `docs/plans/old/runsee_cadre_recette_suivi_qualite_v3.md`.

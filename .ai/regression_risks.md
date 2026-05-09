@@ -7,6 +7,13 @@
 - Garde-fous presents : `docs/README.md`, `.ai/README.md`, ADR quality gate, matrice de validation et test log permanents.
 - Validation requise : verifier les references actives avant chaque commit documentaire, puis regenerer l'archive review depuis un `HEAD` propre si le plan l'exige.
 
+## Scheduler backfill Garmin
+
+- Zone : `garminHistoricalBackfill.service.js`, `runDueGarminActivityBackfillWindows`.
+- Risque : une fenetre non encore due peut masquer une fenetre eligible si la limite de candidats est appliquee trop tot.
+- Garde-fous presents : selection des fenetres dues apres chargement d'un lot de candidats, limite finale par `GARMIN_BACKFILL_MAX_WINDOWS_PER_RUN`, tests purs sur intervalle minimal et taille de batch.
+- Validation requise : apres chaque fenetre automatique importante, verifier les logs backfill et relancer le dry-run doublons.
+
 ## Risques surveilles dans la passe de fiabilisation
 
 ### Statuts providers dans le layout
