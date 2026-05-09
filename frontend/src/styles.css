@@ -8855,3 +8855,457 @@ button.alert-banner-positive-item {
 .alpine-source-other {
   border-color: var(--al-border, #dfe8f5);
 }
+
+/* ============================================================================
+   Lot 2-bis — Sidebar / Topbar Alpine Light selon mockup
+   ============================================================================ */
+
+/* Sidebar layout */
+.alpine-shell.app-shell {
+  grid-template-columns: 248px minmax(0, 1fr);
+}
+
+.alpine-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 16px;
+}
+
+.alpine-sidebar-top {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.alpine-sidebar-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.alpine-sidebar-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--al-border-soft, #eaf0fa);
+}
+
+/* SidebarBrand */
+.alpine-sidebar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  padding: 6px 4px;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+.alpine-sidebar-brand:hover { background: var(--al-primary-soft, #e8f1ff); }
+
+.alpine-sidebar-brand-icon {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+}
+.alpine-sidebar-brand-icon svg { width: 100%; height: 100%; }
+
+.alpine-sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1;
+}
+.alpine-sidebar-brand-text strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  letter-spacing: -0.01em;
+}
+.alpine-sidebar-brand-text span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--al-primary, #1268f3);
+}
+
+/* SidebarObjectiveCard */
+.alpine-sidebar-objective-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--al-surface-soft, #f1f6ff);
+  border: 1px solid var(--al-border-soft, #eaf0fa);
+  border-radius: 12px;
+}
+
+.alpine-sidebar-objective-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-sidebar-objective-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alpine-sidebar-objective-icon {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  color: var(--al-primary, #1268f3);
+  background: var(--al-primary-soft, #e8f1ff);
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+}
+.alpine-sidebar-objective-icon svg { width: 18px; height: 18px; }
+
+.alpine-sidebar-objective-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.alpine-sidebar-objective-text strong {
+  font-size: 13px;
+  color: var(--al-text, #0f2147);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.alpine-sidebar-objective-text span {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-sidebar-objective-card--empty .alpine-sidebar-objective-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-sidebar-objective-link {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-primary, #1268f3);
+  text-decoration: none;
+}
+.alpine-sidebar-objective-link:hover { text-decoration: underline; }
+
+/* SidebarAdviceCard */
+.alpine-sidebar-advice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--al-primary-soft, #e8f1ff);
+  border: 1px solid rgba(18, 104, 243, 0.18);
+  border-radius: 12px;
+  position: relative;
+}
+
+.alpine-sidebar-advice-kicker {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  color: var(--al-primary, #1268f3);
+  align-items: center;
+}
+.alpine-sidebar-advice-kicker svg { width: 100%; height: 100%; }
+
+.alpine-sidebar-advice-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--al-primary, #1268f3);
+}
+
+.alpine-sidebar-advice-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--al-text-soft, #2a3f6b);
+}
+
+.alpine-sidebar-advice-link {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-primary, #1268f3);
+  text-decoration: none;
+  margin-top: 2px;
+}
+.alpine-sidebar-advice-link:hover { text-decoration: underline; }
+
+/* UserMenu */
+.alpine-user-menu {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.alpine-user-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.alpine-user-menu-trigger:hover,
+.alpine-user-menu-trigger.is-open {
+  background: var(--al-surface-soft, #f1f6ff);
+  border-color: var(--al-border, #dfe8f5);
+}
+
+.alpine-user-menu-avatar {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  background: var(--al-primary-soft, #e8f1ff);
+  color: var(--al-primary, #1268f3);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.alpine-user-menu-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.alpine-user-menu-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--al-text, #0f2147);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alpine-user-menu-chevron {
+  width: 14px;
+  height: 14px;
+  color: var(--al-muted, #64748b);
+  transition: transform 0.15s ease;
+}
+.alpine-user-menu-trigger.is-open .alpine-user-menu-chevron {
+  transform: rotate(180deg);
+}
+
+.alpine-user-menu-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 12px;
+  box-shadow: var(--al-shadow-strong);
+  padding: 6px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alpine-user-menu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--al-text, #0f2147);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.alpine-user-menu-item:hover { background: var(--al-primary-soft, #e8f1ff); color: var(--al-primary, #1268f3); }
+
+.alpine-user-menu-item-danger { color: var(--al-alert, #ef4444); }
+.alpine-user-menu-item-danger:hover { background: var(--al-alert-soft, #fde6e6); color: var(--al-alert, #ef4444); }
+
+.alpine-user-menu-sep {
+  border: none;
+  border-top: 1px solid var(--al-border-soft, #eaf0fa);
+  margin: 4px 6px;
+}
+
+/* Sidebar sync button */
+.alpine-sidebar-sync {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 10px;
+  color: var(--al-primary, #1268f3);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+}
+.alpine-sidebar-sync:hover:not(:disabled) {
+  background: var(--al-primary-soft, #e8f1ff);
+  border-color: var(--al-primary, #1268f3);
+}
+.alpine-sidebar-sync:disabled { opacity: 0.5; cursor: not-allowed; }
+.alpine-sidebar-sync svg { width: 16px; height: 16px; }
+.alpine-sidebar-sync.is-busy svg {
+  animation: alpine-sync-spin 1.5s linear infinite;
+}
+
+@keyframes alpine-sync-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* AlpineTopbar */
+.alpine-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 0 22px;
+  border-bottom: none;
+  margin-bottom: 22px;
+}
+
+.alpine-topbar-text { flex: 1; min-width: 0; }
+
+.alpine-topbar-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  line-height: 1.15;
+}
+
+.alpine-topbar-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* WeatherBadge */
+.alpine-weather-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: var(--al-radius-pill, 999px);
+}
+
+.alpine-weather-icon {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+}
+.alpine-weather-icon svg { width: 100%; height: 100%; }
+
+.alpine-weather-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.1;
+}
+
+.alpine-weather-temp {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-weather-wind {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+
+/* Topbar actions */
+.alpine-topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.alpine-topbar-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 10px;
+  color: var(--al-text-soft, #2a3f6b);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.alpine-topbar-icon-button:hover {
+  background: var(--al-primary-soft, #e8f1ff);
+  color: var(--al-primary, #1268f3);
+  border-color: var(--al-primary, #1268f3);
+}
+.alpine-topbar-icon-button svg { width: 18px; height: 18px; }
+
+/* Responsive sidebar Alpine Light (Lot 2-bis) */
+@media (max-width: 760px) {
+  .alpine-shell.app-shell {
+    grid-template-columns: 1fr;
+  }
+  .alpine-sidebar {
+    position: relative;
+    min-height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .alpine-sidebar-top {
+    flex: 1;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    overflow-x: auto;
+  }
+  .alpine-sidebar-cards { display: none; }
+  .alpine-sidebar-bottom {
+    border-top: none;
+    padding-top: 0;
+    margin-left: auto;
+  }
+  .alpine-topbar { padding: 12px 0 16px; }
+  .alpine-topbar-title { font-size: 22px; }
+}

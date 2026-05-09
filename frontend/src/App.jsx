@@ -9,6 +9,7 @@ import AppLayout from "./layouts/AppLayout.jsx";
 const DashboardPage = lazy(() => import("./pages/DashboardPage.jsx"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage.jsx"));
 const PerformancePage = lazy(() => import("./pages/PerformancePage.jsx"));
+const ProgressionPage = lazy(() => import("./pages/ProgressionPage.jsx"));
 const ActivitiesPage = lazy(() => import("./pages/ActivitiesPage.jsx"));
 const ActivityDetailPage = lazy(() => import("./pages/ActivityDetailPage.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
@@ -112,6 +113,14 @@ export default function App() {
             element={(
               <PageRoute>
                 <PerformancePage />
+              </PageRoute>
+            )}
+          />
+          <Route
+            path="progression"
+            element={(
+              <PageRoute>
+                <ProgressionPage />
               </PageRoute>
             )}
           />

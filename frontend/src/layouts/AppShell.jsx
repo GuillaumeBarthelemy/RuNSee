@@ -1,25 +1,59 @@
+import AlpineTopbar from "../components/visuals/alpine/AlpineTopbar.jsx";
+
 /**
- * AppShell — wrapper commun pour les pages.
+ * AppShell — Refonte Alpine Light Lot 2-bis (mockup-faithful).
  *
- * Refonte Alpine Light (Lot 2) :
- * - Le header de page utilise désormais le style Alpine Light (eyebrow bleu,
- *   titre sombre, fond doux). Le rendu reste compatible avec toutes les pages
- *   existantes qui passent eyebrow/title/subtitle/actions.
- * - Aucune modification de la prop `children` : les sections existantes
- *   (cards, .section, etc.) restent inchangées.
+ * Topbar selon mockup :
+ *  - Titre de page à gauche (peut contenir emoji, ex: "Aujourd'hui 👋")
+ *  - Sous-titre date longue française (ex: "Mardi 6 mai 2025") si fourni
+ *  - À droite : météo placeholder désactivable + 3 boutons icônes
+ *
+ * Props :
+ *  - eyebrow : string optionnel (compatibilité ascendante — placé avant le titre)
+ *  - title : string
+ *  - subtitle : string (si non fourni, date du jour générée automatiquement)
+ *  - actions : ReactNode (override des 3 boutons icônes par défaut)
+ *  - withDate : boolean (défaut true) — si subtitle absent, génère la date
+ *  - children : sections de la page
  */
-export default function AppShell({ eyebrow, title, subtitle, actions = null, children }) {
+
+function buildLongFrenchDate(value = new Date()) {
+  try {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const formatted = date.toLocaleDateString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  } catch {
+    return "";
+  }
+}
+
+export default function AppShell({
+  eyebrow = "",
+  title = "",
+  subtitle = "",
+  actions = null,
+  withDate = true,
+  children,
+}) {
+  // Si pas de subtitle fourni, on génère la date longue française.
+  const computedSubtitle = subtitle || (withDate ? buildLongFrenchDate() : "");
+  // L'eyebrow (ex: "Aujourd'hui") est conservé en compatibilité — il devient
+  // le titre principal si pas de title fourni.
+  const computedTitle = title || eyebrow;
+
   return (
     <>
-      <header className="app-header app-header-alpine">
-        <div className="app-header-copy">
-          {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
-          <h1 className="page-title">{title}</h1>
-          {subtitle ? <p className="page-subtitle">{subtitle}</p> : null}
-        </div>
-        {actions ? <div className="app-header-actions">{actions}</div> : null}
-      </header>
-
+      <AlpineTopbar
+        title={computedTitle}
+        subtitle={computedSubtitle}
+        actions={actions}
+      />
       <div className="app-sections">{children}</div>
     </>
   );

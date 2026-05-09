@@ -17,9 +17,10 @@ Source de verite :
 | Champ | Valeur |
 |---|---|
 | Chantier | Refonte UX/UI Alpine Light |
-| Statut global | En cours - Lot 3 termine, enchainement Lot 4 |
-| Dernier lot traite | Lot 3 - Aujourd'hui (CoachAdviceBar Alpine Light) |
-| Dernier commit | `3ad0c8e feat(ui): harmonize alpine light app layout` puis Lot 3 a creer |
+| Statut global | En cours - Lot 2-bis termine, en attente recette utilisateur avant Lot 3-bis |
+| Dernier lot traite | Lot 2-bis - Refonte sidebar/topbar mockup-faithful |
+| Dernier commit | `810e4fe feat(today): apply alpine light dashboard` (Lot 3 invalide) -> Lot 2-bis a commiter |
+| Note importante | Lot 3 (commit 810e4fe) invalide vs mockup -> sera repris en Lot 3-bis. Lot 2 (3ad0c8e) etendu par Lot 2-bis pour matcher le mockup (objectif principal, conseil du jour, UserMenu, AlpineTopbar avec icones). |
 | Derniere archive review | `runsee-source-review-analysis-confidence-final.zip` (chantier precedent) |
 | Dernier test frontend | 156/156 (chantier precedent, post correctif Charge) |
 | Dernier test backend | 21/21 |
@@ -107,7 +108,29 @@ Source de verite :
 | Risques residuels | Faible : transition visuelle importante (sidebar bleu fonce -> blanc). Pages contenu inchangees, leurs styles `.card`/`.section` restent compatibles avec le nouveau fond clair. Pas de regression fonctionnelle (handlers, routes, hash routing tous conserves). |
 | Commit | `feat(ui): harmonize alpine light app layout` (a creer) |
 
-### Lot 3 - Aujourd'hui (TERMINE)
+### Lot 2-bis - Refonte sidebar/topbar mockup-faithful (TERMINE, en attente recette utilisateur)
+
+| Element | Statut / notes |
+|---|---|
+| Statut | TERMINE - en attente recette visuelle utilisateur avant Lot 3-bis |
+| Decisions validees | V1 Progression : route placeholder /progression creee. V2 Meteo : WeatherBadge desactivable. V3 Avatar dropdown : OK. V4 Conseil du jour : reformulation neutre prudente par defaut. V5 RunNSee (avec N). V10 Option A correctifs progressifs sans revert (implicite). |
+| Composants crees | `SidebarBrand` (logo RunNSee + ALPINE LIGHT + icone montagne SVG), `UserMenu` (avatar + nom + dropdown : Reglages/Glossaire/Deconnexion), `SidebarObjectiveCard` (carte objectif principal consommant `useRaceObjectives.activeRace`), `SidebarAdviceCard` (carte conseil du jour, texte coach prudent par defaut), `WeatherBadge` (placeholder desactivable, par defaut return null), `AlpineTopbar` (titre + sous-titre/date + WeatherBadge + 3 icones calendrier/notif/compte) |
+| Page placeholder Progression | `frontend/src/pages/ProgressionPage.jsx` cree avec EmptyState "Page en construction". Route `/progression` ajoutee dans App.jsx. |
+| AppNavigation | Re-ordonne selon mockup : Accueil / Activites / Analyse / Performance / Progression / Reglages / Glossaire. "Aujourd'hui" -> "Accueil", "Analyses" -> "Analyse" (singulier). Glossaire ajoute dans la nav principale. |
+| AppLayout | Refonte complete : SidebarBrand + AppNavigation en haut, SidebarObjectiveCard + SidebarAdviceCard au milieu, UserMenu + bouton sync en bas. Hooks et services backend conserves intacts (useAuth, useRunSeeData, useProviderStatuses, useRaceObjectives, startGlobalSync). |
+| AppShell | Refonte : utilise `AlpineTopbar` avec generation auto de la date longue francaise si subtitle non fourni. Compatibilite ascendante : si pas de title, eyebrow devient le titre. |
+| Composants anciens non supprimes | `AppBrand.jsx`, `CurrentAccountPanel.jsx` plus references mais conserves jusqu'au Lot 10 (validation utilisateur necessaire avant suppression). |
+| Backlog dettes | `docs/backlog/BACKLOG_FONCTIONNALITES_FUTURES.md` cree avec 5 entrees : Meteo, Sortie suggeree, Disponibilite (a valider scientifiquement), Page Progression, Algorithme conseil du jour. |
+| Tests realises | Vitest 156/156, ESLint 0 warning, build Vite OK 388 ms. |
+| Risques residuels | Moyen visuel : la transition sidebar foncee Phase 2 -> sidebar Alpine Light claire avec nouvelles cartes est importante. Aucun handler metier modifie, hooks conserves. La sortie/page Progression est un placeholder "en construction" pour eviter 404. |
+| Commit | `feat(ui): rebuild alpine light layout per mockup (Lot 2-bis)` (a creer) |
+| Recette visuelle requise avant Lot 3-bis | Pages : / (Aujourd'hui), /activities, /analytics, /performance, /progression (placeholder), /admin, /glossaire. Verifier sidebar : brand, nav 7 items, objectif (avec/sans course active), advice card, user menu (dropdown), bouton sync. Verifier topbar : titre + date longue francaise + 3 icones (sans meteo). Mobile : sidebar verticale -> horizontale, cards masquees. |
+
+### Lot 3 - Aujourd'hui (INVALIDE - a reprendre en Lot 3-bis)
+
+Note : le Lot 3 d'origine (commit `810e4fe`) ajoutait juste une `CoachAdviceBar` en bas de page. Cette implementation ne correspond pas au mockup qui demande une refonte complete de la page Aujourd'hui (grille 6 KPI, carte Lecture du jour redessinee, 4 cards graphiques, section recuperation 4 cards + Sortie suggeree, bandeau Conseil du jour). Sera repris en Lot 3-bis apres validation utilisateur Lot 2-bis.
+
+### Lot 3 (initial) - Aujourd'hui (TERMINE)
 
 | Element | Statut / notes |
 |---|---|
@@ -213,6 +236,10 @@ Source de verite :
 | 2026-05-09 (Lot 2) | npm test -- --run frontend | 156/156 OK | Layout repivote sans regression fonctionnelle |
 | 2026-05-09 (Lot 2) | npm run build frontend | OK 371 ms | Build OK |
 | 2026-05-09 (Lot 2) | npx eslint AppShell/AppLayout/AppNavigation/AppTopbar/CurrentAccountPanel/AppBrand | 0 warning | Layout propre |
+| 2026-05-09 (Lot 3 invalide) | npm test/build | OK | Mais ne correspond pas au mockup. A reprendre. |
+| 2026-05-09 (Lot 2-bis) | npm test -- --run frontend | 156/156 OK | Refonte sidebar/topbar OK, aucune regression |
+| 2026-05-09 (Lot 2-bis) | npm run build frontend | OK 388 ms | Build OK |
+| 2026-05-09 (Lot 2-bis) | npx eslint composants alpine + AppLayout/AppShell/AppNavigation/ProgressionPage/App.jsx | 0 warning | Code propre |
 
 ---
 
@@ -285,13 +312,14 @@ Source de verite :
 ## 10. Etat de reprise rapide
 
 ```text
-Derniere action realisee : Lot 2 termine - layout global homogeneise Alpine Light
-Dernier fichier modifie : styles.css + AppShell.jsx + SUIVI_CHANTIER_ALPINE_LIGHT.md
-Dernier lot en cours : Lot 2 (termine, en attente commit + Lot 3)
-Prochaine action exacte : Commit "feat(ui): harmonize alpine light app layout", push, puis enchainer Lot 3 (Aujourd'hui)
-Blocage eventuel : Aucun. Note : transition visuelle sidebar foncé -> Alpine Light visible immediatement sur toutes les pages. Validation visuelle utilisateur recommandee mais non bloquante (tests/build/lint OK).
-Tests a relancer apres codage Lot 3 : npm test, npm run build, ESLint sur fichiers touches
-Fichiers a relire avant Lot 3 : sections 9 (Aujourd'hui) du plan, DashboardPage.jsx, DashboardDecisionSummaryCard.jsx, TodayHeader.jsx, TodayReadinessCard.jsx, TodayFormCards.jsx
-Composants Alpine Light a consommer en Lot 3 : PageHeader, KpiCard, InsightCard, CoachAdviceBar, MetricRow, RightRailCard
-URL de validation visuelle Alpine Light : / (Aujourd'hui), /admin, /glossaire, /visuals-preview
+Derniere action realisee : Lot 2-bis termine - sidebar/topbar refondues mockup-faithful (V1-V5 + V10 validees user)
+Dernier fichier modifie : SUIVI_CHANTIER_ALPINE_LIGHT.md
+Dernier lot en cours : Lot 2-bis (termine, en attente commit + recette utilisateur)
+Prochaine action exacte : Commit "feat(ui): rebuild alpine light layout per mockup (Lot 2-bis)", push, puis STOP recette visuelle utilisateur sur sidebar + topbar avant de demarrer Lot 3-bis
+Blocage eventuel : Aucun. Recette utilisateur OBLIGATOIRE sur sidebar/topbar avant Lot 3-bis (le user a explicitement demande "valider a chaque fin de lot").
+Tests a relancer apres codage Lot 3-bis : npm test, npm run build, ESLint sur fichiers touches
+Pages a verifier en navigation reelle : / (Accueil), /activities, /analytics, /performance, /progression (placeholder), /admin, /glossaire
+Recette visuelle requise : sidebar (brand RunNSee + ALPINE LIGHT, nav 7 items, ObjectiveCard avec/sans course, AdviceCard, UserMenu dropdown, bouton sync), topbar (titre + date longue francaise + 3 icones sans meteo)
+Lot 3-bis composants prevus : KpiGaugeCircular (jauges 72%/80%), TodayReadingCard (Lecture du jour mockup-faithful avec icone + verdict + ConfidenceDots + bouton ->), KpiChartCard (4 cartes graphiques charge/fatigue/volume/denivele 14j), RecoveryKpiCard (4 cards recup compactes avec lien detail), SuggestedWorkoutCard (sortie suggeree placeholder), ConfidenceDots (5 dots colores)
+Backlog dettes journalisees : docs/backlog/BACKLOG_FONCTIONNALITES_FUTURES.md (Meteo, Sortie suggeree, Disponibilite a valider sci, Page Progression, Algorithme conseil)
 ```

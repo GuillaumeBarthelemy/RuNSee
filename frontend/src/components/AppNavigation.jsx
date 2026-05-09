@@ -1,10 +1,12 @@
 import { NavLink } from "react-router-dom";
 
+// Ordre validé selon mockup Alpine Light :
+// Accueil / Activités / Analyse / Performance / Progression / Réglages / Glossaire
 const NAV_ITEMS = [
   {
     to: "/",
-    label: "Aujourd'hui",
-    shortLabel: "Jour",
+    label: "Accueil",
+    shortLabel: "Accueil",
     end: true,
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -13,9 +15,19 @@ const NAV_ITEMS = [
     ),
   },
   {
+    to: "/activities",
+    label: "Activités",
+    shortLabel: "Activités",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 6h10M7 12h10M7 18h10M4 6h.01M4 12h.01M4 18h.01" />
+      </svg>
+    ),
+  },
+  {
     to: "/analytics",
-    label: "Analyses",
-    shortLabel: "Analyses",
+    label: "Analyse",
+    shortLabel: "Analyse",
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M5 19h14M7 16V9m5 7V5m5 11v-4" />
@@ -33,12 +45,12 @@ const NAV_ITEMS = [
     ),
   },
   {
-    to: "/activities",
-    label: "Activités",
-    shortLabel: "Activités",
+    to: "/progression",
+    label: "Progression",
+    shortLabel: "Progression",
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M7 6h10M7 12h10M7 18h10M4 6h.01M4 12h.01M4 18h.01" />
+        <path d="M4 19h16M7 19V11m5 8V7m5 12v-5" />
       </svg>
     ),
   },
@@ -49,6 +61,16 @@ const NAV_ITEMS = [
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-7 8a7 7 0 0 1 14 0" />
+      </svg>
+    ),
+  },
+  {
+    to: "/glossaire",
+    label: "Glossaire",
+    shortLabel: "Glossaire",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zm4 4h8m-8 4h6" />
       </svg>
     ),
   },
