@@ -91,11 +91,16 @@ function TodayFormCards({ loadModel = {}, trendLoadModel = {} }) {
   const base = toNumber(summary.ctl);
   const loadSeries = chartData.slice(-14);
   const todayLoad = toNumber(loadSeries[loadSeries.length - 1]?.load);
+  // La carte affiche le cumul 7 jours (cohérent avec le barème glossaire :
+  // < 200 = bloc léger, 200-400 = standard, 400-600 = dense, > 600 = très chargé).
+  // La charge du jour J est mentionnée séparément en détail si elle est non nulle.
   const sevenDayLoad = loadSeries.slice(-7).reduce((sum, point) => sum + toNumber(point?.load), 0);
-  const loadValue = todayLoad > 0 ? todayLoad : sevenDayLoad;
   const loadStatus = getLoadStatus(sevenDayLoad);
   const freshnessStatus = getFreshnessStatus(freshness);
   const baseStatus = getBaseStatus(base);
+  const loadDetail = todayLoad > 0
+    ? `Cumul des 7 derniers jours, dont ${formatPoints(todayLoad, 1)} aujourd'hui.`
+    : "Cumul de charge des 7 derniers jours.";
 
   return (
     <section className="today-form-grid">
@@ -121,10 +126,10 @@ function TodayFormCards({ loadModel = {}, trendLoadModel = {} }) {
       </FormCard>
       <FormCard
         label="Charge récente"
-        value={formatPoints(loadValue, todayLoad > 0 ? 1 : 0)}
-        status={todayLoad > 0 ? loadStatus.label : `cumul 7 j — ${loadStatus.label}`}
+        value={formatPoints(sevenDayLoad, 0)}
+        status={`cumul 7 j — ${loadStatus.label}`}
         tone={loadStatus.tone}
-        detail="Charge des derniers jours, avec le jour courant mis en avant si une sortie est détectée."
+        detail={loadDetail}
         info={TRAINING_MVP_KPI_INFO.load}
       >
         <FormMicroBars data={loadSeries} dataKey="load" toneFn={load7dTone} />

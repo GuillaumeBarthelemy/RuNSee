@@ -2,6 +2,57 @@
 
 Ce journal trace les recettes reellement executees. Il evite de rouvrir les memes controles a chaque plan.
 
+## 2026-05-09 - Score de confiance des analyses (validation visuelle GO + correctif charge recente)
+
+### Contexte
+
+- Branche : `main`
+- Commits :
+  - audit cloture : `4cc1f58 docs(quality): cloture chantier score de confiance des analyses`
+  - correctif charge : a venir
+- Validation visuelle authentifiee desktop + mobile : OK utilisateur sur les 6 zones (Aujourd'hui, Analytics, Performance, VDOT, Objectif, TrailSpec, Detail Trail).
+- Anomalie remontee par utilisateur lors de la recette : "Charge recente 96.9 pts" parait basse vs bareme glossaire (< 200 pts = bloc leger).
+
+### Investigation
+
+- Source : `frontend/src/components/TodayFormCards.jsx` lignes 93-96 (avant correctif).
+- Cause : la valeur affichee melangeait charge du jour (`todayLoad`) et statut sur cumul 7 j.
+  - `loadValue = todayLoad > 0 ? todayLoad : sevenDayLoad` -> valeur = charge d'une seule journee si sortie detectee.
+  - `loadStatus = getLoadStatus(sevenDayLoad)` -> status calcule sur cumul 7 j.
+  - Le copy "Charge des derniers jours" et le bareme glossaire (< 200/200-400/...) parlent de cumul 7 j.
+- Consequence : 96.9 pts affichees (charge du jour seul) avec status "Bloc leger" calcule sur 7 j -> incoherence visuelle.
+
+### Correctif applique
+
+- Valeur principale toujours egale au cumul 7 j (`sevenDayLoad`) pour rester coherente avec le bareme glossaire.
+- Charge du jour J mentionnee separement dans le detail si elle est non nulle :
+  `"Cumul des 7 derniers jours, dont X.X pts aujourd'hui."`
+- Aucune modification du moteur de calcul de charge (ni `loadModel`, ni `trendLoadModel`, ni `load7dTone`).
+- Status reste `cumul 7 j - <label barème>` pour rappeler l'unite.
+
+### Tests techniques (Quality Gate post correctif)
+
+| Test | Resultat | Preuve |
+|---|---|---|
+| `npm test -- --run` frontend | OK | 156/156 (11 fichiers) |
+| `npm run build` frontend | OK | Vite build OK 488 ms |
+| ESLint `TodayFormCards.jsx` | OK | `--max-warnings 0` |
+
+### Decision
+
+```text
+GO definitif chantier `Score de confiance / qualite des analyses`.
+GO bonus correctif minimal "Charge recente" pour aligner valeur et bareme glossaire.
+Tag `runsee-stable-analysis-confidence` a poser a la cloture finale apres push CI/CD.
+```
+
+### Suite
+
+- Push commit correctif charge.
+- Re-generer archive review (apres correctif charge).
+- Poser tag `runsee-stable-analysis-confidence`.
+- Surveiller CI/CD VM.
+
 ## 2026-05-09 - Score de confiance des analyses (cloture chantier)
 
 ### Contexte

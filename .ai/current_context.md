@@ -150,11 +150,15 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 - Documentation modele : `docs/architecture/ANALYSIS_CONFIDENCE_MODEL.md`.
 - Correction wording cloture : `VdotProfileCard` `vdot-summary-label` "Confiance" -> "Fiabilite VDOT" pour distinguer la confiance d'analyse globale (badge) de la fiabilite metier de l'estimation VDOT.
 - Limite volontaire : le score reste qualitatif et ne remplace pas les calculs metier existants ; il doit aider a lire les incertitudes sans sur-vendre la precision.
-- Decision : GO technique cloture audit. Validation visuelle authentifiee desktop/mobile restant a la charge utilisateur avant tag `runsee-stable-analysis-confidence`.
+- Decision : GO definitif. Validation visuelle authentifiee desktop + mobile confirmee par utilisateur le 2026-05-09. Tag `runsee-stable-analysis-confidence` pose apres correctif charge recente.
 
-## Dette ouverte hors scope
+## Correctif "Charge recente" Aujourd'hui (en marge du chantier confiance)
 
-- Charge recente affichee : la valeur `96.9 pts` parait basse comparee au bareme glossaire (`< 200 pts = bloc leger`). A analyser dans un chantier ulterieur (verifier la source `loadModel` consommee par TodayFormCards/MicroBars vs la somme reelle 7 j ; ne pas toucher au moteur de charge sans plan dedie).
+- Anomalie identifiee lors de la recette visuelle : valeur "96.9 pts" affichee parait basse comparee au bareme glossaire (`< 200 pts = bloc leger`).
+- Cause : `TodayFormCards.jsx` melangeait charge du jour (valeur affichee si sortie detectee) avec statut/bareme calcule sur le cumul 7 j.
+- Correctif applique : valeur principale toujours = cumul 7 j (coherent bareme), charge du jour mentionnee separement dans le detail (`"Cumul des 7 derniers jours, dont X pts aujourd'hui."`).
+- Aucun changement du moteur de calcul de charge ; uniquement l'affichage de la carte.
+- Tests : 156/156, ESLint 0 warning, build OK.
 
 ## Backfill historique Garmin activites
 
