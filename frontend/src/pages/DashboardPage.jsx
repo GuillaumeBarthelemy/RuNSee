@@ -1,48 +1,44 @@
 import { useEffect, useMemo, useState } from "react";
-import DashboardDecisionSummaryCard from "../components/DashboardDecisionSummaryCard.jsx";
-import TodayAlertBanner from "../components/TodayAlertBanner.jsx";
-import TodayHeader from "../components/TodayHeader.jsx";
-import TodaySevenDaySummary from "../components/TodaySevenDaySummary.jsx";
-import TodayUsefulActivities from "../components/TodayUsefulActivities.jsx";
+import AppShell from "../layouts/AppShell.jsx";
 import CoachAdviceBar from "../components/visuals/alpine/CoachAdviceBar.jsx";
-import { TRAINING_MVP_SECTION_INFO } from "../content/trainingMvpCopy.js";
+import KpiCardCompact from "../components/visuals/alpine/KpiCardCompact.jsx";
+import KpiChartCard from "../components/visuals/alpine/KpiChartCard.jsx";
+import RecoveryKpiCard from "../components/visuals/alpine/RecoveryKpiCard.jsx";
+import SuggestedWorkoutCard from "../components/visuals/alpine/SuggestedWorkoutCard.jsx";
+import TodayReadingCard from "../components/visuals/alpine/TodayReadingCard.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import useRaceObjectives from "../hooks/useRaceObjectives.js";
-import AppShell from "../layouts/AppShell.jsx";
 import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
-import { startIncrementalSync } from "../services/sync.service.js";
-import { filterActivities, getAvailableSportGroups, RUN_SPORT_GROUP_LABEL } from "../utils/activityAggregations.js";
-import { buildActivityItems, buildBestEffortRecords, buildRegularitySummary } from "../utils/activityInsights.js";
-import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
+import { filterActivities, RUN_SPORT_GROUP_LABEL } from "../utils/activityAggregations.js";
 import { buildTodayConfidence } from "../utils/analysisConfidence.js";
 import { buildAnalyticsDateRange } from "../utils/analyticsPeriods.js";
-import { buildLoadDynamicsProfile } from "../utils/loadDynamics.js";
-import { buildVdotProfile } from "../utils/runningPerformance.js";
-import { buildTodayAlerts } from "../utils/todayAlerts.js";
-import {
-  buildConsolidatedIntensityDistributionModel,
-  buildEfficiencyHistoryModel,
-  buildTrainingLoadStateModel,
-} from "../utils/trainingMetrics.js";
-import { buildIntensityPolarizationProfile, buildLoadVarianceProfile } from "../utils/trainingIntelligence.js";
 import {
   buildDashboardDecisionSummary,
-  decorateRecentActivities,
 } from "../utils/performanceNarratives.js";
+import { buildRecoveryViewModel } from "../utils/recoveryViewModel.js";
+import { buildTrainingLoadStateModel } from "../utils/trainingMetrics.js";
 import { buildTrailContextSummary } from "../utils/trailProfile.js";
+import { computeAvailabilityScore } from "../utils/availabilityScore.js";
+import {
+  load7dTone,
+  readinessTone,
+  restingHrDeltaTone,
+  sleepScoreTone,
+} from "../utils/tonePicker.js";
 
 const TODAY_PERIOD_PRESET = "7d";
-const TODAY_VOLUME_VIEW_MODE = "rolling";
 const RECOVERY_SNAPSHOT_DAYS = 56;
 const DEFAULT_TODAY_SPORT_GROUP = RUN_SPORT_GROUP_LABEL;
+const CHART_DAYS = 14;
+
+// ---------------------------------------------------------------------------
+// Helpers locaux
+// ---------------------------------------------------------------------------
 
 function toDate(value) {
-  if (!value) {
-    return null;
-  }
-
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 function addDays(value, amount) {
@@ -50,99 +46,120 @@ function addDays(value, amount) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount);
 }
 
-function getActivityDate(activity = {}) {
-  return toDate(activity.startDateLocal || activity.startDate || activity.date);
+function dateKey(value) {
+  const d = toDate(value);
+  if (!d) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+
+function toNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+/**
+ * Agrège distance/durée/dénivelé par jour pour les 14 derniers jours.
+ * Retourne un tableau [{ dateKey, distanceKm, hours, elevationGain }].
+ */
+function aggregateByDayLastN(activities = [], referenceDate = new Date(), days = 14) {
+  const buckets = new Map();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = addDays(referenceDate, -i);
+    buckets.set(dateKey(d), { dateKey: dateKey(d), distanceKm: 0, hours: 0, elevationGain: 0 });
+  }
+  for (const activity of activities) {
+    const aDate = toDate(activity.startDateLocal || activity.startDate);
+    if (!aDate) continue;
+    const key = dateKey(aDate);
+    if (!buckets.has(key)) continue;
+    const b = buckets.get(key);
+    const distanceMeters = toNumber(activity.distance);
+    b.distanceKm += distanceMeters > 1000 ? distanceMeters / 1000 : distanceMeters;
+    const movingSec = toNumber(activity.movingTime || activity.movingSeconds);
+    b.hours += movingSec / 3600;
+    b.elevationGain += Math.max(0, toNumber(activity.totalElevationGain || activity.elevationGain));
+  }
+  return Array.from(buckets.values());
+}
+
+/**
+ * Format durée en "Xh32" depuis un nombre d'heures.
+ */
+function formatHours(hours) {
+  if (hours == null || !Number.isFinite(hours) || hours <= 0) return "—";
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  if (h === 0) return `${m} min`;
+  return `${h}h${String(m).padStart(2, "0")}`;
+}
+
+/**
+ * Format delta heures (+0h32, -0h12) depuis un delta en heures.
+ */
+function formatHoursDelta(deltaHours) {
+  if (deltaHours == null || !Number.isFinite(deltaHours) || deltaHours === 0) return "";
+  const sign = deltaHours > 0 ? "+" : "-";
+  const abs = Math.abs(deltaHours);
+  const h = Math.floor(abs);
+  const m = Math.round((abs - h) * 60);
+  if (h === 0) return `${sign}${m} min`;
+  return `${sign}${h}h${String(m).padStart(2, "0")}`;
+}
+
+/**
+ * Format delta entier signé (+4, -2, +421 m).
+ */
+function formatSignedInt(delta, unit = "") {
+  if (delta == null || !Number.isFinite(delta)) return "";
+  const sign = delta > 0 ? "+" : delta < 0 ? "-" : "";
+  return `${sign}${Math.abs(Math.round(delta))}${unit ? ` ${unit}` : ""}`;
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function DashboardPage() {
   const {
-    athlete,
     error,
     isLoading,
     safeActivities,
     options,
     trainingAnalyticsSettings,
-    reload,
-  } = useActivityViewModel({
-    includeActivities: true,
-  });
+  } = useActivityViewModel({ includeActivities: true });
   const { activeRace } = useRaceObjectives();
   const [recoverySnapshotData, setRecoverySnapshotData] = useState(null);
-  const [todaySportGroupSelection, setTodaySportGroupSelection] = useState(DEFAULT_TODAY_SPORT_GROUP);
 
   useEffect(() => {
     let ignore = false;
-
     getGarminRecoverySnapshots({ days: RECOVERY_SNAPSHOT_DAYS })
       .then((data) => {
-        if (!ignore) {
-          setRecoverySnapshotData(data || null);
-        }
+        if (!ignore) setRecoverySnapshotData(data || null);
       })
-      .catch(() => {
-        if (!ignore) {
-          setRecoverySnapshotData(null);
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
+      .catch(() => { if (!ignore) setRecoverySnapshotData(null); });
+    return () => { ignore = true; };
   }, []);
 
-  const account = useMemo(
-    () => buildCurrentAccountModel({ athlete, options }),
-    [athlete, options],
-  );
-
   const todayRange = buildAnalyticsDateRange({ preset: TODAY_PERIOD_PRESET });
-  const todayAvailableSports = useMemo(
-    () => getAvailableSportGroups(safeActivities, { groupSports: true }),
-    [safeActivities],
-  );
-  const requestedTodaySportGroup = todaySportGroupSelection || DEFAULT_TODAY_SPORT_GROUP;
-  const todaySportGroup = requestedTodaySportGroup === "all" || todayAvailableSports.includes(requestedTodaySportGroup)
-    ? requestedTodaySportGroup
-    : todayAvailableSports.includes(DEFAULT_TODAY_SPORT_GROUP)
-      ? DEFAULT_TODAY_SPORT_GROUP
-      : "all";
-
-  const dashboardFilters = useMemo(
-    () => ({
-      search: "",
-      sportGroup: todaySportGroup,
-      dateFrom: todayRange.dateFrom,
-      dateTo: todayRange.dateTo,
-    }),
-    [todayRange.dateFrom, todayRange.dateTo, todaySportGroup],
-  );
+  const trendStartDate = useMemo(() => addDays(todayRange.end, -55), [todayRange.end]);
 
   const dashboardActivities = useMemo(
-    () => filterActivities(safeActivities, dashboardFilters, { groupSports: true }),
-    [dashboardFilters, safeActivities],
-  );
-
-  const todayPeriodActivities = useMemo(
     () => filterActivities(
       safeActivities,
-      { search: "", sportGroup: "all", dateFrom: todayRange.dateFrom, dateTo: todayRange.dateTo },
+      { search: "", sportGroup: DEFAULT_TODAY_SPORT_GROUP, dateFrom: todayRange.dateFrom, dateTo: todayRange.dateTo },
       { groupSports: true },
     ),
     [safeActivities, todayRange.dateFrom, todayRange.dateTo],
   );
 
   const dashboardScopeActivities = useMemo(
-    () =>
-      filterActivities(
-        safeActivities,
-        { search: "", sportGroup: todaySportGroup, dateFrom: "", dateTo: "" },
-        { groupSports: true },
-      ),
-    [safeActivities, todaySportGroup],
+    () => filterActivities(
+      safeActivities,
+      { search: "", sportGroup: DEFAULT_TODAY_SPORT_GROUP, dateFrom: "", dateTo: "" },
+      { groupSports: true },
+    ),
+    [safeActivities],
   );
-
-  const trendStartDate = useMemo(() => addDays(todayRange.end, -55), [todayRange.end]);
-  const recentIntensityStartDate = useMemo(() => addDays(todayRange.end, -6), [todayRange.end]);
 
   const trainingLoadModel = useMemo(
     () => buildTrainingLoadStateModel(dashboardScopeActivities, {
@@ -165,9 +182,15 @@ export default function DashboardPage() {
     }),
     [dashboardScopeActivities, options.userWeekStartsOn, todayRange.end, trainingAnalyticsSettings, trendStartDate],
   );
+
   const recoverySnapshots = useMemo(
     () => (Array.isArray(recoverySnapshotData?.snapshots) ? recoverySnapshotData.snapshots : []),
     [recoverySnapshotData],
+  );
+
+  const recoveryVm = useMemo(
+    () => buildRecoveryViewModel(recoverySnapshots),
+    [recoverySnapshots],
   );
 
   const dashboardDecisionModel = useMemo(
@@ -194,242 +217,283 @@ export default function DashboardPage() {
     [activeRace, dashboardScopeActivities, todayRange.end],
   );
 
-  const loadVarianceModel = useMemo(
-    () => buildLoadVarianceProfile(dashboardScopeActivities, {
-      endDate: todayRange.end,
-      settings: trainingAnalyticsSettings,
-    }),
-    [dashboardScopeActivities, todayRange.end, trainingAnalyticsSettings],
+  // --- Données graphes 14 j ---
+  const chartData14j = useMemo(() => {
+    const all = Array.isArray(trendLoadModel?.chartData) ? trendLoadModel.chartData : [];
+    return all.slice(-CHART_DAYS);
+  }, [trendLoadModel]);
+
+  const dailyVolumeBuckets = useMemo(
+    () => aggregateByDayLastN(dashboardScopeActivities, todayRange.end, CHART_DAYS),
+    [dashboardScopeActivities, todayRange.end],
   );
 
-  const weeklySummary = useMemo(
-    () => buildRegularitySummary(dashboardScopeActivities, {
-      weeks: 4,
-      endDate: todayRange.end,
-      weekStartsOn: options.userWeekStartsOn,
-      viewMode: TODAY_VOLUME_VIEW_MODE,
-      settings: trainingAnalyticsSettings,
-    }),
-    [
-      dashboardScopeActivities,
-      options.userWeekStartsOn,
-      todayRange.end,
-      trainingAnalyticsSettings,
-    ],
-  );
+  // --- Calculs KPI haut (mockup) ---
+  const summary = trainingLoadModel?.summary || {};
+  const loadValue = toNumber(summary.load);
+  const fatigueValue = toNumber(summary.atl);
+  const tsbValue = toNumber(summary.tsb);
 
-  const efficiencyModel = useMemo(
-    () => buildEfficiencyHistoryModel(dashboardScopeActivities, {
-      startDate: trendStartDate,
-      endDate: todayRange.end,
-      granularity: "weekly",
-      weekStartsOn: options.userWeekStartsOn,
-      settings: trainingAnalyticsSettings,
-    }),
-    [dashboardScopeActivities, options.userWeekStartsOn, todayRange.end, trainingAnalyticsSettings, trendStartDate],
-  );
+  // Charge 7j cumulée
+  const charge7d = useMemo(() => {
+    const last7 = chartData14j.slice(-7);
+    return last7.reduce((sum, p) => sum + toNumber(p?.load), 0);
+  }, [chartData14j]);
 
-  const loadDynamicsProfile = useMemo(
-    () => buildLoadDynamicsProfile({
-      loadModel: trendLoadModel,
-      efficiencyModel,
-      recoverySnapshots,
-    }),
-    [efficiencyModel, trendLoadModel, recoverySnapshots],
-  );
+  // Volume 7j (heures et dénivelé)
+  const last7DaysAgg = useMemo(() => {
+    const last7 = dailyVolumeBuckets.slice(-7);
+    const prev7 = dailyVolumeBuckets.slice(-14, -7);
+    const sumHours = last7.reduce((s, b) => s + b.hours, 0);
+    const sumElevation = last7.reduce((s, b) => s + b.elevationGain, 0);
+    const prevHours = prev7.reduce((s, b) => s + b.hours, 0);
+    const prevElevation = prev7.reduce((s, b) => s + b.elevationGain, 0);
+    return {
+      hours: sumHours,
+      elevation: sumElevation,
+      hoursDelta: sumHours - prevHours,
+      elevationDelta: sumElevation - prevElevation,
+    };
+  }, [dailyVolumeBuckets]);
 
-  const intensityDistributionModel = useMemo(
-    () => buildConsolidatedIntensityDistributionModel(dashboardScopeActivities, {
-      startDate: recentIntensityStartDate,
-      endDate: todayRange.end,
-      settings: trainingAnalyticsSettings,
-    }),
-    [dashboardScopeActivities, recentIntensityStartDate, todayRange.end, trainingAnalyticsSettings],
-  );
+  // Deltas charge/fatigue vs hier
+  const deltaCharge = useMemo(() => {
+    const all = Array.isArray(trendLoadModel?.chartData) ? trendLoadModel.chartData : [];
+    if (all.length < 2) return null;
+    const today = toNumber(all[all.length - 1]?.load);
+    const yest = toNumber(all[all.length - 2]?.load);
+    return today - yest;
+  }, [trendLoadModel]);
 
-  const polarizationModel = useMemo(
-    () => buildIntensityPolarizationProfile(intensityDistributionModel, "duration"),
-    [intensityDistributionModel],
-  );
+  const deltaFatigue = useMemo(() => {
+    const all = Array.isArray(trendLoadModel?.chartData) ? trendLoadModel.chartData : [];
+    if (all.length < 2) return null;
+    const today = toNumber(all[all.length - 1]?.atl);
+    const yest = toNumber(all[all.length - 2]?.atl);
+    return today - yest;
+  }, [trendLoadModel]);
 
-  const bestEffortRecords = useMemo(
-    () => buildBestEffortRecords(buildActivityItems(dashboardScopeActivities, { settings: trainingAnalyticsSettings })),
-    [dashboardScopeActivities, trainingAnalyticsSettings],
-  );
+  // Récupération (Aptitude RuNSee 0-100)
+  const readinessScore = recoveryVm?.readiness?.score ?? null;
+  const readinessTone1 = readinessScore != null ? readinessTone(readinessScore) : 3;
 
-  const vdotProfile = useMemo(
-    () => buildVdotProfile({ records: bestEffortRecords, referenceDate: todayRange.end }),
-    [bestEffortRecords, todayRange.end],
-  );
+  // Disponibilité (composite Aptitude × TSB normalisé) — V6 validé
+  // Calcul direct (pas de useMemo) car le helper est pur et léger.
+  const availability = computeAvailabilityScore({ readinessScore, tsb: tsbValue });
 
-  const vdotProfilePrevious = useMemo(() => {
-    const previousReferenceDate = addDays(todayRange.end, -28);
-    const previousRecords = bestEffortRecords.map((record) => {
-      const activityDate = getActivityDate(record?.activity);
-      return activityDate && activityDate <= previousReferenceDate ? record : { ...record, isAvailable: false };
-    });
-
-    return buildVdotProfile({ records: previousRecords, referenceDate: previousReferenceDate });
-  }, [bestEffortRecords, todayRange.end]);
-
-  const recentActivities = useMemo(
-    () => decorateRecentActivities(
-      [...dashboardActivities]
-        .sort((left, right) => {
-          const leftDate = toDate(left?.startDateLocal || left?.startDate)?.getTime() || 0;
-          const rightDate = toDate(right?.startDateLocal || right?.startDate)?.getTime() || 0;
-          return rightDate - leftDate;
-        })
-        .slice(0, 6),
-      {
-        scopeActivities: dashboardScopeActivities,
-        settings: trainingAnalyticsSettings,
-        endDate: todayRange.end,
-      },
-    ),
-    [dashboardActivities, dashboardScopeActivities, todayRange.end, trainingAnalyticsSettings],
-  );
-
-  const broaderRecentActivities = useMemo(
-    () => decorateRecentActivities(
-      [...dashboardScopeActivities]
-        .sort((left, right) => {
-          const leftDate = toDate(left?.startDateLocal || left?.startDate)?.getTime() || 0;
-          const rightDate = toDate(right?.startDateLocal || right?.startDate)?.getTime() || 0;
-          return rightDate - leftDate;
-        })
-        .slice(0, 80),
-      {
-        scopeActivities: dashboardScopeActivities,
-        settings: trainingAnalyticsSettings,
-        endDate: todayRange.end,
-      },
-    ),
-    [dashboardScopeActivities, todayRange.end, trainingAnalyticsSettings],
-  );
-
-  const todayAlerts = useMemo(
-    () => buildTodayAlerts({
-      loadModel: trendLoadModel,
-      loadDynamicsProfile,
-      loadVarianceModel,
-      polarizationModel,
-      vdotProfile,
-      vdotProfilePrevious,
-      recentActivities: broaderRecentActivities,
-      allActivities: dashboardScopeActivities,
-      bestEffortRecords,
-      weeklySummary,
-      trainingAnalyticsSettings,
-      activeRace,
-      referenceDate: todayRange.end,
-    }),
-    [
-      activeRace,
-      bestEffortRecords,
-      broaderRecentActivities,
-      dashboardScopeActivities,
-      loadDynamicsProfile,
-      loadVarianceModel,
-      polarizationModel,
-      todayRange.end,
-      trainingAnalyticsSettings,
-      trendLoadModel,
-      vdotProfile,
-      vdotProfilePrevious,
-      weeklySummary,
-    ],
-  );
-
-  const handleTodaySportChange = (value) => {
-    setTodaySportGroupSelection(value || DEFAULT_TODAY_SPORT_GROUP);
-  };
-
-  const handleTodaySportReset = () => {
-    setTodaySportGroupSelection(DEFAULT_TODAY_SPORT_GROUP);
-  };
-
-  const handleSyncStrava = async () => {
-    await startIncrementalSync();
-    await reload?.();
-  };
+  // Tone du verdict pour TodayReadingCard
+  const verdictTone = useMemo(() => {
+    const t = dashboardDecisionModel?.recommendation?.tone;
+    if (t === "positive") return 1;
+    if (t === "warning") return 4;
+    if (t === "negative") return 5;
+    return 3;
+  }, [dashboardDecisionModel]);
 
   return (
-    <AppShell
-      eyebrow="Aujourd'hui"
-      title="Pilotage du jour"
-      subtitle="Lecture fixe sur 7 jours glissants, avec périmètre sport ajustable."
-      account={account}
-    >
+    <AppShell title="Aujourd'hui 👋">
       {error ? <div className="alert alert-error section">{error}</div> : null}
-      {isLoading && !dashboardActivities.length ? <div className="card section">Chargement des activités...</div> : null}
+      {isLoading && !dashboardActivities.length ? (
+        <div className="card section">Chargement des activités...</div>
+      ) : null}
 
-      <div className="dashboard-page-stack">
-        <div className="section">
-          <TodayHeader
-            athlete={athlete}
-            activeRace={activeRace}
-            date={todayRange.end}
-            rangeLabel={todayRange.label}
-            sportGroup={todaySportGroup}
-            defaultSportGroup={DEFAULT_TODAY_SPORT_GROUP}
-            availableSports={todayAvailableSports}
-            activityCount={dashboardActivities.length}
-            totalCount={todayPeriodActivities.length}
-            onSportChange={handleTodaySportChange}
-            onSportReset={handleTodaySportReset}
-          />
-        </div>
-
-        <TodayAlertBanner
-          alerts={todayAlerts}
-          onSyncStrava={handleSyncStrava}
+      {/* === Grille 6 KpiCardCompact === */}
+      <section className="alpine-today-kpi-grid">
+        <KpiCardCompact
+          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M3 17 L9 11 L13 14 L21 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /><path d="M16 6 H21 V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
+          label="Charge (7 j)"
+          value={Math.round(charge7d)}
+          unit="pts"
+          hint={charge7d >= 200 && charge7d < 400 ? "Standard" : charge7d >= 400 ? "Dense" : "Léger"}
+          delta={deltaCharge != null ? `${formatSignedInt(deltaCharge)} vs hier` : ""}
+          tone={load7dTone(charge7d)}
         />
+        <KpiCardCompact
+          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M3 17 L8 12 L12 14 L21 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
+          label="Fatigue (ATL)"
+          value={Math.round(fatigueValue)}
+          unit="pts"
+          hint={fatigueValue >= 60 ? "Élevée" : fatigueValue >= 35 ? "Modérée" : "Basse"}
+          delta={deltaFatigue != null ? `${formatSignedInt(deltaFatigue)} vs hier` : ""}
+          tone={fatigueValue >= 60 ? 4 : fatigueValue >= 35 ? 3 : 2}
+        />
+        <KpiCardCompact
+          icon={<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="13" width="3" height="7" fill="currentColor" /><rect x="10" y="9" width="3" height="11" fill="currentColor" /><rect x="16" y="5" width="3" height="15" fill="currentColor" /></svg>}
+          label="Volume (7 j)"
+          value={formatHours(last7DaysAgg.hours)}
+          hint={last7DaysAgg.hours >= 6 ? "Bon" : last7DaysAgg.hours >= 3 ? "Standard" : "Léger"}
+          delta={last7DaysAgg.hoursDelta !== 0 ? `${formatHoursDelta(last7DaysAgg.hoursDelta)} vs sem. passée` : ""}
+          tone={last7DaysAgg.hours >= 6 ? 1 : last7DaysAgg.hours >= 3 ? 2 : 3}
+        />
+        <KpiCardCompact
+          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M3 19 L8 12 L12 16 L17 8 L21 19 Z" fill="currentColor" /></svg>}
+          label="Dénivelé (7 j)"
+          value={`${Math.round(last7DaysAgg.elevation).toLocaleString("fr-FR")}`}
+          unit="m"
+          hint={last7DaysAgg.elevation >= 1000 ? "Bon" : last7DaysAgg.elevation >= 300 ? "Modéré" : "Faible"}
+          delta={last7DaysAgg.elevationDelta !== 0 ? `${formatSignedInt(last7DaysAgg.elevationDelta, "m")} vs sem. passée` : ""}
+          tone={last7DaysAgg.elevation >= 1000 ? 1 : last7DaysAgg.elevation >= 300 ? 2 : 3}
+        />
+        <KpiCardCompact
+          label="Récupération"
+          value={readinessScore != null ? `${readinessScore}` : "—"}
+          unit="%"
+          hint={readinessScore != null
+            ? readinessScore >= 75 ? "Très bonne" : readinessScore >= 50 ? "Correcte" : readinessScore >= 25 ? "Limitée" : "Faible"
+            : "Donnée Garmin"}
+          tone={readinessTone1}
+          gauge={{ value: readinessScore, tone: readinessTone1 }}
+        />
+        <KpiCardCompact
+          label="Disponibilité"
+          value={availability.score != null ? `${availability.score}` : "—"}
+          unit="%"
+          hint={availability.label}
+          tone={availability.tone}
+          gauge={{ value: availability.score, tone: availability.tone }}
+        />
+      </section>
 
-        <div className="section">
-          <DashboardDecisionSummaryCard
-            model={dashboardDecisionModel}
-            info={TRAINING_MVP_SECTION_INFO.decisionSummary}
-            trailContext={trailContext}
-            confidence={todayConfidence}
-          />
-        </div>
+      {/* === Lecture du jour === */}
+      <TodayReadingCard
+        title={dashboardDecisionModel?.recommendation?.label
+          || dashboardDecisionModel?.insight
+          || "Lecture du jour à compléter"}
+        description={
+          dashboardDecisionModel?.insight && dashboardDecisionModel?.insight !== dashboardDecisionModel?.recommendation?.label
+            ? dashboardDecisionModel.insight
+            : `${dashboardDecisionModel?.charge?.label ? `Charge ${dashboardDecisionModel.charge.label.toLowerCase()}` : ""}${dashboardDecisionModel?.fatigue?.label ? `, fatigue ${dashboardDecisionModel.fatigue.label.toLowerCase()}` : ""}.`
+        }
+        tone={verdictTone}
+        confidenceLevel={todayConfidence?.level || "insufficient"}
+        linkTo="/analytics"
+      />
 
-        <div className="section">
-          <TodaySevenDaySummary
-            weeklySummary={weeklySummary}
-            decisionModel={dashboardDecisionModel}
-            recoverySnapshots={recoverySnapshots}
-            trailContext={trailContext}
-          />
-        </div>
+      {/* === Grille 4 KpiChartCard avec graphes 14 j === */}
+      <section className="alpine-today-charts-grid">
+        <KpiChartCard
+          label="Charge d'entraînement"
+          value={Math.round(loadValue) || 0}
+          unit="pts"
+          hint={loadValue >= 600 ? "Très chargé" : loadValue >= 200 ? "Standard" : "Léger"}
+          delta={deltaCharge != null ? `${formatSignedInt(deltaCharge)} vs hier` : ""}
+          tone={load7dTone(charge7d)}
+          chart={{ type: "line", data: chartData14j.map((p) => toNumber(p?.load)) }}
+          axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
+          footnote="Charge journalière sur 14 jours. Continue de construire progressivement."
+        />
+        <KpiChartCard
+          label="Fatigue (ATL)"
+          value={Math.round(fatigueValue) || 0}
+          unit="pts"
+          hint={fatigueValue >= 60 ? "Élevée" : fatigueValue >= 35 ? "Modérée" : "Basse"}
+          delta={deltaFatigue != null ? `${formatSignedInt(deltaFatigue)} vs hier` : ""}
+          tone={fatigueValue >= 60 ? 4 : fatigueValue >= 35 ? 3 : 2}
+          chart={{ type: "line", data: chartData14j.map((p) => toNumber(p?.atl)) }}
+          axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
+          footnote="Fatigue récente (ATL). Écoute ton corps."
+        />
+        <KpiChartCard
+          label="Volume (14 j)"
+          value={formatHours(last7DaysAgg.hours)}
+          hint={last7DaysAgg.hours >= 6 ? "Bon volume" : "Standard"}
+          delta={last7DaysAgg.hoursDelta !== 0 ? `${formatHoursDelta(last7DaysAgg.hoursDelta)} vs sem. passée` : ""}
+          tone={last7DaysAgg.hours >= 6 ? 1 : last7DaysAgg.hours >= 3 ? 2 : 3}
+          chart={{ type: "bar", data: dailyVolumeBuckets.map((b) => b.hours) }}
+          axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
+          footnote="Heures par jour. Beau volume hebdomadaire si la qualité suit."
+        />
+        <KpiChartCard
+          label="Dénivelé (14 j)"
+          value={`${Math.round(dailyVolumeBuckets.reduce((s, b) => s + b.elevationGain, 0)).toLocaleString("fr-FR")}`}
+          unit="m"
+          hint={last7DaysAgg.elevation >= 1000 ? "Bon" : "Modéré"}
+          delta={last7DaysAgg.elevationDelta !== 0 ? `${formatSignedInt(last7DaysAgg.elevationDelta, "m")} vs sem. passée` : ""}
+          tone={last7DaysAgg.elevation >= 1000 ? 1 : last7DaysAgg.elevation >= 300 ? 2 : 3}
+          chart={{ type: "bar", data: dailyVolumeBuckets.map((b) => b.elevationGain) }}
+          axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
+          footnote="Dénivelé positif par jour. Continue d'accumuler."
+        />
+      </section>
 
-        <div className="section">
-          <TodayUsefulActivities
-            activities={broaderRecentActivities.length ? broaderRecentActivities : recentActivities}
-            referenceDate={todayRange.end}
-            returnPath="/"
-            info={TRAINING_MVP_SECTION_INFO.recentActivities}
-          />
-        </div>
+      {/* === Section Récupération + Sortie suggérée === */}
+      <section className="alpine-today-recovery-row">
+        <RecoveryKpiCard
+          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M12 4 L4 13 L12 22 L20 13 Z" fill="currentColor" /></svg>}
+          label="Récupération"
+          gaugeValue={readinessScore}
+          value={readinessScore != null ? `${readinessScore}` : "—"}
+          unit="%"
+          hint={readinessScore != null
+            ? readinessScore >= 75 ? "Très bonne" : readinessScore >= 50 ? "Correcte" : "Limitée"
+            : "Donnée absente"}
+          delta=""
+          tone={readinessTone1}
+          linkTo="/analytics"
+        />
+        <RecoveryKpiCard
+          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M21 13 a8 8 0 1 1 -10 -10 a6.5 6.5 0 0 0 10 10 Z" fill="currentColor" /></svg>}
+          label="Sommeil"
+          value={recoveryVm?.sleep?.recentAvg != null ? `${Math.round(recoveryVm.sleep.recentAvg)}` : "—"}
+          unit="/100"
+          hint={recoveryVm?.sleep?.recentAvg != null
+            ? recoveryVm.sleep.recentAvg >= 75 ? "Bonne qualité" : "À surveiller"
+            : "Donnée absente"}
+          delta={recoveryVm?.sleep?.deltaPct != null
+            ? `${formatSignedInt(recoveryVm.sleep.deltaPct, "%")} vs repère`
+            : ""}
+          tone={recoveryVm?.sleep?.recentAvg != null ? sleepScoreTone(recoveryVm.sleep.recentAvg) : 3}
+          chartData={Array.isArray(recoveryVm?.sleep?.series) ? recoveryVm.sleep.series.slice(-CHART_DAYS) : null}
+          chartType="bar"
+          linkTo="/analytics"
+        />
+        <RecoveryKpiCard
+          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M12 21 s-7 -5 -7 -11 a4 4 0 0 1 7 -2 a4 4 0 0 1 7 2 c0 6 -7 11 -7 11 Z" fill="currentColor" /></svg>}
+          label="Fréquence cardiaque au repos"
+          value={recoveryVm?.restingHr?.recentAvg != null ? `${Math.round(recoveryVm.restingHr.recentAvg)}` : "—"}
+          unit="bpm"
+          hint={recoveryVm?.restingHr?.recentAvg != null ? "Dans la norme" : "Donnée absente"}
+          delta={recoveryVm?.restingHr?.deltaPct != null
+            ? `${formatSignedInt(recoveryVm.restingHr.deltaPct, "%")} vs repère`
+            : ""}
+          tone={recoveryVm?.restingHr?.deltaPct != null ? restingHrDeltaTone(recoveryVm.restingHr.deltaPct) : 3}
+          chartData={Array.isArray(recoveryVm?.restingHr?.series) ? recoveryVm.restingHr.series.slice(-CHART_DAYS) : null}
+          chartType="line"
+          linkTo="/analytics"
+        />
+        <RecoveryKpiCard
+          icon={<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" /></svg>}
+          label="Disponibilité"
+          gaugeValue={availability.score}
+          value={availability.score != null ? `${availability.score}` : "—"}
+          unit="%"
+          hint={availability.label}
+          delta=""
+          tone={availability.tone}
+          linkTo="/analytics"
+        />
+        <SuggestedWorkoutCard
+          title="Sortie endurance"
+          tags={["Zone 2", "Endurance"]}
+          distanceKm={null}
+          durationLabel={null}
+          elevationGainMeters={null}
+          linkTo="/activities"
+        />
+      </section>
 
-        {/* Conseil du jour Alpine Light (Lot 3) — synthese coach derivee
-            de la decision deja calculee. Pas de duplication metier. */}
-        {dashboardDecisionModel?.recommendation?.label || dashboardDecisionModel?.insight ? (
-          <div className="section">
-            <CoachAdviceBar
-              tone={dashboardDecisionModel.recommendation?.tone === "negative" ? "warning"
-                : dashboardDecisionModel.recommendation?.tone === "positive" ? "success"
-                : "info"}
-              icon="🏔️"
-            >
-              {dashboardDecisionModel.recommendation?.label
-                || dashboardDecisionModel.insight
-                || "Continue ton plan en restant à l'écoute de ton ressenti."}
-            </CoachAdviceBar>
-          </div>
-        ) : null}
-      </div>
+      {/* === Conseil du jour === */}
+      <CoachAdviceBar
+        tone={dashboardDecisionModel?.recommendation?.tone === "negative" ? "warning"
+          : dashboardDecisionModel?.recommendation?.tone === "positive" ? "success"
+          : "info"}
+        icon="🏔️"
+      >
+        {dashboardDecisionModel?.recommendation?.label
+          || dashboardDecisionModel?.insight
+          || "Une sortie en endurance fondamentale renforce ta base sans ajouter de fatigue excessive."}
+        {trailContext?.shouldShow && trailContext?.context ? ` ${trailContext.context}` : ""}
+      </CoachAdviceBar>
     </AppShell>
   );
 }

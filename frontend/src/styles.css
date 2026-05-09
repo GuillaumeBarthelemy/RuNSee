@@ -9309,3 +9309,585 @@ button.alert-banner-positive-item {
   .alpine-topbar { padding: 12px 0 16px; }
   .alpine-topbar-title { font-size: 22px; }
 }
+
+/* ============================================================================
+   Lot 3-bis — Page Aujourd'hui mockup-faithful
+   ============================================================================ */
+
+/* Grille des KPI haut */
+.alpine-today-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 1280px) {
+  .alpine-today-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .alpine-today-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* KpiCardCompact */
+.alpine-kpi-compact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: var(--al-radius-card, 16px);
+  box-shadow: var(--al-shadow-card);
+  min-width: 0;
+}
+
+.alpine-kpi-compact-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  color: var(--al-success, #35a853);
+  background: var(--al-success-soft, #e8f6ec);
+}
+
+.alpine-kpi-compact-icon.tone-1-bg { background: var(--al-success-soft, #e8f6ec); color: var(--al-success, #35a853); }
+.alpine-kpi-compact-icon.tone-2-bg { background: var(--al-success-soft, #e8f6ec); color: var(--al-success, #35a853); }
+.alpine-kpi-compact-icon.tone-3-bg { background: var(--al-info-soft, #e6efff); color: var(--al-primary, #1268f3); }
+.alpine-kpi-compact-icon.tone-4-bg { background: var(--al-warning-soft, #fef4e0); color: var(--al-warning, #f59e0b); }
+.alpine-kpi-compact-icon.tone-5-bg { background: var(--al-alert-soft, #fde6e6); color: var(--al-alert, #ef4444); }
+
+.alpine-kpi-compact-icon svg { width: 22px; height: 22px; }
+
+.alpine-kpi-compact-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alpine-kpi-compact-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-kpi-compact-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.alpine-kpi-compact-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  line-height: 1.1;
+}
+
+.alpine-kpi-compact-unit {
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-kpi-compact-hint {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.alpine-kpi-compact-delta {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+
+/* KpiGaugeCircular */
+.alpine-gauge-circular {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alpine-gauge-circular--sm svg { width: 44px; height: 44px; }
+.alpine-gauge-circular--md svg { width: 60px; height: 60px; }
+.alpine-gauge-circular--lg svg { width: 96px; height: 96px; }
+
+/* TodayReadingCard */
+.alpine-today-reading-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 22px;
+  margin: 0 0 22px;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: var(--al-radius-card, 16px);
+  box-shadow: var(--al-shadow-card);
+}
+
+.alpine-today-reading-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-today-reading-body {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.alpine-today-reading-icon {
+  display: inline-flex;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.alpine-today-reading-icon.tone-1-bg { background: var(--al-success-soft, #e8f6ec); }
+.alpine-today-reading-icon.tone-2-bg { background: var(--al-success-soft, #e8f6ec); }
+.alpine-today-reading-icon.tone-3-bg { background: var(--al-info-soft, #e6efff); }
+.alpine-today-reading-icon.tone-4-bg { background: var(--al-warning-soft, #fef4e0); }
+.alpine-today-reading-icon.tone-5-bg { background: var(--al-alert-soft, #fde6e6); }
+
+.alpine-today-reading-icon-inner svg { width: 32px; height: 32px; }
+
+.alpine-today-reading-icon-inner.tone-1 svg { color: var(--al-success, #35a853); }
+.alpine-today-reading-icon-inner.tone-2 svg { color: var(--al-success, #35a853); }
+.alpine-today-reading-icon-inner.tone-3 svg { color: var(--al-primary, #1268f3); }
+.alpine-today-reading-icon-inner.tone-4 svg { color: var(--al-warning, #f59e0b); }
+.alpine-today-reading-icon-inner.tone-5 svg { color: var(--al-alert, #ef4444); }
+
+.alpine-today-reading-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alpine-today-reading-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  line-height: 1.3;
+}
+
+.alpine-today-reading-description {
+  margin: 0;
+  font-size: 13px;
+  color: var(--al-muted, #64748b);
+  line-height: 1.5;
+}
+
+.alpine-today-reading-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.alpine-today-reading-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--al-primary-soft, #e8f1ff);
+  color: var(--al-primary, #1268f3);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.alpine-today-reading-link:hover {
+  background: var(--al-primary, #1268f3);
+  color: #ffffff;
+}
+.alpine-today-reading-link svg { width: 18px; height: 18px; }
+
+@media (max-width: 720px) {
+  .alpine-today-reading-body { flex-wrap: wrap; }
+  .alpine-today-reading-meta { width: 100%; justify-content: space-between; }
+}
+
+/* ConfidenceDots */
+.alpine-confidence-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alpine-confidence-dots-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.1;
+}
+
+.alpine-confidence-dots-kicker {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-confidence-dots-text strong {
+  font-size: 13px;
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-confidence-dots-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.alpine-confidence-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--al-border, #dfe8f5);
+}
+
+.alpine-confidence-dot.is-filled {
+  background: var(--al-success, #35a853);
+}
+
+/* Grille 4 KpiChartCard */
+.alpine-today-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 1280px) {
+  .alpine-today-charts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .alpine-today-charts-grid { grid-template-columns: 1fr; }
+}
+
+/* KpiChartCard */
+.alpine-kpi-chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: var(--al-radius-card, 16px);
+  box-shadow: var(--al-shadow-card);
+}
+
+.alpine-kpi-chart-head { margin-bottom: 4px; }
+
+.alpine-kpi-chart-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-kpi-chart-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.alpine-kpi-chart-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  line-height: 1.1;
+}
+
+.alpine-kpi-chart-unit {
+  font-size: 13px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-kpi-chart-hint {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.alpine-kpi-chart-delta {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-kpi-chart-graph {
+  width: 100%;
+  height: 100px;
+  margin-top: 8px;
+}
+.alpine-kpi-chart-svg { width: 100%; height: 100%; }
+
+.alpine-chart-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+  font-style: italic;
+}
+
+.alpine-kpi-chart-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+  margin-top: 2px;
+}
+
+.alpine-kpi-chart-footnote {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+  line-height: 1.4;
+}
+
+/* Section recovery + suggested */
+.alpine-today-recovery-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(220px, 1.2fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 1280px) {
+  .alpine-today-recovery-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .alpine-today-recovery-row { grid-template-columns: 1fr; }
+}
+
+/* RecoveryKpiCard */
+.alpine-recovery-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 14px;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: var(--al-radius-card, 16px);
+  box-shadow: var(--al-shadow-card);
+}
+
+.alpine-recovery-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.alpine-recovery-card-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+}
+.alpine-recovery-card-icon svg { width: 100%; height: 100%; }
+
+.alpine-recovery-card-icon.tone-1 { color: var(--al-success, #35a853); }
+.alpine-recovery-card-icon.tone-2 { color: var(--al-success, #35a853); }
+.alpine-recovery-card-icon.tone-3 { color: var(--al-primary, #1268f3); }
+.alpine-recovery-card-icon.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-recovery-card-icon.tone-5 { color: var(--al-alert, #ef4444); }
+
+.alpine-recovery-card-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-recovery-card-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.alpine-recovery-card-value-block {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.alpine-recovery-card-value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.alpine-recovery-card-value.tone-1 { color: var(--al-success, #35a853); }
+.alpine-recovery-card-value.tone-2 { color: var(--al-success, #35a853); }
+.alpine-recovery-card-value.tone-3 { color: var(--al-text, #0f2147); }
+.alpine-recovery-card-value.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-recovery-card-value.tone-5 { color: var(--al-alert, #ef4444); }
+
+.alpine-recovery-card-unit {
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-recovery-card-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.alpine-recovery-card-hint {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.alpine-recovery-card-delta {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-recovery-card-link {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-primary, #1268f3);
+  text-decoration: none;
+  align-self: flex-start;
+}
+.alpine-recovery-card-link:hover { text-decoration: underline; }
+
+.alpine-recovery-mini-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 22px;
+  margin-top: 2px;
+}
+
+.alpine-recovery-mini-bar {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 1px;
+  background: var(--al-primary, #1268f3);
+}
+.alpine-recovery-mini-bar.is-empty {
+  background: var(--al-border, #dfe8f5);
+  height: 20% !important;
+  align-self: flex-end;
+}
+
+.alpine-recovery-mini-line {
+  width: 100%;
+  height: 22px;
+  margin-top: 2px;
+}
+
+/* SuggestedWorkoutCard */
+.alpine-suggested-workout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, var(--al-primary-soft, #e8f1ff) 0%, var(--al-surface, #ffffff) 100%);
+  border: 1px solid rgba(18, 104, 243, 0.20);
+  border-radius: var(--al-radius-card, 16px);
+  box-shadow: var(--al-shadow-card);
+}
+
+.alpine-suggested-workout-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.alpine-suggested-workout-icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  background: var(--al-primary-soft, #e8f1ff);
+  color: var(--al-primary, #1268f3);
+  flex-shrink: 0;
+}
+.alpine-suggested-workout-icon svg { width: 22px; height: 22px; }
+
+.alpine-suggested-workout-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alpine-suggested-workout-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--al-primary, #1268f3);
+}
+
+.alpine-suggested-workout-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-suggested-workout-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.alpine-suggested-workout-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: rgba(18, 104, 243, 0.12);
+  color: var(--al-primary, #1268f3);
+  border-radius: var(--al-radius-pill, 999px);
+}
+
+.alpine-suggested-workout-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.alpine-suggested-workout-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.alpine-suggested-workout-stats span {
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-suggested-workout-stats strong {
+  font-size: 13px;
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-suggested-workout-cta {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  text-decoration: none;
+}

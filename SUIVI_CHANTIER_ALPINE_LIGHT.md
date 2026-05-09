@@ -17,10 +17,10 @@ Source de verite :
 | Champ | Valeur |
 |---|---|
 | Chantier | Refonte UX/UI Alpine Light |
-| Statut global | En cours - Lot 2-bis termine, en attente recette utilisateur avant Lot 3-bis |
-| Dernier lot traite | Lot 2-bis - Refonte sidebar/topbar mockup-faithful |
-| Dernier commit | `810e4fe feat(today): apply alpine light dashboard` (Lot 3 invalide) -> Lot 2-bis a commiter |
-| Note importante | Lot 3 (commit 810e4fe) invalide vs mockup -> sera repris en Lot 3-bis. Lot 2 (3ad0c8e) etendu par Lot 2-bis pour matcher le mockup (objectif principal, conseil du jour, UserMenu, AlpineTopbar avec icones). |
+| Statut global | En cours - Lot 3-bis termine, en attente recette utilisateur |
+| Dernier lot traite | Lot 3-bis - Refonte page Aujourd'hui mockup-faithful |
+| Dernier commit | `b356d4b feat(ui): rebuild alpine light layout per mockup (Lot 2-bis)` puis Lot 3-bis a commiter |
+| Note importante | Lot 3-bis : refonte complete DashboardPage selon mockup avec 6 KpiCardCompact + TodayReadingCard + 4 KpiChartCard + 4 RecoveryKpiCard + SuggestedWorkoutCard + CoachAdviceBar. Helper Disponibilite (computeAvailabilityScore) cree avec validation scientifique (Plews+Buchheit+Banister). |
 | Derniere archive review | `runsee-source-review-analysis-confidence-final.zip` (chantier precedent) |
 | Dernier test frontend | 156/156 (chantier precedent, post correctif Charge) |
 | Dernier test backend | 21/21 |
@@ -126,9 +126,28 @@ Source de verite :
 | Commit | `feat(ui): rebuild alpine light layout per mockup (Lot 2-bis)` (a creer) |
 | Recette visuelle requise avant Lot 3-bis | Pages : / (Aujourd'hui), /activities, /analytics, /performance, /progression (placeholder), /admin, /glossaire. Verifier sidebar : brand, nav 7 items, objectif (avec/sans course active), advice card, user menu (dropdown), bouton sync. Verifier topbar : titre + date longue francaise + 3 icones (sans meteo). Mobile : sidebar verticale -> horizontale, cards masquees. |
 
-### Lot 3 - Aujourd'hui (INVALIDE - a reprendre en Lot 3-bis)
+### Lot 3 - Aujourd'hui (INVALIDE - repris en Lot 3-bis)
 
-Note : le Lot 3 d'origine (commit `810e4fe`) ajoutait juste une `CoachAdviceBar` en bas de page. Cette implementation ne correspond pas au mockup qui demande une refonte complete de la page Aujourd'hui (grille 6 KPI, carte Lecture du jour redessinee, 4 cards graphiques, section recuperation 4 cards + Sortie suggeree, bandeau Conseil du jour). Sera repris en Lot 3-bis apres validation utilisateur Lot 2-bis.
+Le Lot 3 d'origine (commit `810e4fe`) ne correspondait pas au mockup. Repris integralement en Lot 3-bis ci-dessous.
+
+### Lot 3-bis - Refonte page Aujourd'hui mockup-faithful (TERMINE, en attente recette utilisateur)
+
+| Element | Statut / notes |
+|---|---|
+| Statut | TERMINE - en attente recette visuelle utilisateur avant Lot 4 |
+| Decisions validees | V6 Disponibilite : OK validee scientifiquement (formule = 0.6 * Aptitude + 0.4 * TSB normalise, refs Plews 2013, Buchheit 2014, Banister 1991, Coggan-Allen 2019). V7 Sortie suggeree : placeholder. V8 Mini-graphes : 14 jours. V9 Lecture du jour : nouveau composant TodayReadingCard mockup-faithful (l'ancienne DashboardDecisionSummaryCard reste disponible pour usage ailleurs si besoin). |
+| Composants crees | `KpiGaugeCircular` (jauge circulaire 0-100 avec tone, tailles sm/md/lg), `ConfidenceDots` (5 dots colores avec label Elevee/Moyenne/Faible), `KpiCardCompact` (carte KPI haut avec icone + label + valeur + hint + delta + jauge optionnelle), `TodayReadingCard` (Lecture du jour avec icone + verdict + description + ConfidenceDots + bouton ->), `KpiChartCard` (grosse carte avec valeur + delta + mini-graphe line/bar 14j + footnote), `RecoveryKpiCard` (carte recup compact avec gauge ou mini-graphe + lien detail), `SuggestedWorkoutCard` (placeholder sortie suggeree avec stats + bouton "Voir le detail") |
+| Helper cree | `availabilityScore.js` avec `computeAvailabilityScore` et `normalizeTsb`. 12 tests Vitest passants. Documente dans backlog avec references Plews/Buchheit/Banister. |
+| Refonte DashboardPage | Reecrite integralement : 1) AppShell title="Aujourd'hui 👋", 2) grille 6 KpiCardCompact (Charge/Fatigue/Volume/Denivele + Recuperation jauge + Disponibilite jauge), 3) TodayReadingCard avec verdict + ConfidenceDots, 4) grille 4 KpiChartCard avec graphes 14j (charge line, fatigue line, volume bars, denivele bars), 5) section 4 RecoveryKpiCard + 1 SuggestedWorkoutCard, 6) CoachAdviceBar bas de page. |
+| Calculs metier | Aucune modification. Reutilisation : useActivityViewModel, useRaceObjectives, getGarminRecoverySnapshots, buildTrainingLoadStateModel (load/atl/ctl/tsb), buildRecoveryViewModel (sleep/hrv/restingHr/bodyBattery/readiness), buildDashboardDecisionSummary, buildTodayConfidence, buildTrailContextSummary, computeAvailabilityScore (nouveau pur). |
+| CSS Lot 3-bis | ~+550 lignes : grille 6 KPI haut responsive (6 -> 3 -> 2 cols), KpiCardCompact icone+body+gauge, KpiGaugeCircular SVG, TodayReadingCard layout flex avec icone ronde teintee, ConfidenceDots label + 5 dots, grille 4 charts responsive (4 -> 2 -> 1 cols), KpiChartCard avec gradient tone fill, alpine-today-recovery-row 4+1 cols (4+1 -> 2 -> 1), RecoveryKpiCard avec mini-bars/line, SuggestedWorkoutCard gradient bleu clair + tags + stats grid + CTA bleu. |
+| Backlog dettes documentees | Sortie suggeree = placeholder generique (V7), algorithme genere personnalise repousse. Disponibilite affichee mais formule a valider par revue scientifique externe. |
+| Tests realises | Vitest 168/168 (12 nouveaux availabilityScore.test), ESLint 0 warning, build Vite OK 386 ms. |
+| Risques residuels | Faible : aucun calcul metier modifie. La nouvelle DashboardPage consomme tous les hooks existants. Les anciens composants (DashboardDecisionSummaryCard, TodaySevenDaySummary, TodayUsefulActivities, TodayHeader, TodayAlertBanner) ne sont plus references mais conserves pour suppression Lot 10. |
+| Commit | `feat(today): rebuild dashboard per alpine light mockup (Lot 3-bis)` (a creer) |
+| Recette visuelle requise | Page / (Accueil) doit afficher : 6 KpiCardCompact en grille, TodayReadingCard avec verdict + 5 dots, 4 KpiChartCard 14j, 4 RecoveryKpiCard + 1 SuggestedWorkoutCard, CoachAdviceBar. Verifier responsive desktop/tablette/mobile. |
+
+### Lot 3 (initial) - Aujourd'hui (TERMINE)
 
 ### Lot 3 (initial) - Aujourd'hui (TERMINE)
 
