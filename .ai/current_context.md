@@ -1,14 +1,23 @@
 # Current Context
 
+## Cadre qualite permanent
+
+- Plan qualite traite puis archive sous `docs/plans/old/runsee_cadre_recette_suivi_qualite_v3.md`.
+- Documentation reorganisee : les plans termines sont centralises dans `docs/plans/old/`, les plans actifs futurs dans `docs/plans/active/`, les decisions dans `docs/decisions/`, les releases dans `docs/releases/`, les operations dans `docs/operations/`.
+- Les documents multi-source sont maintenant ranges sous `docs/architecture/`.
+- Cadre qualite cree : `docs/quality/RUNSEE_QUALITY_GATE.md`, `docs/quality/RUNSEE_TEST_LOG.md`, `docs/quality/RUNSEE_VALIDATION_MATRIX.md`, `docs/quality/RUNSEE_RELEASE_CHECKLIST.md`.
+- ADR initiaux crees : multi-source Strava/Garmin, politique backfill Garmin, quality gate.
+- Regle de travail : chaque chantier significatif doit mettre a jour le test log, la matrice de validation et `.ai` avant commit ; aucun tag stable ne doit etre pose sans checklist release complete.
+
 ## Mise a jour de fiabilisation en cours
 
-- Nouveau plan actif lu : `docs/runsee_plan_fiabilisation_frontend_backend_science_ux.md`.
+- Nouveau plan actif lu : `docs/plans/old/runsee_plan_fiabilisation_frontend_backend_science_ux.md`.
 - Objectif de cette passe : finaliser les garde-fous frontend/backend sans modifier les calculs metier centraux.
 - Backend : route assistant existante montee sur `/assistant`, `/health` enrichi avec probe DB, reponse d'erreur standardisee en conservant le format legacy `message/details`.
 - Frontend : confiance de l'Aptitude RunNSee rendue plus explicite (`coveredWeight`, `sourcesCount`, statut `Insuffisante` quand aucune source exploitable).
 - Glossaire : libelle canonique `Aptitude RunNSee`, ancien `Aptitude RunSee` conserve en alias.
 - DB : ajout d'un controle `npm run db:compare-schemas` pour detecter une divergence de modeles Prisma SQLite/PostgreSQL.
-- Nouveau plan de stabilisation pre-ajouts lu : `docs/runsee_plan_stabilisation_pre_ajouts_codex.md`.
+- Nouveau plan de stabilisation pre-ajouts lu : `docs/plans/old/runsee_plan_stabilisation_pre_ajouts_codex.md`.
 - Stabilisation pre-ajouts en cours : packaging Git, validation GREEN auth-aware, bridge Garmin activite, timestamps Garmin, import PostgreSQL, tests backend purs.
 - `lastSyncAt` reste reserve a la synchronisation recovery Garmin ; l'enrichissement activite Garmin ne doit plus le deplacer.
 - Les metriques Garmin de seance sont libellees comme estimations/donnees Garmin, pas comme mesures physiologiques directes.
@@ -63,7 +72,7 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 
 ## Plan Trail + statuts providers + sync globale
 
-- Nouveau plan execute : `docs/runsee_plan_trail_sync_global_codex_v2.md`.
+- Nouveau plan execute : `docs/plans/old/runsee_plan_trail_sync_global_codex_v2_20260507.md`.
 - Backend : ajout de `GET /providers/status` pour exposer un etat filtre Strava/Garmin sans secret.
 - Backend : ajout de `POST /sync/all`, orchestration prudente Strava incremental + Garmin recovery recent ; Garmin activity enrichment reste volontairement skippe hors contexte activite.
 - Frontend layout : le panneau compte affiche maintenant les pastilles Strava/Garmin et un bouton de synchronisation globale compact.
@@ -76,26 +85,26 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 
 ## Correctif post Trail + providers + sync globale
 
-- Nouveau plan traite : `docs/runsee_plan_correctif_post_trail_provider_sync.md`, archive ensuite sous `docs/old/`.
+- Nouveau plan traite : `docs/plans/old/runsee_plan_correctif_post_trail_provider_sync.md`, archive ensuite sous `docs/plans/old/`.
 - Sidebar compte : le statut Strava historique du header est retire ; Strava et Garmin sont affiches une seule fois au meme niveau dans les pastilles provider.
 - `Lecture du jour` : la carte est reorganisee en verdict, action du jour, vigilance et signaux cles ; le contexte trail est integre a la decision au lieu d'un bloc analytique separe.
 - Sync globale : `/sync/all` cree un job `global_incremental` sequentiel qui lance Strava incremental, Garmin recuperation recente puis Garmin activites recentes bornees.
 - Garmin activites global : enrichissement recent en mode `recent_missing`, fenetre configuree par `GARMIN_ACTIVITY_ENRICHMENT_GLOBAL_DAYS` avec plafond applicatif a 30 jours.
-- Documentation : convention d'archive standardisee sur `docs/old/`.
+- Documentation : convention d'archive standardisee sur `docs/plans/old/`.
 
 ## Plan multi-sources Strava/Garmin avec fallback Garmin
 
-- Nouveau plan traite : `docs/runsee_plan_multisource_garmin_fallback_v2.md`, archive ensuite sous `docs/old/`.
+- Nouveau plan traite : `docs/plans/old/runsee_plan_multisource_garmin_fallback_v2.md`, archive ensuite sous `docs/plans/old/`.
 - Modele : `Activity` porte maintenant une identite canonique multi-source (`appUserId`, `sourceProvider`, `sourceActivityId`, `sourcePriority`) en conservant `stravaActivityId` pour compatibilite.
 - Modele : ajout de `ActivityProviderLink` pour tracer les matchs provider et de `ProviderBackfillCursor` pour preparer le backfill Garmin historique par fenetres.
 - Backend Garmin : ajout d'un normaliseur d'activites Garmin et d'un scorer de matching provider reutilisable.
 - Sync globale : Garmin activites recentes peut maintenant creer des activites Garmin-only quand aucun match Strava fiable n'existe et que le cas n'est pas ambigu.
 - Frontend : les listes et fiches activites utilisent un identifiant stable (`id` puis fallback source/Strava) et affichent un badge source Strava/Garmin.
-- Documentation : ajout de `docs/MULTI_SOURCE_AUDIT.md` et `docs/MULTI_SOURCE_ARCHITECTURE.md`.
+- Documentation : ajout de `docs/architecture/MULTI_SOURCE_AUDIT.md` et `docs/architecture/MULTI_SOURCE_ARCHITECTURE.md`.
 
 ## Correctif UX Aujourd'hui
 
-- Nouveau plan traite : `docs/runsee_plan_correctif_ux_aujourdhui.md`, a archiver sous `docs/old/`.
+- Nouveau plan traite : `docs/plans/old/runsee_plan_correctif_ux_aujourdhui.md`, a archiver sous `docs/plans/old/`.
 - Aujourd'hui reste une lecture fixe sur 7 jours glissants ; seul le perimetre sport est ajustable localement.
 - Le filtre sport d'Aujourd'hui n'est plus persiste dans le state dashboard long terme ; il revient par defaut sur `Course a pied / trail` et affiche un chip + reset lorsqu'il est modifie.
 - La page Aujourd'hui est ramenee a 4 blocs majeurs : header compact, lecture du jour, synthese 7 jours, activites a relire.
@@ -104,7 +113,7 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 
 ## Correctif doublons Strava/Garmin et stabilisation multi-source
 
-- Nouveau plan traite : `docs/runsee_correctif_doublons.md`, archive ensuite sous `docs/old/`.
+- Nouveau plan traite : `docs/plans/old/runsee_correctif_doublons.md`, archive ensuite sous `docs/plans/old/`.
 - Matching Strava/Garmin renforce : fenetre possible 20 min si les metriques sont fortes, controle distance/duree/D+/FC, sport compatible, nom non bloquant.
 - Garmin-only securise : une activite Garmin deja liee ou ambigue ne recree pas de fallback canonique.
 - Duplicats existants : ajout de scripts dry-run/apply pour detecter puis soft-merger Garmin vers Strava sans suppression physique.
@@ -121,7 +130,7 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 
 ## Backfill historique Garmin activites
 
-- Nouveau chantier traite : `docs/runsee_chantier_backfill_garmin.md`, archive ensuite sous `docs/old/`.
+- Nouveau chantier traite : `docs/plans/old/runsee_chantier_backfill_garmin.md`, archive ensuite sous `docs/plans/old/`.
 - Baseline de depart conservee : tag `runsee-stable-post-garmin-dedup`.
 - Le backfill historique Garmin utilise `ProviderBackfillCursor` existant, sans migration Prisma.
 - Le backfill est lance manuellement depuis Admin, puis poursuivi automatiquement par scheduler backend.
@@ -137,7 +146,7 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 
 ## Review finale post-correctif Garmin/Strava
 
-- Plan de controle traite : `docs/runsee_review_finale.md`, archive sous `docs/old/runsee_review_finale.md`.
+- Plan de controle traite : `docs/plans/old/runsee_review_finale.md`, archive sous `docs/plans/old/runsee_review_finale.md`.
 - Git : diff applicatif nul avant review, seul le plan etait non suivi ; archive source generee via `git archive` depuis `HEAD`.
 - Backend : Prisma SQLite/PostgreSQL valides, schemas alignes, tests backend verts (15/15), `node --check` OK sur `src/app.js` et `src/server.js`.
 - Frontend : tests Vitest verts (148/148) et build Vite OK.
@@ -147,7 +156,7 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 
 ## Review code post-dedup et durcissement matching exact
 
-- Plan traite : `docs/runsee_review_code_post_dedup.md`, archive sous `docs/old/runsee_review_code_post_dedup.md`.
+- Plan traite : `docs/plans/old/runsee_review_code_post_dedup.md`, archive sous `docs/plans/old/runsee_review_code_post_dedup.md`.
 - Correction appliquee : le statut provider `exact` exige maintenant un timestamp proche ET des ecarts distance/duree de grade exact ; les matches proches mais moins stricts restent `probable/matched_tolerated`.
 - Tests adaptes : un cas proche avec duree differente d'environ une minute reste matche, mais n'est plus surclasse en exact.
 - Verification enrichissements post-merge prod : 0 enrichment Garmin reste attache a une activite merged, 0 cible Strava sans enrichment, 0 mismatch de providerActivityId sur les cibles.
@@ -156,7 +165,7 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 
 ## Stabilisation pre-usage reel du backfill historique Garmin
 
-- Plan traite : `docs/runsee_review_backfill_garmin_derniere_version.md`, archive ensuite sous `docs/old/`.
+- Plan traite : `docs/plans/old/runsee_review_backfill_garmin_derniere_version.md`, archive ensuite sous `docs/plans/old/`.
 - Ajout de `ProviderBackfillWindowLog` (SQLite + PostgreSQL) pour historiser chaque fenetre Garmin : dates, statut, compteurs, erreur, doublons detectes et resultat JSON redige.
 - Le statut Admin ne depend plus uniquement des extras de la derniere requete : les compteurs `matched`, `Garmin-only`, `ambiguous` et `rejected` sont recalcules depuis les logs persistants.
 - Le backfill controle les doublons avant ecriture ; si un doublon actif existe deja, la fenetre est bloquee et le curseur passe en `error` sans avancer.
@@ -166,7 +175,7 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 
 ## Recette controlee backfill Garmin - fenetre 1
 
-- Plan traite : `docs/runsee_plan_suite_backfill_garmin.md`, archive ensuite sous `docs/old/`.
+- Plan traite : `docs/plans/old/runsee_plan_suite_backfill_garmin.md`, archive ensuite sous `docs/plans/old/`.
 - Production alignee sur le commit `d4e612d` avant recette ; migration `ProviderBackfillWindowLog` deja appliquee.
 - Variables prod explicites : `GARMIN_BACKFILL_WINDOW_DAYS=180`, `GARMIN_BACKFILL_MIN_INTERVAL_MINUTES=60`, `GARMIN_BACKFILL_MAX_WINDOWS_PER_RUN=1`, `GARMIN_BACKFILL_SCAN_INTERVAL_MINUTES=10`, `GARMIN_BACKFILL_ALLOW_FORCE_RUN=false`, `GARMIN_BACKFILL_MIN_DATE=2015-01-01`.
 - Dry-run doublons initial prod : `duplicateCount=0`.

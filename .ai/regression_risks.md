@@ -1,5 +1,12 @@
 # Regression Risks
 
+## Documentation / quality gate
+
+- Zone : `docs/quality/`, `docs/decisions/`, `docs/plans/*`, `.ai/*`.
+- Risque : le contexte agent ou les plans futurs pointent vers d'anciens chemins (`docs/old`, documents multi-source a la racine) et relancent une recette obsolete.
+- Garde-fous presents : `docs/README.md`, `.ai/README.md`, ADR quality gate, matrice de validation et test log permanents.
+- Validation requise : verifier les references actives avant chaque commit documentaire, puis regenerer l'archive review depuis un `HEAD` propre si le plan l'exige.
+
 ## Risques surveilles dans la passe de fiabilisation
 
 ### Statuts providers dans le layout

@@ -1,5 +1,15 @@
 # Open Tasks
 
+## Cadre qualite permanent
+
+- [x] Creer le dossier `docs/quality/` avec quality gate, test log, matrice de validation et checklist release.
+- [x] Reorganiser la documentation : architecture, decisions, operations, plans actifs, plans archives et releases.
+- [x] Archiver les anciens plans depuis `docs/old/` vers `docs/plans/old/`.
+- [x] Ajouter les ADR initiaux multi-source Strava/Garmin, backfill Garmin et quality gate.
+- [x] Ajouter `docs/README.md` et `.ai/README.md` pour cadrer l'usage durable de la documentation.
+- [ ] Tenir `docs/quality/RUNSEE_TEST_LOG.md` et `docs/quality/RUNSEE_VALIDATION_MATRIX.md` a jour a chaque futur chantier.
+- [ ] Completer la validation visuelle authentifiee post backfill Garmin : Activites, Aujourd'hui, Analytics, absence de double comptage UI.
+
 ## Termines dans la passe de fiabilisation frontend/backend/science/UX
 
 - [x] Monter la route backend assistant existante sur `/assistant`.

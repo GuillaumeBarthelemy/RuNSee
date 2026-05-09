@@ -9,6 +9,18 @@ Monorepo `C:\Services\RuNSee` :
 - DB dev : SQLite `backend/dev.db` local, ignore Git.
 - DB prod cible : PostgreSQL via `backend/prisma-postgresql/schema.prisma`.
 
+## Documentation projet
+
+- `docs/README.md` : point d'entree documentaire et conventions de classement.
+- `docs/architecture/` : documents d'architecture vivants, dont `MULTI_SOURCE_AUDIT.md` et `MULTI_SOURCE_ARCHITECTURE.md`.
+- `docs/quality/` : quality gate, test log, matrice de validation et checklist release.
+- `docs/decisions/` : ADR RunNSee.
+- `docs/plans/active/` : plans en cours.
+- `docs/plans/old/` : plans termines et archives.
+- `docs/releases/` : baselines, tags et notes de release.
+- `docs/operations/` : runbooks et procedures operationnelles.
+- `.ai/README.md` : cadrage du contexte agent court terme.
+
 ## Backend critique
 
 - `src/app.js` : montage routes Express.
@@ -60,7 +72,7 @@ Monorepo `C:\Services\RuNSee` :
 - `scripts/db/report-database-snapshot.js` : snapshot counts + integrite Garmin.
 - `scripts/db/detect-provider-activity-duplicates.js` : detection dry-run des doublons Strava/Garmin par utilisateur.
 - `scripts/db/repair-provider-activity-duplicates.js` : soft-merge explicite Garmin -> Strava, sans suppression physique.
-- `docs/old/runsee_review_finale.md` : plan de controle final post-correctif Garmin/Strava et criteres de baseline stable.
+- `docs/plans/old/runsee_review_finale.md` : plan de controle final post-correctif Garmin/Strava et criteres de baseline stable.
 - `deployment/scripts/Export-RunSeeSourceArchive.ps1` : archive source propre via `git archive`.
 - `deployment/postgresql/scripts/validate-green-stack.ps1` : validation GREEN publique ou authentifiee selon cookie fourni.
 
