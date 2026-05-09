@@ -17,9 +17,9 @@ Source de verite :
 | Champ | Valeur |
 |---|---|
 | Chantier | Refonte UX/UI Alpine Light |
-| Statut global | En cours - Lot 1 termine, en attente GO Lot 2 |
-| Dernier lot traite | Lot 1 - Design system Alpine Light |
-| Dernier commit | a creer apres MAJ suivi |
+| Statut global | En cours - Lot 2 termine, enchainement Lot 3 |
+| Dernier lot traite | Lot 2 - Layout global Alpine Light |
+| Dernier commit | `3867622 feat(ui): introduce alpine light layout primitives` puis Lot 2 a creer |
 | Derniere archive review | `runsee-source-review-analysis-confidence-final.zip` (chantier precedent) |
 | Dernier test frontend | 156/156 (chantier precedent, post correctif Charge) |
 | Dernier test backend | 21/21 |
@@ -89,17 +89,23 @@ Source de verite :
 | Risques residuels | Aucun (additif). Les pages existantes n'utilisent PAS encore les nouvelles primitives Alpine Light. La migration page par page sera faite dans les Lots 2-9. |
 | Commit | `feat(ui): introduce alpine light layout primitives` (a pousser) |
 
-### Lot 2 - Layout global
+### Lot 2 - Layout global Alpine Light (TERMINE)
 
 | Element | Statut / notes |
 |---|---|
-| Statut | Pas demarre |
-| Fichiers prevus | `frontend/src/layouts/AppLayout.jsx`, `AppShell.jsx`, `components/AppNavigation.jsx`, `AppTopbar.jsx`, `AppBrand.jsx`, ajout bandeau montagne discret. |
-| Sidebar | A re-styler Alpine Light, conserver routes existantes |
-| Topbar | Allegement, meteo legere si dispo |
-| Header / bandeau montagne | Bandeau visuel discret en haut de page |
-| Responsive | Mobile-first, sidebar transformable |
-| Commit prevu | `feat(ui): harmonize alpine light app layout` |
+| Statut | TERMINE - layout global homogeneise Alpine Light |
+| Fichiers modifies | `frontend/src/layouts/AppShell.jsx` (classe `.app-header-alpine`), `frontend/src/styles.css` (~+90 lignes / -20 lignes pour repivot sidebar/topbar/header) |
+| Sidebar | Refonte en blanc/lumineux : fond `--al-surface`, bordure droite `--al-border`, kicker en `--al-muted`, items nav en `--al-text-soft` avec hover bleu primary-soft et actif fond `--al-primary` blanc. Logo conservé sur fond clair. |
+| Carte compte sidebar | Refonte gradient subtil bleu clair (`--al-primary-soft` -> `--al-surface`), texte sombre, avatar avec fond blanc et accent bleu. |
+| Pastilles provider | Pivot Alpine Light : `is-connected`/`is-warning`/`is-error`/`is-pending` consomment les variables `--al-success-soft`/`--al-warning-soft`/`--al-alert-soft`/`--al-surface-soft`. |
+| Liens nav (`.app-nav-link`, `.topnav-link`) | Refonte : pas de bordure ni fond par defaut, hover bleu pale, actif bleu primaire fond. Hauteur reduite a 44 px (etait 48). |
+| AppShell header | Nouveau style `.app-header-alpine` : carte arrondie avec gradient bleu clair, eyebrow bleu primaire, titre 26 px sombre, sous-titre muted, responsive mobile. |
+| Bandeau montagne | Ajoute via `.app-main::before` : SVG inline 180 px en haut, opacite 5%, gradient `--al-primary-soft` vers transparent. Pointer-events none. Z-index 0 avec contenu en z-index 1. |
+| Bouton Glossaire sidebar | Conserve `.button.button-outline`, fond blanc compatible Alpine Light. |
+| Bouton sync sidebar (icon) | Pivot Alpine Light : fond blanc, icone bleu primaire, hover bleu pale + bordure primaire. |
+| Tests realises | Vitest 156/156, ESLint 0 warning sur les 6 fichiers layout, build Vite OK 371 ms. |
+| Risques residuels | Faible : transition visuelle importante (sidebar bleu fonce -> blanc). Pages contenu inchangees, leurs styles `.card`/`.section` restent compatibles avec le nouveau fond clair. Pas de regression fonctionnelle (handlers, routes, hash routing tous conserves). |
+| Commit | `feat(ui): harmonize alpine light app layout` (a creer) |
 
 ### Lot 3 - Aujourd'hui
 
@@ -196,6 +202,9 @@ Source de verite :
 | 2026-05-09 (Lot 1) | npm run build frontend | OK 445 ms | Bundles vendor/charts/maps inchanges, dist OK |
 | 2026-05-09 (Lot 1) | npx eslint src/components/visuals/alpine src/pages/VisualsPreviewPage.jsx | 0 warning | Tous les composants Alpine Light propres |
 | 2026-05-09 (Lot 1) | git diff --check | OK | Pas de whitespace bloquant |
+| 2026-05-09 (Lot 2) | npm test -- --run frontend | 156/156 OK | Layout repivote sans regression fonctionnelle |
+| 2026-05-09 (Lot 2) | npm run build frontend | OK 371 ms | Build OK |
+| 2026-05-09 (Lot 2) | npx eslint AppShell/AppLayout/AppNavigation/AppTopbar/CurrentAccountPanel/AppBrand | 0 warning | Layout propre |
 
 ---
 
@@ -268,14 +277,13 @@ Source de verite :
 ## 10. Etat de reprise rapide
 
 ```text
-Derniere action realisee : Lot 1 termine - 10 primitives Alpine Light + variables CSS + demo etendue
-Dernier fichier modifie : SUIVI_CHANTIER_ALPINE_LIGHT.md (mise a jour Lot 1)
-Dernier lot en cours : Lot 1 (termine, en attente commit + GO Lot 2)
-Prochaine action exacte : Commit "feat(ui): introduce alpine light layout primitives", push, puis attendre GO utilisateur Lot 2 (Layout global)
-Blocage eventuel : Aucun
-Tests a relancer apres codage Lot 2 : npm test, npm run build, ESLint sur fichiers touches
-Fichiers a relire avant Lot 2 : .tmp/alpine_light/01_plan/...md sections 8 (layout) et 9 (Aujourd'hui), AppLayout.jsx, AppNavigation.jsx, AppTopbar.jsx
-Composants Alpine Light prets a etre consommes : PageHeader, SectionHeader, KpiCard, InsightCard, RightRailCard, SubTabs, MetricRow, CoachAdviceBar, EmptyState, SourceBadge
-Variables CSS Alpine Light prefixees `--al-*` declarees dans :root de styles.css
-URL de validation visuelle : /visuals-preview (apres login) - les nouvelles primitives sont en bas de la page
+Derniere action realisee : Lot 2 termine - layout global homogeneise Alpine Light
+Dernier fichier modifie : styles.css + AppShell.jsx + SUIVI_CHANTIER_ALPINE_LIGHT.md
+Dernier lot en cours : Lot 2 (termine, en attente commit + Lot 3)
+Prochaine action exacte : Commit "feat(ui): harmonize alpine light app layout", push, puis enchainer Lot 3 (Aujourd'hui)
+Blocage eventuel : Aucun. Note : transition visuelle sidebar foncé -> Alpine Light visible immediatement sur toutes les pages. Validation visuelle utilisateur recommandee mais non bloquante (tests/build/lint OK).
+Tests a relancer apres codage Lot 3 : npm test, npm run build, ESLint sur fichiers touches
+Fichiers a relire avant Lot 3 : sections 9 (Aujourd'hui) du plan, DashboardPage.jsx, DashboardDecisionSummaryCard.jsx, TodayHeader.jsx, TodayReadinessCard.jsx, TodayFormCards.jsx
+Composants Alpine Light a consommer en Lot 3 : PageHeader, KpiCard, InsightCard, CoachAdviceBar, MetricRow, RightRailCard
+URL de validation visuelle Alpine Light : / (Aujourd'hui), /admin, /glossaire, /visuals-preview
 ```
