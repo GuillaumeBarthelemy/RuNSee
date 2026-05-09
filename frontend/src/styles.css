@@ -37,6 +37,35 @@
   --color-sidebar-light: #2C4A73;
   --color-sidebar-active: #355886;
 
+  /* --- Palette Alpine Light (refonte UX/UI Lot 1) ------------------------ */
+  /* Variables additives, ne remplacent pas les vars existantes utilisees par
+     les composants antérieurs. Les primitives `components/visuals/alpine/`
+     consomment ces vars en priorité. Cf. plan section 7.2. */
+  --al-bg: #f7faff;
+  --al-surface: #ffffff;
+  --al-surface-soft: #f1f6ff;
+  --al-border: #dfe8f5;
+  --al-border-soft: #eaf0fa;
+  --al-text: #0f2147;
+  --al-text-soft: #2a3f6b;
+  --al-muted: #64748b;
+  --al-primary: #1268f3;
+  --al-primary-soft: #e8f1ff;
+  --al-primary-stronger: #0a4fbb;
+  --al-success: #35a853;
+  --al-success-soft: #e8f6ec;
+  --al-warning: #f59e0b;
+  --al-warning-soft: #fef4e0;
+  --al-alert: #ef4444;
+  --al-alert-soft: #fde6e6;
+  --al-info: #4f8df7;
+  --al-info-soft: #e6efff;
+  --al-shadow-card: 0 4px 14px rgba(15, 33, 71, 0.06);
+  --al-shadow-strong: 0 10px 30px rgba(15, 33, 71, 0.10);
+  --al-radius-card: 16px;
+  --al-radius-pill: 999px;
+  --al-radius-input: 10px;
+
   --shadow-soft: 0 6px 18px rgba(27, 42, 65, 0.06);
   --shadow-strong: 0 10px 24px rgba(27, 42, 65, 0.1);
 
@@ -8085,4 +8114,663 @@ button.alert-banner-positive-item {
     width: 100%;
     justify-content: flex-start;
   }
+}
+
+/* ============================================================================
+   Alpine Light — Lot 1 design system
+   Composants additifs sous src/components/visuals/alpine/
+   Cf. plan section 7 (palette + composants visuels) et mockups validés.
+   ============================================================================ */
+
+/* --- PageHeader -------------------------------------------------------- */
+
+.alpine-page-header {
+  position: relative;
+  margin-bottom: 24px;
+  padding: 28px 28px 24px;
+  background: linear-gradient(180deg, var(--al-primary-soft, #e8f1ff) 0%, var(--al-bg, #f7faff) 100%);
+  border-radius: var(--al-radius-card, 16px);
+  overflow: hidden;
+}
+
+.alpine-page-header.with-mountains::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 60px;
+  background-image:
+    linear-gradient(180deg, transparent 0%, rgba(247, 250, 255, 0.4) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'><path fill='%231268f3' fill-opacity='0.08' d='M0 80 L120 50 L240 70 L360 30 L480 60 L600 20 L720 55 L840 35 L960 65 L1080 25 L1200 60 L1200 120 L0 120 Z'/></svg>");
+  background-size: 100% 60px;
+  background-repeat: no-repeat;
+  background-position: bottom;
+  pointer-events: none;
+}
+
+.alpine-page-header-inner {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.alpine-page-header-text { flex: 1; min-width: 0; }
+
+.alpine-page-header-eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--al-primary, #1268f3);
+  margin-bottom: 8px;
+}
+
+.alpine-page-header-title {
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin: 0;
+}
+
+.alpine-page-header-subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--al-muted, #64748b);
+  line-height: 1.5;
+  max-width: 720px;
+}
+
+.alpine-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+  .alpine-page-header { padding: 22px 18px 20px; }
+  .alpine-page-header-title { font-size: 22px; }
+  .alpine-page-header-actions { width: 100%; }
+}
+
+/* --- SectionHeader ----------------------------------------------------- */
+
+.alpine-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.alpine-section-header-text { flex: 1; min-width: 0; }
+
+.alpine-section-header-kicker {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--al-primary, #1268f3);
+  margin-bottom: 4px;
+}
+
+.alpine-section-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alpine-section-header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin: 0;
+}
+
+.alpine-section-header-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-section-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* --- KpiCard ----------------------------------------------------------- */
+
+.alpine-kpi-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: var(--al-radius-card, 16px);
+  box-shadow: var(--al-shadow-card);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.alpine-kpi-card:hover { box-shadow: var(--al-shadow-strong); }
+
+.alpine-kpi-card-tone-1 { border-left: 4px solid var(--tone-1); }
+.alpine-kpi-card-tone-2 { border-left: 4px solid var(--tone-2); }
+.alpine-kpi-card-tone-3 { border-left: 4px solid var(--tone-3); }
+.alpine-kpi-card-tone-4 { border-left: 4px solid var(--tone-4); }
+.alpine-kpi-card-tone-5 { border-left: 4px solid var(--tone-5); }
+
+.alpine-kpi-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alpine-kpi-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--al-primary-soft, #e8f1ff);
+  color: var(--al-primary, #1268f3);
+}
+
+.alpine-kpi-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-kpi-card-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.alpine-kpi-card-value {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-kpi-card-unit {
+  font-size: 13px;
+  color: var(--al-muted, #64748b);
+  font-weight: 500;
+}
+
+.alpine-kpi-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.alpine-kpi-card-hint {
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-kpi-card-footer {
+  margin-top: 4px;
+  border-top: 1px dashed var(--al-border-soft, #eaf0fa);
+  padding-top: 8px;
+}
+
+@media (max-width: 720px) {
+  .alpine-kpi-card { padding: 14px 14px; }
+  .alpine-kpi-card-value { font-size: 24px; }
+}
+
+/* --- InsightCard ------------------------------------------------------- */
+
+.alpine-insight-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--al-radius-card, 16px);
+  border: 1px solid var(--al-border, #dfe8f5);
+  background: var(--al-surface, #ffffff);
+}
+
+.alpine-insight-card.alpine-insight-info {
+  background: var(--al-info-soft);
+  border-color: rgba(79, 141, 247, 0.30);
+}
+.alpine-insight-card.alpine-insight-success {
+  background: var(--al-success-soft);
+  border-color: rgba(53, 168, 83, 0.30);
+}
+.alpine-insight-card.alpine-insight-warning {
+  background: var(--al-warning-soft);
+  border-color: rgba(245, 158, 11, 0.32);
+}
+.alpine-insight-card.alpine-insight-alert {
+  background: var(--al-alert-soft);
+  border-color: rgba(239, 68, 68, 0.32);
+}
+.alpine-insight-card.alpine-insight-neutral {
+  background: var(--al-surface-soft, #f1f6ff);
+  border-color: var(--al-border-soft, #eaf0fa);
+}
+
+.alpine-insight-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alpine-insight-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.alpine-insight-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--al-text-soft, #2a3f6b);
+}
+
+.alpine-insight-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--al-text, #0f2147);
+}
+
+/* --- RightRailCard ----------------------------------------------------- */
+
+.alpine-rail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: var(--al-radius-card, 16px);
+  border: 1px solid var(--al-border, #dfe8f5);
+  background: var(--al-surface, #ffffff);
+  box-shadow: var(--al-shadow-card);
+}
+
+.alpine-rail-card--soft {
+  background: var(--al-surface-soft, #f1f6ff);
+  box-shadow: none;
+}
+
+.alpine-rail-card-head { display: flex; flex-direction: column; gap: 4px; }
+
+.alpine-rail-card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-rail-card-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-rail-card-body { font-size: 13px; color: var(--al-text-soft, #2a3f6b); }
+
+.alpine-rail-card-footer {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--al-primary, #1268f3);
+}
+
+/* --- SubTabs ----------------------------------------------------------- */
+
+.alpine-subtabs {
+  width: 100%;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: var(--al-radius-pill, 999px);
+  padding: 4px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.alpine-subtabs-track {
+  display: inline-flex;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.alpine-subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--al-muted, #64748b);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--al-radius-pill, 999px);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.alpine-subtab:hover {
+  background: var(--al-surface-soft, #f1f6ff);
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-subtab.is-active {
+  background: var(--al-primary, #1268f3);
+  color: #ffffff;
+}
+
+.alpine-subtab.is-active:hover { background: var(--al-primary-stronger, #0a4fbb); }
+
+.alpine-subtab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--al-radius-pill, 999px);
+  background: rgba(15, 33, 71, 0.1);
+}
+
+.alpine-subtab.is-active .alpine-subtab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .alpine-subtab { padding: 7px 12px; font-size: 12px; }
+}
+
+/* --- MetricRow --------------------------------------------------------- */
+
+.alpine-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--al-border-soft, #eaf0fa);
+}
+
+.alpine-metric-row:last-child { border-bottom: none; }
+
+.alpine-metric-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--al-text-soft, #2a3f6b);
+}
+
+.alpine-metric-row-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  color: var(--al-primary, #1268f3);
+}
+
+.alpine-metric-row-value-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.alpine-metric-row-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-metric-row-value.tone-1 { color: var(--tone-1); }
+.alpine-metric-row-value.tone-2 { color: var(--tone-2); }
+.alpine-metric-row-value.tone-3 { color: var(--al-text, #0f2147); }
+.alpine-metric-row-value.tone-4 { color: var(--tone-4); }
+.alpine-metric-row-value.tone-5 { color: var(--tone-5); }
+
+.alpine-metric-row-unit {
+  margin-left: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-metric-row-hint {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+
+/* --- CoachAdviceBar ---------------------------------------------------- */
+
+.alpine-coach-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--al-radius-card, 16px);
+  border: 1px solid rgba(79, 141, 247, 0.30);
+  background: linear-gradient(135deg, var(--al-info-soft) 0%, var(--al-surface, #ffffff) 100%);
+  margin-top: 16px;
+}
+
+.alpine-coach-bar.alpine-coach-bar-success {
+  border-color: rgba(53, 168, 83, 0.30);
+  background: linear-gradient(135deg, var(--al-success-soft) 0%, var(--al-surface, #ffffff) 100%);
+}
+
+.alpine-coach-bar.alpine-coach-bar-warning {
+  border-color: rgba(245, 158, 11, 0.32);
+  background: linear-gradient(135deg, var(--al-warning-soft) 0%, var(--al-surface, #ffffff) 100%);
+}
+
+.alpine-coach-bar.alpine-coach-bar-neutral {
+  border-color: var(--al-border, #dfe8f5);
+  background: var(--al-surface, #ffffff);
+}
+
+.alpine-coach-bar-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border-radius: 50%;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border-soft, #eaf0fa);
+}
+
+.alpine-coach-bar-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+.alpine-coach-bar-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--al-primary, #1268f3);
+}
+
+.alpine-coach-bar-message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-coach-bar-action {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--al-primary, #1268f3);
+  background: transparent;
+  color: var(--al-primary, #1268f3);
+  border-radius: var(--al-radius-pill, 999px);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.alpine-coach-bar-action:hover {
+  background: var(--al-primary, #1268f3);
+  color: #ffffff;
+}
+
+@media (max-width: 720px) {
+  .alpine-coach-bar { flex-direction: column; align-items: flex-start; }
+  .alpine-coach-bar-action { align-self: stretch; text-align: center; }
+}
+
+/* --- EmptyState -------------------------------------------------------- */
+
+.alpine-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 36px 20px;
+  background: var(--al-surface, #ffffff);
+  border: 1px dashed var(--al-border, #dfe8f5);
+  border-radius: var(--al-radius-card, 16px);
+}
+
+.alpine-empty-state-icon {
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--al-primary, #1268f3);
+  background: var(--al-primary-soft, #e8f1ff);
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+
+.alpine-empty-state-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-empty-state-description {
+  margin: 0;
+  font-size: 13px;
+  color: var(--al-muted, #64748b);
+  max-width: 480px;
+}
+
+.alpine-empty-state-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.alpine-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--al-radius-pill, 999px);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.alpine-button--primary {
+  background: var(--al-primary, #1268f3);
+  color: #ffffff;
+  border-color: var(--al-primary, #1268f3);
+}
+
+.alpine-button--primary:hover {
+  background: var(--al-primary-stronger, #0a4fbb);
+  border-color: var(--al-primary-stronger, #0a4fbb);
+}
+
+.alpine-button--ghost {
+  background: transparent;
+  color: var(--al-primary, #1268f3);
+  border-color: var(--al-border, #dfe8f5);
+}
+
+.alpine-button--ghost:hover {
+  background: var(--al-primary-soft, #e8f1ff);
+  border-color: var(--al-primary, #1268f3);
+}
+
+/* --- SourceBadge ------------------------------------------------------- */
+
+.alpine-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--al-radius-pill, 999px);
+  border: 1px solid var(--al-border, #dfe8f5);
+  background: var(--al-surface, #ffffff);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--al-text-soft, #2a3f6b);
+  white-space: nowrap;
+}
+
+.alpine-source-strava {
+  border-color: rgba(252, 76, 2, 0.4);
+  color: #fc4c02;
+  background: rgba(252, 76, 2, 0.06);
+}
+
+.alpine-source-garmin {
+  border-color: rgba(0, 124, 195, 0.4);
+  color: #007cc3;
+  background: rgba(0, 124, 195, 0.06);
+}
+
+.alpine-source-runsee {
+  border-color: rgba(18, 104, 243, 0.4);
+  color: var(--al-primary, #1268f3);
+  background: var(--al-primary-soft, #e8f1ff);
+}
+
+.alpine-source-other {
+  border-color: var(--al-border, #dfe8f5);
 }

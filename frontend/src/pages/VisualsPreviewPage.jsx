@@ -4,10 +4,22 @@ import MetricGauge from "../components/visuals/MetricGauge.jsx";
 import MicroBars from "../components/visuals/MicroBars.jsx";
 import RangeBar from "../components/visuals/RangeBar.jsx";
 import TrendChip from "../components/visuals/TrendChip.jsx";
+import CoachAdviceBar from "../components/visuals/alpine/CoachAdviceBar.jsx";
+import EmptyState from "../components/visuals/alpine/EmptyState.jsx";
+import InsightCard from "../components/visuals/alpine/InsightCard.jsx";
+import KpiCard from "../components/visuals/alpine/KpiCard.jsx";
+import MetricRow from "../components/visuals/alpine/MetricRow.jsx";
+import PageHeader from "../components/visuals/alpine/PageHeader.jsx";
+import RightRailCard from "../components/visuals/alpine/RightRailCard.jsx";
+import SectionHeader from "../components/visuals/alpine/SectionHeader.jsx";
+import SourceBadge from "../components/visuals/alpine/SourceBadge.jsx";
+import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import {
+  energyLevelTone,
   freshnessTone,
   load7dTone,
   readinessTone,
+  restingHrDeltaTone,
   sleepScoreTone,
   vfcDeltaTone,
 } from "../utils/tonePicker.js";
@@ -186,6 +198,186 @@ export default function VisualsPreviewPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ============================================================
+          Alpine Light — Lot 1 design system
+          ============================================================ */}
+
+      <PageHeader
+        eyebrow="Alpine Light"
+        title="Design system Lot 1"
+        subtitle="Aperçu des primitives Alpine Light. Ces composants sont additifs et n'impactent pas les pages existantes tant qu'elles ne les consomment pas."
+      />
+
+      {/* --- KpiCard ----------------------------------------------------- */}
+      <section className="card">
+        <SectionHeader
+          kicker="Cartes KPI"
+          title="KpiCard"
+          subtitle="Carte synthétique pour Charge, Fatigue, Volume, Dénivelé, Récupération, Disponibilité."
+        />
+        <div className="visuals-preview-row" style={{ gap: 12, alignItems: "stretch" }}>
+          <div style={{ minWidth: 200, flex: "1 1 200px" }}>
+            <KpiCard
+              label="Charge (7 j)"
+              value="380"
+              unit="pts"
+              hint="Bloc standard"
+              tone={load7dTone(380)}
+              trend={{ delta: 6.4, unit: "%", tone: 2, label: "vs sem -1" }}
+            />
+          </div>
+          <div style={{ minWidth: 200, flex: "1 1 200px" }}>
+            <KpiCard
+              label="Fatigue"
+              value="42"
+              unit="pts"
+              hint="Stable"
+              tone={3}
+              trend={{ delta: -2.1, unit: "%", tone: 3, label: "vs J-7" }}
+            />
+          </div>
+          <div style={{ minWidth: 200, flex: "1 1 200px" }}>
+            <KpiCard
+              label="Volume (7 j)"
+              value="42"
+              unit="km"
+              hint="Bonne semaine"
+              tone={2}
+            />
+          </div>
+          <div style={{ minWidth: 200, flex: "1 1 200px" }}>
+            <KpiCard
+              label="Énergie"
+              value="—"
+              unit=""
+              hint="Donnée Garmin absente"
+              tone={3}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* --- InsightCard ------------------------------------------------- */}
+      <section className="card">
+        <SectionHeader
+          kicker="Lecture du jour"
+          title="InsightCard"
+          subtitle="Cartes de lecture/conseil avec tone qualitatif."
+        />
+        <div className="visuals-preview-stack" style={{ marginTop: 12 }}>
+          <InsightCard tone="success" title="Charge maitrisée" icon="✓">
+            Tu construis une bonne base. Garde une semaine plus légère toutes les 3 à 4 semaines.
+          </InsightCard>
+          <InsightCard tone="info" title="Lecture du jour" icon="ℹ">
+            Forme correcte, marge présente. Endurance ou séance modérée selon ton plan.
+          </InsightCard>
+          <InsightCard tone="warning" title="Vigilance" icon="⚠">
+            Fatigue récente élevée. Privilégie une sortie facile aujourd'hui.
+          </InsightCard>
+          <InsightCard tone="alert" title="Alerte" icon="!">
+            Trois nuits courtes consécutives détectées. Repos actif recommandé sur 24-48 h.
+          </InsightCard>
+        </div>
+      </section>
+
+      {/* --- SubTabs ----------------------------------------------------- */}
+      <section className="card">
+        <SectionHeader
+          kicker="Navigation"
+          title="SubTabs"
+          subtitle="Sous-onglets compacts utilisés dans Analyse / Performance / Progression. Source de vérité = hash URL."
+        />
+        <SubTabs
+          tabs={[
+            { id: "vue-ensemble", label: "Vue d'ensemble" },
+            { id: "charges", label: "Charges" },
+            { id: "tendances", label: "Tendances" },
+            { id: "intensites", label: "Intensités" },
+            { id: "sommeil-recup", label: "Sommeil & récupération" },
+          ]}
+          defaultTabId="vue-ensemble"
+        />
+      </section>
+
+      {/* --- MetricRow + RightRailCard ----------------------------------- */}
+      <section className="card">
+        <SectionHeader
+          kicker="Listes denses"
+          title="MetricRow + RightRailCard"
+          subtitle="Affichage compact pour la colonne droite ou les listes physiologiques."
+        />
+        <div className="visuals-preview-row" style={{ gap: 16, alignItems: "stretch" }}>
+          <div style={{ minWidth: 260, flex: "1 1 260px" }}>
+            <RightRailCard title="Récupération du jour" subtitle="Sources Garmin">
+              <MetricRow label="Sommeil" value={82} unit="/100" tone={sleepScoreTone(82)} />
+              <MetricRow label="VFC" value={56} unit="ms" hint="+5 % vs repère" tone={vfcDeltaTone(5)} />
+              <MetricRow label="FC repos" value={49} unit="bpm" hint="-1 % vs repère" tone={restingHrDeltaTone(-1)} />
+              <MetricRow label="Énergie" value={75} unit="%" tone={energyLevelTone(75)} />
+              <MetricRow label="Aptitude" value={78} unit="/100" tone={readinessTone(78)} />
+            </RightRailCard>
+          </div>
+          <div style={{ minWidth: 260, flex: "1 1 260px" }}>
+            <RightRailCard
+              title="Synthèse hebdo"
+              subtitle="7 derniers jours"
+              variant="soft"
+              footer={<a href="#progression-cumul">Voir Cumul annuel →</a>}
+            >
+              <MetricRow label="Distance" value={42.3} unit="km" />
+              <MetricRow label="Temps" value="4 h 12" />
+              <MetricRow label="Dénivelé" value={620} unit="m" />
+              <MetricRow label="Activités" value={4} />
+              <MetricRow label="Fréquence" value="4 / 7 j" hint="constance OK" />
+            </RightRailCard>
+          </div>
+          <div style={{ minWidth: 240, flex: "1 1 240px" }}>
+            <RightRailCard title="Sources" subtitle="Identité multi-source">
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <SourceBadge source="strava" />
+                <SourceBadge source="garmin" />
+                <SourceBadge source="runsee" />
+                <SourceBadge source="manual" label="Saisie manuelle" />
+              </div>
+            </RightRailCard>
+          </div>
+        </div>
+      </section>
+
+      {/* --- EmptyState -------------------------------------------------- */}
+      <section className="card">
+        <SectionHeader
+          kicker="États vides"
+          title="EmptyState"
+          subtitle="Quand aucune donnée n'est disponible, ou qu'une connexion provider est requise."
+        />
+        <EmptyState
+          icon="🏔️"
+          title="Pas encore d'objectif actif"
+          description="Définis un objectif course pour suivre l'avancement de ton plan, voir le compte à rebours et obtenir des estimations de chrono prudentes."
+          action={{ label: "Définir un objectif", onClick: () => {} }}
+          secondaryAction={{ label: "Voir Performance", onClick: () => {} }}
+        />
+      </section>
+
+      {/* --- CoachAdviceBar ---------------------------------------------- */}
+      <section>
+        <SectionHeader
+          kicker="Conseil"
+          title="CoachAdviceBar"
+          subtitle="Bandeau bas de page, ton coach, descriptif et prudent."
+        />
+        <CoachAdviceBar tone="info" icon="🏔️" action={{ label: "Voir analyse", onClick: () => {} }}>
+          Charge maitrisée cette semaine. Surveille ton sommeil sur les 2-3 prochains jours pour
+          préserver ta dynamique.
+        </CoachAdviceBar>
+        <CoachAdviceBar tone="success" icon="✓">
+          Tu construis une bonne base. Garde une séance facile entre les blocs intenses.
+        </CoachAdviceBar>
+        <CoachAdviceBar tone="warning" icon="⚠">
+          Trois sorties intenses sur 5 jours : pense à insérer une journée plus calme.
+        </CoachAdviceBar>
       </section>
     </AppShell>
   );
