@@ -4,6 +4,7 @@ import TodayAlertBanner from "../components/TodayAlertBanner.jsx";
 import TodayHeader from "../components/TodayHeader.jsx";
 import TodaySevenDaySummary from "../components/TodaySevenDaySummary.jsx";
 import TodayUsefulActivities from "../components/TodayUsefulActivities.jsx";
+import CoachAdviceBar from "../components/visuals/alpine/CoachAdviceBar.jsx";
 import { TRAINING_MVP_SECTION_INFO } from "../content/trainingMvpCopy.js";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import useRaceObjectives from "../hooks/useRaceObjectives.js";
@@ -411,6 +412,23 @@ export default function DashboardPage() {
             info={TRAINING_MVP_SECTION_INFO.recentActivities}
           />
         </div>
+
+        {/* Conseil du jour Alpine Light (Lot 3) — synthese coach derivee
+            de la decision deja calculee. Pas de duplication metier. */}
+        {dashboardDecisionModel?.recommendation?.label || dashboardDecisionModel?.insight ? (
+          <div className="section">
+            <CoachAdviceBar
+              tone={dashboardDecisionModel.recommendation?.tone === "negative" ? "warning"
+                : dashboardDecisionModel.recommendation?.tone === "positive" ? "success"
+                : "info"}
+              icon="🏔️"
+            >
+              {dashboardDecisionModel.recommendation?.label
+                || dashboardDecisionModel.insight
+                || "Continue ton plan en restant à l'écoute de ton ressenti."}
+            </CoachAdviceBar>
+          </div>
+        ) : null}
       </div>
     </AppShell>
   );

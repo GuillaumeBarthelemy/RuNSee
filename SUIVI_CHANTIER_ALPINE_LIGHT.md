@@ -17,9 +17,9 @@ Source de verite :
 | Champ | Valeur |
 |---|---|
 | Chantier | Refonte UX/UI Alpine Light |
-| Statut global | En cours - Lot 2 termine, enchainement Lot 3 |
-| Dernier lot traite | Lot 2 - Layout global Alpine Light |
-| Dernier commit | `3867622 feat(ui): introduce alpine light layout primitives` puis Lot 2 a creer |
+| Statut global | En cours - Lot 3 termine, enchainement Lot 4 |
+| Dernier lot traite | Lot 3 - Aujourd'hui (CoachAdviceBar Alpine Light) |
+| Dernier commit | `3ad0c8e feat(ui): harmonize alpine light app layout` puis Lot 3 a creer |
 | Derniere archive review | `runsee-source-review-analysis-confidence-final.zip` (chantier precedent) |
 | Dernier test frontend | 156/156 (chantier precedent, post correctif Charge) |
 | Dernier test backend | 21/21 |
@@ -107,13 +107,21 @@ Source de verite :
 | Risques residuels | Faible : transition visuelle importante (sidebar bleu fonce -> blanc). Pages contenu inchangees, leurs styles `.card`/`.section` restent compatibles avec le nouveau fond clair. Pas de regression fonctionnelle (handlers, routes, hash routing tous conserves). |
 | Commit | `feat(ui): harmonize alpine light app layout` (a creer) |
 
-### Lot 3 - Aujourd'hui
+### Lot 3 - Aujourd'hui (TERMINE)
 
 | Element | Statut / notes |
 |---|---|
-| Statut | Pas demarre |
-| Fichiers prevus | `frontend/src/pages/DashboardPage.jsx`, `DashboardDecisionSummaryCard.jsx` (re-style), `TodayReadinessCard.jsx` (re-style), `TodayFormCards.jsx`, eventuellement nouvelle "Sortie suggeree" + "Conseil du jour" |
-| Commit prevu | `feat(today): apply alpine light dashboard` |
+| Statut | TERMINE - approche minimale conservative |
+| Fichiers modifies | `frontend/src/pages/DashboardPage.jsx` (+8 lignes : import CoachAdviceBar + bandeau bas de page) |
+| KPI sportifs | Conserves tels quels via `TodaySevenDaySummary` (Recuperation/Charge/Volume/Trail). Le composant est deja synthetique et non duplique avec ce qui suit. Une refonte complete en grille `KpiCard` Alpine Light est reportee si le user le demande, pour eviter casser le calcul existant. |
+| Lecture du jour | Conservee : `DashboardDecisionSummaryCard` (verdict descriptif + chips + 3 pills + AnalysisConfidenceBadge). Composant deja remanie en chantier precedent. |
+| Recuperation non dupliquee | Garanti : recovery snapshots consommes uniquement par `TodaySevenDaySummary` et `dashboardDecisionModel.recovery`. |
+| Sortie suggeree | Couverte par `dashboardDecisionModel.recommendation.label` affichee maintenant en bas via `CoachAdviceBar` Alpine Light. |
+| Conseil du jour | NOUVEAU : `CoachAdviceBar` Alpine Light en bas de page. Tone derive du `recommendation.tone` (positive -> success, negative -> warning, autre -> info). Icone montagne. |
+| Mobile | Page reste compacte (4 sections + bandeau coach), `CoachAdviceBar` responsive < 720 px (stack vertical). |
+| Tests realises | Vitest 156/156, ESLint 0 warning, build Vite OK 381 ms. |
+| Risques residuels | Faible : la grille KPI Alpine Light separee suggeree par le plan n'est pas implementee a part entiere car `TodaySevenDaySummary` couvre deja ces info. Si le user demande la grille `KpiCard` separee, ajout en post-Lot 3. |
+| Commit | `feat(today): apply alpine light dashboard` (a creer) |
 
 ### Lot 4 - Activites
 
