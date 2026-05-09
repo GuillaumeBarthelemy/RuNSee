@@ -163,10 +163,12 @@
 
 ### Score de confiance des analyses
 
-- Zone : `analysisConfidence.js`, `AnalysisConfidenceBadge.jsx`, pages Aujourd'hui/Analytics/Performance/Trail.
+- Zone : `analysisConfidence.js`, `AnalysisConfidenceBadge.jsx`, pages Aujourd'hui/Analytics/Performance/Trail, `VdotProfileCard`, `RaceCountdownCard`, `TrailSpecificityCard`, `ActivityTrailCard`.
 - Risque : transformer un indicateur de qualite de donnees en verite physiologique ou en score de performance.
-- Garde-fous presents : libelles qualitatifs, details en tooltip, aucune modification des calculs metier, tests sur niveaux `high/medium/insufficient`.
-- Validation requise : recette visuelle authentifiee sur desktop/mobile pour verifier lisibilite, positionnement et absence de surcharge.
+- Garde-fous presents : libelles qualitatifs, details en tooltip, aucune modification des calculs metier, tests sur niveaux `high/medium/low/insufficient`.
+- Garde-fou ajoute en cloture : le `vdot-summary` interne de `VdotProfileCard` ne porte plus le label "Confiance" (renomme "Fiabilite VDOT") pour eviter la confusion avec le badge analyse globale.
+- Audit UX statique passe : tones cohérents, responsive `< 760px` sans overflow, ARIA tooltip OK, wording prudent, pas de promesse pseudo-scientifique.
+- Validation requise : recette visuelle authentifiee sur desktop/mobile pour verifier lisibilite, positionnement et absence de surcharge avant tag `runsee-stable-analysis-confidence`.
 
 ### Mapping Garmin frontend
 

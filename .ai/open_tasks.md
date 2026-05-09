@@ -9,7 +9,7 @@
 - [ ] Surveiller la prochaine fenetre automatique du backfill Garmin historique.
 - [ ] Relancer `detect-provider-activity-duplicates.js` en production apres la prochaine fenetre importante.
 - [ ] Confirmer que le backfill poursuit jusqu'a `GARMIN_BACKFILL_MIN_DATE` sans status `error`.
-- [ ] Valider visuellement les nouveaux badges de confiance sur Aujourd'hui, Analytics, Performance et detail activite trail en session authentifiee.
+- [ ] Valider visuellement les badges de confiance sur Aujourd'hui, Analytics, Performance, VDOT (label "Fiabilite VDOT" renomme), Objectif, TrailSpecificity et detail activite Trail en session authentifiee desktop + mobile, puis poser le tag `runsee-stable-analysis-confidence`.
 - [ ] Tester `POST /sync/all` avec Strava seul, Garmin seul, puis les deux connectes lors d'une prochaine recette globale.
 - [ ] Verifier visuellement la sidebar provider et Aujourd'hui sur mobile/ecran etroit.
 - [ ] Revalider un objectif trail si un nouvel objectif critique est cree.
@@ -21,6 +21,7 @@
 - [ ] Valider l'import PostgreSQL sur une base cible uniquement avec backup et option explicite (`--truncate` ou `--allow-append`).
 - [x] Preparer et implementer le chantier produit recommande : score de confiance / qualite des analyses.
 - [ ] Backend sans configuration ESLint compatible ESLint 10 : les controles actuels reposent sur `node --check`, Prisma et `npm test`.
+- [ ] **Charge recente Aujourd'hui** : la valeur `96.9 pts` affichee parait basse comparee au bareme glossaire (`< 200 pts = bloc leger`). A analyser dans un chantier ulterieur (verifier `loadModel.summary.periodLoad` vs somme journaliere reelle, scope sport, fenetre glissante). Ne pas modifier le moteur de charge sans plan dedie.
 
 ## Termines recemment
 

@@ -2,43 +2,113 @@
 
 Ce journal trace les recettes reellement executees. Il evite de rouvrir les memes controles a chaque plan.
 
-## 2026-05-09 - Score de confiance des analyses
+## 2026-05-09 - Score de confiance des analyses (cloture chantier)
 
 ### Contexte
 
 - Branche : `main`
-- Plan utilise : `docs/plans/active/runsee_chantier_score_confiance_analyses.md`
-- Responsable : CODEX
+- Commit chantier : `ab3947f feat(analytics): add analysis confidence signals`
+- Plan utilise : `docs/plans/active/runsee_handoff_claude_score_confiance.md` (handoff Claude Code Pro), a archiver sous `docs/plans/old/`
+- Responsable : Claude Code Pro
+- Audit cible : composant `AnalysisConfidenceBadge`, moteur `analysisConfidence.js`, integrations Aujourd'hui / Analytics / Performance / Trail / VdotProfileCard / RaceCountdownCard.
 
-### Tests techniques
+### Audit UX statique
+
+| Element | Resultat | Commentaire |
+|---|---|---|
+| Composant badge : props, ARIA, tooltip | OK | `compact` mode + tooltip via `InfoTooltip` avec `aria-label` ; 4 tones (positive/warning/negative/neutral) |
+| Wording moteur : 4 niveaux | OK | "Confiance elevee/moyenne/faible/Donnees insuffisantes", sans promesse pseudo-scientifique |
+| Wording prudent | OK | `low` -> "Lecture prudente", `insufficient` -> "Pas assez de donnees" |
+| CSS responsive `< 760px` | OK | Badge passe pleine largeur en mode normal, `fit-content` en compact, `trail-card-actions` bascule a gauche |
+| `min-width: 0` sur main | OK | Wrapping correct sur petits ecrans, `white-space: nowrap` en compact pour eviter overflow |
+| Anomalie wording VDOT | Corrigee | `vdot-summary` libelle "Confiance" renomme en "Fiabilite VDOT" pour distinguer la confiance d'analyse globale (badge) de la fiabilite metier de l'estimation VDOT |
+| Doublon visuel | OK apres correction | Plus de label "Confiance" en double dans la meme carte |
+
+### Tests techniques (Quality Gate)
 
 | Test | Resultat | Preuve |
 |---|---|---|
-| `npx vitest run src/utils/analysisConfidence.test.js --run` | OK | 8/8 |
-| `npm test -- --run` frontend | OK | 156/156 |
-| `npm run build` frontend | OK | Vite build OK |
-| ESLint fichiers touches | OK | `--max-warnings 0` |
-| Backend Prisma generate/validate | OK | SQLite + PostgreSQL valides |
-| `npm run db:compare-schemas` backend | OK | 18 modeles alignes |
-| `npm test` backend | OK | 21/21 |
+| `npm test -- --run` frontend | OK | 156/156 (11 fichiers) |
+| `npm run build` frontend | OK | Vite build OK en 682 ms |
+| ESLint fichiers touches | OK | `--max-warnings 0` sur 11 fichiers cibles |
+| Backend `npm run prisma:generate` | OK | Prisma Client genere |
+| Backend `npx prisma validate` SQLite | OK | Schema valide |
+| Backend `npm run prisma:pg:validate` | OK | Schema PostgreSQL valide |
+| Backend `npm run db:compare-schemas` | OK | 18 modeles alignes |
+| Backend `npm test` | OK | 21/21 |
 | `node --check src/app.js` / `src/server.js` | OK | Syntax OK |
-| `git diff --check` | OK | Aucun whitespace bloquant |
+| `git status --short` | OK | Workspace propre (handoff doc untracked, archive prevue) |
 
 ### Recette metier
 
 | Domaine | Test | Resultat | Commentaire |
 |---|---|---|---|
-| Aujourd'hui | Badge confiance decisionnelle | OK technique | Injection dans la synthese decisionnelle, sans changer les calculs |
-| Analytics | Qualite periode analysee | OK technique | Badge compact apres filtres + reutilisation trail |
-| Performance | Potentiel route et objectif | OK technique | Badges VDOT/route et objectif course |
-| Detail activite trail | Donnees trail disponibles | OK technique | Badge compact dans la carte trail |
-| Fallbacks | Donnees manquantes | OK | Niveau `insufficient` teste si objectif absent |
+| Aujourd'hui | Badge confiance decisionnelle | OK technique + audit | Injection compact dans `DashboardDecisionSummaryCard` via prop `confidence`, sans changer les calculs |
+| Analytics | Qualite periode analysee | OK technique + audit | Badge non-compact entre filters et stack analytics, summary visible |
+| Performance | Potentiel route | OK technique + audit | Badge non-compact en haut de page + badge compact dans `VdotProfileCard` |
+| Performance | Objectif course | OK technique + audit | Badge compact dans `RaceCountdownCard` quand objectif actif |
+| Trail Specificity | Lecture analytics trail | OK technique | Badge compact dans `TrailSpecificityCard` |
+| Detail activite trail | Donnees trail disponibles | OK technique | Badge compact dans `ActivityTrailCard`, tous les etats (sans data, sans contexte trail, avec contexte) |
+| Fallbacks | Donnees manquantes | OK | Niveau `insufficient` teste si objectif absent et si recovery absent |
+| Wording scientifique | Prudence | OK | Pas de "diagnostic", pas de "preuve", pas de "garantie" ; vocabulaire "lecture", "appuis", "limites" |
+
+### Anomalies detectees et traitees
+
+| Anomalie | Gravite | Decision |
+|---|---|---|
+| `VdotProfileCard` : label "Confiance" du `vdot-summary` metier en doublon visuel avec le `AnalysisConfidenceBadge` | Mineure | Corrigee : renomme en "Fiabilite VDOT" pour clarifier les deux confiances differentes (analyse globale vs fiabilite estimation VDOT) |
+
+### Validation visuelle authentifiee
+
+A realiser cote utilisateur sur desktop/mobile sur les 6 pages cibles :
+
+```text
+Aujourd'hui                     - badge dans Lecture du jour
+Analytics                       - badge global apres filtres
+Performance                     - badge global + badges VDOT et objectif
+Performance / VDOT              - badge compact + label "Fiabilite VDOT" (renomme)
+Performance / Course objectif   - badge compact si objectif actif
+Trail (Analytics)               - badge dans TrailSpecificityCard
+Detail activite Trail           - badge dans ActivityTrailCard
+Mobile / ecran etroit           - pas d'overflow horizontal
+```
+
+Controles attendus :
+
+```text
+badge visible mais non intrusif
+pas de surcharge UX
+pas de decalage d'interface
+tooltip lisible
+libelles comprehensibles
+aucun bloc trop haut
+aucun overflow horizontal
+aucune regression des calculs existants
+```
 
 ### Decision
 
 ```text
-GO technique. Une validation visuelle authentifiee reste conseillee sur desktop/mobile avant de considerer le chantier comme baseline UX stable.
+GO technique cloture chantier `Score de confiance / qualite des analyses`.
+Validation visuelle authentifiee restant a realiser cote utilisateur sur desktop/mobile.
+Tag `runsee-stable-analysis-confidence` recommande apres confirmation visuelle utilisateur.
 ```
+
+### Archive de review
+
+- Generee : a la cloture
+- Nom : `runsee-source-review-analysis-confidence-final.zip`
+- Commande : `git archive --format=zip --output runsee-source-review-analysis-confidence-final.zip HEAD`
+- Basee sur : `HEAD` apres correction A1 et MAJ documentaires.
+- Artefacts interdits detectes : non.
+
+### Suite
+
+- Validation visuelle authentifiee desktop + mobile par l'utilisateur.
+- Si OK : tag `runsee-stable-analysis-confidence` puis push.
+- Tache de dette ouverte (hors scope) : analyser pourquoi la "Charge recente" affichee (96.9 pts) parait basse vs le bareme glossaire (< 200 pts = bloc leger). A traiter dans un chantier ulterieur.
+
+## 2026-05-09 - Score de confiance des analyses (chantier initial CODEX)
 
 ## 2026-05-09 - Validation UI post-backfill Garmin et Go poursuite
 

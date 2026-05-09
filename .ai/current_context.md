@@ -139,15 +139,22 @@ Finalisation de la stabilisation RunNSee autour de 4 priorites :
 
 ## Score de confiance des analyses
 
-- Nouveau chantier traite : `docs/plans/active/runsee_chantier_score_confiance_analyses.md`, a archiver sous `docs/plans/old/` apres commit.
-- Nouveau moteur pur : `frontend/src/utils/analysisConfidence.js`.
+- Chantier ouvert dans `ab3947f feat(analytics): add analysis confidence signals`.
+- Cloture audit Claude Code Pro : handoff lu (`docs/plans/active/runsee_handoff_claude_score_confiance.md`, archive sous `docs/plans/old/` apres tag), audit UX statique des integrations, Quality Gate complet OK, correction wording VDOT appliquee.
+- Moteur pur : `frontend/src/utils/analysisConfidence.js`.
 - Le score ne cree pas de KPI physiologique ; il qualifie la solidite de lecture selon les donnees disponibles, manquantes ou partielles.
 - Niveaux exposes : `high`, `medium`, `low`, `insufficient`, rendus comme confiance elevee/moyenne/faible ou insuffisante.
-- Nouveau composant UI : `frontend/src/components/AnalysisConfidenceBadge.jsx`, compact et utilisable dans les headers.
-- Integrations faites : synthese Aujourd'hui, Analytics, Performance route/objectif, specificite trail et detail activite trail.
-- Tests purs ajoutes : `frontend/src/utils/analysisConfidence.test.js`.
+- Composant UI : `frontend/src/components/AnalysisConfidenceBadge.jsx`, compact et utilisable dans les headers.
+- Integrations actives : `DashboardDecisionSummaryCard`, `AnalyticsPage` (badge global), `PerformancePage` (badge global), `VdotProfileCard`, `RaceCountdownCard`, `TrailSpecificityCard`, `ActivityTrailCard`.
+- Tests purs : `frontend/src/utils/analysisConfidence.test.js` (8 cas).
 - Documentation modele : `docs/architecture/ANALYSIS_CONFIDENCE_MODEL.md`.
+- Correction wording cloture : `VdotProfileCard` `vdot-summary-label` "Confiance" -> "Fiabilite VDOT" pour distinguer la confiance d'analyse globale (badge) de la fiabilite metier de l'estimation VDOT.
 - Limite volontaire : le score reste qualitatif et ne remplace pas les calculs metier existants ; il doit aider a lire les incertitudes sans sur-vendre la precision.
+- Decision : GO technique cloture audit. Validation visuelle authentifiee desktop/mobile restant a la charge utilisateur avant tag `runsee-stable-analysis-confidence`.
+
+## Dette ouverte hors scope
+
+- Charge recente affichee : la valeur `96.9 pts` parait basse comparee au bareme glossaire (`< 200 pts = bloc leger`). A analyser dans un chantier ulterieur (verifier la source `loadModel` consommee par TodayFormCards/MicroBars vs la somme reelle 7 j ; ne pas toucher au moteur de charge sans plan dedie).
 
 ## Backfill historique Garmin activites
 

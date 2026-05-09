@@ -131,7 +131,7 @@ function VdotProfileCard({ profile = {}, info = [], confidence = null }) {
             <span className="small-text">VO2max equivalent</span>
           </div>
           <div className={`vdot-summary vdot-summary-${profileConfidence.tone || "neutral"}`.trim()}>
-            <span className="vdot-summary-label">Confiance</span>
+            <span className="vdot-summary-label">Fiabilite VDOT</span>
             <strong className="vdot-summary-value">{profileConfidence.label || "-"}</strong>
             <span className="small-text">{levelLabel}</span>
           </div>
