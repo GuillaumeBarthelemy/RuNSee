@@ -39,17 +39,61 @@ export function getActivityProviderKey(activity = {}) {
 }
 
 // ============================================================================
-// Intensité (heuristique simple basée sur FC moyenne / max)
+// Intensité — classification scientifique basée sur les zones FC personnelles
 // ============================================================================
+//
+// Méthode (par ordre de priorité) :
+//   1. Zones FC personnelles (heartRateZone2Max, heartRateZone3Max) → ACSM
+//   2. % FCmax personnelle (heartRateMax) → seuils 70 % / 85 % (ACSM)
+//   3. Aucune référence configurée → null (badge masqué, pas de seuil inventé)
+//
+// Mapping 5 zones → 3 niveaux selon Seiler (2010), modèle polarisé :
+//   - Facile  : Z1–Z2 (≤ Z2Max)        → endurance fondamentale, ~80 % du volume
+//   - Modérée : Z3 (Z2Max → Z3Max)     → tempo, sub-seuil
+//   - Intense : Z4–Z5 (> Z3Max)        → seuil + VO2max, ~20 % du volume
+//
+// Refs :
+//   - ACSM (2018), Guidelines for Exercise Testing and Prescription, 10e éd.
+//   - Seiler S. (2010), Int J Sports Physiol Perform 5(3):276–291
+//   - Jamnick NA et al. (2020), Sports Med 50(10):1729–1756
 
-export function getActivityIntensity(activity = {}) {
+export function getActivityIntensity(activity = {}, settings = null) {
   const avgHr = Number(activity?.averageHeartrate);
   if (!Number.isFinite(avgHr) || avgHr <= 0) return null;
-  // Approximation : zones FC sans connaître la FCmax personnelle
-  // < 130 = facile, 130-160 = modérée, >= 160 = intense
-  if (avgHr < 130) return "facile";
-  if (avgHr < 160) return "moderee";
-  return "intense";
+
+  // Méthode 1 : zones FC personnelles (priorité)
+  const z2Max = Number(settings?.heartRateZone2Max);
+  const z3Max = Number(settings?.heartRateZone3Max);
+  if (Number.isFinite(z2Max) && Number.isFinite(z3Max) && z2Max > 0 && z3Max > z2Max) {
+    if (avgHr <= z2Max) return "facile";
+    if (avgHr <= z3Max) return "moderee";
+    return "intense";
+  }
+
+  // Méthode 2 : % FCmax personnelle (ACSM)
+  const fcmax = Number(settings?.heartRateMax);
+  if (Number.isFinite(fcmax) && fcmax > 0) {
+    const pct = avgHr / fcmax;
+    if (pct <= 0.70) return "facile";
+    if (pct <= 0.85) return "moderee";
+    return "intense";
+  }
+
+  // Méthode 3 : aucune référence → pas de classification
+  return null;
+}
+
+/**
+ * Indique si la classification d'intensité est disponible pour les settings courants.
+ * Sert au filtre Intensité (afficher un message si l'utilisateur n'a pas configuré).
+ */
+export function hasIntensityReference(settings = null) {
+  if (!settings) return false;
+  const z2 = Number(settings.heartRateZone2Max);
+  const z3 = Number(settings.heartRateZone3Max);
+  if (Number.isFinite(z2) && Number.isFinite(z3) && z2 > 0 && z3 > z2) return true;
+  const fcmax = Number(settings.heartRateMax);
+  return Number.isFinite(fcmax) && fcmax > 0;
 }
 
 export const INTENSITY_LABELS = {

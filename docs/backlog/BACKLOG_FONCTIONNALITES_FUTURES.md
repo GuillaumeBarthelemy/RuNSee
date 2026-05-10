@@ -76,3 +76,29 @@ Tenu à jour à chaque chantier qui identifie une dette.
 - Les fonctionnalités placeholder sont **opérationnelles visuellement** mais ne consomment pas de service externe ni d'algorithme complexe.
 - Chaque dette a une **estimation effort** et une **référence scientifique** quand pertinent.
 - Une dette est levée par un chantier dédié + validation utilisateur + Quality Gate complet.
+
+---
+
+## Mini-lot 14 — Recalage Activités (2026-05-10)
+
+### 5. Mini-graphe par carte activité (page Activités)
+
+| Item | Détail |
+|---|---|
+| **Statut** | Placeholder — zone masquée |
+| **Pourquoi placeholder** | Le PDF page 6 prévoit un mini-graphe (allure ou FC sur la durée) par carte activité. Les streams Strava complets ne sont pas chargés en page liste (perfs : 50 activités × stream complet = lourd). En page liste, seule la moyenne FC / allure est disponible. |
+| **Décision** | Plan 03 §10.2 autorise à masquer la zone si aucune série exploitable. Pas de placeholder visuel artificiel (trait neutre rejeté pour ne pas suggérer une donnée). |
+| **Évolution future** | Charger les streams résumés (ex. 30 points par activité) lors du fetch liste, ou utiliser l'endpoint Strava `/streams` à la demande (lazy load au survol). |
+| **Effort estimé** | 6-8 h (backend stream summary + frontend lazy load) |
+| **Critère futur** | Validation utilisateur sur 50 activités sans dégradation des perfs initiales |
+
+### 6. Classification d'intensité personnalisée — affinement
+
+| Item | Détail |
+|---|---|
+| **Statut** | Implémenté — méthodes 1 (zones FC perso) et 2 (% FCmax ACSM) actives. Méthode 3 = pas de classification si rien configuré. |
+| **Pourquoi backlog** | La méthode actuelle est correcte mais ne tient pas compte de la dynamique intra-activité (intervalles courts à FC élevée mais FC moyenne basse → classifié "Facile" à tort). |
+| **Évolution future** | Considérer le TIME-IN-ZONE (durée passée dans chaque zone FC) plutôt que la FC moyenne globale. Nécessite les streams FC. |
+| **Sources scientifiques** | Sylta Ø, Tønnessen E, Seiler S. (2014), "From heart-rate data to training quantification: a comparison of 3 methods of training-intensity analysis", Int J Sports Physiol Perform 9(1):100-7 |
+| **Effort estimé** | 4-6 h (refacto util + tests) |
+| **Critère futur** | Comparaison cross-méthode sur un échantillon représentatif |

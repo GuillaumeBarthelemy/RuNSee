@@ -1,33 +1,35 @@
 import { useEffect, useMemo, useState } from "react";
-import AnalyticsFiltersBar from "../components/AnalyticsFiltersBar.jsx";
 import ActivitiesTable from "../components/ActivitiesTable.jsx";
+import ActivitiesFilterBar from "../components/activities/ActivitiesFilterBar.jsx";
 import ActivityPeriodKpis from "../components/activities/ActivityPeriodKpis.jsx";
 import ActivityCardsView from "../components/activities/ActivityCardsView.jsx";
 import ActivityRightRail from "../components/activities/ActivityRightRail.jsx";
-import { SHARED_FILTER_COPY } from "../content/analyticsCopy.js";
 import AppShell from "../layouts/AppShell.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import { filterActivities } from "../utils/activityAggregations.js";
-import { getAnalyticsPresetLabel } from "../utils/analyticsPeriods.js";
-import { computePeriodKpis } from "../utils/activitiesViewModel.js";
+import {
+  computePeriodKpis,
+  getActivityIntensity,
+  getActivityProviderKey,
+  hasIntensityReference,
+} from "../utils/activitiesViewModel.js";
 
 /**
- * ActivitiesPage — Alpine Light (Lot 03, mockup PDF page 6).
+ * ActivitiesPage — Alpine Light (mini-lot 14, mockup PDF page 6).
  *
- * Refonte cards-first (PDF page 6) :
- *  1. Header "Activités" + sous-texte "Toutes vos sorties et entraînements."
- *  2. Bandeau 5 KPIs période
- *  3. AnalyticsFiltersBar (existant, conservé)
- *  4. Layout 2 colonnes desktop : liste cartes (gauche) + right rail (droite)
- *  5. Toggle "Vue tableau" → fallback ActivitiesTable conservé
+ * Mini-lot 14 — corrections :
+ *  - ActivitiesFilterBar Alpine compact (remplace AnalyticsFiltersBar volumineuse).
+ *  - Filtres Source (Toutes/Strava/Garmin/Strava+Garmin) et Intensité (zones FC).
+ *  - Tri (Date desc/asc, Distance, Durée).
+ *  - Compteur intégré dans la barre filtres (plus de bandeau scope séparé).
  *
  * Anti-régression :
  *  - Aucun calcul métier modifié (filterActivities, useActivityViewModel intacts).
- *  - getActivityPublicId via activityLinks (pas de /activities/undefined).
- *  - "—" si donnée absente (jamais 0 km, 0 m, 0 bpm fictif).
- *  - ActivitiesTable conservé en fallback toggle.
+ *  - AnalyticsFiltersBar non modifié (toujours utilisé par Analyse).
+ *  - Filtres Source / Intensité / Tri appliqués EN AVAL via useMemo, pas dans
+ *    l'util filterActivities partagé.
+ *  - Lien détail jamais cassé.
  */
-
 export default function ActivitiesPage() {
   const {
     error,
@@ -39,6 +41,7 @@ export default function ActivitiesPage() {
     sharedRange,
     table,
     availableSports,
+    trainingAnalyticsSettings,
     setFilter,
     resetFilters,
     setOption,
@@ -53,6 +56,9 @@ export default function ActivitiesPage() {
   });
 
   const [viewMode, setViewMode] = useState("cards"); // 'cards' | 'table'
+  const [source, setSource] = useState("all");
+  const [intensity, setIntensity] = useState("all");
+  const [sort, setSort] = useState("date_desc");
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.sessionStorage) return;
@@ -65,9 +71,36 @@ export default function ActivitiesPage() {
     { groupSports: options.groupSports },
   );
 
-  const scopeLabel = filters.sportGroup === "all" ? "tous les sports" : filters.sportGroup;
-  const searchNote = filters.search ? ` Recherche active : "${filters.search}".` : "";
-  const scopeNote = `Périmètre actuel : ${scopeLabel}.${searchNote} Filtres partagés sur ${getAnalyticsPresetLabel(options.sharedPeriodPreset)}.`;
+  // Filtrage Source + Intensité en aval (jamais dans filterActivities partagé)
+  const filteredAndRefined = useMemo(() => {
+    const intensityRef = hasIntensityReference(trainingAnalyticsSettings);
+    const result = filteredActivities.filter((a) => {
+      // Filtre Source
+      if (source !== "all") {
+        if (getActivityProviderKey(a) !== source) return false;
+      }
+      // Filtre Intensité (uniquement si zones FC configurées)
+      if (intensity !== "all" && intensityRef) {
+        if (getActivityIntensity(a, trainingAnalyticsSettings) !== intensity) return false;
+      }
+      return true;
+    });
+    return result;
+  }, [filteredActivities, source, intensity, trainingAnalyticsSettings]);
+
+  // Tri en aval (jamais dans filterActivities)
+  const sortedActivities = useMemo(() => {
+    const arr = [...filteredAndRefined];
+    const getDate = (a) => new Date(a?.startDate || a?.startDateLocal || 0).getTime();
+    switch (sort) {
+      case "date_asc":  arr.sort((a, b) => getDate(a) - getDate(b)); break;
+      case "distance":  arr.sort((a, b) => Number(b?.distance || 0) - Number(a?.distance || 0)); break;
+      case "duration":  arr.sort((a, b) => Number(b?.movingTime || 0) - Number(a?.movingTime || 0)); break;
+      case "date_desc":
+      default:          arr.sort((a, b) => getDate(b) - getDate(a)); break;
+    }
+    return arr;
+  }, [filteredAndRefined, sort]);
 
   const handleSharedPresetChange = (preset) => {
     if (preset === "custom") {
@@ -79,21 +112,27 @@ export default function ActivitiesPage() {
     setOption("sharedPeriodPreset", preset);
   };
 
-  const handleSharedCustomDateChange = (name, value) => {
-    setOption("sharedPeriodPreset", "custom");
-    setOption(name, value);
-  };
-
-  const handleResetSharedFilters = () => {
+  const handleResetFilters = () => {
     resetFilters();
     setOption("groupSports", true);
     setOption("sharedPeriodPreset", "90d");
     setOption("sharedCustomDateFrom", "");
     setOption("sharedCustomDateTo", "");
+    setSource("all");
+    setIntensity("all");
+    setSort("date_desc");
   };
 
-  // KPIs sur les activités filtrées (utils existants → aucun calcul métier nouveau)
-  const periodKpis = useMemo(() => computePeriodKpis(filteredActivities), [filteredActivities]);
+  // KPIs sur les activités filtrées + raffinées
+  const periodKpis = useMemo(
+    () => computePeriodKpis(sortedActivities),
+    [sortedActivities],
+  );
+
+  const intensityAvailable = useMemo(
+    () => hasIntensityReference(trainingAnalyticsSettings),
+    [trainingAnalyticsSettings],
+  );
 
   return (
     <AppShell
@@ -103,38 +142,33 @@ export default function ActivitiesPage() {
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {isLoading && !safeActivities.length ? (
-        <div className="card section">Chargement des activités...</div>
+        <div className="card section">Chargement des activités…</div>
       ) : null}
 
       {/* === Bandeau 5 KPIs période === */}
       <ActivityPeriodKpis kpis={periodKpis} />
 
-      {/* === Filtres partagés (composant existant) === */}
-      <div className="section">
-        <AnalyticsFiltersBar
-          title="Filtres"
-          subtitle={SHARED_FILTER_COPY.subtitle}
-          resetLabel={SHARED_FILTER_COPY.resetLabel}
-          infoContent={SHARED_FILTER_COPY.info}
-          preset={options.sharedPeriodPreset}
-          rangeLabel={sharedRange.label}
-          customDateFrom={options.sharedCustomDateFrom}
-          customDateTo={options.sharedCustomDateTo}
-          search={filters.search}
-          sportGroup={filters.sportGroup}
-          groupSports={options.groupSports}
-          availableSports={availableSports}
-          filteredCount={filteredActivities.length}
-          totalCount={activityScopeActivities.length}
-          onPresetChange={handleSharedPresetChange}
-          onCustomDateChange={handleSharedCustomDateChange}
-          onSearchChange={(value) => setFilter("search", value)}
-          onSportChange={(value) => setFilter("sportGroup", value)}
-          onGroupSportsChange={(value) => setOption("groupSports", value)}
-          onReset={handleResetSharedFilters}
-          scopeNote={scopeNote}
-        />
-      </div>
+      {/* === Barre filtres compacte Alpine === */}
+      <ActivitiesFilterBar
+        search={filters.search}
+        sportGroup={filters.sportGroup}
+        source={source}
+        intensity={intensity}
+        sort={sort}
+        preset={options.sharedPeriodPreset}
+        periodLabel={sharedRange.label}
+        availableSports={availableSports}
+        intensityAvailable={intensityAvailable}
+        filteredCount={sortedActivities.length}
+        totalCount={activityScopeActivities.length}
+        onSearchChange={(value) => setFilter("search", value)}
+        onSportChange={(value) => setFilter("sportGroup", value)}
+        onSourceChange={setSource}
+        onIntensityChange={setIntensity}
+        onSortChange={setSort}
+        onPresetChange={handleSharedPresetChange}
+        onReset={handleResetFilters}
+      />
 
       {/* === Toggle Cartes / Tableau (fallback) === */}
       <div className="alpine-activities-view-toggle" role="tablist" aria-label="Mode d'affichage">
@@ -162,14 +196,17 @@ export default function ActivitiesPage() {
       {viewMode === "cards" ? (
         <div className="alpine-activities-layout">
           <div className="alpine-activities-main">
-            <ActivityCardsView activities={filteredActivities} />
+            <ActivityCardsView
+              activities={sortedActivities}
+              settings={trainingAnalyticsSettings}
+            />
           </div>
-          <ActivityRightRail activities={filteredActivities} />
+          <ActivityRightRail activities={sortedActivities} />
         </div>
       ) : (
         <div className="section">
           <ActivitiesTable
-            activities={filteredActivities}
+            activities={sortedActivities}
             groupSports={options.groupSports}
             currentAnchor={activeAnchor}
             onAnchorHandled={() => setActiveAnchor("")}

@@ -22,31 +22,49 @@ import { buildActivityDetailPath, getActivityPublicId } from "../../utils/activi
  *  - Lien détail uniquement si publicId présent (jamais "/activities/undefined")
  */
 
+// Helpers de format → renvoient { value, unit }.
+// Si la valeur est absente : value="—" et unit="" (jamais "— km" / "— bpm" / "— m").
+// D+ : si la valeur est explicitement 0 → "0" + "m" (cas sortie sans dénivelé, autorisé plan §10.2).
+
 function formatDistance(meters) {
-  if (!Number.isFinite(meters) || meters <= 0) return "—";
-  return (meters / 1000).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  if (!Number.isFinite(meters) || meters <= 0) return { value: "—", unit: "" };
+  const km = meters / 1000;
+  return {
+    value: km.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    unit: "km",
+  };
 }
 
 function formatDuration(seconds) {
-  if (!Number.isFinite(seconds) || seconds <= 0) return "—";
+  if (!Number.isFinite(seconds) || seconds <= 0) return { value: "—", unit: "" };
   const h = Math.floor(seconds / 3600);
   const m = Math.round((seconds % 3600) / 60);
-  if (h === 0) return `${m} min`;
-  return `${h}h${String(m).padStart(2, "0")}`;
+  if (h === 0) return { value: `${m}`, unit: "min" };
+  return { value: `${h}h${String(m).padStart(2, "0")}`, unit: "" };
 }
 
 function formatElevation(activity) {
-  // D+ = "—" si valeur absente, "0 m" autorisé si explicitement 0 (per plan §10.2)
-  const e = activity?.totalElevationGain;
-  if (e == null) return "—";
-  if (!Number.isFinite(Number(e))) return "—";
-  return `${Math.round(Number(e)).toLocaleString("fr-FR")} m`;
+  const raw = activity?.totalElevationGain;
+  if (raw == null) return { value: "—", unit: "" };
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return { value: "—", unit: "" };
+  return { value: Math.round(n).toLocaleString("fr-FR"), unit: "m" };
 }
 
 function formatHr(activity) {
-  const hr = activity?.averageHeartrate;
-  if (hr == null || !Number.isFinite(Number(hr)) || Number(hr) <= 0) return "—";
-  return `${Math.round(Number(hr))} bpm`;
+  const raw = activity?.averageHeartrate;
+  const n = Number(raw);
+  if (raw == null || !Number.isFinite(n) || n <= 0) return { value: "—", unit: "" };
+  return { value: `${Math.round(n)}`, unit: "bpm" };
+}
+
+function Stat({ label, value, unit }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}{unit ? <span> {unit}</span> : null}</dd>
+    </div>
+  );
 }
 
 function formatTime(activity) {
@@ -86,14 +104,19 @@ function SportIcon({ sport = "" }) {
   );
 }
 
-function ActivityListCard({ activity = {} }) {
+function ActivityListCard({ activity = {}, settings = null }) {
   const publicId = getActivityPublicId(activity);
   const detailPath = publicId ? buildActivityDetailPath(activity) : null;
   const providerLabel = getActivityProviderLabel(activity);
   const providerKey = getActivityProviderKey(activity);
-  const intensity = getActivityIntensity(activity);
-  const sport = activity?.sportType || activity?.type || "—";
+  const intensity = getActivityIntensity(activity, settings);
+  const sport = activity?.sportType || activity?.type || "Activité";
   const time = formatTime(activity);
+
+  const distance = formatDistance(Number(activity?.distance));
+  const duration = formatDuration(Number(activity?.movingTime));
+  const elevation = formatElevation(activity);
+  const heartrate = formatHr(activity);
 
   const cardContent = (
     <>
@@ -114,22 +137,10 @@ function ActivityListCard({ activity = {} }) {
         <span className="alpine-activity-card-sport">{sport}{time ? ` · ${time}` : ""}</span>
       </div>
       <dl className="alpine-activity-card-stats">
-        <div>
-          <dt>Distance</dt>
-          <dd>{formatDistance(activity?.distance)}<span> km</span></dd>
-        </div>
-        <div>
-          <dt>Durée</dt>
-          <dd>{formatDuration(activity?.movingTime)}</dd>
-        </div>
-        <div>
-          <dt>D+</dt>
-          <dd>{formatElevation(activity)}</dd>
-        </div>
-        <div>
-          <dt>FC</dt>
-          <dd>{formatHr(activity)}</dd>
-        </div>
+        <Stat label="Distance" value={distance.value} unit={distance.unit} />
+        <Stat label="Durée"    value={duration.value} unit={duration.unit} />
+        <Stat label="D+"       value={elevation.value} unit={elevation.unit} />
+        <Stat label="FC"       value={heartrate.value} unit={heartrate.unit} />
       </dl>
     </>
   );

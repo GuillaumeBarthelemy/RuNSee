@@ -9,7 +9,7 @@ import { groupActivitiesByDate } from "../../utils/activitiesViewModel.js";
  *
  * Empty state si aucune activité.
  */
-function ActivityCardsView({ activities = [], onSyncRequest = null }) {
+function ActivityCardsView({ activities = [], settings = null, onSyncRequest = null }) {
   const groups = useMemo(() => groupActivitiesByDate(activities), [activities]);
 
   if (!groups.length) {
@@ -29,6 +29,7 @@ function ActivityCardsView({ activities = [], onSyncRequest = null }) {
           key={group.key}
           label={group.label}
           items={group.items}
+          settings={settings}
         />
       ))}
     </div>

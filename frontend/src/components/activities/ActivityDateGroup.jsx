@@ -6,7 +6,7 @@ import { getActivityPublicId } from "../../utils/activityLinks.js";
  * ActivityDateGroup — Alpine Light (Lot 03).
  * Section avec un séparateur de date + liste de cartes activités.
  */
-function ActivityDateGroup({ label = "", items = [] }) {
+function ActivityDateGroup({ label = "", items = [], settings = null }) {
   if (!items.length) return null;
   return (
     <section className="alpine-activity-group">
@@ -14,7 +14,7 @@ function ActivityDateGroup({ label = "", items = [] }) {
       <div className="alpine-activity-group-list">
         {items.map((activity, idx) => {
           const key = getActivityPublicId(activity) || `${label}-${idx}`;
-          return <ActivityListCard key={key} activity={activity} />;
+          return <ActivityListCard key={key} activity={activity} settings={settings} />;
         })}
       </div>
     </section>
