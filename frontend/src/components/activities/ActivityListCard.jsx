@@ -75,31 +75,76 @@ function formatTime(activity) {
   return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
+// Pictogrammes sport — Alpine Light Lot 14
+// Icônes lisibles à 22px (taille rendu .alpine-activity-card-icon svg).
+// Stroke 1.8 uniforme, paths compacts, pas de détails illisibles à petite taille.
 function SportIcon({ sport = "" }) {
   const s = String(sport).toLowerCase();
-  if (s.includes("hike") || s.includes("rando")) {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M3 20 L9 10 L13 14 L21 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="9" cy="6" r="2" stroke="currentColor" strokeWidth="2" />
-      </svg>
-    );
-  }
-  if (s.includes("ride") || s.includes("velo") || s.includes("cycle")) {
+
+  // Vélo : 2 roues + cadre triangulaire + selle
+  if (s.includes("ride") || s.includes("velo") || s.includes("vélo") || s.includes("cycle") || s.includes("bike")) {
     return (
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <circle cx="6" cy="17" r="3.5" stroke="currentColor" strokeWidth="1.8" />
         <circle cx="18" cy="17" r="3.5" stroke="currentColor" strokeWidth="1.8" />
-        <path d="M6 17 L10 8 L15 8 L18 17 M10 8 L13 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M6 17 L11 9 L16 17 M11 9 L13 6 L16 6 M11 9 L18 17"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     );
   }
-  // Default : run
+
+  // Randonnée / hike : montagne stylisée + soleil
+  if (s.includes("hike") || s.includes("rando") || s.includes("walk") || s.includes("marche")) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="17" cy="6" r="2" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M3 20 L8 12 L11 16 L15 9 L21 20 Z"
+          stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none" />
+      </svg>
+    );
+  }
+
+  // Natation : vagues + tête
+  if (s.includes("swim") || s.includes("nage") || s.includes("natation")) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="8" cy="6" r="2" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M3 13 q3 -2 6 0 q3 2 6 0 q3 -2 6 0 M3 18 q3 -2 6 0 q3 2 6 0 q3 -2 6 0"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      </svg>
+    );
+  }
+
+  // Renforcement / cross-training : haltère
+  if (s.includes("workout") || s.includes("strength") || s.includes("musculation") || s.includes("crossfit")) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="2" y="9" width="3" height="6" rx="1" stroke="currentColor" strokeWidth="1.8" />
+        <rect x="19" y="9" width="3" height="6" rx="1" stroke="currentColor" strokeWidth="1.8" />
+        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+        <line x1="6" y1="10" x2="6" y2="14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="18" y1="10" x2="18" y2="14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  // Yoga / mobilité : silhouette assise
+  if (s.includes("yoga") || s.includes("mobility") || s.includes("stretch")) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="5" r="2" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M8 19 q4 -3 8 0 M12 8 L12 14 M12 14 L8 19 M12 14 L16 19"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </svg>
+    );
+  }
+
+  // Course (défaut) : silhouette en mouvement simplifiée
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="14" cy="5" r="2" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M9 13 L11 11 L13 13 L15 12 M11 11 L11 17 L9 21 M13 13 L15 17 L17 20"
-        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="15" cy="5" r="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M14 9 L10 13 L7 12 M14 9 L17 12 L19 16 M14 9 L13 14 L9 19 M13 14 L17 17"
+        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     </svg>
   );
 }

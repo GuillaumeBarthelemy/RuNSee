@@ -48,12 +48,15 @@ const INTENSITY_OPTIONS = [
   { key: "intense",  label: "Intense" },
 ];
 
+// Presets EXACTEMENT alignés avec analyticsPeriods.js (buildAnalyticsDateRange).
+// Toute valeur non listée ici n'est pas reconnue par le hook → période non
+// rafraîchie. Cf. utils/analyticsPeriods.js getAnalyticsPresetLabel.
 const PERIOD_OPTIONS = [
-  { key: "7d",   label: "7 j" },
-  { key: "30d",  label: "30 j" },
-  { key: "90d",  label: "90 j" },
-  { key: "365d", label: "1 an" },
-  { key: "all",  label: "Tout" },
+  { key: "7d",  label: "7 j" },
+  { key: "90d", label: "90 j" },
+  { key: "6m",  label: "6 mois" },
+  { key: "12m", label: "12 mois" },
+  { key: "all", label: "Tout" },
 ];
 
 function ActivitiesFilterBar({
