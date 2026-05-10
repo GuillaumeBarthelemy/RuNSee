@@ -9278,13 +9278,6 @@ button.alert-banner-positive-item {
 }
 .alpine-topbar-icon-button svg { width: 18px; height: 18px; }
 
-.alpine-topbar-icon-button.is-disabled,
-.alpine-topbar-icon-button[disabled] {
-  opacity: 0.45;
-  cursor: not-allowed;
-  pointer-events: none; /* annule hover/click visuels */
-}
-
 /* Responsive sidebar Alpine Light (Lot 2-bis) */
 @media (max-width: 760px) {
   .alpine-shell.app-shell {
@@ -9696,7 +9689,7 @@ button.alert-banner-positive-item {
 /* Section recovery + suggested */
 .alpine-today-recovery-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(220px, 1.4fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(220px, 1.4fr);
   gap: 12px;
   margin-bottom: 22px;
 }
