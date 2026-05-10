@@ -9712,13 +9712,24 @@ button.alert-banner-positive-item {
   color: var(--al-muted, #64748b);
 }
 
+/* Layout compact : info à gauche, chart à droite */
 .alpine-recovery-card-body {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: stretch;
+  gap: 10px;
+  flex: 1;
 }
 
-.alpine-recovery-card-value-block {
+/* Colonne gauche : valeur + hint + delta */
+.alpine-recovery-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.alpine-recovery-card-value-row {
   display: flex;
   align-items: baseline;
   gap: 3px;
@@ -9727,7 +9738,7 @@ button.alert-banner-positive-item {
 .alpine-recovery-card-value {
   font-size: 22px;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 .alpine-recovery-card-value.tone-1 { color: var(--al-success, #35a853); }
 .alpine-recovery-card-value.tone-2 { color: var(--al-success, #35a853); }
@@ -9735,17 +9746,17 @@ button.alert-banner-positive-item {
 .alpine-recovery-card-value.tone-4 { color: var(--al-warning, #f59e0b); }
 .alpine-recovery-card-value.tone-5 { color: var(--al-alert, #ef4444); }
 
+.alpine-recovery-card-gauge-value {
+  font-size: 13px;
+  font-weight: 700;
+}
+.alpine-recovery-card-gauge-value.tone-1 { color: var(--al-success, #35a853); }
+.alpine-recovery-card-gauge-value.tone-3 { color: var(--al-text, #0f2147); }
+.alpine-recovery-card-gauge-value.tone-4 { color: var(--al-warning, #f59e0b); }
+
 .alpine-recovery-card-unit {
   font-size: 12px;
   color: var(--al-muted, #64748b);
-}
-
-.alpine-recovery-card-meta {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
 }
 
 .alpine-recovery-card-hint {
@@ -9759,7 +9770,8 @@ button.alert-banner-positive-item {
 }
 
 .alpine-recovery-card-link {
-  margin-top: 4px;
+  margin-top: auto;
+  padding-top: 6px;
   font-size: 11px;
   font-weight: 600;
   color: var(--al-primary, #1268f3);
@@ -9768,30 +9780,37 @@ button.alert-banner-positive-item {
 }
 .alpine-recovery-card-link:hover { text-decoration: underline; }
 
+/* Colonne droite : mini-graphe */
+.alpine-recovery-card-chart {
+  width: 110px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
 .alpine-recovery-mini-bars {
   display: flex;
   align-items: flex-end;
-  gap: 1px;
-  height: 22px;
-  margin-top: 2px;
+  gap: 2px;
+  height: 44px;
+  width: 100%;
 }
 
 .alpine-recovery-mini-bar {
   flex: 1;
-  min-width: 2px;
-  border-radius: 1px;
-  background: var(--al-primary, #1268f3);
+  min-width: 3px;
+  border-radius: 2px;
 }
 .alpine-recovery-mini-bar.is-empty {
-  background: var(--al-border, #dfe8f5);
+  background: var(--al-border, #dfe8f5) !important;
   height: 20% !important;
   align-self: flex-end;
+  opacity: 0.6;
 }
 
 .alpine-recovery-mini-line {
   width: 100%;
-  height: 22px;
-  margin-top: 2px;
+  height: 44px;
 }
 
 /* SuggestedWorkoutCard */

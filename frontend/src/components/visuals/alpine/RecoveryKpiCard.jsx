@@ -6,32 +6,27 @@ import { clampTone } from "../../../utils/tonePicker.js";
 /**
  * RecoveryKpiCard — Alpine Light (Lot 3-bis, mockup-faithful).
  *
- * Carte récupération compacte. 4 sont alignées dans la section Récupération
- * de la page Aujourd'hui (Récupération / Sommeil / FC repos / Disponibilité).
- *
- * Layout :
- *  - icône colorée + label en haut
- *  - valeur grosse
- *  - sous-label tone (Correcte / Bonne qualité / Dans la norme / Prêt)
- *  - mini-graphe ou jauge circulaire
- *  - delta vs hier
- *  - lien "Voir le détail" en bas
+ * Layout compact : valeur + hint + delta à gauche, mini-graphe à droite.
+ * La couleur du graphe suit le tone de la carte (cohérence visuelle).
  *
  * Props :
- * - icon : ReactNode
- * - label : string
- * - value : string|number
- * - unit : string optionnel
- * - hint : string optionnel
- * - delta : string optionnel
- * - tone : 1..5
- * - gaugeValue : number|null — si présent affiche jauge circulaire à la place du graphe
- * - chartData : number[] — alternative graphe simple
- * - chartType : "line" | "bar" (défaut "bar")
- * - linkTo : string optionnel (ex: "/analytics#sommeil-recup")
+ * - icon, label, value, unit, hint, delta, tone : 1..5
+ * - gaugeValue : number|null — remplace value-block par jauge SVG
+ * - chartData  : number[] — mini-graphe à droite
+ * - chartType  : "line" | "bar"
+ * - linkTo     : string
  */
 
-function MiniBars({ data = [], color = "var(--al-primary, #1268f3)" }) {
+// Couleur du tracé selon le tone — cohérence avec icon et hint
+const TONE_CHART_COLOR = {
+  1: "var(--al-success, #35a853)",
+  2: "#84cc16",
+  3: "var(--al-primary, #1268f3)",
+  4: "var(--al-warning, #f59e0b)",
+  5: "var(--al-alert, #ef4444)",
+};
+
+function MiniBars({ data = [], color }) {
   const valid = data.filter((v) => v != null && Number.isFinite(v));
   if (valid.length < 2) return null;
   const max = Math.max(...valid, 1);
@@ -55,14 +50,14 @@ function MiniBars({ data = [], color = "var(--al-primary, #1268f3)" }) {
   );
 }
 
-function MiniLine({ data = [], color = "var(--al-primary, #1268f3)" }) {
+function MiniLine({ data = [], color }) {
   const valid = data.filter((v) => v != null && Number.isFinite(v));
   if (valid.length < 2) return null;
   const max = Math.max(...valid);
   const min = Math.min(...valid);
   const span = Math.max(1, max - min);
-  const width = 140;
-  const height = 36;
+  const width = 110;
+  const height = 44;
   const step = width / Math.max(1, data.length - 1);
   const path = data
     .map((v, idx) => {
@@ -73,6 +68,7 @@ function MiniLine({ data = [], color = "var(--al-primary, #1268f3)" }) {
     })
     .filter(Boolean)
     .join(" ");
+  const gradId = `rcMiniLine-${String(color).replace(/\W/g, "")}`;
   return (
     <svg
       className="alpine-recovery-mini-line"
@@ -80,25 +76,44 @@ function MiniLine({ data = [], color = "var(--al-primary, #1268f3)" }) {
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={color} stopOpacity="0.15" />
+          <stop offset="1" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path
+        d={`${path} L ${width} ${height} L 0 ${height} Z`}
+        fill={`url(#${gradId})`}
+      />
+      <path
+        d={path}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function RecoveryKpiCard({
-  icon = null,
-  label = "",
-  value = "—",
-  unit = "",
-  hint = "",
-  delta = "",
-  tone = 3,
+  icon      = null,
+  label     = "",
+  value     = "—",
+  unit      = "",
+  hint      = "",
+  delta     = "",
+  tone      = 3,
   gaugeValue = null,
-  chartData = null,
-  chartType = "bar",
-  linkTo = null,
+  chartData  = null,
+  chartType  = "bar",
+  linkTo     = null,
 }) {
-  const safeTone = clampTone(tone);
+  const safeTone   = clampTone(tone);
+  const chartColor = TONE_CHART_COLOR[safeTone] || TONE_CHART_COLOR[3];
+  const hasChart   = Array.isArray(chartData) && chartData.filter(Boolean).length > 1;
 
   return (
     <article className="alpine-recovery-card">
@@ -110,32 +125,37 @@ function RecoveryKpiCard({
         ) : null}
         <span className="alpine-recovery-card-label">{label}</span>
       </header>
+
       <div className="alpine-recovery-card-body">
-        {gaugeValue != null ? (
-          <KpiGaugeCircular value={gaugeValue} tone={safeTone} size="md" unit="%" />
-        ) : (
-          <div className="alpine-recovery-card-value-block">
-            <strong className={`alpine-recovery-card-value tone-${safeTone}`}>{value}</strong>
-            {unit ? <span className="alpine-recovery-card-unit">{unit}</span> : null}
-          </div>
-        )}
-        <div className="alpine-recovery-card-meta">
+        {/* Colonne gauche : valeur + hint + delta */}
+        <div className="alpine-recovery-card-info">
+          {gaugeValue != null ? (
+            <KpiGaugeCircular value={gaugeValue} tone={safeTone} size="md" unit="%" />
+          ) : (
+            <div className="alpine-recovery-card-value-row">
+              <strong className={`alpine-recovery-card-value tone-${safeTone}`}>{value}</strong>
+              {unit ? <span className="alpine-recovery-card-unit">{unit}</span> : null}
+            </div>
+          )}
           {gaugeValue != null && value !== "—" ? (
-            <strong className={`alpine-recovery-card-value tone-${safeTone}`}>{value}{unit}</strong>
+            <strong className={`alpine-recovery-card-gauge-value tone-${safeTone}`}>{value}{unit}</strong>
           ) : null}
-          {hint ? <span className={`alpine-recovery-card-hint tone-${safeTone}`}>{hint}</span> : null}
+          {hint  ? <span className={`alpine-recovery-card-hint  tone-${safeTone}`}>{hint}</span>  : null}
           {delta ? <span className="alpine-recovery-card-delta">{delta}</span> : null}
-          {chartData && chartData.length > 1 ? (
-            chartType === "line"
-              ? <MiniLine data={chartData} />
-              : <MiniBars data={chartData} />
-          ) : null}
         </div>
+
+        {/* Colonne droite : mini-graphe */}
+        {hasChart ? (
+          <div className="alpine-recovery-card-chart">
+            {chartType === "line"
+              ? <MiniLine data={chartData} color={chartColor} />
+              : <MiniBars data={chartData} color={chartColor} />}
+          </div>
+        ) : null}
       </div>
+
       {linkTo ? (
-        <Link className="alpine-recovery-card-link" to={linkTo}>
-          Voir le détail
-        </Link>
+        <Link className="alpine-recovery-card-link" to={linkTo}>Voir le détail</Link>
       ) : null}
     </article>
   );

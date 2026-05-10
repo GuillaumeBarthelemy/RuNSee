@@ -24,7 +24,6 @@ import {
   readinessTone,
   restingHrDeltaTone,
   sleepScoreTone,
-  vfcDeltaTone,
 } from "../utils/tonePicker.js";
 
 const TODAY_PERIOD_PRESET = "7d";
@@ -475,7 +474,11 @@ export default function DashboardPage() {
           delta={recoveryVm?.hrv?.deltaPct != null
             ? `${formatSignedInt(recoveryVm.hrv.deltaPct, "%")} vs repère`
             : ""}
-          tone={recoveryVm?.hrv?.deltaPct != null ? vfcDeltaTone(recoveryVm.hrv.deltaPct) : 3}
+          tone={recoveryVm?.hrv?.deltaPct != null
+            ? recoveryVm.hrv.deltaPct >= 5 ? 1
+              : recoveryVm.hrv.deltaPct <= -8 ? 4
+              : 3
+            : 3}
           chartData={Array.isArray(recoveryVm?.hrv?.series) ? recoveryVm.hrv.series.slice(-CHART_DAYS) : null}
           chartType="line"
           linkTo="/analytics"
