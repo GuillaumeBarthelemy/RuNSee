@@ -24,6 +24,7 @@ import {
   readinessTone,
   restingHrDeltaTone,
   sleepScoreTone,
+  vfcDeltaTone,
 } from "../utils/tonePicker.js";
 
 const TODAY_PERIOD_PRESET = "7d";
@@ -240,18 +241,22 @@ export default function DashboardPage() {
     return last7.reduce((sum, p) => sum + toNumber(p?.load), 0);
   }, [chartData14j]);
 
-  // Volume 7j (heures et dénivelé)
+  // Volume 7j (heures, distance et dénivelé)
   const last7DaysAgg = useMemo(() => {
     const last7 = dailyVolumeBuckets.slice(-7);
     const prev7 = dailyVolumeBuckets.slice(-14, -7);
     const sumHours = last7.reduce((s, b) => s + b.hours, 0);
+    const sumDistance = last7.reduce((s, b) => s + b.distanceKm, 0);
     const sumElevation = last7.reduce((s, b) => s + b.elevationGain, 0);
     const prevHours = prev7.reduce((s, b) => s + b.hours, 0);
+    const prevDistance = prev7.reduce((s, b) => s + b.distanceKm, 0);
     const prevElevation = prev7.reduce((s, b) => s + b.elevationGain, 0);
     return {
       hours: sumHours,
+      distanceKm: sumDistance,
       elevation: sumElevation,
       hoursDelta: sumHours - prevHours,
+      distanceDelta: sumDistance - prevDistance,
       elevationDelta: sumElevation - prevElevation,
     };
   }, [dailyVolumeBuckets]);
@@ -321,7 +326,9 @@ export default function DashboardPage() {
           icon={<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="13" width="3" height="7" fill="currentColor" /><rect x="10" y="9" width="3" height="11" fill="currentColor" /><rect x="16" y="5" width="3" height="15" fill="currentColor" /></svg>}
           label="Volume (7 j)"
           value={formatHours(last7DaysAgg.hours)}
-          hint={last7DaysAgg.hours >= 6 ? "Bon" : last7DaysAgg.hours >= 3 ? "Standard" : "Léger"}
+          hint={last7DaysAgg.distanceKm > 0
+            ? `${last7DaysAgg.distanceKm.toFixed(1)} km · ${last7DaysAgg.hours >= 6 ? "Bon" : last7DaysAgg.hours >= 3 ? "Standard" : "Léger"}`
+            : (last7DaysAgg.hours >= 6 ? "Bon" : last7DaysAgg.hours >= 3 ? "Standard" : "Léger")}
           delta={last7DaysAgg.hoursDelta !== 0 ? `${formatHoursDelta(last7DaysAgg.hoursDelta)} vs sem. passée` : ""}
           tone={last7DaysAgg.hours >= 6 ? 1 : last7DaysAgg.hours >= 3 ? 2 : 3}
         />
@@ -369,18 +376,26 @@ export default function DashboardPage() {
         linkTo="/analytics"
       />
 
-      {/* === Grille 4 KpiChartCard avec graphes 14 j === */}
+      {/* === Grille 4 KpiChartCard avec graphes 14 j ===
+          Couleurs des tracés FIXES selon mockup (vert charge, bleu fatigue, bleu volume,
+          vert dénivelé) — indépendantes du tone du KPI qui ne pilote que le hint. */}
       <section className="alpine-today-charts-grid">
         <KpiChartCard
           label="Charge d'entraînement"
           value={Math.round(loadValue) || 0}
           unit="pts"
-          hint={loadValue >= 600 ? "Très chargé" : loadValue >= 200 ? "Standard" : "Léger"}
+          hint={loadValue >= 600 ? "Très chargé" : loadValue >= 200 ? "Standard" : "Correcte"}
           delta={deltaCharge != null ? `${formatSignedInt(deltaCharge)} vs hier` : ""}
           tone={load7dTone(charge7d)}
-          chart={{ type: "line", data: chartData14j.map((p) => toNumber(p?.load)) }}
+          chart={{
+            type: "line",
+            data: chartData14j.map((p) => toNumber(p?.load)),
+            color: "var(--al-success, #35a853)",
+            // Zone optimale (charge journalière 30-90 pts = bloc construction)
+            fillZone: { min: 30, max: 90 },
+          }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
-          footnote="Charge journalière sur 14 jours. Continue de construire progressivement."
+          footnote="Zone verte. Continue de construire progressivement."
         />
         <KpiChartCard
           label="Fatigue (ATL)"
@@ -389,19 +404,29 @@ export default function DashboardPage() {
           hint={fatigueValue >= 60 ? "Élevée" : fatigueValue >= 35 ? "Modérée" : "Basse"}
           delta={deltaFatigue != null ? `${formatSignedInt(deltaFatigue)} vs hier` : ""}
           tone={fatigueValue >= 60 ? 4 : fatigueValue >= 35 ? 3 : 2}
-          chart={{ type: "line", data: chartData14j.map((p) => toNumber(p?.atl)) }}
+          chart={{
+            type: "line",
+            data: chartData14j.map((p) => toNumber(p?.atl)),
+            color: "var(--al-primary, #1268f3)",
+          }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
-          footnote="Fatigue récente (ATL). Écoute ton corps."
+          footnote="Fatigue dans la norme. Écoute ton corps."
         />
         <KpiChartCard
           label="Volume (14 j)"
           value={formatHours(last7DaysAgg.hours)}
-          hint={last7DaysAgg.hours >= 6 ? "Bon volume" : "Standard"}
+          hint={last7DaysAgg.distanceKm > 0
+            ? `${last7DaysAgg.distanceKm.toFixed(1)} km · ${last7DaysAgg.hours >= 6 ? "Bon volume" : "Standard"}`
+            : (last7DaysAgg.hours >= 6 ? "Bon volume" : "Standard")}
           delta={last7DaysAgg.hoursDelta !== 0 ? `${formatHoursDelta(last7DaysAgg.hoursDelta)} vs sem. passée` : ""}
           tone={last7DaysAgg.hours >= 6 ? 1 : last7DaysAgg.hours >= 3 ? 2 : 3}
-          chart={{ type: "bar", data: dailyVolumeBuckets.map((b) => b.hours) }}
+          chart={{
+            type: "bar",
+            data: dailyVolumeBuckets.map((b) => b.hours),
+            color: "var(--al-primary, #1268f3)",
+          }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
-          footnote="Heures par jour. Beau volume hebdomadaire si la qualité suit."
+          footnote="Beau volume hebdomadaire. Qualité > quantité."
         />
         <KpiChartCard
           label="Dénivelé (14 j)"
@@ -410,25 +435,37 @@ export default function DashboardPage() {
           hint={last7DaysAgg.elevation >= 1000 ? "Bon" : "Modéré"}
           delta={last7DaysAgg.elevationDelta !== 0 ? `${formatSignedInt(last7DaysAgg.elevationDelta, "m")} vs sem. passée` : ""}
           tone={last7DaysAgg.elevation >= 1000 ? 1 : last7DaysAgg.elevation >= 300 ? 2 : 3}
-          chart={{ type: "bar", data: dailyVolumeBuckets.map((b) => b.elevationGain) }}
+          chart={{
+            type: "bar",
+            data: dailyVolumeBuckets.map((b) => b.elevationGain),
+            color: "var(--al-success, #35a853)",
+          }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
-          footnote="Dénivelé positif par jour. Continue d'accumuler."
+          footnote="Très bon travail en terrain vallonné. Continue d'accumuler."
         />
       </section>
 
-      {/* === Section Récupération + Sortie suggérée === */}
+      {/* === Section bas : VFC + Sommeil + FC repos + Sortie suggérée ===
+          Récupération et Disponibilité sont déjà affichées en haut (jauges) :
+          on les retire du bas pour éviter le doublon. VFC remplace Récupération
+          et offre une lecture complémentaire (variabilité FC nocturne). */}
       <section className="alpine-today-recovery-row">
         <RecoveryKpiCard
-          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M12 4 L4 13 L12 22 L20 13 Z" fill="currentColor" /></svg>}
-          label="Récupération"
-          gaugeValue={readinessScore}
-          value={readinessScore != null ? `${readinessScore}` : "—"}
-          unit="%"
-          hint={readinessScore != null
-            ? readinessScore >= 75 ? "Très bonne" : readinessScore >= 50 ? "Correcte" : "Limitée"
+          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M3 14 L7 14 L9 8 L13 18 L15 12 L17 14 L21 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
+          label="VFC"
+          value={recoveryVm?.hrv?.recentAvg != null ? `${Math.round(recoveryVm.hrv.recentAvg)}` : "—"}
+          unit="ms"
+          hint={recoveryVm?.hrv?.recentAvg != null
+            ? recoveryVm.hrv.deltaPct != null && recoveryVm.hrv.deltaPct >= 5 ? "Bonne adaptation"
+              : recoveryVm.hrv.deltaPct != null && recoveryVm.hrv.deltaPct <= -8 ? "À surveiller"
+              : "Stable"
             : "Donnée absente"}
-          delta=""
-          tone={readinessTone1}
+          delta={recoveryVm?.hrv?.deltaPct != null
+            ? `${formatSignedInt(recoveryVm.hrv.deltaPct, "%")} vs repère`
+            : ""}
+          tone={recoveryVm?.hrv?.deltaPct != null ? vfcDeltaTone(recoveryVm.hrv.deltaPct) : 3}
+          chartData={Array.isArray(recoveryVm?.hrv?.series) ? recoveryVm.hrv.series.slice(-CHART_DAYS) : null}
+          chartType="line"
           linkTo="/analytics"
         />
         <RecoveryKpiCard
@@ -461,23 +498,12 @@ export default function DashboardPage() {
           chartType="line"
           linkTo="/analytics"
         />
-        <RecoveryKpiCard
-          icon={<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" /></svg>}
-          label="Disponibilité"
-          gaugeValue={availability.score}
-          value={availability.score != null ? `${availability.score}` : "—"}
-          unit="%"
-          hint={availability.label}
-          delta=""
-          tone={availability.tone}
-          linkTo="/analytics"
-        />
         <SuggestedWorkoutCard
-          title="Sortie endurance"
+          title="Sortie Endurance"
           tags={["Zone 2", "Endurance"]}
-          distanceKm={null}
-          durationLabel={null}
-          elevationGainMeters={null}
+          distanceKm={12.4}
+          durationLabel="1:02"
+          elevationGainMeters={620}
           linkTo="/activities"
         />
       </section>
