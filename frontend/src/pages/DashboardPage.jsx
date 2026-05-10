@@ -21,7 +21,6 @@ import { buildTrailContextSummary } from "../utils/trailProfile.js";
 import { computeAvailabilityScore } from "../utils/availabilityScore.js";
 import { buildSuggestedWorkout } from "../utils/dashboardSuggestedWorkout.js";
 import {
-  load7dTone,
   readinessTone,
   restingHrDeltaTone,
   sleepScoreTone,
@@ -232,11 +231,17 @@ export default function DashboardPage() {
 
   // --- Calculs KPI haut (mockup) ---
   const summary = trainingLoadModel?.summary || {};
-  const loadValue = toNumber(summary.load);
-  const fatigueValue = toNumber(summary.atl);
-  const tsbValue = toNumber(summary.tsb);
+  const tsbValue  = toNumber(summary.tsb);
 
-  // Charge 7j cumulée
+  // Scores normalisés 0-100 (mockup — "68/100 Correcte")
+  // CTL = Charge chronique (Banister, fenêtre 42 j) — score de forme
+  const ctlScore    = toNumber(summary.ctl);
+  const ctlDelta    = summary.ctlDeltaValue ?? null;
+  // ATL = Fatigue aiguë (Banister, fenêtre 7 j)
+  const fatigueValue = toNumber(summary.atl);
+  const atlDelta     = summary.atlDeltaValue ?? null;
+
+  // Charge 7j cumulée (conservée pour la suggestion et les histos bruts)
   const charge7d = useMemo(() => {
     const last7 = chartData14j.slice(-7);
     return last7.reduce((sum, p) => sum + toNumber(p?.load), 0);
@@ -262,22 +267,7 @@ export default function DashboardPage() {
     };
   }, [dailyVolumeBuckets]);
 
-  // Deltas charge/fatigue vs hier
-  const deltaCharge = useMemo(() => {
-    const all = Array.isArray(trendLoadModel?.chartData) ? trendLoadModel.chartData : [];
-    if (all.length < 2) return null;
-    const today = toNumber(all[all.length - 1]?.load);
-    const yest = toNumber(all[all.length - 2]?.load);
-    return today - yest;
-  }, [trendLoadModel]);
-
-  const deltaFatigue = useMemo(() => {
-    const all = Array.isArray(trendLoadModel?.chartData) ? trendLoadModel.chartData : [];
-    if (all.length < 2) return null;
-    const today = toNumber(all[all.length - 1]?.atl);
-    const yest = toNumber(all[all.length - 2]?.atl);
-    return today - yest;
-  }, [trendLoadModel]);
+  // deltaCharge/deltaFatigue supprimés — remplacés par summary.ctlDeltaValue / summary.atlDeltaValue
 
   // Récupération (Aptitude RuNSee 0-100)
   const readinessScore = recoveryVm?.readiness?.score ?? null;
@@ -315,19 +305,19 @@ export default function DashboardPage() {
         <KpiCardCompact
           icon={<svg viewBox="0 0 24 24" fill="none"><path d="M3 17 L9 11 L13 14 L21 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /><path d="M16 6 H21 V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
           label="Charge (7 j)"
-          value={Math.round(charge7d)}
-          unit="pts"
-          hint={charge7d >= 200 && charge7d < 400 ? "Standard" : charge7d >= 400 ? "Dense" : "Léger"}
-          delta={deltaCharge != null ? `${formatSignedInt(deltaCharge)} vs hier` : ""}
-          tone={load7dTone(charge7d)}
+          value={ctlScore > 0 ? Math.round(ctlScore) : "—"}
+          unit="/100"
+          hint={ctlScore >= 75 ? "Très bonne" : ctlScore >= 50 ? "Correcte" : ctlScore >= 25 ? "En construction" : "Débutant"}
+          delta={ctlDelta != null ? `${formatSignedInt(ctlDelta)} vs hier` : ""}
+          tone={readinessTone(ctlScore)}
         />
         <KpiCardCompact
           icon={<svg viewBox="0 0 24 24" fill="none"><path d="M3 17 L8 12 L12 14 L21 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
           label="Fatigue (ATL)"
-          value={Math.round(fatigueValue)}
-          unit="pts"
+          value={fatigueValue > 0 ? Math.round(fatigueValue) : "—"}
+          unit="/100"
           hint={fatigueValue >= 60 ? "Élevée" : fatigueValue >= 35 ? "Modérée" : "Basse"}
-          delta={deltaFatigue != null ? `${formatSignedInt(deltaFatigue)} vs hier` : ""}
+          delta={atlDelta != null ? `${formatSignedInt(atlDelta)} vs hier` : ""}
           tone={fatigueValue >= 60 ? 4 : fatigueValue >= 35 ? 3 : 2}
         />
         <KpiCardCompact
@@ -390,32 +380,37 @@ export default function DashboardPage() {
       <section className="alpine-today-charts-grid">
         <KpiChartCard
           label="Charge d'entraînement"
-          value={Math.round(loadValue) || 0}
-          unit="pts"
-          hint={loadValue >= 600 ? "Très chargé" : loadValue >= 200 ? "Standard" : "Correcte"}
-          delta={deltaCharge != null ? `${formatSignedInt(deltaCharge)} vs hier` : ""}
-          tone={load7dTone(charge7d)}
+          value={ctlScore > 0 ? Math.round(ctlScore) : "—"}
+          unit="/100"
+          hint={ctlScore >= 75 ? "Très bonne" : ctlScore >= 50 ? "Correcte" : ctlScore >= 25 ? "En construction" : "—"}
+          delta={ctlDelta != null ? `${formatSignedInt(ctlDelta)} vs hier` : ""}
+          tone={readinessTone(ctlScore)}
           chart={{
             type: "line",
-            data: chartData14j.map((p) => toNumber(p?.load)),
+            data: chartData14j.map((p) => toNumber(p?.ctl)),
             color: "var(--al-success, #35a853)",
-            // Zone optimale (charge journalière 30-90 pts = bloc construction)
-            fillZone: { min: 30, max: 90 },
+            min: 0,
+            max: 100,
+            fillZone: { min: 30, max: 75 },
+            yAxis: { labels: ["100", "50", "0"] },
           }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
-          footnote="Zone verte. Continue de construire progressivement."
+          footnote="Zone verte = base aérobie en construction. Continue progressivement."
         />
         <KpiChartCard
           label="Fatigue (ATL)"
-          value={Math.round(fatigueValue) || 0}
-          unit="pts"
+          value={fatigueValue > 0 ? Math.round(fatigueValue) : "—"}
+          unit="/100"
           hint={fatigueValue >= 60 ? "Élevée" : fatigueValue >= 35 ? "Modérée" : "Basse"}
-          delta={deltaFatigue != null ? `${formatSignedInt(deltaFatigue)} vs hier` : ""}
+          delta={atlDelta != null ? `${formatSignedInt(atlDelta)} vs hier` : ""}
           tone={fatigueValue >= 60 ? 4 : fatigueValue >= 35 ? 3 : 2}
           chart={{
             type: "line",
             data: chartData14j.map((p) => toNumber(p?.atl)),
             color: "var(--al-primary, #1268f3)",
+            min: 0,
+            max: 100,
+            yAxis: { labels: ["100", "50", "0"] },
           }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
           footnote="Fatigue dans la norme. Écoute ton corps."
