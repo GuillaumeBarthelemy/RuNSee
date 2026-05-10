@@ -44,7 +44,6 @@ function buildLinePath(data, min, max, width) {
 }
 
 function YAxisLabels({ labels, min, max }) {
-  // Dessine grille horizontale + labels à droite pour chaque valeur de labels
   const span = Math.max(1, max - min);
   return (
     <>
@@ -52,21 +51,25 @@ function YAxisLabels({ labels, min, max }) {
         const val = parseFloat(label);
         if (!Number.isFinite(val)) return null;
         const y = ((max - val) / span) * CHART_HEIGHT;
+        // Clamp pour que la ligne du bas ne soit pas coupée
+        const yC = Math.min(CHART_HEIGHT - 0.5, Math.max(0.5, y));
         return (
           <g key={idx}>
             <line
-              x1="0" y1={y.toFixed(1)}
-              x2={CHART_WIDTH} y2={y.toFixed(1)}
-              stroke="var(--al-border, #dfe8f5)"
+              x1="0" y1={yC.toFixed(1)}
+              x2={CHART_WIDTH} y2={yC.toFixed(1)}
+              stroke="#c4d0e8"
               strokeWidth="1"
-              strokeDasharray="3 3"
+              strokeDasharray="4 4"
+              opacity="0.9"
             />
             <text
-              x={CHART_WIDTH + 4}
-              y={(y + 4).toFixed(1)}
-              fontSize="9"
-              fill="var(--al-text-soft, #6b7a99)"
-              fontFamily="inherit"
+              x={CHART_WIDTH + 5}
+              y={(yC + 4).toFixed(1)}
+              fontSize="10"
+              fontWeight="600"
+              fill="#6b7a99"
+              fontFamily="system-ui, sans-serif"
             >
               {label}
             </text>

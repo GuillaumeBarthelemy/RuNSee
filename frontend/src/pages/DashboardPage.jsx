@@ -247,14 +247,15 @@ export default function DashboardPage() {
     return last7.reduce((sum, p) => sum + toNumber(p?.load), 0);
   }, [chartData14j]);
 
-  // Volume 7j (heures, distance et dénivelé)
+  // Volume agrégé sur 7j (compact bandeau) et 14j (KpiChartCard valeur)
+  // → cohérence : compact affiche période "7 j", chart affiche total "14 j"
   const last7DaysAgg = useMemo(() => {
     const last7 = dailyVolumeBuckets.slice(-7);
     const prev7 = dailyVolumeBuckets.slice(-14, -7);
-    const sumHours = last7.reduce((s, b) => s + b.hours, 0);
+    const sumHours    = last7.reduce((s, b) => s + b.hours, 0);
     const sumDistance = last7.reduce((s, b) => s + b.distanceKm, 0);
     const sumElevation = last7.reduce((s, b) => s + b.elevationGain, 0);
-    const prevHours = prev7.reduce((s, b) => s + b.hours, 0);
+    const prevHours    = prev7.reduce((s, b) => s + b.hours, 0);
     const prevDistance = prev7.reduce((s, b) => s + b.distanceKm, 0);
     const prevElevation = prev7.reduce((s, b) => s + b.elevationGain, 0);
     return {
@@ -265,6 +266,14 @@ export default function DashboardPage() {
       distanceDelta: sumDistance - prevDistance,
       elevationDelta: sumElevation - prevElevation,
     };
+  }, [dailyVolumeBuckets]);
+
+  // Agrégats 14j pour KpiChartCard Volume et Dénivelé (valeur = même période que le graphe)
+  const last14DaysAgg = useMemo(() => {
+    const hours    = dailyVolumeBuckets.reduce((s, b) => s + b.hours, 0);
+    const distanceKm = dailyVolumeBuckets.reduce((s, b) => s + b.distanceKm, 0);
+    const elevation  = dailyVolumeBuckets.reduce((s, b) => s + b.elevationGain, 0);
+    return { hours, distanceKm, elevation };
   }, [dailyVolumeBuckets]);
 
   // deltaCharge/deltaFatigue supprimés — remplacés par summary.ctlDeltaValue / summary.atlDeltaValue
@@ -304,7 +313,7 @@ export default function DashboardPage() {
       <section className="alpine-today-kpi-grid">
         <KpiCardCompact
           icon={<svg viewBox="0 0 24 24" fill="none"><path d="M3 17 L9 11 L13 14 L21 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /><path d="M16 6 H21 V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
-          label="Charge (7 j)"
+          label="Charge"
           value={ctlScore > 0 ? Math.round(ctlScore) : "—"}
           unit="/100"
           hint={ctlScore >= 75 ? "Très bonne" : ctlScore >= 50 ? "Correcte" : ctlScore >= 25 ? "En construction" : "Débutant"}
@@ -417,34 +426,34 @@ export default function DashboardPage() {
         />
         <KpiChartCard
           label="Volume (14 j)"
-          value={formatHours(last7DaysAgg.hours)}
-          hint={last7DaysAgg.distanceKm > 0
-            ? `${last7DaysAgg.distanceKm.toFixed(1)} km · ${last7DaysAgg.hours >= 6 ? "Bon volume" : "Standard"}`
-            : (last7DaysAgg.hours >= 6 ? "Bon volume" : "Standard")}
+          value={formatHours(last14DaysAgg.hours)}
+          hint={last14DaysAgg.distanceKm > 0
+            ? `${last14DaysAgg.distanceKm.toFixed(1)} km · ${last14DaysAgg.hours >= 10 ? "Bon volume" : "Standard"}`
+            : (last14DaysAgg.hours >= 10 ? "Bon volume" : "Standard")}
           delta={last7DaysAgg.hoursDelta !== 0 ? `${formatHoursDelta(last7DaysAgg.hoursDelta)} vs sem. passée` : ""}
-          tone={last7DaysAgg.hours >= 6 ? 1 : last7DaysAgg.hours >= 3 ? 2 : 3}
+          tone={last14DaysAgg.hours >= 10 ? 1 : last14DaysAgg.hours >= 5 ? 2 : 3}
           chart={{
             type: "bar",
             data: dailyVolumeBuckets.map((b) => b.hours),
             color: "var(--al-primary, #1268f3)",
           }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
-          footnote="Beau volume hebdomadaire. Qualité > quantité."
+          footnote="Total 14 derniers jours. Delta vs semaine précédente."
         />
         <KpiChartCard
           label="Dénivelé (14 j)"
-          value={`${Math.round(dailyVolumeBuckets.reduce((s, b) => s + b.elevationGain, 0)).toLocaleString("fr-FR")}`}
-          unit="m"
-          hint={last7DaysAgg.elevation >= 1000 ? "Bon" : "Modéré"}
+          value={`${Math.round(last14DaysAgg.elevation).toLocaleString("fr-FR")}`}
+          unit="m D+"
+          hint={last14DaysAgg.elevation >= 2000 ? "Bon" : last14DaysAgg.elevation >= 600 ? "Modéré" : "Faible"}
           delta={last7DaysAgg.elevationDelta !== 0 ? `${formatSignedInt(last7DaysAgg.elevationDelta, "m")} vs sem. passée` : ""}
-          tone={last7DaysAgg.elevation >= 1000 ? 1 : last7DaysAgg.elevation >= 300 ? 2 : 3}
+          tone={last14DaysAgg.elevation >= 2000 ? 1 : last14DaysAgg.elevation >= 600 ? 2 : 3}
           chart={{
             type: "bar",
             data: dailyVolumeBuckets.map((b) => b.elevationGain),
             color: "var(--al-success, #35a853)",
           }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
-          footnote="Très bon travail en terrain vallonné. Continue d'accumuler."
+          footnote="Total 14 derniers jours. Delta vs semaine précédente."
         />
       </section>
 
