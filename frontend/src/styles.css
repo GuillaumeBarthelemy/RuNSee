@@ -9808,14 +9808,16 @@ button.alert-banner-positive-item {
 }
 .alpine-recovery-card-link:hover { text-decoration: underline; }
 
-/* Colonne droite : mini-graphe — remplit l'espace dispo, hauteur fixe */
+/* Colonne droite : mini-graphe — remplit l'espace, ratio aligné au viewBox 5:1 */
 .alpine-recovery-card-chart {
-  flex: 1 1 auto;           /* grandit pour combler le vide à droite de info */
-  min-width: 130px;
-  max-width: 320px;
-  height: 56px;             /* hauteur fixe → pas de distortion verticale */
+  flex: 1 1 auto;
+  min-width: 140px;
+  max-width: 280px;         /* cap = largeur viewBox → distortion ≈ 0 */
+  height: 56px;             /* ratio cible 5:1 → 280×56 */
   display: flex;
   align-items: center;
+  justify-content: flex-end;/* chart aligné à droite si pas de stretch complet */
+  margin-left: auto;        /* pousse le chart à droite si info compact */
 }
 
 .alpine-recovery-mini-bars {

@@ -50,14 +50,16 @@ function MiniBars({ data = [], color }) {
   );
 }
 
+// viewBox 280×56 (ratio 5:1) — proche du ratio cible du container chart
+// → distortion X/Y minime peu importe la largeur réelle (130–320px) du container.
 function MiniLine({ data = [], color }) {
   const valid = data.filter((v) => v != null && Number.isFinite(v));
   if (valid.length < 2) return null;
   const max = Math.max(...valid);
   const min = Math.min(...valid);
   const span = Math.max(1, max - min);
-  const width = 110;
-  const height = 44;
+  const width = 280;
+  const height = 56;
   const step = width / Math.max(1, data.length - 1);
   const path = data
     .map((v, idx) => {
@@ -93,6 +95,7 @@ function MiniLine({ data = [], color }) {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );
