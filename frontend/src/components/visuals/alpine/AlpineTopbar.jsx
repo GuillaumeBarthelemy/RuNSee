@@ -22,9 +22,11 @@ function DefaultActions() {
     <div className="alpine-topbar-actions" role="toolbar" aria-label="Actions rapides">
       <button
         type="button"
-        className="alpine-topbar-icon-button"
-        aria-label="Calendrier"
-        title="Calendrier"
+        className="alpine-topbar-icon-button is-disabled"
+        aria-label="Calendrier — À venir"
+        title="Calendrier — À venir"
+        disabled
+        aria-disabled="true"
       >
         <svg viewBox="0 0 24 24" fill="none">
           <rect x="3.5" y="5" width="17" height="15" rx="2" stroke="currentColor" strokeWidth="1.6" />
@@ -35,9 +37,11 @@ function DefaultActions() {
       </button>
       <button
         type="button"
-        className="alpine-topbar-icon-button"
-        aria-label="Notifications"
-        title="Notifications"
+        className="alpine-topbar-icon-button is-disabled"
+        aria-label="Notifications — À venir"
+        title="Notifications — À venir"
+        disabled
+        aria-disabled="true"
       >
         <svg viewBox="0 0 24 24" fill="none">
           <path
@@ -49,9 +53,9 @@ function DefaultActions() {
           <path d="M10 20 a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
       </button>
-      <button
-        type="button"
+      <a
         className="alpine-topbar-icon-button"
+        href="/admin#compte"
         aria-label="Compte"
         title="Compte"
       >
@@ -64,7 +68,7 @@ function DefaultActions() {
             strokeLinecap="round"
           />
         </svg>
-      </button>
+      </a>
     </div>
   );
 }

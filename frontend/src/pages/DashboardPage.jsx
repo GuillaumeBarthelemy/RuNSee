@@ -21,6 +21,7 @@ import { buildTrailContextSummary } from "../utils/trailProfile.js";
 import { computeAvailabilityScore } from "../utils/availabilityScore.js";
 import { buildSuggestedWorkout } from "../utils/dashboardSuggestedWorkout.js";
 import {
+  load7dTone,
   readinessTone,
   restingHrDeltaTone,
   sleepScoreTone,
@@ -232,10 +233,6 @@ export default function DashboardPage() {
   const summary = trainingLoadModel?.summary || {};
   const tsbValue  = toNumber(summary.tsb);
 
-  // Scores normalisés 0-100 (mockup — "68/100 Correcte")
-  // CTL = Charge chronique (Banister, fenêtre 42 j) — score de forme
-  const ctlScore    = toNumber(summary.ctl);
-  const ctlDelta    = summary.ctlDeltaValue ?? null;
   // ATL = Fatigue aiguë (Banister, fenêtre 7 j)
   const fatigueValue = toNumber(summary.atl);
   const atlDelta     = summary.atlDeltaValue ?? null;
@@ -341,18 +338,18 @@ export default function DashboardPage() {
       <section className="alpine-today-kpi-grid">
         <KpiCardCompact
           icon={<svg viewBox="0 0 24 24" fill="none"><path d="M3 17 L9 11 L13 14 L21 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /><path d="M16 6 H21 V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
-          label="Charge"
-          value={ctlScore > 0 ? Math.round(ctlScore) : "—"}
-          unit="/100"
-          hint={ctlScore >= 75 ? "Très bonne" : ctlScore >= 50 ? "Correcte" : ctlScore >= 25 ? "En construction" : "Débutant"}
-          delta={ctlDelta != null ? `${formatSignedInt(ctlDelta)} vs hier` : ""}
-          tone={readinessTone(ctlScore)}
+          label="Charge (7 j)"
+          value={charge7d > 0 ? Math.round(charge7d) : "—"}
+          unit="pts"
+          hint={charge7d >= 600 ? "Très chargé" : charge7d >= 400 ? "Dense" : charge7d >= 200 ? "Standard" : "Léger"}
+          delta=""
+          tone={load7dTone(charge7d)}
         />
         <KpiCardCompact
           icon={<svg viewBox="0 0 24 24" fill="none"><path d="M3 17 L8 12 L12 14 L21 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
-          label="Fatigue (ATL)"
+          label="Fatigue"
           value={fatigueValue > 0 ? Math.round(fatigueValue) : "—"}
-          unit="/100"
+          unit="pts"
           hint={fatigueValue >= 60 ? "Élevée" : fatigueValue >= 35 ? "Modérée" : "Basse"}
           delta={atlDelta != null ? `${formatSignedInt(atlDelta)} vs hier` : ""}
           tone={fatigueValue >= 60 ? 4 : fatigueValue >= 35 ? 3 : 2}
@@ -417,27 +414,23 @@ export default function DashboardPage() {
       <section className="alpine-today-charts-grid">
         <KpiChartCard
           label="Charge d'entraînement"
-          value={ctlScore > 0 ? Math.round(ctlScore) : "—"}
-          unit="/100"
-          hint={ctlScore >= 75 ? "Très bonne" : ctlScore >= 50 ? "Correcte" : ctlScore >= 25 ? "En construction" : "—"}
-          delta={ctlDelta != null ? `${formatSignedInt(ctlDelta)} vs hier` : ""}
-          tone={readinessTone(ctlScore)}
+          value={charge7d > 0 ? Math.round(charge7d) : "—"}
+          unit="pts"
+          hint={charge7d >= 600 ? "Très chargé" : charge7d >= 400 ? "Dense" : charge7d >= 200 ? "Standard" : "Léger"}
+          delta=""
+          tone={load7dTone(charge7d)}
           chart={{
             type: "line",
-            data: chartData14j.map((p) => toNumber(p?.ctl)),
+            data: chartData14j.map((p) => toNumber(p?.load)),
             color: "var(--al-success, #35a853)",
-            min: 0,
-            max: 100,
-            fillZone: { min: 30, max: 75 },
-            yAxis: { labels: ["100", "50", "0"] },
           }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
-          footnote="Zone verte = base aérobie en construction. Continue progressivement."
+          footnote="Charge journalière (TRIMP). Continue progressivement."
         />
         <KpiChartCard
           label="Fatigue (ATL)"
           value={fatigueValue > 0 ? Math.round(fatigueValue) : "—"}
-          unit="/100"
+          unit="pts"
           hint={fatigueValue >= 60 ? "Élevée" : fatigueValue >= 35 ? "Modérée" : "Basse"}
           delta={atlDelta != null ? `${formatSignedInt(atlDelta)} vs hier` : ""}
           tone={fatigueValue >= 60 ? 4 : fatigueValue >= 35 ? 3 : 2}
@@ -445,12 +438,9 @@ export default function DashboardPage() {
             type: "line",
             data: chartData14j.map((p) => toNumber(p?.atl)),
             color: "var(--al-primary, #1268f3)",
-            min: 0,
-            max: 100,
-            yAxis: { labels: ["100", "50", "0"] },
           }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
-          footnote="Fatigue dans la norme. Écoute ton corps."
+          footnote="Fatigue aiguë sur 14 jours. Écoute ton corps."
         />
         <KpiChartCard
           label="Volume (14 j)"
@@ -491,31 +481,24 @@ export default function DashboardPage() {
         />
       </section>
 
-      {/* === Section bas : VFC + Sommeil + FC repos + Sortie suggérée ===
-          Récupération et Disponibilité sont déjà affichées en haut (jauges) :
-          on les retire du bas pour éviter le doublon. VFC remplace Récupération
-          et offre une lecture complémentaire (variabilité FC nocturne). */}
+      {/* === Section bas : structure PDF page 5 (5 cartes) ===
+          Récupération + Sommeil + FC repos + Disponibilité + Sortie suggérée.
+          La VFC apparaît en hint de la carte Récupération (donnée secondaire).
+          Lien "Voir le détail" → Analyse > Sommeil & récupération. */}
       <section className="alpine-today-recovery-row">
         <RecoveryKpiCard
-          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M3 14 L7 14 L9 8 L13 18 L15 12 L17 14 L21 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" /></svg>}
-          label="VFC"
-          value={recoveryVm?.hrv?.recentAvg != null ? `${Math.round(recoveryVm.hrv.recentAvg)}` : "—"}
-          unit="ms"
-          hint={recoveryVm?.hrv?.recentAvg != null
-            ? recoveryVm.hrv.deltaPct != null && recoveryVm.hrv.deltaPct >= 5 ? "Bonne adaptation"
-              : recoveryVm.hrv.deltaPct != null && recoveryVm.hrv.deltaPct <= -8 ? "À surveiller"
-              : "Stable"
-            : "Donnée absente"}
-          delta={recoveryVm?.hrv?.deltaPct != null
-            ? `${formatSignedInt(recoveryVm.hrv.deltaPct, "%")} vs repère`
+          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M12 4 L4 13 L12 22 L20 13 Z" fill="currentColor" /></svg>}
+          label="Récupération"
+          value={readinessScore != null ? `${readinessScore}` : "—"}
+          unit="%"
+          hint={readinessScore != null
+            ? readinessScore >= 75 ? "Très bonne" : readinessScore >= 50 ? "Correcte" : readinessScore >= 25 ? "Limitée" : "Faible"
+            : "Donnée Garmin"}
+          delta={recoveryVm?.hrv?.recentAvg != null
+            ? `VFC ${Math.round(recoveryVm.hrv.recentAvg)} ms`
             : ""}
-          tone={recoveryVm?.hrv?.deltaPct != null
-            ? recoveryVm.hrv.deltaPct >= 5 ? 1
-              : recoveryVm.hrv.deltaPct <= -8 ? 4
-              : 3
-            : 3}
-          chartData={Array.isArray(recoveryVm?.hrv?.series) ? recoveryVm.hrv.series.slice(-CHART_DAYS) : null}
-          chartType="line"
+          tone={readinessTone1}
+          gaugeValue={readinessScore}
           linkTo="/analytics"
         />
         <RecoveryKpiCard
@@ -548,6 +531,17 @@ export default function DashboardPage() {
           chartType="line"
           linkTo="/analytics"
         />
+        <RecoveryKpiCard
+          icon={<svg viewBox="0 0 24 24" fill="none"><path d="M12 3 L4 7 L12 11 L20 7 Z M4 12 L12 16 L20 12 M4 17 L12 21 L20 17" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinejoin="round" /></svg>}
+          label="Disponibilité"
+          value={availability.score != null ? `${availability.score}` : "—"}
+          unit="%"
+          hint={availability.label}
+          delta=""
+          tone={availability.tone}
+          gaugeValue={availability.score}
+          linkTo="/analytics"
+        />
         <SuggestedWorkoutCard
           title={suggestedWorkout.title}
           subtitle={suggestedWorkout.subtitle}
@@ -555,7 +549,7 @@ export default function DashboardPage() {
           durationRange={suggestedWorkout.durationRange}
           terrain={suggestedWorkout.terrain}
           isPlaceholder={suggestedWorkout.isPlaceholder}
-          linkTo="/activities"
+          linkTo="/analytics"
         />
       </section>
 
