@@ -277,6 +277,35 @@ export default function DashboardPage() {
 
   // deltaCharge/deltaFatigue supprimés — remplacés par summary.ctlDeltaValue / summary.atlDeltaValue
 
+  // Échelles + ticks pour les graphes Volume/Dénivelé (axe Y dynamique)
+  const volumeChartScale = useMemo(() => {
+    const peak = Math.max(0.5, ...dailyVolumeBuckets.map((b) => b.hours || 0));
+    // Arrondi 0.5h supérieur pour avoir un max "rond"
+    const max = Math.max(1, Math.ceil(peak * 2) / 2);
+    return {
+      max,
+      ticks: [
+        { value: max, label: formatHours(max) },
+        { value: max / 2, label: formatHours(max / 2) },
+        { value: 0, label: "0" },
+      ],
+    };
+  }, [dailyVolumeBuckets]);
+
+  const elevationChartScale = useMemo(() => {
+    const peak = Math.max(100, ...dailyVolumeBuckets.map((b) => b.elevationGain || 0));
+    // Arrondi 100m supérieur
+    const max = Math.ceil(peak / 100) * 100;
+    return {
+      max,
+      ticks: [
+        { value: max, label: `${max}` },
+        { value: max / 2, label: `${Math.round(max / 2)}` },
+        { value: 0, label: "0" },
+      ],
+    };
+  }, [dailyVolumeBuckets]);
+
   // Récupération (Aptitude RuNSee 0-100)
   const readinessScore = recoveryVm?.readiness?.score ?? null;
   const readinessTone1 = readinessScore != null ? readinessTone(readinessScore) : 3;
@@ -435,6 +464,9 @@ export default function DashboardPage() {
             type: "bar",
             data: dailyVolumeBuckets.map((b) => b.hours),
             color: "var(--al-primary, #1268f3)",
+            min: 0,
+            max: volumeChartScale.max,
+            yAxis: { ticks: volumeChartScale.ticks },
           }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
           footnote="Total 14 derniers jours. Delta vs semaine précédente."
@@ -450,6 +482,9 @@ export default function DashboardPage() {
             type: "bar",
             data: dailyVolumeBuckets.map((b) => b.elevationGain),
             color: "var(--al-success, #35a853)",
+            min: 0,
+            max: elevationChartScale.max,
+            yAxis: { ticks: elevationChartScale.ticks },
           }}
           axisLabels={["-14 j", "", "", "", "", "", "", "Aujourd'hui"]}
           footnote="Total 14 derniers jours. Delta vs semaine précédente."

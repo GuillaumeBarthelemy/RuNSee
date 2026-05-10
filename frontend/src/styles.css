@@ -9627,11 +9627,39 @@ button.alert-banner-positive-item {
 }
 
 .alpine-kpi-chart-graph {
+  position: relative;
   width: 100%;
-  height: 100px;
+  height: 130px;
   margin-top: 8px;
 }
-.alpine-kpi-chart-svg { width: 100%; height: 100%; }
+.alpine-kpi-chart-graph.has-yaxis {
+  padding-right: 30px; /* place pour les labels Y en HTML overlay */
+}
+.alpine-kpi-chart-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Labels Y en HTML overlay — pas de déformation SVG */
+.alpine-kpi-chart-yaxis {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 28px;
+  pointer-events: none;
+}
+.alpine-kpi-chart-yaxis span {
+  position: absolute;
+  right: 2px;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7a99;
+  font-family: system-ui, sans-serif;
+  white-space: nowrap;
+}
 
 .alpine-chart-empty {
   height: 100%;
