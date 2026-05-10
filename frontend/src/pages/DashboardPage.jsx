@@ -19,6 +19,7 @@ import { buildRecoveryViewModel } from "../utils/recoveryViewModel.js";
 import { buildTrainingLoadStateModel } from "../utils/trainingMetrics.js";
 import { buildTrailContextSummary } from "../utils/trailProfile.js";
 import { computeAvailabilityScore } from "../utils/availabilityScore.js";
+import { buildSuggestedWorkout } from "../utils/dashboardSuggestedWorkout.js";
 import {
   load7dTone,
   readinessTone,
@@ -286,6 +287,13 @@ export default function DashboardPage() {
   // Calcul direct (pas de useMemo) car le helper est pur et léger.
   const availability = computeAvailabilityScore({ readinessScore, tsb: tsbValue });
 
+  // Séance suggérée — orientation prudente sans valeurs inventées
+  const suggestedWorkout = buildSuggestedWorkout({
+    readinessScore,
+    fatigueValue,
+    charge7d,
+  });
+
   // Tone du verdict pour TodayReadingCard
   const verdictTone = useMemo(() => {
     const t = dashboardDecisionModel?.recommendation?.tone;
@@ -499,11 +507,12 @@ export default function DashboardPage() {
           linkTo="/analytics"
         />
         <SuggestedWorkoutCard
-          title="Sortie Endurance"
-          tags={["Zone 2", "Endurance"]}
-          distanceKm={12.4}
-          durationLabel="1:02"
-          elevationGainMeters={620}
+          title={suggestedWorkout.title}
+          subtitle={suggestedWorkout.subtitle}
+          tags={suggestedWorkout.tags}
+          durationRange={suggestedWorkout.durationRange}
+          terrain={suggestedWorkout.terrain}
+          isPlaceholder={suggestedWorkout.isPlaceholder}
           linkTo="/activities"
         />
       </section>

@@ -9661,7 +9661,7 @@ button.alert-banner-positive-item {
 /* Section recovery + suggested */
 .alpine-today-recovery-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(220px, 1.2fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(220px, 1.4fr);
   gap: 12px;
   margin-bottom: 22px;
 }
@@ -9845,6 +9845,24 @@ button.alert-banner-positive-item {
   font-size: 14px;
   font-weight: 700;
   color: var(--al-text, #0f2147);
+}
+
+.alpine-suggested-workout-subtitle {
+  font-size: 11px;
+  color: var(--al-text-soft, #6b7a99);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.alpine-suggested-workout-placeholder {
+  font-size: 11px;
+  color: var(--al-text-soft, #6b7a99);
+  font-style: italic;
+  margin: 8px 0;
+  padding: 8px 10px;
+  background: var(--al-surface-alt, #f5f8ff);
+  border-radius: 8px;
+  border: 1px dashed var(--al-border, #dfe8f5);
 }
 
 .alpine-suggested-workout-tags {
