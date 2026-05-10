@@ -9967,3 +9967,342 @@ button.alert-banner-positive-item {
   justify-content: center;
   text-decoration: none;
 }
+
+/* ============================================================================
+   Lot 03 — Page Activités (Alpine Light, mockup PDF page 6)
+   ============================================================================ */
+
+/* Bandeau 5 KPIs période */
+.alpine-activities-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (max-width: 1100px) {
+  .alpine-activities-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .alpine-activities-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.alpine-activity-kpi {
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: var(--al-shadow-card);
+}
+.alpine-activity-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.alpine-activity-kpi-value {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--al-text, #0f2147);
+}
+.alpine-activity-kpi-unit {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+
+/* Toggle cartes / tableau */
+.alpine-activities-view-toggle {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+.alpine-activities-view-toggle .alpine-button.is-active {
+  background: var(--al-primary, #1268f3);
+  color: #fff;
+  border-color: var(--al-primary, #1268f3);
+}
+
+/* Layout principal 2 colonnes desktop */
+.alpine-activities-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .alpine-activities-layout { grid-template-columns: 1fr; }
+}
+
+.alpine-activities-main {
+  min-width: 0;
+}
+
+/* Liste activités (groupes + cartes) */
+.alpine-activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.alpine-activity-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.alpine-activity-group-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 4px 0;
+}
+.alpine-activity-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Carte activité horizontale */
+.alpine-activity-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  box-shadow: var(--al-shadow-card);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+}
+.alpine-activity-card--clickable:hover {
+  border-color: var(--al-primary, #1268f3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(18, 104, 243, 0.08);
+}
+
+.alpine-activity-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--al-primary-soft, #e8f1ff);
+  color: var(--al-primary, #1268f3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.alpine-activity-card-icon svg { width: 22px; height: 22px; }
+
+.alpine-activity-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.alpine-activity-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.alpine-activity-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.alpine-activity-card-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.alpine-activity-card-sport {
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+}
+
+/* Stats côté droit de la carte */
+.alpine-activity-card-stats {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 14px;
+  margin: 0;
+}
+.alpine-activity-card-stats > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+.alpine-activity-card-stats dt {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+.alpine-activity-card-stats dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  line-height: 1.1;
+}
+.alpine-activity-card-stats dd span {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--al-muted, #64748b);
+  margin-left: 2px;
+}
+@media (max-width: 720px) {
+  .alpine-activity-card {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+  .alpine-activity-card-stats {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .alpine-activity-card-stats > div {
+    align-items: flex-start;
+  }
+}
+
+/* Badge intensité */
+.alpine-intensity-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.alpine-intensity-badge.intensity-facile {
+  background: var(--al-success-soft, #e8f6ec);
+  color: var(--al-success, #35a853);
+  border-color: var(--al-success, #35a853);
+}
+.alpine-intensity-badge.intensity-moderee {
+  background: var(--al-primary-soft, #e8f1ff);
+  color: var(--al-primary, #1268f3);
+  border-color: var(--al-primary, #1268f3);
+}
+.alpine-intensity-badge.intensity-intense {
+  background: rgba(245, 158, 11, 0.10);
+  color: #b45309;
+  border-color: #f59e0b;
+}
+
+/* Right rail Activités */
+.alpine-activity-right-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.alpine-rr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.alpine-rr-list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.alpine-rr-list li span {
+  color: var(--al-muted, #64748b);
+}
+.alpine-rr-list li strong {
+  color: var(--al-text, #0f2147);
+  font-weight: 700;
+}
+
+.alpine-rr-empty {
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+  font-style: italic;
+  margin: 0;
+}
+
+.alpine-rr-distribution {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.alpine-rr-distribution-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 3px;
+}
+.alpine-rr-distribution-label {
+  font-weight: 600;
+  color: var(--al-text, #0f2147);
+}
+.alpine-rr-distribution-meta {
+  color: var(--al-muted, #64748b);
+}
+.alpine-rr-distribution-bar {
+  height: 6px;
+  background: var(--al-border-soft, #eaf0fa);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.alpine-rr-distribution-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--al-primary, #1268f3);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.alpine-rr-best {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.alpine-rr-best-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-rr-best-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--al-text-soft, #2a3f6b);
+  font-weight: 600;
+}
+.alpine-rr-best-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--al-primary, #1268f3);
+  text-decoration: none;
+  margin-top: 4px;
+}
+.alpine-rr-best-link:hover { text-decoration: underline; }
+.alpine-rr-best-note {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+  font-style: italic;
+}
