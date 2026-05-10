@@ -9749,9 +9749,9 @@ button.alert-banner-positive-item {
   min-height: 60px;
 }
 
-/* Colonne gauche : valeur + hint + delta */
+/* Colonne gauche : valeur + hint + delta — taille naturelle */
 .alpine-recovery-card-info {
-  flex: 1;
+  flex: 0 0 auto;          /* taille du contenu, ne grandit pas */
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -9808,11 +9808,12 @@ button.alert-banner-positive-item {
 }
 .alpine-recovery-card-link:hover { text-decoration: underline; }
 
-/* Colonne droite : mini-graphe — taille fixe pour garder un ratio harmonieux */
+/* Colonne droite : mini-graphe — remplit l'espace dispo, hauteur fixe */
 .alpine-recovery-card-chart {
-  width: 130px;
-  height: 52px;             /* ratio 130/52 ≈ 2.5:1 — proche du viewBox */
-  flex-shrink: 0;
+  flex: 1 1 auto;           /* grandit pour combler le vide à droite de info */
+  min-width: 130px;
+  max-width: 320px;
+  height: 56px;             /* hauteur fixe → pas de distortion verticale */
   display: flex;
   align-items: center;
 }
