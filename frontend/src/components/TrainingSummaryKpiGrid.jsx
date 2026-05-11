@@ -60,7 +60,7 @@ export default function TrainingSummaryKpiGrid({
     {
       label: "Charge du bloc",
       value: loadSummary ? formatTrainingLoadValue(loadSummary.load) : "-",
-      trend: loadSummary ? buildTrend("vs periode prec.", loadSummary.loadDeltaValue, formatSignedPoints) : "Pas assez d'historique",
+      trend: loadSummary ? buildTrend("vs période préc.", loadSummary.loadDeltaValue, formatSignedPoints) : "Pas assez d'historique",
       trendTone: getTrendTone(loadSummary?.loadDeltaValue, { higherIsBetter: true }),
       hint: interpretations.load,
       meta: rangeLabel,
@@ -69,7 +69,7 @@ export default function TrainingSummaryKpiGrid({
     {
       label: "Base de fond",
       value: loadSummary ? formatTrainingLoadValue(loadSummary.ctl) : "-",
-      trend: loadSummary ? buildTrend("vs periode prec.", loadSummary.ctlDeltaValue, formatSignedPoints) : "Pas assez d'historique",
+      trend: loadSummary ? buildTrend("vs période préc.", loadSummary.ctlDeltaValue, formatSignedPoints) : "Pas assez d'historique",
       trendTone: getTrendTone(loadSummary?.ctlDeltaValue, { higherIsBetter: true }),
       hint: interpretations.ctl,
       meta: rangeLabel,
@@ -78,16 +78,16 @@ export default function TrainingSummaryKpiGrid({
     {
       label: "Fatigue recente",
       value: loadSummary ? formatTrainingLoadValue(loadSummary.atl) : "-",
-      trend: loadSummary ? buildTrend("vs periode prec.", loadSummary.atlDeltaValue, formatSignedPoints) : "Pas assez d'historique",
+      trend: loadSummary ? buildTrend("vs période préc.", loadSummary.atlDeltaValue, formatSignedPoints) : "Pas assez d'historique",
       trendTone: getTrendTone(loadSummary?.atlDeltaValue, { higherIsBetter: false }),
       hint: interpretations.atl,
       meta: rangeLabel,
       info: infoMap.atl,
     },
     {
-      label: "Marge de fraicheur",
+      label: "Marge de fraîcheur",
       value: loadSummary ? formatTrainingLoadValue(loadSummary.tsb) : "-",
-      trend: loadSummary ? buildTrend("vs periode prec.", loadSummary.tsbDeltaValue, formatSignedPoints) : "Pas assez d'historique",
+      trend: loadSummary ? buildTrend("vs période préc.", loadSummary.tsbDeltaValue, formatSignedPoints) : "Pas assez d'historique",
       trendTone: getTrendTone(loadSummary?.tsbDeltaValue, { higherIsBetter: true }),
       hint: interpretations.tsb,
       meta: rangeLabel,
@@ -100,7 +100,7 @@ export default function TrainingSummaryKpiGrid({
       label: "Efficience allure / FC",
       value: efficiencySummary ? formatEfficiencyValue(efficiencySummary.value) : "-",
       trend: efficiencySummary
-        ? buildTrend("vs periode prec.", efficiencySummary.deltaValue, formatSignedEfficiency)
+        ? buildTrend("vs période préc.", efficiencySummary.deltaValue, formatSignedEfficiency)
         : "Pas assez d'activites comparables",
       trendTone: getTrendTone(efficiencySummary?.deltaValue, { higherIsBetter: true }),
       hint: efficiencyInterpretation.headline,

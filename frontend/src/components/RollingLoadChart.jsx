@@ -186,7 +186,7 @@ function RollingLoadChart({
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-      ) : <div className="empty-state">Pas assez de donnees pour calculer l'etat d'entrainement sur cette periode.</div>}
+      ) : <div className="empty-state">Pas assez de données pour calculer l'état d'entraînement sur cette période.</div>}
     </section>
   );
 }

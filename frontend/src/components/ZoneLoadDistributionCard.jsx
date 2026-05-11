@@ -52,7 +52,7 @@ function getMetricConfig(metric) {
     return {
       key: "duration",
       dataKey: "durationMinutes",
-      label: "Duree",
+      label: "Durée",
       formatter: formatDurationMinutes,
       shareKey: "durationShare",
       shareLabel: "du temps suivi",
@@ -69,7 +69,7 @@ function getMetricConfig(metric) {
     formatter: formatLoad,
     shareKey: "loadShare",
     shareLabel: "de la charge suivie",
-    secondaryLabel: "Duree",
+    secondaryLabel: "Durée",
     secondaryFormatter: formatDurationMinutes,
     secondaryValueKey: "durationMinutes",
   };
@@ -121,7 +121,7 @@ function ZoneLoadDistributionCard({
     ? metricOptions
     : [
         { value: "load", label: "Charge" },
-        { value: "duration", label: "Duree" },
+        { value: "duration", label: "Durée" },
       ];
   const zoneLegend = safeData.filter((entry) => entry?.rangeLabel);
 
@@ -204,7 +204,7 @@ function ZoneLoadDistributionCard({
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="empty-state">{safeModel.message || "Pas assez de donnees pour repartir la charge par zones."}</div>
+        <div className="empty-state">{safeModel.message || "Pas assez de données pour répartir la charge par zones."}</div>
       )}
     </section>
   );

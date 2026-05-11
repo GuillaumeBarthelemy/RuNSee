@@ -27,7 +27,7 @@ function TrailStat({ label, value, detail = "" }) {
 
 function TrailSpecificityCard({
   model = {},
-  title = "Specificite trail",
+  title = "Spécificité trail",
   info = [],
   confidence = null,
 }) {
@@ -47,7 +47,7 @@ function TrailSpecificityCard({
       </div>
 
       <div className={`insight-banner insight-banner-${safeModel.downhillTone || "neutral"}`.trim()}>
-        {safeModel.insight || "Pas assez de donnees altitude exploitables sur la selection."}
+        {safeModel.insight || "Pas assez de données altitude exploitables sur la sélection."}
       </div>
 
       <div className="trail-stat-grid">

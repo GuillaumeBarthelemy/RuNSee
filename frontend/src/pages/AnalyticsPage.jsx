@@ -1,17 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import AnalyticsFiltersBar from "../components/AnalyticsFiltersBar.jsx";
-import AnalysisConfidenceBadge from "../components/AnalysisConfidenceBadge.jsx";
-import RecoveryVsLoadChart from "../components/RecoveryVsLoadChart.jsx";
-import DynamicsGrid from "../components/DynamicsGrid.jsx";
-import MonthlyVolumeChart from "../components/MonthlyVolumeChart.jsx";
-import PerformanceTrendChart from "../components/PerformanceTrendChart.jsx";
-import PeriodComparisonSection from "../components/PeriodComparisonSection.jsx";
-import RollingLoadChart from "../components/RollingLoadChart.jsx";
-import TrainingSummaryKpiGrid from "../components/TrainingSummaryKpiGrid.jsx";
-import TrailSpecificityCard from "../components/TrailSpecificityCard.jsx";
-import WeeklyVolumeChart from "../components/WeeklyVolumeChart.jsx";
-import ZoneLoadDistributionCard from "../components/ZoneLoadDistributionCard.jsx";
-import { SHARED_FILTER_COPY } from "../content/analyticsCopy.js";
+import { useLocation } from "react-router-dom";
+import AnalyticsCompactFilters from "../components/analytics/AnalyticsCompactFilters.jsx";
+import AnalyticsOverviewTab from "../components/analytics/AnalyticsOverviewTab.jsx";
+import AnalyticsChargesTab from "../components/analytics/AnalyticsChargesTab.jsx";
+import AnalyticsTrendsTab from "../components/analytics/AnalyticsTrendsTab.jsx";
+import AnalyticsIntensitiesTab from "../components/analytics/AnalyticsIntensitiesTab.jsx";
+import AnalyticsRecoveryTab from "../components/analytics/AnalyticsRecoveryTab.jsx";
+import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import {
   TRAINING_MVP_ADVANCED_SIGNAL_INFO,
   TRAINING_MVP_KPI_INFO,
@@ -21,13 +16,9 @@ import {
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import AppShell from "../layouts/AppShell.jsx";
 import { buildMonthlySeries, filterActivities } from "../utils/activityAggregations.js";
-import { buildCurrentAccountModel } from "../utils/accountPresentation.js";
 import { buildAnalyticsConfidence } from "../utils/analysisConfidence.js";
-import {
-  buildCriticalSpeed,
-  buildRegularitySummary,
-} from "../utils/activityInsights.js";
-import { getAnalyticsGranularity, getAnalyticsPresetLabel } from "../utils/analyticsPeriods.js";
+import { buildCriticalSpeed, buildRegularitySummary } from "../utils/activityInsights.js";
+import { getAnalyticsGranularity } from "../utils/analyticsPeriods.js";
 import {
   buildConsolidatedIntensityDistributionModel,
   buildEfficiencyHistoryModel,
@@ -46,16 +37,42 @@ import {
 } from "../utils/trainingIntelligence.js";
 import { buildLoadDynamicsProfile } from "../utils/loadDynamics.js";
 import { buildRecoveryCorrelationDataset } from "../utils/recoveryCorrelations.js";
+import { buildRecoveryViewModel } from "../utils/recoveryViewModel.js";
 import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
 import { buildTrailAnalyticsSummary } from "../utils/trailProfile.js";
+import { computeTrainingStateScore } from "../utils/analyticsTrainingState.js";
 
 function addDays(date, days) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 }
 
+const ANALYTICS_TABS = [
+  { id: "overview",     label: "Vue d'ensemble" },
+  { id: "charges",      label: "Charges" },
+  { id: "tendances",    label: "Tendances" },
+  { id: "intensites",   label: "Intensités" },
+  { id: "recuperation", label: "Sommeil & récupération" },
+];
+
+/**
+ * AnalyticsPage — Alpine Light (Lot 04 V5 strict).
+ *
+ * Orchestrateur 5 sous-onglets (plan §4) :
+ *   #overview · #charges · #tendances · #intensites · #recuperation
+ *
+ * Les view models sont calculés une seule fois ici et passés en props
+ * aux composants tabs. Aucun calcul métier dans les tabs.
+ *
+ * Anti-régression :
+ *  - Calculs CTL/ATL/TSB/zones/efficience tous intacts (utils existants).
+ *  - Filtres partagés via useActivityViewModel (filterActivities intact).
+ *  - AnalyticsFiltersBar (volumineuse) plus utilisée → AnalyticsCompactFilters.
+ *  - Vocabulaire FR canonique : "Analyse" (pas "Tendance"), "Comparaison
+ *    historique" (pas "YTD"), accents partout.
+ */
 export default function AnalyticsPage() {
+  const location = useLocation();
   const {
-    athlete,
     error,
     isLoading,
     safeActivities,
@@ -67,9 +84,7 @@ export default function AnalyticsPage() {
     setFilter,
     resetFilters,
     setOption,
-  } = useActivityViewModel({
-    includeActivities: true,
-  });
+  } = useActivityViewModel({ includeActivities: true });
 
   const [recoverySnapshots, setRecoverySnapshots] = useState([]);
 
@@ -83,10 +98,9 @@ export default function AnalyticsPage() {
     return () => { ignore = true; };
   }, []);
 
-  const account = useMemo(
-    () => buildCurrentAccountModel({ athlete, options }),
-    [athlete, options],
-  );
+  // ---------------------------------------------------------------------------
+  // Filtres + scopes activités
+  // ---------------------------------------------------------------------------
 
   const analyticsFilters = useMemo(
     () => ({
@@ -113,6 +127,10 @@ export default function AnalyticsPage() {
   );
 
   const chartGranularity = getAnalyticsGranularity(sharedRange);
+
+  // ---------------------------------------------------------------------------
+  // View models (calculs métier intacts)
+  // ---------------------------------------------------------------------------
 
   const trainingLoadModel = useMemo(
     () => buildTrainingLoadStateModel(analyticsScopeActivities, {
@@ -159,26 +177,23 @@ export default function AnalyticsPage() {
     [analyticsScopeActivities, analyticsVolumeGrouping, options.userWeekStartsOn, periodWeeks, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
   );
 
-  const weeklyChartData = useMemo(
-    () => weeklySummary.weeklySeries,
-    [weeklySummary.weeklySeries],
-  );
-
+  const weeklyChartData = weeklySummary.weeklySeries;
   const weeklyTrendSourceData = useMemo(
     () => buildRegularitySummary(analyticsScopeActivities, {
-        weeks: periodWeeks + 3,
-        startDate: addDays(sharedRange.start, -21),
-        endDate: sharedRange.end,
-        weekStartsOn: options.userWeekStartsOn,
-        viewMode: analyticsVolumeGrouping,
-        settings: trainingAnalyticsSettings,
-      }).weeklySeries,
+      weeks: periodWeeks + 3,
+      startDate: addDays(sharedRange.start, -21),
+      endDate: sharedRange.end,
+      weekStartsOn: options.userWeekStartsOn,
+      viewMode: analyticsVolumeGrouping,
+      settings: trainingAnalyticsSettings,
+    }).weeklySeries,
     [analyticsScopeActivities, analyticsVolumeGrouping, options.userWeekStartsOn, periodWeeks, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
   );
 
   const analyticsWeeklyMetric = options.analyticsWeeklyMetric === "distanceKm" ? "distanceKm" : "count";
   const analyticsMonthlyMetric = options.analyticsMonthlyMetric === "distanceKm" ? "distanceKm" : "load";
   const analyticsIntensityMetric = options.analyticsHeartRateDistributionMetric === "duration" ? "duration" : "load";
+
   const monthlySeries = useMemo(
     () => buildMonthlySeries(analyticsActivities, {
       metric: analyticsMonthlyMetric,
@@ -191,14 +206,8 @@ export default function AnalyticsPage() {
   );
   const monthlyAxisGranularity = analyticsVolumeGrouping === "calendar" ? "month" : "day";
 
-  const loadChartNarrative = useMemo(
-    () => buildLoadChartNarrative(trainingLoadModel),
-    [trainingLoadModel],
-  );
-  const efficiencyNarrative = useMemo(
-    () => buildEfficiencyInterpretation(efficiencyModel),
-    [efficiencyModel],
-  );
+  const loadChartNarrative = useMemo(() => buildLoadChartNarrative(trainingLoadModel), [trainingLoadModel]);
+  const efficiencyNarrative = useMemo(() => buildEfficiencyInterpretation(efficiencyModel), [efficiencyModel]);
   const intensityNarrative = useMemo(
     () => buildIntensityNarrative(intensityModel, analyticsIntensityMetric),
     [analyticsIntensityMetric, intensityModel],
@@ -231,26 +240,25 @@ export default function AnalyticsPage() {
   );
 
   const loadDynamicsProfile = useMemo(
-    () => buildLoadDynamicsProfile({
-      loadModel: trainingLoadModel,
-      efficiencyModel,
-    }),
+    () => buildLoadDynamicsProfile({ loadModel: trainingLoadModel, efficiencyModel }),
     [trainingLoadModel, efficiencyModel],
   );
 
   const recoveryCorrelation = useMemo(
-    () => buildRecoveryCorrelationDataset(
-      recoverySnapshots,
-      trainingLoadModel.chartData || [],
-      56,
-    ),
+    () => buildRecoveryCorrelationDataset(recoverySnapshots, trainingLoadModel.chartData || [], 56),
     [recoverySnapshots, trainingLoadModel.chartData],
+  );
+
+  const recoveryVm = useMemo(
+    () => buildRecoveryViewModel(recoverySnapshots),
+    [recoverySnapshots],
   );
 
   const trailAnalytics = useMemo(
     () => buildTrailAnalyticsSummary(analyticsActivities),
     [analyticsActivities],
   );
+
   const analyticsConfidence = useMemo(
     () => buildAnalyticsConfidence({
       activities: analyticsScopeActivities,
@@ -262,17 +270,32 @@ export default function AnalyticsPage() {
     [analyticsActivities, analyticsScopeActivities, recoverySnapshots, sharedRange.end, trailAnalytics],
   );
 
+  // Score composite état d'entraînement (Lot 04 ajout C)
+  const tsbValue = trainingLoadModel?.summary?.tsb ?? null;
+  const acwrValue = loadDynamicsProfile?.acwrEwma?.value ?? null;
+  const monotonyValue = loadVarianceModel?.monotony ?? null;
+  const hrvDeltaPct = recoveryVm?.hrv?.deltaPct ?? null;
+  const trainingState = useMemo(
+    () => computeTrainingStateScore({
+      tsb: tsbValue,
+      acwr: acwrValue,
+      monotony: monotonyValue,
+      hrvDeltaPct,
+    }),
+    [tsbValue, acwrValue, monotonyValue, hrvDeltaPct],
+  );
+
+  // ---------------------------------------------------------------------------
+  // Wording sections (FR avec accents)
+  // ---------------------------------------------------------------------------
+
   const scopeLabel = filters.sportGroup === "all" ? "tous les sports" : filters.sportGroup;
   const searchNote = filters.search ? ` Recherche active : "${filters.search}".` : "";
-  const scopeNote = `Perimetre actuel : ${scopeLabel}.${searchNote} Donnees recalculees sur la selection.`;
   const comparisonScopeText = useMemo(() => {
     const cutoffLabel = sharedRange.end.toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
+      day: "2-digit", month: "short", year: "numeric",
     });
-
-    return `YTD au ${cutoffLabel} - ${scopeLabel}.${searchNote}`;
+    return `Cumul annuel au ${cutoffLabel} — ${scopeLabel}.${searchNote}`;
   }, [scopeLabel, searchNote, sharedRange.end]);
 
   const weeklyChartConfig = useMemo(
@@ -288,15 +311,14 @@ export default function AnalyticsPage() {
             trendLabel: "Moyenne 4 sem.",
             trendColor: "#355886",
             valueFormatter: (value) => `${Number(value || 0).toLocaleString("fr-FR", {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
+              minimumFractionDigits: 1, maximumFractionDigits: 1,
             })} km`,
           }
         : {
-            title: "Seances hebdomadaires",
+            title: "Séances hebdomadaires",
             subtitle: "",
             dataKey: "count",
-            name: "Seances",
+            name: "Séances",
             unit: "",
             fill: "#355886",
             trendLabel: "Tendance 4 sem.",
@@ -304,30 +326,24 @@ export default function AnalyticsPage() {
             valueFormatter: (value) => `${Number(value || 0).toLocaleString("fr-FR", {
               minimumFractionDigits: Number.isInteger(Number(value || 0)) ? 0 : 1,
               maximumFractionDigits: 1,
-            })} seance(s)`,
+            })} séance(s)`,
           }
     ),
     [analyticsWeeklyMetric],
   );
 
+  // ---------------------------------------------------------------------------
+  // Handlers filtres
+  // ---------------------------------------------------------------------------
+
   const handleSharedPresetChange = (preset) => {
     if (preset === "custom") {
       setOption("sharedPeriodPreset", "custom");
-      if (!options.sharedCustomDateFrom) {
-        setOption("sharedCustomDateFrom", sharedRange.dateFrom);
-      }
-      if (!options.sharedCustomDateTo) {
-        setOption("sharedCustomDateTo", sharedRange.dateTo);
-      }
+      if (!options.sharedCustomDateFrom) setOption("sharedCustomDateFrom", sharedRange.dateFrom);
+      if (!options.sharedCustomDateTo) setOption("sharedCustomDateTo", sharedRange.dateTo);
       return;
     }
-
     setOption("sharedPeriodPreset", preset);
-  };
-
-  const handleSharedCustomDateChange = (name, value) => {
-    setOption("sharedPeriodPreset", "custom");
-    setOption(name, value);
   };
 
   const handleResetSharedFilters = () => {
@@ -342,242 +358,132 @@ export default function AnalyticsPage() {
     setOption("analyticsVolumeGrouping", "rolling");
   };
 
+  // ---------------------------------------------------------------------------
+  // Onglet actif (hash URL)
+  // ---------------------------------------------------------------------------
+
+  const hash = location.hash.replace(/^#/, "");
+  const activeTabId = ANALYTICS_TABS.some((t) => t.id === hash) ? hash : "overview";
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
     <AppShell
-      eyebrow="Tendance"
-      title="Tendance"
-      subtitle={`Charge, fraicheur, volume et intensites sur ${getAnalyticsPresetLabel(options.sharedPeriodPreset)}.`}
-      account={account}
+      eyebrow="Analyse"
+      title="Analyse"
+      subtitle="Lecture détaillée de votre entraînement et de votre récupération."
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
-      {isLoading && !safeActivities.length ? <div className="card section">Chargement des analyses...</div> : null}
+      {isLoading && !safeActivities.length ? (
+        <div className="card section">Chargement des analyses…</div>
+      ) : null}
 
-      <div className="section">
-        <AnalyticsFiltersBar
-          title="Filtres d'analyse"
-          subtitle={SHARED_FILTER_COPY.subtitle}
-          resetLabel={SHARED_FILTER_COPY.resetLabel}
-          infoContent={SHARED_FILTER_COPY.info}
-          preset={options.sharedPeriodPreset}
-          rangeLabel={sharedRange.label}
-          customDateFrom={options.sharedCustomDateFrom}
-          customDateTo={options.sharedCustomDateTo}
-          search={filters.search}
-          sportGroup={filters.sportGroup}
-          groupSports={options.groupSports}
-          availableSports={availableSports}
-          filteredCount={analyticsActivities.length}
-          totalCount={analyticsScopeActivities.length}
-          onPresetChange={handleSharedPresetChange}
-          onCustomDateChange={handleSharedCustomDateChange}
-          onSearchChange={(value) => setFilter("search", value)}
-          onSportChange={(value) => setFilter("sportGroup", value)}
-          onGroupSportsChange={(value) => setOption("groupSports", value)}
-          onReset={handleResetSharedFilters}
-          scopeNote={scopeNote}
+      <AnalyticsCompactFilters
+        search={filters.search}
+        sportGroup={filters.sportGroup}
+        preset={options.sharedPeriodPreset}
+        periodLabel={sharedRange.label}
+        availableSports={availableSports}
+        filteredCount={analyticsActivities.length}
+        totalCount={analyticsScopeActivities.length}
+        onSearchChange={(value) => setFilter("search", value)}
+        onSportChange={(value) => setFilter("sportGroup", value)}
+        onPresetChange={handleSharedPresetChange}
+        onReset={handleResetSharedFilters}
+      />
+
+      <SubTabs tabs={ANALYTICS_TABS} defaultTabId="overview" />
+
+      {activeTabId === "overview" ? (
+        <AnalyticsOverviewTab
+          trainingState={trainingState}
+          confidence={analyticsConfidence}
+          loadModel={trainingLoadModel}
+          efficiencyModel={efficiencyModel}
+          kpiInfoMap={TRAINING_MVP_KPI_INFO}
         />
-      </div>
+      ) : null}
 
-      <div className="section">
-        <AnalysisConfidenceBadge confidence={analyticsConfidence} />
-      </div>
+      {activeTabId === "charges" ? (
+        <AnalyticsChargesTab
+          trainingLoadModel={trainingLoadModel}
+          loadVarianceModel={loadVarianceModel}
+          polarizationModel={polarizationModel}
+          loadDynamicsProfile={loadDynamicsProfile}
+          criticalSpeedModel={criticalSpeedModel}
+          signalInfo={TRAINING_MVP_ADVANCED_SIGNAL_INFO}
+          loadDynamicsInfo={TRAINING_MVP_LOAD_DYNAMICS_SIGNAL_INFO}
+          dynamicsCardInfo={TRAINING_MVP_SECTION_INFO.dynamicsGrid}
+          loadChartInfo={TRAINING_MVP_SECTION_INFO.loadChart}
+          loadChartNarrative={loadChartNarrative}
+        />
+      ) : null}
 
-      <div className="analysis-page-stack">
-        <div className="section analysis-section-shell">
-          <div className="analysis-section-intro">
-            <span className="eyebrow analysis-section-kicker">Charge</span>
-            <h2 className="card-title">Charge et fraicheur</h2>
-            <p className="card-subtitle">Socle, fatigue et marge d'absorption.</p>
-          </div>
-          <div className="analysis-section-stack">
-            <RollingLoadChart
-              data={trainingLoadModel.chartData}
-              metric="load"
-              granularity={trainingLoadModel.granularity}
-              title="Charge, base, fatigue et fraicheur"
-              subtitle=""
-              info={TRAINING_MVP_SECTION_INFO.loadChart}
-              shortKey="atl"
-              longKey="ctl"
-              freshnessKey="tsb"
-              shortLabel="Fatigue recente"
-              longLabel="Base de fond"
-              freshnessLabel="Fraicheur"
-              barKey="load"
-              barLabel="Charge jour"
-              showFreshness
-              showBar
-              showFreshnessZones
-              insight={loadChartNarrative}
-            />
+      {activeTabId === "tendances" ? (
+        <AnalyticsTrendsTab
+          weeklyChartData={weeklyChartData}
+          weeklyTrendSourceData={weeklyTrendSourceData}
+          weeklyChartConfig={weeklyChartConfig}
+          weeklySupportInfo={TRAINING_MVP_SECTION_INFO.weeklySupport}
+          weeklyNarrative={weeklyNarrative}
+          weeklyMetric={analyticsWeeklyMetric}
+          onWeeklyMetricChange={(value) => setOption("analyticsWeeklyMetric", value)}
 
-            <TrainingSummaryKpiGrid
-              loadModel={trainingLoadModel}
-              efficiencyModel={efficiencyModel}
-              infoMap={TRAINING_MVP_KPI_INFO}
-              includeEfficiency={false}
-              className="kpi-grid kpi-grid-primary"
-              showHints={false}
-              showMeta={false}
-            />
-          </div>
-        </div>
+          monthlySeries={monthlySeries}
+          monthlyAxisGranularity={monthlyAxisGranularity}
+          monthlyMetric={analyticsMonthlyMetric}
+          monthlySupportInfo={TRAINING_MVP_SECTION_INFO.monthlySupport}
+          monthlyNarrative={monthlyNarrative}
+          onMonthlyMetricChange={(value) => setOption("analyticsMonthlyMetric", value)}
 
-        {recoveryCorrelation.hasData ? (
-          <div className="section">
-            <RecoveryVsLoadChart points={recoveryCorrelation.points} />
-          </div>
-        ) : null}
+          efficiencyModel={efficiencyModel}
+          efficiencyInfo={TRAINING_MVP_SECTION_INFO.efficiencyChart}
+          efficiencyNarrative={efficiencyNarrative}
 
-        <div className="section analysis-section-shell">
-          <DynamicsGrid
-            loadVarianceModel={loadVarianceModel}
-            polarizationModel={polarizationModel}
-            loadDynamicsProfile={loadDynamicsProfile}
-            criticalSpeedModel={criticalSpeedModel}
-            signalInfo={TRAINING_MVP_ADVANCED_SIGNAL_INFO}
-            loadDynamicsInfo={TRAINING_MVP_LOAD_DYNAMICS_SIGNAL_INFO}
-            cardInfo={TRAINING_MVP_SECTION_INFO.dynamicsGrid}
-          />
-        </div>
+          trailAnalytics={trailAnalytics}
+          trailInfo={TRAINING_MVP_SECTION_INFO.trailSpecificity}
+          analyticsConfidence={analyticsConfidence}
 
-        <div className="section analysis-section-shell">
-          <div className="analysis-section-header-row">
-            <div className="analysis-section-intro">
-              <span className="eyebrow analysis-section-kicker">Volume + efficience</span>
-              <h2 className="card-title">Volume, regularite et efficience</h2>
-              <p className="card-subtitle">Volume et rendement cardio.</p>
-            </div>
-            <div className="analysis-section-controls">
-              <label className="inline-field">
-                <span className="field-label inline-label">Decoupage</span>
-                <select
-                  className="field-input field-input-small"
-                  value={analyticsVolumeGrouping}
-                  onChange={(event) => setOption("analyticsVolumeGrouping", event.target.value)}
-                >
-                  <option value="rolling">Glissante</option>
-                  <option value="calendar">Debut de semaine / mois</option>
-                </select>
-              </label>
-            </div>
-          </div>
-          <div className="grid two-columns">
-            <WeeklyVolumeChart
-              data={weeklyChartData}
-              trendSourceData={weeklyTrendSourceData}
-              title={weeklyChartConfig.title}
-              subtitle={weeklyChartConfig.subtitle}
-              info={TRAINING_MVP_SECTION_INFO.weeklySupport}
-              dataKey={weeklyChartConfig.dataKey}
-              name={weeklyChartConfig.name}
-              unit={weeklyChartConfig.unit}
-              fill={weeklyChartConfig.fill}
-              showTrendLine
-              trendWindow={4}
-              requireFullTrendWindow
-              trendLabel={weeklyChartConfig.trendLabel}
-              trendColor={weeklyChartConfig.trendColor}
-              valueFormatter={weeklyChartConfig.valueFormatter}
-              showMetricControl
-              metricControlLabel="Mesure"
-              metricOptions={[
-                { value: "count", label: "Seances" },
-                { value: "distanceKm", label: "Km" },
-              ]}
-              selectedMetric={analyticsWeeklyMetric}
-              onMetricChange={(value) => setOption("analyticsWeeklyMetric", value)}
-              insight={weeklyNarrative}
-            />
-            <MonthlyVolumeChart
-              data={monthlySeries}
-              title="Analyse mensuelle"
-              subtitle=""
-              info={TRAINING_MVP_SECTION_INFO.monthlySupport}
-              metric={analyticsMonthlyMetric}
-              granularity={monthlyAxisGranularity}
-              display="bar"
-              months={monthlySeries.length}
-              showControls
-              showMetricControl
-              showDisplayControl={false}
-              showMonthsControl={false}
-              metricControlLabel="Mesure"
-              allowedMetrics={["distanceKm", "load"]}
-              onMetricChange={(value) => setOption("analyticsMonthlyMetric", value)}
-              insight={monthlyNarrative}
-            />
-          </div>
-          <div className="top-gap-lg">
-            <PerformanceTrendChart
-              data={efficiencyModel.chartData}
-              title="Efficience allure / FC"
-              subtitle=""
-              info={TRAINING_MVP_SECTION_INFO.efficiencyChart}
-              granularity={efficiencyModel.granularity}
-              insight={efficiencyNarrative.headline}
-            />
-          </div>
-        </div>
+          comparisonActivities={analyticsScopeActivities}
+          comparisonRange={sharedRange}
+          comparisonMetric={options.comparisonMetric}
+          comparisonSelectedYears={options.comparisonSelectedYears}
+          comparisonSettings={trainingAnalyticsSettings}
+          comparisonScopeText={comparisonScopeText}
+          comparisonInfo={TRAINING_MVP_SECTION_INFO.comparison}
+          onComparisonMetricChange={(value) => setOption("comparisonMetric", value)}
+          onComparisonYearsChange={(value) => setOption("comparisonSelectedYears", value)}
 
-        <div className="section analysis-section-shell">
-          <div className="analysis-section-intro">
-            <span className="eyebrow analysis-section-kicker">Intensites</span>
-            <h2 className="card-title">Repartition des intensites</h2>
-            <p className="card-subtitle">Charge ou duree par zone.</p>
-          </div>
-          <ZoneLoadDistributionCard
-            model={intensityModel}
-            title="Repartition des intensites"
-            subtitle=""
-            info={TRAINING_MVP_SECTION_INFO.intensity}
-            accentColor="#F97316"
-            selectedMetric={analyticsIntensityMetric}
-            metricControlLabel="Mesure"
-            metricOptions={[
-              { value: "load", label: "Charge" },
-              { value: "duration", label: "Duree" },
-            ]}
-            onMetricChange={(value) => setOption("analyticsHeartRateDistributionMetric", value)}
-            insight={intensityNarrative}
-          />
-        </div>
+          volumeGroupingValue={analyticsVolumeGrouping}
+          onVolumeGroupingChange={(value) => setOption("analyticsVolumeGrouping", value)}
+        />
+      ) : null}
 
-        {trailAnalytics.hasData ? (
-          <div className="section analysis-section-shell">
-            <div className="analysis-section-intro">
-              <span className="eyebrow analysis-section-kicker">Trail</span>
-              <h2 className="card-title">Specificite trail</h2>
-              <p className="card-subtitle">Lecture terrain et charge musculaire potentielle.</p>
-            </div>
-            <TrailSpecificityCard
-              model={trailAnalytics}
-              info={TRAINING_MVP_SECTION_INFO.trailSpecificity}
-              confidence={analyticsConfidence}
-            />
-          </div>
-        ) : null}
+      {activeTabId === "intensites" ? (
+        <AnalyticsIntensitiesTab
+          intensityModel={intensityModel}
+          polarizationModel={polarizationModel}
+          intensityInfo={TRAINING_MVP_SECTION_INFO.intensity}
+          intensityNarrative={intensityNarrative}
+          selectedMetric={analyticsIntensityMetric}
+          metricOptions={[
+            { value: "load",     label: "Charge" },
+            { value: "duration", label: "Durée" },
+          ]}
+          onMetricChange={(value) => setOption("analyticsHeartRateDistributionMetric", value)}
+        />
+      ) : null}
 
-        <div className="section analysis-section-shell">
-          <div className="analysis-section-intro">
-            <span className="eyebrow analysis-section-kicker">Comparaison YTD</span>
-            <h2 className="card-title">Comparaison historique / YTD</h2>
-            <p className="card-subtitle">Tes annees comparees a date.</p>
-          </div>
-          <PeriodComparisonSection
-            activities={analyticsScopeActivities}
-            currentRange={sharedRange}
-            chartMetric={options.comparisonMetric}
-            selectedYears={options.comparisonSelectedYears}
-            settings={trainingAnalyticsSettings}
-            scopeText={comparisonScopeText}
-            info={TRAINING_MVP_SECTION_INFO.comparison}
-            onChartMetricChange={(value) => setOption("comparisonMetric", value)}
-            onSelectedYearsChange={(value) => setOption("comparisonSelectedYears", value)}
-          />
-        </div>
-
-      </div>
+      {activeTabId === "recuperation" ? (
+        <AnalyticsRecoveryTab
+          recoveryVm={recoveryVm}
+          recoveryCorrelation={recoveryCorrelation}
+          activities={analyticsScopeActivities}
+          snapshots={recoverySnapshots}
+        />
+      ) : null}
     </AppShell>
   );
 }

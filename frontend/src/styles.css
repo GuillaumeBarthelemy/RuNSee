@@ -10442,3 +10442,299 @@ button.alert-banner-positive-item {
   white-space: nowrap;
   border: 0;
 }
+
+/* ============================================================================
+   Lot 04 — Page Analyse (Alpine Light, PDF pages 7-11)
+   ============================================================================ */
+
+.alpine-analytics-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.alpine-analytics-tab-section {
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--al-shadow-card);
+}
+
+.alpine-analytics-tab-section--header-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* AnalyticsTakeawayCard — carte synthèse score composite */
+.alpine-takeaway-card {
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--al-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alpine-takeaway-card.tone-1 { border-left: 4px solid var(--al-success, #35a853); }
+.alpine-takeaway-card.tone-2 { border-left: 4px solid #84cc16; }
+.alpine-takeaway-card.tone-3 { border-left: 4px solid var(--al-primary, #1268f3); }
+.alpine-takeaway-card.tone-4 { border-left: 4px solid var(--al-warning, #f59e0b); }
+.alpine-takeaway-card.tone-5 { border-left: 4px solid var(--al-alert, #ef4444); }
+
+.alpine-takeaway-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.alpine-takeaway-card-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.alpine-takeaway-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin: 0;
+}
+
+.alpine-takeaway-card-score {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 6px 0;
+}
+.alpine-takeaway-card-score-value {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.alpine-takeaway-card-score-number {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+}
+.alpine-takeaway-card-score-number.tone-1 { color: var(--al-success, #35a853); }
+.alpine-takeaway-card-score-number.tone-2 { color: #84cc16; }
+.alpine-takeaway-card-score-number.tone-3 { color: var(--al-primary, #1268f3); }
+.alpine-takeaway-card-score-number.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-takeaway-card-score-number.tone-5 { color: var(--al-alert, #ef4444); }
+
+.alpine-takeaway-card-score-unit {
+  font-size: 14px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-takeaway-card-score-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+.alpine-takeaway-card-score-label.tone-1 { color: var(--al-success, #35a853); }
+.alpine-takeaway-card-score-label.tone-2 { color: #65a30d; }
+.alpine-takeaway-card-score-label.tone-3 { color: var(--al-primary, #1268f3); }
+.alpine-takeaway-card-score-label.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-takeaway-card-score-label.tone-5 { color: var(--al-alert, #ef4444); }
+
+.alpine-takeaway-card-contributions {
+  border-top: 1px dashed var(--al-border, #dfe8f5);
+  padding-top: 10px;
+}
+.alpine-takeaway-card-contributions-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px;
+}
+.alpine-takeaway-card-contributions ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.alpine-takeaway-card-contributions li {
+  background: var(--al-surface-alt, #f5f8ff);
+  border: 1px solid var(--al-border-soft, #eaf0fa);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.alpine-takeaway-card-contribution-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--al-text, #0f2147);
+}
+.alpine-takeaway-card-contribution-weight {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--al-primary, #1268f3);
+}
+.alpine-takeaway-card-contribution-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-takeaway-card-contribution-source {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--al-muted, #64748b);
+}
+
+.alpine-takeaway-card-missing {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+  font-style: italic;
+  margin: 4px 0 0;
+}
+
+/* Carte Polarization Index / CV-HRV (cartes scientifiques avec source) */
+.alpine-pi-card {
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: var(--al-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.alpine-pi-card.tone-1 { border-left: 4px solid var(--al-success, #35a853); }
+.alpine-pi-card.tone-2 { border-left: 4px solid #84cc16; }
+.alpine-pi-card.tone-3 { border-left: 4px solid var(--al-primary, #1268f3); }
+.alpine-pi-card.tone-4 { border-left: 4px solid var(--al-warning, #f59e0b); }
+.alpine-pi-card.tone-5 { border-left: 4px solid var(--al-alert, #ef4444); }
+
+.alpine-pi-card-head { display: flex; flex-direction: column; gap: 2px; }
+
+.alpine-pi-card-body {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.alpine-pi-card-value-block {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.alpine-pi-card-value {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+}
+.alpine-pi-card-value.tone-1 { color: var(--al-success, #35a853); }
+.alpine-pi-card-value.tone-2 { color: #84cc16; }
+.alpine-pi-card-value.tone-3 { color: var(--al-primary, #1268f3); }
+.alpine-pi-card-value.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-pi-card-value.tone-5 { color: var(--al-alert, #ef4444); }
+
+.alpine-pi-card-unit { font-size: 14px; color: var(--al-muted, #64748b); }
+
+.alpine-pi-card-level {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+.alpine-pi-card-level.tone-1 { color: var(--al-success, #35a853); background: var(--al-success-soft, #e8f6ec); }
+.alpine-pi-card-level.tone-2 { color: #65a30d; background: rgba(132,204,22,0.10); }
+.alpine-pi-card-level.tone-3 { color: var(--al-primary, #1268f3); background: var(--al-primary-soft, #e8f1ff); }
+.alpine-pi-card-level.tone-4 { color: var(--al-warning, #f59e0b); background: rgba(245,158,11,0.10); }
+.alpine-pi-card-level.tone-5 { color: var(--al-alert, #ef4444); background: rgba(239,68,68,0.10); }
+
+.alpine-pi-card-zones ul {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; gap: 16px; flex-wrap: wrap;
+}
+.alpine-pi-card-zones li { display: flex; flex-direction: column; }
+.alpine-pi-card-zones li span {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.alpine-pi-card-zones li strong {
+  font-size: 15px;
+  color: var(--al-text, #0f2147);
+}
+
+.alpine-pi-card-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--al-text-soft, #2a3f6b);
+  background: var(--al-surface-alt, #f5f8ff);
+  border-left: 3px solid var(--al-border, #dfe8f5);
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.alpine-pi-card-source {
+  margin: 0;
+  font-size: 10px;
+  font-style: italic;
+  color: var(--al-muted, #64748b);
+}
+
+/* Insights croises (onglet Recuperation) */
+.alpine-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+.alpine-insight-card {
+  background: var(--al-surface-alt, #f5f8ff);
+  border: 1px solid var(--al-border-soft, #eaf0fa);
+  border-radius: 10px;
+  padding: 12px;
+}
+.alpine-insight-card h4 {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px;
+}
+.alpine-insight-headline {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin: 0 0 4px;
+}
+.alpine-insight-text {
+  font-size: 12px;
+  color: var(--al-text-soft, #2a3f6b);
+  margin: 0;
+  line-height: 1.4;
+}
+.alpine-insight-confidence {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+}
+.alpine-insight-empty {
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+  font-style: italic;
+  margin: 0;
+}

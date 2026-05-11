@@ -77,7 +77,7 @@ function WeeklyTooltip({
         <div>{trendLabel} : {formatValue(rawTrendValue)}</div>
       ) : null}
       {entry?.isPartial ? (
-        <div>{entry?.viewMode === "calendar" ? "Semaine partielle" : "Fenetre partielle"} : {entry.coverageLabel || "periode tronquee"}</div>
+        <div>{entry?.viewMode === "calendar" ? "Semaine partielle" : "Fenêtre partielle"} : {entry.coverageLabel || "période tronquée"}</div>
       ) : null}
     </div>
   );
@@ -86,7 +86,7 @@ function WeeklyTooltip({
 function WeeklyVolumeChart({
   data = [],
   title = "Volume hebdomadaire",
-  subtitle = "Toutes les semaines de la periode affichee sont conservees, meme a 0.",
+  subtitle = "Toutes les semaines de la période affichée sont conservées, même à 0.",
   info = [],
   dataKey = "distanceKm",
   name = "Distance (km)",
@@ -106,7 +106,7 @@ function WeeklyVolumeChart({
   selectedMetric = "",
   onMetricChange = noop,
   showViewControl = false,
-  viewControlLabel = "Decoupage",
+  viewControlLabel = "Découpage",
   viewOptions = [],
   selectedView = "",
   onViewChange = noop,

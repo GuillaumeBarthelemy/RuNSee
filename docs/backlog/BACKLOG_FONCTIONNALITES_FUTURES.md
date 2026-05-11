@@ -102,3 +102,19 @@ Tenu à jour à chaque chantier qui identifie une dette.
 | **Sources scientifiques** | Sylta Ø, Tønnessen E, Seiler S. (2014), "From heart-rate data to training quantification: a comparison of 3 methods of training-intensity analysis", Int J Sports Physiol Perform 9(1):100-7 |
 | **Effort estimé** | 4-6 h (refacto util + tests) |
 | **Critère futur** | Comparaison cross-méthode sur un échantillon représentatif |
+
+---
+
+## Lot 04 — Page Analyse (2026-05-11)
+
+### 7. Sleep Regularity Index (Phillips 2017)
+
+| Item | Détail |
+|---|---|
+| **Statut** | Backlog futur — non implémenté |
+| **Pourquoi backlog** | Le PDF Analyse §Récupération suggère un suivi de la régularité du sommeil. Le SRI nécessite les timings d'endormissement et de réveil quotidiens. La structure `recoveryVm.sleep` actuelle expose `recentAvg` (score Garmin /100) mais pas les horaires détaillés. |
+| **Évolution future** | Étendre la sync Garmin pour inclure `sleepStartTimestamp` et `sleepEndTimestamp` par jour, puis implémenter SRI = 100 × Σ(δᵢ - δⱼ < 60min) / N où δ = écart en minutes du timing endormissement / réveil. |
+| **Source scientifique** | Phillips AJK, Clerx WM, O'Brien CS et al. (2017). *"Irregular sleep/wake patterns are associated with poorer academic performance and delayed circadian and sleep/wake timing"*, Sci Rep 7:3216. |
+| **Effort estimé** | 6-8 h (sync data + util + tests + UI) |
+| **Critère futur** | Validation utilisateur sur 28 jours de données réelles |
+

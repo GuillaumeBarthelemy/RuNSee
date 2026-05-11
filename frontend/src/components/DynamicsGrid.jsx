@@ -223,7 +223,7 @@ function DynamicsGrid({
             value={loadVarianceModel?.hasData ? `${formatNumber(loadVarianceModel.strain, 0)} pts` : "-"}
             status={loadVarianceModel?.hasData ? `${formatNumber(loadVarianceModel.weeklyLoad, 0)} pts / 7 j` : "Non calcule"}
             detail="Plus c'est haut, plus ton bloc demande a etre absorbe."
-            meta="Calcul Foster : charge 7 j x regularite de charge."
+            meta="Calcul Foster : charge 7 j × régularité de charge."
             tone={loadVarianceModel?.tone || "neutral"}
             info={signalInfo.strain}
           />
@@ -242,7 +242,7 @@ function DynamicsGrid({
               ? (timeToRecover.daysToTarget !== null ? `${timeToRecover.daysToTarget} j` : "> 21 j")
               : "-"}
             status={timeToRecover.label || "Non calcule"}
-            detail="Estimation du temps pour retrouver une marge de fraicheur."
+            detail="Estimation du temps pour retrouver une marge de fraîcheur."
             meta={timeToRecover.message}
             tone={timeToRecover.tone || "neutral"}
             info={loadDynamicsInfo.timeToRecover}
@@ -273,8 +273,8 @@ function DynamicsGrid({
           <DynamicsTile
             title="Structure d'intensite"
             value={polarizationModel?.label || "-"}
-            status={polarizationModel?.metric === "load" ? "Charge" : "Duree"}
-            detail="Repartition facile, tempo et intense."
+            status={polarizationModel?.metric === "load" ? "Charge" : "Durée"}
+            detail="Répartition facile, tempo et intense."
             meta={polarizationModel?.message || "Zones indisponibles."}
             tone={polarizationModel?.tone || "neutral"}
             info={signalInfo.intensityStructure}
@@ -313,7 +313,7 @@ function DynamicsGrid({
               title="Etat general"
               value={recoveryContext.label}
               status={`${recoveryContext.sampleDays} jour(s) analyses`}
-              detail="Lecture croisee sommeil, HRV et FC repos sur la periode recente."
+              detail="Lecture croisée sommeil, VFC et FC repos sur la période récente."
               meta={recoveryContext.message}
               tone={recoveryContext.tone || "neutral"}
             />
@@ -330,15 +330,15 @@ function DynamicsGrid({
               value={recoveryContext.avgHrvMs != null ? `${recoveryContext.avgHrvMs} ms` : "-"}
               status={recoveryContext.latestHrvMs != null ? `Derniere : ${recoveryContext.latestHrvMs} ms` : "Indisponible"}
               detail="Variabilite de frequence cardiaque nocturne. Baisse = fatigue systemique probable."
-              meta={recoveryContext.hrvDeclineFlag ? "VFC en recul vs debut de periode : surveiller." : "VFC stable ou en hausse."}
+              meta={recoveryContext.hrvDeclineFlag ? "VFC en recul vs début de période : surveiller." : "VFC stable ou en hausse."}
               tone={recoveryContext.hrvDeclineFlag ? "warning" : "positive"}
             />
             <DynamicsTile
               title="FC repos"
               value={recoveryContext.latestRestingHr != null ? `${recoveryContext.latestRestingHr} bpm` : "-"}
               status={recoveryContext.restingHrElevatedFlag ? "Elevee" : "Normale"}
-              detail="FC de repos matinale. Hausse = recuperation insuffisante ou stress."
-              meta={recoveryContext.restingHrElevatedFlag ? "FC repos au-dessus du repere de la periode." : "FC repos dans les normes."}
+              detail="FC de repos matinale. Hausse = récupération insuffisante ou stress."
+              meta={recoveryContext.restingHrElevatedFlag ? "FC repos au-dessus du repère de la période." : "FC repos dans les normes."}
               tone={recoveryContext.restingHrElevatedFlag ? "warning" : "positive"}
             />
             {recoveryContext.latestBodyBattery != null ? (
@@ -347,7 +347,7 @@ function DynamicsGrid({
                 value={`${recoveryContext.latestBodyBattery} %`}
                 status="Derniere mesure"
                 detail="Energie disponible (Body Battery Garmin), au reveil ou en journee."
-                meta={recoveryContext.latestBodyBattery < 30 ? "Niveau faible — favoriser la recuperation." : "Niveau suffisant."}
+                meta={recoveryContext.latestBodyBattery < 30 ? "Niveau faible — favoriser la récupération." : "Niveau suffisant."}
                 tone={recoveryContext.latestBodyBattery < 30 ? "warning" : "positive"}
               />
             ) : null}

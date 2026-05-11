@@ -116,7 +116,7 @@ function PerformanceTrendChart({
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="empty-state">Pas assez de sorties course comparables pour suivre l'efficience sur la periode.</div>
+        <div className="empty-state">Pas assez de sorties course comparables pour suivre l'efficience sur la période.</div>
       )}
     </section>
   );

@@ -32,7 +32,7 @@ function CustomTooltip({ active, payload, label, metric }) {
     <div className="chart-tooltip">
       <strong>{entry.period || label}</strong>
       <div>{formatMetricValue(payload[0].value, metric)}</div>
-      {entry?.isPartial ? <div>Mois partiel : {entry.coverageLabel || "periode tronquee"}</div> : null}
+      {entry?.isPartial ? <div>Mois partiel : {entry.coverageLabel || "période tronquée"}</div> : null}
     </div>
   );
 }
@@ -40,7 +40,7 @@ function CustomTooltip({ active, payload, label, metric }) {
 function MonthlyVolumeChart({
   data = [],
   title = "Analyse mensuelle",
-  subtitle = "Tous les mois de la periode choisie restent visibles, meme a 0.",
+  subtitle = "Tous les mois de la période choisie restent visibles, même à 0.",
   info = [],
   metric = "distanceKm",
   granularity = "month",

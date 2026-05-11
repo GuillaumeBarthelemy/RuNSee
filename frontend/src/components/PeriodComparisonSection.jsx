@@ -123,8 +123,8 @@ function PeriodComparisonSection({
       <div className="card-header-row wrap-on-mobile comparison-header-row">
         <div className="comparison-header-copy">
           <div className="title-with-info">
-            <h2 className="card-title">Comparaison YTD</h2>
-            <InfoTooltip title="Comparaison YTD" content={info} label="Afficher l'aide pour la comparaison YTD" />
+            <h2 className="card-title">Comparaison historique</h2>
+            <InfoTooltip title="Comparaison historique" content={info} label="Afficher l'aide pour la comparaison historique" />
           </div>
           <p className="card-subtitle">Du 1er janvier au {model.cutoffLabel || "jour de coupure"}.</p>
           {scopeText ? <p className="comparison-scope">{scopeText}</p> : null}
@@ -146,7 +146,7 @@ function PeriodComparisonSection({
 
       {model.availableYears.length ? (
         <div className="comparison-year-filter">
-          <span className="comparison-year-filter-label">Annees YTD</span>
+          <span className="comparison-year-filter-label">Années comparées</span>
           {model.availableYears.map((year) => {
             const period = model.periods.find((entry) => entry.year === year);
             const color = period?.color || "#7B8CA3";
@@ -179,7 +179,7 @@ function PeriodComparisonSection({
       {narrative ? <div className="alert alert-info comparison-insight-banner">{narrative}</div> : null}
 
       {!model.hasData || !hasRows ? (
-        <div className="empty-state">Aucune donnee exploitable pour comparer les annees en YTD sur ce perimetre.</div>
+        <div className="empty-state">Aucune donnée exploitable pour comparer les années en cumul annuel sur ce périmètre.</div>
       ) : (
         <div className="comparison-stack">
           <div className="comparison-panel comparison-summary-panel">
@@ -250,7 +250,7 @@ function PeriodComparisonSection({
           <div className="comparison-panel comparison-chart-panel">
             <div className="comparison-panel-head">
               <div>
-                <h3 className="subcard-title">Graphe YTD</h3>
+                <h3 className="subcard-title">Graphique d'évolution annuelle</h3>
               </div>
             </div>
 
