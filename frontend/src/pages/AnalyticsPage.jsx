@@ -399,10 +399,12 @@ export default function AnalyticsPage() {
       {activeTabId === "overview" ? (
         <AnalyticsOverviewTab
           trainingState={trainingState}
-          confidence={analyticsConfidence}
-          loadModel={trainingLoadModel}
+          trainingLoadModel={trainingLoadModel}
           efficiencyModel={efficiencyModel}
-          kpiInfoMap={TRAINING_MVP_KPI_INFO}
+          intensityModel={intensityModel}
+          loadDynamicsProfile={loadDynamicsProfile}
+          weeklySummary={weeklySummary}
+          analyticsActivities={analyticsActivities}
         />
       ) : null}
 

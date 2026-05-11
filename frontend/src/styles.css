@@ -10738,3 +10738,600 @@ button.alert-banner-positive-item {
   font-style: italic;
   margin: 0;
 }
+
+/* ============================================================================
+   Lot 04 — Onglet Vue d'ensemble (Alpine Light, PDF page 7)
+   ============================================================================ */
+
+/* Bandeau compact score composite */
+.alpine-takeaway-card--compact {
+  padding: 10px 14px;
+  gap: 0;
+  margin-bottom: 12px;
+}
+.alpine-takeaway-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.alpine-takeaway-compact-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.alpine-takeaway-compact-score {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.alpine-takeaway-compact-score strong {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+.alpine-takeaway-compact-score strong.tone-1 { color: var(--al-success, #35a853); }
+.alpine-takeaway-compact-score strong.tone-2 { color: #84cc16; }
+.alpine-takeaway-compact-score strong.tone-3 { color: var(--al-primary, #1268f3); }
+.alpine-takeaway-compact-score strong.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-takeaway-compact-score strong.tone-5 { color: var(--al-alert, #ef4444); }
+.alpine-takeaway-compact-unit {
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-takeaway-compact-label {
+  font-size: 13px;
+  font-weight: 700;
+}
+.alpine-takeaway-compact-label.tone-1 { color: var(--al-success, #35a853); }
+.alpine-takeaway-compact-label.tone-2 { color: #65a30d; }
+.alpine-takeaway-compact-label.tone-3 { color: var(--al-primary, #1268f3); }
+.alpine-takeaway-compact-label.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-takeaway-compact-label.tone-5 { color: var(--al-alert, #ef4444); }
+
+/* Layout 2 colonnes */
+.alpine-overview-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .alpine-overview-layout { grid-template-columns: 1fr; }
+}
+.alpine-overview-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.alpine-overview-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alpine-overview-section { display: flex; flex-direction: column; gap: 10px; }
+.alpine-overview-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+/* Indicateurs cles row : 3 cartes */
+.alpine-overview-indicators-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 800px) { .alpine-overview-indicators-row { grid-template-columns: 1fr; } }
+
+.alpine-overview-indicator-card {
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--al-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.alpine-overview-indicator-card.tone-1 { border-left: 4px solid var(--al-success, #35a853); }
+.alpine-overview-indicator-card.tone-2 { border-left: 4px solid #84cc16; }
+.alpine-overview-indicator-card.tone-3 { border-left: 4px solid var(--al-primary, #1268f3); }
+.alpine-overview-indicator-card.tone-4 { border-left: 4px solid var(--al-warning, #f59e0b); }
+.alpine-overview-indicator-card.tone-5 { border-left: 4px solid var(--al-alert, #ef4444); }
+
+.alpine-overview-indicator-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.alpine-overview-indicator-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.alpine-overview-indicator-value {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+.alpine-overview-indicator-value.tone-1 { color: var(--al-success, #35a853); }
+.alpine-overview-indicator-value.tone-2 { color: #84cc16; }
+.alpine-overview-indicator-value.tone-3 { color: var(--al-text, #0f2147); }
+.alpine-overview-indicator-value.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-overview-indicator-value.tone-5 { color: var(--al-alert, #ef4444); }
+.alpine-overview-indicator-unit {
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-overview-indicator-hint {
+  font-size: 12px;
+  font-weight: 700;
+}
+.alpine-overview-indicator-hint.tone-1 { color: var(--al-success, #35a853); }
+.alpine-overview-indicator-hint.tone-2 { color: #65a30d; }
+.alpine-overview-indicator-hint.tone-3 { color: var(--al-muted, #64748b); }
+.alpine-overview-indicator-hint.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-overview-indicator-hint.tone-5 { color: var(--al-alert, #ef4444); }
+.alpine-overview-indicator-delta {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-overview-indicator-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 36px;
+  margin-top: 6px;
+}
+.alpine-overview-indicator-bar {
+  flex: 1;
+  min-width: 3px;
+  border-radius: 2px;
+  background: var(--al-border, #dfe8f5);
+  opacity: 0.65;
+}
+.alpine-overview-indicator-bar.tone-1 { background: var(--al-success, #35a853); }
+.alpine-overview-indicator-bar.tone-2 { background: #84cc16; }
+.alpine-overview-indicator-bar.tone-3 { background: var(--al-primary, #1268f3); }
+.alpine-overview-indicator-bar.tone-4 { background: var(--al-warning, #f59e0b); }
+.alpine-overview-indicator-bar.tone-5 { background: var(--al-alert, #ef4444); }
+.alpine-overview-indicator-bar.is-last { opacity: 1; }
+.alpine-overview-indicator-bar.is-empty {
+  height: 18% !important;
+  opacity: 0.3;
+}
+
+/* Focus row : 3 cartes performance */
+.alpine-overview-focus-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1000px) { .alpine-overview-focus-row { grid-template-columns: 1fr; } }
+
+.alpine-overview-focus-card {
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--al-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alpine-overview-focus-card.tone-1 { border-left: 4px solid var(--al-success, #35a853); }
+.alpine-overview-focus-card.tone-2 { border-left: 4px solid #84cc16; }
+.alpine-overview-focus-card.tone-3 { border-left: 4px solid var(--al-primary, #1268f3); }
+.alpine-overview-focus-card.tone-4 { border-left: 4px solid var(--al-warning, #f59e0b); }
+.alpine-overview-focus-card.tone-5 { border-left: 4px solid var(--al-alert, #ef4444); }
+
+.alpine-overview-focus-head { display: flex; flex-direction: column; gap: 2px; }
+.alpine-overview-focus-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.alpine-overview-focus-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin: 0;
+}
+.alpine-overview-focus-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.alpine-overview-focus-value-block {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.alpine-overview-focus-value {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+}
+.alpine-overview-focus-value.tone-1 { color: var(--al-success, #35a853); }
+.alpine-overview-focus-value.tone-2 { color: #84cc16; }
+.alpine-overview-focus-value.tone-3 { color: var(--al-text, #0f2147); }
+.alpine-overview-focus-value.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-overview-focus-value.tone-5 { color: var(--al-alert, #ef4444); }
+.alpine-overview-focus-unit { font-size: 12px; color: var(--al-muted, #64748b); }
+.alpine-overview-focus-label {
+  font-size: 12px;
+  font-weight: 700;
+}
+.alpine-overview-focus-label.tone-1 { color: var(--al-success, #35a853); }
+.alpine-overview-focus-label.tone-2 { color: #65a30d; }
+.alpine-overview-focus-label.tone-3 { color: var(--al-muted, #64748b); }
+.alpine-overview-focus-label.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-overview-focus-label.tone-5 { color: var(--al-alert, #ef4444); }
+.alpine-overview-focus-explain {
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  line-height: 1.4;
+  margin: 4px 0 0;
+}
+.alpine-overview-focus-sample {
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+  font-style: italic;
+}
+.alpine-overview-focus-empty {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+  font-style: italic;
+  margin: 0;
+}
+.alpine-overview-focus-empty-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.alpine-overview-focus-link {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-primary, #1268f3);
+  text-decoration: none;
+}
+.alpine-overview-focus-link:hover { text-decoration: underline; }
+.alpine-overview-focus-source {
+  margin: 0;
+  font-size: 9px;
+  font-style: italic;
+  color: var(--al-muted, #64748b);
+  border-top: 1px dashed var(--al-border-soft, #eaf0fa);
+  padding-top: 6px;
+}
+
+/* EPOC donut */
+.alpine-overview-epoc-body {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.alpine-overview-epoc-donut {
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0;
+}
+.alpine-overview-epoc-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.alpine-overview-epoc-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.alpine-overview-epoc-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.alpine-overview-epoc-legend-label {
+  flex: 1;
+  color: var(--al-text-soft, #2a3f6b);
+}
+.alpine-overview-epoc-legend-pct {
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+
+/* CHARGE & FATIGUE row : 2 mini-charts + gauges */
+.alpine-overview-charge-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1000px) { .alpine-overview-charge-row { grid-template-columns: 1fr; } }
+
+.alpine-overview-mini-chart-card {
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--al-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.alpine-overview-mini-chart-card.tone-1 { border-left: 4px solid var(--al-success, #35a853); }
+.alpine-overview-mini-chart-card.tone-2 { border-left: 4px solid #84cc16; }
+.alpine-overview-mini-chart-card.tone-3 { border-left: 4px solid var(--al-primary, #1268f3); }
+.alpine-overview-mini-chart-card.tone-4 { border-left: 4px solid var(--al-warning, #f59e0b); }
+.alpine-overview-mini-chart-card.tone-5 { border-left: 4px solid var(--al-alert, #ef4444); }
+
+.alpine-overview-mini-chart-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.alpine-overview-mini-chart-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin: 2px 0 0;
+}
+.alpine-overview-mini-chart-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.alpine-overview-mini-chart-value {
+  font-size: 24px;
+  font-weight: 800;
+}
+.alpine-overview-mini-chart-value.tone-1 { color: var(--al-success, #35a853); }
+.alpine-overview-mini-chart-value.tone-2 { color: #84cc16; }
+.alpine-overview-mini-chart-value.tone-3 { color: var(--al-text, #0f2147); }
+.alpine-overview-mini-chart-value.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-overview-mini-chart-value.tone-5 { color: var(--al-alert, #ef4444); }
+.alpine-overview-mini-chart-unit { font-size: 11px; color: var(--al-muted, #64748b); }
+
+.alpine-overview-mini-histo {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 70px;
+  margin-top: 6px;
+}
+.alpine-overview-mini-histo-col {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  min-width: 8px;
+}
+.alpine-overview-mini-histo-bar {
+  width: 100%;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+.alpine-overview-mini-histo-bar.is-last { opacity: 1; }
+.alpine-overview-mini-chart-axis {
+  font-size: 9px;
+  color: var(--al-muted, #64748b);
+  text-align: right;
+  margin: 0;
+}
+
+/* State gauges card */
+.alpine-overview-state-card {
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--al-shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.alpine-overview-state-head { display: flex; flex-direction: column; gap: 2px; }
+.alpine-overview-state-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.alpine-overview-state-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin: 0;
+}
+.alpine-overview-state-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.alpine-overview-gauge-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 10px;
+  background: var(--al-surface-alt, #f5f8ff);
+  border-radius: 8px;
+}
+.alpine-overview-gauge-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.alpine-overview-gauge-label {
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  font-weight: 600;
+}
+.alpine-overview-gauge-value {
+  font-size: 17px;
+  font-weight: 800;
+}
+.alpine-overview-gauge-value.tone-1 { color: var(--al-success, #35a853); }
+.alpine-overview-gauge-value.tone-2 { color: #84cc16; }
+.alpine-overview-gauge-value.tone-3 { color: var(--al-text, #0f2147); }
+.alpine-overview-gauge-value.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-overview-gauge-value.tone-5 { color: var(--al-alert, #ef4444); }
+.alpine-overview-gauge-hint {
+  font-size: 10px;
+  font-weight: 600;
+}
+.alpine-overview-gauge-hint.tone-1 { color: var(--al-success, #35a853); }
+.alpine-overview-gauge-hint.tone-2 { color: #65a30d; }
+.alpine-overview-gauge-hint.tone-3 { color: var(--al-muted, #64748b); }
+.alpine-overview-gauge-hint.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-overview-gauge-hint.tone-5 { color: var(--al-alert, #ef4444); }
+.alpine-overview-state-note {
+  margin: 0;
+  font-size: 9px;
+  font-style: italic;
+  color: var(--al-muted, #64748b);
+}
+
+/* Right rail : Takeaway bullets */
+.alpine-overview-takeaway {
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--al-shadow-card);
+}
+.alpine-overview-takeaway-head { margin-bottom: 10px; }
+.alpine-overview-takeaway-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin: 0;
+}
+.alpine-overview-takeaway-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alpine-overview-takeaway-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.alpine-overview-takeaway-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.alpine-overview-takeaway-icon.tone-1 { color: var(--al-success, #35a853); }
+.alpine-overview-takeaway-icon.tone-2 { color: #65a30d; }
+.alpine-overview-takeaway-icon.tone-3 { color: var(--al-muted, #64748b); }
+.alpine-overview-takeaway-icon.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-overview-takeaway-icon.tone-5 { color: var(--al-alert, #ef4444); }
+.alpine-overview-takeaway-icon svg { width: 100%; height: 100%; }
+.alpine-overview-takeaway-content { display: flex; flex-direction: column; gap: 2px; }
+.alpine-overview-takeaway-item-title {
+  font-size: 12px;
+  font-weight: 700;
+}
+.alpine-overview-takeaway-item-title.tone-1 { color: var(--al-success, #35a853); }
+.alpine-overview-takeaway-item-title.tone-2 { color: #65a30d; }
+.alpine-overview-takeaway-item-title.tone-3 { color: var(--al-text, #0f2147); }
+.alpine-overview-takeaway-item-title.tone-4 { color: var(--al-warning, #f59e0b); }
+.alpine-overview-takeaway-item-title.tone-5 { color: var(--al-alert, #ef4444); }
+.alpine-overview-takeaway-item-text {
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  line-height: 1.4;
+  margin: 0;
+}
+.alpine-overview-takeaway-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-primary, #1268f3);
+  text-decoration: none;
+}
+.alpine-overview-takeaway-link:hover { text-decoration: underline; }
+
+/* Right rail : Intensity Donut */
+.alpine-overview-donut-card {
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--al-shadow-card);
+}
+.alpine-overview-donut-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin: 0 0 10px;
+}
+.alpine-overview-donut-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.alpine-overview-donut-svg {
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+}
+.alpine-overview-donut-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.alpine-overview-donut-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+}
+.alpine-overview-donut-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.alpine-overview-donut-legend-label {
+  font-weight: 600;
+  color: var(--al-text, #0f2147);
+}
+.alpine-overview-donut-legend-meta {
+  margin-left: auto;
+  color: var(--al-muted, #64748b);
+}

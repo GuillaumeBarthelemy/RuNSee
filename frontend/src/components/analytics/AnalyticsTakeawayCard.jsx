@@ -40,11 +40,35 @@ function AnalyticsTakeawayCard({
   state = null,
   kicker = "État d'entraînement",
   title = "À retenir",
+  variant = "default",
 }) {
   if (!state) return null;
 
   const tone = clampTone(state.tone || 3);
   const hasScore = Number.isFinite(state.score);
+
+  // Variant "compact" : bandeau horizontal mini (score + label + 1 ligne).
+  // Sans détail des contributions ni signaux manquants.
+  if (variant === "compact") {
+    return (
+      <article className={`alpine-takeaway-card alpine-takeaway-card--compact tone-${tone}`}>
+        <div className="alpine-takeaway-compact-row">
+          <span className="alpine-takeaway-compact-kicker">{kicker}</span>
+          <span className="alpine-takeaway-compact-score">
+            {hasScore ? (
+              <>
+                <strong className={`tone-${tone}`}>{state.score}</strong>
+                <span className="alpine-takeaway-compact-unit">/100</span>
+              </>
+            ) : (
+              <strong className="tone-3">—</strong>
+            )}
+          </span>
+          <span className={`alpine-takeaway-compact-label tone-${tone}`}>{state.label}</span>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article className={`alpine-takeaway-card tone-${tone}`}>
