@@ -11522,6 +11522,36 @@ button.alert-banner-positive-item {
   color: var(--al-muted, #64748b);
 }
 
+/* Bouton "Lancer l'enrichissement maintenant" (EPOC empty state) */
+.alpine-overview-epoc-enrich-btn {
+  margin: 8px 0 4px;
+  padding: 8px 12px;
+  background: var(--al-primary, #1268f3);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.12s ease, opacity 0.12s ease;
+}
+.alpine-overview-epoc-enrich-btn:hover:not(:disabled) {
+  background: var(--al-primary-stronger, #0a4fbb);
+}
+.alpine-overview-epoc-enrich-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.alpine-overview-epoc-enrich-msg {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-style: italic;
+}
+.alpine-overview-epoc-enrich-msg.is-success { color: var(--al-success, #35a853); }
+.alpine-overview-epoc-enrich-msg.is-error,
+.alpine-overview-epoc-enrich-msg.is-no-connection { color: var(--al-alert, #ef4444); }
+
 /* Bouton CTA commun aux 3 cartes Vue d'ensemble (mockup PDF page 7) */
 .alpine-overview-cta-button,
 .alpine-overview-epoc-cta {

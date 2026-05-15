@@ -1,6 +1,7 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Link } from "react-router-dom";
 import { clampTone } from "../../utils/tonePicker.js";
+import { enrichGarminActivities, getGarminConnectionStatus } from "../../services/externalProvider.service.js";
 
 /**
  * OverviewEpocCard — Section FOCUS, "Dette d'oxygène (EPOC)" (Lot 04 v2).
@@ -75,6 +76,35 @@ function OverviewEpocCard({ summary = {}, linkTo = "/analytics#charges" }) {
   const tone = clampTone(summary.tone || 3);
   const hasData = !!summary.hasData;
 
+  // État local pour le bouton "Lancer l'enrichissement maintenant"
+  const [enrichStatus, setEnrichStatus] = useState(null); // null | "loading" | "success" | "error" | "no-connection"
+  const [enrichMessage, setEnrichMessage] = useState("");
+
+  async function handleEnrichNow() {
+    setEnrichStatus("loading");
+    setEnrichMessage("");
+    try {
+      const conn = await getGarminConnectionStatus();
+      if (!conn?.connection?.connected) {
+        setEnrichStatus("no-connection");
+        setEnrichMessage("Connecte Garmin avant d'enrichir tes activités.");
+        return;
+      }
+      const result = await enrichGarminActivities({ mode: "recent_missing", days: 30, allowGarminOnly: true });
+      setEnrichStatus("success");
+      const matched = result?.matchedCount ?? 0;
+      const fetched = result?.fetchedCount ?? 0;
+      setEnrichMessage(
+        matched > 0
+          ? `${matched} activité${matched > 1 ? "s" : ""} enrichie${matched > 1 ? "s" : ""}. Rafraîchis la page pour voir l'EPOC.`
+          : `${fetched} activité${fetched > 1 ? "s" : ""} Garmin récupérée${fetched > 1 ? "s" : ""}, aucun match Strava sur la période.`,
+      );
+    } catch (err) {
+      setEnrichStatus("error");
+      setEnrichMessage(err?.response?.data?.message || err?.message || "Échec de l'enrichissement.");
+    }
+  }
+
   // Valeur centrale du donut : temps de récupération moyen Garmin
   const centerLabel = summary.averageRecoveryLabel || "—";
   const centerHint = summary.averageRecoveryLabel ? "récupération" : "";
@@ -113,9 +143,26 @@ function OverviewEpocCard({ summary = {}, linkTo = "/analytics#charges" }) {
           <div className="alpine-overview-focus-empty-block">
             <p className="alpine-overview-focus-empty">
               Aucune activité enrichie Garmin sur la période. L'EPOC est mesurée
-              par les montres Garmin compatibles : vérifie ta connexion et
-              l'enrichissement par activité.
+              par les montres Garmin compatibles.
             </p>
+
+            <button
+              type="button"
+              onClick={handleEnrichNow}
+              disabled={enrichStatus === "loading"}
+              className="alpine-overview-epoc-enrich-btn"
+            >
+              {enrichStatus === "loading"
+                ? "Enrichissement en cours…"
+                : "Lancer l'enrichissement maintenant"}
+            </button>
+
+            {enrichMessage ? (
+              <p className={`alpine-overview-epoc-enrich-msg is-${enrichStatus}`}>
+                {enrichMessage}
+              </p>
+            ) : null}
+
             <Link to="/admin#connexions" className="alpine-overview-focus-link">
               Vérifier la connexion Garmin →
             </Link>
