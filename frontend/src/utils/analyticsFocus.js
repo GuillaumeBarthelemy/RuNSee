@@ -218,11 +218,13 @@ export function buildPeriodPaceAdjustedSummary(efficiencyModel = {}) {
 // ---------------------------------------------------------------------------
 
 /**
- * Agrège la dérive cardiaque sur la période. Cherche un champ
- * `cardiacDecouplingPercent` ou `decouplingPercent` éventuellement précalculé
- * sur l'activité. À ce stade, ces champs ne sont PAS stockés en base donc
- * `hasData: false` quasi systématiquement — l'UI affichera un état vide
- * pédagogique avec lien vers la fiche détail.
+ * Agrège la dérive cardiaque sur la période, pondérée par durée.
+ *
+ * Source : champ `activity.cardiacDecouplingPercent` précalculé côté backend
+ * (cardiacDecoupling.service.js) au moment du fetch détaillé Strava OU via
+ * le script backfill scripts/maintenance/backfill-cardiac-decoupling.js.
+ * Si la valeur est absente sur toutes les activités (activités jamais
+ * détaillées), l'UI affichera un état vide pédagogique.
  *
  * @returns {{
  *   hasData: boolean,

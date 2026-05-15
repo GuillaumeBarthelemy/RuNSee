@@ -264,6 +264,11 @@ model Activity {
   userRpe               Int?
   userRpeUpdatedAt      DateTime?
 
+  // Derive cardiaque (Pa:Hr decoupling, Allen & Coggan 2010) precalculee
+  // a partir des splits Strava au moment du fetch detaille de l'activite.
+  cardiacDecouplingPercent     Float?
+  cardiacDecouplingComputedAt  DateTime?
+
   providerEnrichments   ActivityProviderEnrichment[]
   providerLinks         ActivityProviderLink[]
 

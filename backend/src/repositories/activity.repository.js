@@ -1,4 +1,8 @@
 import prisma from "../config/prisma.js";
+import {
+  calculateCardiacDecouplingPercent,
+  extractStravaSplitsFromPayload,
+} from "../services/cardiacDecoupling.service.js";
 
 const INVALID_STORED_ACTIVITY_IDS = ["", "undefined", "null"];
 
@@ -227,6 +231,24 @@ function buildSummaryActivityUpdateData(activity, athleteId, existingActivity = 
   };
 }
 
+function computeCardiacDecouplingFields(activity) {
+  // Décodage à la volée : le payload Strava détaillé contient splits_metric.
+  // Allen & Coggan 2010 — calcul reproduisant cardiacDecoupling.service.js.
+  try {
+    const splits = extractStravaSplitsFromPayload(activity);
+    const percent = calculateCardiacDecouplingPercent(splits);
+    return {
+      cardiacDecouplingPercent: percent,
+      cardiacDecouplingComputedAt: new Date(),
+    };
+  } catch {
+    return {
+      cardiacDecouplingPercent: null,
+      cardiacDecouplingComputedAt: new Date(),
+    };
+  }
+}
+
 function buildDetailedActivityCreateData(activity, athleteId) {
   return {
     ...mapActivityData(activity, athleteId, true),
@@ -235,6 +257,7 @@ function buildDetailedActivityCreateData(activity, athleteId) {
     rawJson: JSON.stringify(activity),
     summaryFetchedAt: new Date(),
     detailsFetchedAt: new Date(),
+    ...computeCardiacDecouplingFields(activity),
   };
 }
 
@@ -246,6 +269,7 @@ function buildDetailedActivityUpdateData(activity, athleteId, existingActivity =
     rawJson: JSON.stringify(activity),
     summaryFetchedAt: existingActivity?.summaryFetchedAt ?? new Date(),
     detailsFetchedAt: new Date(),
+    ...computeCardiacDecouplingFields(activity),
   };
 }
 
