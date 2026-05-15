@@ -71,7 +71,8 @@ function OverviewDecouplingCard({ summary = {}, comparisonLabel = "" }) {
         ) : (
           <div className="alpine-overview-focus-empty-block">
             <p className="alpine-overview-focus-empty">
-              La dérive cardiaque est calculée par activité à partir des splits.
+              Aucune activité avec dérive précalculée sur la période. Le calcul
+              s'effectue automatiquement à chaque sortie détaillée.
             </p>
             <Link to="/activities" className="alpine-overview-focus-link">
               Voir le détail par sortie →

@@ -112,18 +112,19 @@ function OverviewEpocCard({ summary = {}, linkTo = "/analytics#charges" }) {
         ) : (
           <div className="alpine-overview-focus-empty-block">
             <p className="alpine-overview-focus-empty">
-              L'EPOC est mesurée par les montres Garmin compatibles. Activez la
-              sync Garmin et l'enrichissement par activité pour l'afficher ici.
+              Aucune activité enrichie Garmin sur la période. L'EPOC est mesurée
+              par les montres Garmin compatibles : vérifie ta connexion et
+              l'enrichissement par activité.
             </p>
             <Link to="/admin#connexions" className="alpine-overview-focus-link">
-              Configurer Garmin →
+              Vérifier la connexion Garmin →
             </Link>
           </div>
         )}
       </div>
 
       {hasData ? (
-        <Link to={linkTo} className="alpine-overview-epoc-cta">
+        <Link to={linkTo} className="alpine-overview-cta-button">
           Voir le détail
         </Link>
       ) : null}

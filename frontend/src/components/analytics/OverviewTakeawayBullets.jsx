@@ -12,40 +12,66 @@ import { clampTone } from "../../utils/tonePicker.js";
  *  - linkTo : string optionnel
  */
 
-const ICONS = {
-  1: (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-      <path d="M7 12 L11 16 L17 9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  2: (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-      <path d="M7 12 L11 16 L17 9" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  3: (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-      <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-    </svg>
-  ),
-  4: (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 3 L22 21 L2 21 Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-      <line x1="12" y1="10" x2="12" y2="15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="12" cy="18" r="1" fill="currentColor" />
-    </svg>
-  ),
-  5: (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-      <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  ),
-};
+// Icônes sémantiques par key (mockup PDF page 7) :
+//   - charge   → ✓ check (rond avec coche)
+//   - fatigue  → ⚡ éclair
+//   - volume   → 📈 flèche montante
+// Couleur dérivée du tone (CSS .tone-N) sur le container.
+const ICON_CHECK = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.15" />
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+    <path d="M7 12 L11 16 L17 9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+  </svg>
+);
+const ICON_BOLT = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.15" />
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+    <path d="M13 3 L7 13 L11 13 L10 21 L17 10 L13 10 Z" fill="currentColor" />
+  </svg>
+);
+const ICON_TREND_UP = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.15" />
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+    <path d="M7 16 L11 12 L13 14 L17 8 M14 8 L17 8 L17 11" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+  </svg>
+);
+const ICON_TREND_DOWN = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.15" />
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+    <path d="M7 8 L11 12 L13 10 L17 16 M14 16 L17 16 L17 13" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+  </svg>
+);
+const ICON_MINUS = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.15" />
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+    <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+  </svg>
+);
+
+function pickIcon(bullet) {
+  if (!bullet) return ICON_MINUS;
+  // Sémantique par key
+  if (bullet.key === "charge") {
+    // Charge maîtrisée ou modérée → check ; sinon éclair
+    return bullet.tone <= 2 ? ICON_CHECK : ICON_BOLT;
+  }
+  if (bullet.key === "fatigue") {
+    // Fatigue basse → check ; modérée/élevée → éclair
+    return bullet.tone <= 2 ? ICON_CHECK : ICON_BOLT;
+  }
+  if (bullet.key === "volume") {
+    // Volume en hausse → flèche up ; baisse → flèche down ; stable → minus
+    if (bullet.tone === 1) return ICON_TREND_UP;
+    if (bullet.tone === 4 || bullet.tone === 5) return ICON_TREND_DOWN;
+    return ICON_MINUS;
+  }
+  return ICON_MINUS;
+}
 
 function OverviewTakeawayBullets({ bullets = [], linkTo = "/analytics#charges" }) {
   return (
@@ -59,7 +85,7 @@ function OverviewTakeawayBullets({ bullets = [], linkTo = "/analytics#charges" }
           return (
             <li key={b.key} className={`alpine-overview-takeaway-item tone-${tone}`}>
               <span className={`alpine-overview-takeaway-icon tone-${tone}`}>
-                {ICONS[tone] || ICONS[3]}
+                {pickIcon(b)}
               </span>
               <div className="alpine-overview-takeaway-content">
                 <strong className={`alpine-overview-takeaway-item-title tone-${tone}`}>
@@ -72,8 +98,8 @@ function OverviewTakeawayBullets({ bullets = [], linkTo = "/analytics#charges" }
         })}
       </ul>
       {linkTo ? (
-        <Link to={linkTo} className="alpine-overview-takeaway-link">
-          Voir l'analyse complète →
+        <Link to={linkTo} className="alpine-overview-cta-button">
+          Voir l'analyse complète
         </Link>
       ) : null}
     </article>

@@ -28,7 +28,23 @@ function startOfDay(d) {
 }
 
 /**
+ * Clé de date en heure LOCALE (pas UTC) pour éviter le décalage timezone
+ * sur le matching chartData ↔ jours iterés.
+ * Bug initial : toISOString().slice(0,10) renvoie la date UTC, ce qui crée
+ * un offset d'un jour pour les utilisateurs en UTC+N le soir → histogrammes
+ * Charge/Fatigue tous à zéro.
+ */
+function localDateKey(d) {
+  if (!(d instanceof Date)) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/**
  * Renvoie [{ date, label, ctl, atl, load }] pour les 7 derniers jours.
+ * Matching dates en LOCAL — cf. localDateKey.
  */
 function buildLastSevenDays(chartData = [], referenceEnd = new Date()) {
   if (!Array.isArray(chartData)) return [];
@@ -36,10 +52,10 @@ function buildLastSevenDays(chartData = [], referenceEnd = new Date()) {
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const target = new Date(end.getTime() - i * 24 * 60 * 60 * 1000);
-    const dayKey = target.toISOString().slice(0, 10);
+    const dayKey = localDateKey(target);
     const point = chartData.find((p) => {
-      if (!(p?.date instanceof Date)) return false;
-      return startOfDay(p.date).toISOString().slice(0, 10) === dayKey;
+      const pd = p?.date instanceof Date ? p.date : null;
+      return pd ? localDateKey(startOfDay(pd)) === dayKey : false;
     });
     days.push({
       date: target,

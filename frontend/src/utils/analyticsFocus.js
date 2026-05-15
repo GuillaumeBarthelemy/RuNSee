@@ -256,6 +256,13 @@ export function buildPeriodDecouplingSummary(activities = []) {
     sampleSize += 1;
   }
 
+  // Dev logging discret pour diagnostic prod (uniquement mode dev)
+  if (typeof window !== "undefined" && import.meta?.env?.DEV && activities.length > 0) {
+    console.debug(
+      `[analyticsFocus] decoupling: ${sampleSize}/${activities.length} activités avec cardiacDecouplingPercent`,
+    );
+  }
+
   if (sampleSize === 0 || weightTotal === 0) {
     return {
       hasData: false,
@@ -318,35 +325,40 @@ function extractEpocFromActivity(activity) {
 
 /**
  * Extrait le temps de récupération Garmin (secondes) — champ natif Garmin
- * dérivé de l'EPOC. Décision utilisateur §3 : afficher ce champ au lieu de
- * recalculer une heuristique.
+ * dérivé de l'EPOC. Décision utilisateur §3.
  *
- * Note : Garmin expose recoveryTime tantôt en heures, tantôt en secondes.
- * Le serializer backend normalise en HEURES (cf. garminActivityEnrichment.service
- * `getGarminRecoveryTimeHours`). On convertit en secondes pour la cohérence
- * de l'affichage.
+ * Sources, par ordre de priorité :
+ *  1. activity.recoveryTimeSeconds (rare, champ direct explicite)
+ *  2. activity.garminActivityEnrichment.normalized.recoveryTime
+ *     ← chemin canonique, normalisé en HEURES par le serializer backend
+ *       getGarminRecoveryTimeHours (qui convertit tous les formats Garmin).
+ *  3. activity.recoveryTime (legacy direct, heuristique heures<200 / secondes>=200)
+ *  4. providerEnrichments[].recoveryTime (legacy fallback)
+ *
+ * On retourne TOUJOURS en SECONDES pour cohérence avec formatRecoveryTime.
  */
 function extractRecoveryTimeFromActivity(activity) {
   if (!activity) return null;
 
-  // Champ direct activity.recoveryTimeSeconds (rare)
-  if (Number.isFinite(Number(activity?.recoveryTimeSeconds))) {
-    return Number(activity.recoveryTimeSeconds);
+  // 1. Secondes explicites
+  const sec = Number(activity?.recoveryTimeSeconds);
+  if (Number.isFinite(sec) && sec > 0) return sec;
+
+  // 2. Chemin canonique enrichment (heures) → secondes
+  const fromEnrichmentHours = Number(activity?.garminActivityEnrichment?.normalized?.recoveryTime);
+  if (Number.isFinite(fromEnrichmentHours) && fromEnrichmentHours > 0) {
+    return fromEnrichmentHours * 3600;
   }
 
-  // Champ direct activity.recoveryTime (interprété en heures par défaut Garmin)
-  if (Number.isFinite(Number(activity?.recoveryTime))) {
-    const v = Number(activity.recoveryTime);
-    return v > 0 && v < 200 ? v * 3600 : v; // si valeur petite (< 200), probablement heures
+  // 3. Champ direct activity.recoveryTime — heuristique :
+  //    < 200 = heures (typique Garmin 0–96h) → * 3600
+  //    ≥ 200 = secondes (legacy tests/fallback)
+  const direct = Number(activity?.recoveryTime);
+  if (Number.isFinite(direct) && direct > 0) {
+    return direct < 200 ? direct * 3600 : direct;
   }
 
-  // Chemin canonique API : garminActivityEnrichment.normalized.recoveryTime (en heures)
-  const fromEnrichment = Number(activity?.garminActivityEnrichment?.normalized?.recoveryTime);
-  if (Number.isFinite(fromEnrichment) && fromEnrichment > 0) {
-    return fromEnrichment < 200 ? fromEnrichment * 3600 : fromEnrichment;
-  }
-
-  // Legacy fallback
+  // 4. Legacy fallback providerEnrichments[]
   if (Array.isArray(activity?.providerEnrichments)) {
     for (const enr of activity.providerEnrichments) {
       const v = Number(enr?.recoveryTime ?? enr?.payload?.recoveryTime);
@@ -430,6 +442,14 @@ export function buildPeriodEpocSummary(activities = []) {
     const b = buckets.get(cls.level);
     b.count += 1;
     b.totalDurationSeconds += duration;
+  }
+
+  // Dev logging discret pour diagnostic prod
+  if (typeof window !== "undefined" && import.meta?.env?.DEV && activities.length > 0) {
+    console.debug(
+      `[analyticsFocus] epoc: ${sampleSize}/${activities.length} activités avec EPOC, ` +
+      `${recoverySampleCount} avec recoveryTime`,
+    );
   }
 
   if (sampleSize === 0 || weightTotal === 0) {

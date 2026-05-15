@@ -135,8 +135,8 @@ function OverviewIntensityDonut({ intensityModel = {}, linkTo = "/analytics#inte
       </div>
 
       {linkTo ? (
-        <Link to={linkTo} className="alpine-overview-focus-link">
-          Voir le détail →
+        <Link to={linkTo} className="alpine-overview-cta-button">
+          Voir le détail
         </Link>
       ) : null}
     </article>
