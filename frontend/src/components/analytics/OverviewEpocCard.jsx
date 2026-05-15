@@ -3,51 +3,45 @@ import { Link } from "react-router-dom";
 import { clampTone } from "../../utils/tonePicker.js";
 
 /**
- * OverviewEpocCard — Section FOCUS, indicateur "Dette d'oxygène (EPOC)".
+ * OverviewEpocCard — Section FOCUS, "Dette d'oxygène (EPOC)" (Lot 04 v2).
  *
- * Donut SVG affichant la distribution des niveaux EPOC sur la période,
- * pondérée par durée d'activité. Valeur centrale = EPOC moyen mlO₂/kg.
+ * Mockup PDF page 7 :
+ *   - Donut avec **temps de récupération Garmin** au centre (décision §3)
+ *   - Légende : Léger 14 (50%), Modéré 9 (32%), etc. — comptes absolus + %
+ *   - Bouton "Voir le détail" en bas (CTA proéminent)
  *
- * État vide propre si pas d'enrichissement Garmin disponible.
+ * Source : Børsheim & Bahr (2003), classification EPOC ; champ recoveryTime
+ * natif Garmin Firstbeat.
  */
 
-const TONE_COLOR = {
-  1: "#35a853",  // Léger
-  2: "#84cc16",  // (non utilisé pour EPOC)
-  3: "#1268f3",  // (non utilisé)
-  4: "#f59e0b",  // Élevé
-  5: "#ef4444",  // Très élevé
-};
-
-// Couleur Modéré custom (entre tone 1 et tone 4)
+const COLOR_LIGHT = "#35a853";
 const COLOR_MODERATE = "#65a30d";
+const COLOR_HIGH = "#f59e0b";
+const COLOR_VERY_HIGH = "#ef4444";
 
 function colorForLevel(level) {
   switch (level) {
-    case "Léger":       return TONE_COLOR[1];
-    case "Modéré":      return COLOR_MODERATE;
-    case "Élevé":       return TONE_COLOR[4];
-    case "Très élevé":  return TONE_COLOR[5];
-    default:            return "#cbd5e1";
+    case "Léger":      return COLOR_LIGHT;
+    case "Modéré":     return COLOR_MODERATE;
+    case "Élevé":      return COLOR_HIGH;
+    case "Très élevé": return COLOR_VERY_HIGH;
+    default:           return "#cbd5e1";
   }
 }
 
-function MiniDonut({ distribution = [], averageMlKg = 0 }) {
+function MiniDonut({ distribution = [], centerLabel = "—", centerHint = "" }) {
   const total = distribution.reduce((s, d) => s + d.pct, 0) || 100;
   const radius = 38;
   const circ = 2 * Math.PI * radius;
-  // Pré-calcul des offsets cumulés via reduce (immutable, conforme react-hooks)
+  // Offsets cumulés via reduce (immutable, conforme react-hooks)
   const segments = distribution.reduce((acc, d) => {
     const length = (d.pct / total) * circ;
     const offset = acc.length > 0 ? acc[acc.length - 1].offset + acc[acc.length - 1].length : 0;
     return [...acc, { ...d, length, offset }];
   }, []);
+
   return (
-    <svg
-      viewBox="0 0 100 100"
-      className="alpine-overview-epoc-donut"
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 100 100" className="alpine-overview-epoc-donut" aria-hidden="true">
       <circle cx="50" cy="50" r={radius} fill="none" stroke="#eaf0fa" strokeWidth="12" />
       {segments.map((s) => {
         const dash = `${s.length} ${circ - s.length}`;
@@ -65,21 +59,25 @@ function MiniDonut({ distribution = [], averageMlKg = 0 }) {
           />
         );
       })}
-      <text x="50" y="50" textAnchor="middle" dominantBaseline="central"
-        fontSize="22" fontWeight="700" fill="#0f2147">
-        {averageMlKg}
+      <text x="50" y="48" textAnchor="middle" dominantBaseline="central"
+        fontSize="16" fontWeight="800" fill="#0f2147">
+        {centerLabel}
       </text>
-      <text x="50" y="66" textAnchor="middle" dominantBaseline="central"
-        fontSize="9" fill="#64748b">
-        mlO₂/kg
+      <text x="50" y="62" textAnchor="middle" dominantBaseline="central"
+        fontSize="7" fill="#64748b">
+        {centerHint}
       </text>
     </svg>
   );
 }
 
-function OverviewEpocCard({ summary = {} }) {
+function OverviewEpocCard({ summary = {}, linkTo = "/analytics#charges" }) {
   const tone = clampTone(summary.tone || 3);
   const hasData = !!summary.hasData;
+
+  // Valeur centrale du donut : temps de récupération moyen Garmin
+  const centerLabel = summary.averageRecoveryLabel || "—";
+  const centerHint = summary.averageRecoveryLabel ? "récupération" : "";
 
   return (
     <article className={`alpine-overview-focus-card tone-${tone}`}>
@@ -91,7 +89,11 @@ function OverviewEpocCard({ summary = {} }) {
       <div className="alpine-overview-focus-body alpine-overview-epoc-body">
         {hasData ? (
           <>
-            <MiniDonut distribution={summary.distribution} averageMlKg={summary.averageMlKg} />
+            <MiniDonut
+              distribution={summary.distribution}
+              centerLabel={centerLabel}
+              centerHint={centerHint}
+            />
             <ul className="alpine-overview-epoc-legend">
               {summary.distribution.map((d) => (
                 <li key={d.level}>
@@ -100,7 +102,9 @@ function OverviewEpocCard({ summary = {} }) {
                     style={{ background: colorForLevel(d.level) }}
                   />
                   <span className="alpine-overview-epoc-legend-label">{d.level}</span>
-                  <strong className="alpine-overview-epoc-legend-pct">{d.pct} %</strong>
+                  <span className="alpine-overview-epoc-legend-count">
+                    {d.count} <span className="alpine-overview-epoc-legend-pct">({d.pct} %)</span>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -118,8 +122,15 @@ function OverviewEpocCard({ summary = {} }) {
         )}
       </div>
 
+      {hasData ? (
+        <Link to={linkTo} className="alpine-overview-epoc-cta">
+          Voir le détail
+        </Link>
+      ) : null}
+
       <p className="alpine-overview-focus-source">
         Méthode : Børsheim E, Bahr R (2003), <i>Sports Med</i> 33(14):1037–1060.
+        Temps de récupération : champ natif Garmin Firstbeat.
       </p>
     </article>
   );

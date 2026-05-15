@@ -92,6 +92,25 @@ describe("buildPeriodEpocSummary", () => {
     expect(r.averageMlKg).toBe(100);
   });
 
+  it("agrège recoveryTime Garmin pondéré durée", () => {
+    const activities = [
+      { movingTime: 3600, epoc: 50, recoveryTime: 3600 },    // 1h récup pour 1h activité
+      { movingTime: 7200, epoc: 100, recoveryTime: 18000 },  // 5h récup pour 2h activité
+    ];
+    const r = buildPeriodEpocSummary(activities);
+    // weightedSumRecovery = 3600*3600 + 18000*7200 = 12 960 000 + 129 600 000 = 142 560 000
+    // weightTotal = 10 800
+    // moyenne = 142 560 000 / 10 800 = 13 200 sec = 3h 40
+    expect(r.averageRecoverySeconds).toBe(13200);
+    expect(r.averageRecoveryLabel).toMatch(/3h\s*40/);
+  });
+
+  it("averageRecoverySeconds null si aucun recoveryTime", () => {
+    const r = buildPeriodEpocSummary([{ movingTime: 3600, epoc: 50 }]);
+    expect(r.averageRecoverySeconds).toBeNull();
+    expect(r.averageRecoveryLabel).toBeNull();
+  });
+
   it("ignore activités sans durée ou sans EPOC", () => {
     const r = buildPeriodEpocSummary([
       { movingTime: 0, epoc: 50 },

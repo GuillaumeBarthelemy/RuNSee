@@ -1,16 +1,21 @@
 import { memo } from "react";
 import { clampTone } from "../../utils/tonePicker.js";
+import OverviewRangeBar from "./OverviewRangeBar.jsx";
 
 /**
- * OverviewIndicatorCard — Vue d'ensemble PDF page 7, section INDICATEURS CLÉS.
+ * OverviewIndicatorCard — Section INDICATEURS CLÉS (Vue d'ensemble, PDF page 7).
  *
- * Carte horizontale : label + valeur grosse + unit + hint + delta + mini bar chart.
+ * Layout fidèle au mockup :
+ *   label (uppercase) + ⓘ
+ *   valeur grosse  unité
+ *   hint coloré
+ *   range bar horizontale graduée + curseur
+ *   delta "+18 % vs 28 avr. - 4 mai"
  *
  * Props :
  *  - label, value, unit, hint, delta (string)
  *  - tone : 1..5
- *  - series : number[] (mini bar chart, 7-14 valeurs)
- *  - seriesMax : number optionnel (échelle Y forcée)
+ *  - rangeBar : { value, min, max, ticks, gradient } — config OverviewRangeBar
  */
 function OverviewIndicatorCard({
   label = "",
@@ -19,12 +24,9 @@ function OverviewIndicatorCard({
   hint = "",
   delta = "",
   tone = 3,
-  series = [],
-  seriesMax = null,
+  rangeBar = null,
 }) {
   const safeTone = clampTone(tone);
-  const valid = series.filter((v) => v != null && Number.isFinite(v));
-  const max = seriesMax ?? (valid.length ? Math.max(...valid) * 1.1 : 1);
 
   return (
     <article className={`alpine-overview-indicator-card tone-${safeTone}`}>
@@ -34,26 +36,19 @@ function OverviewIndicatorCard({
         {unit ? <span className="alpine-overview-indicator-unit">{unit}</span> : null}
       </div>
       {hint ? <span className={`alpine-overview-indicator-hint tone-${safeTone}`}>{hint}</span> : null}
-      {delta ? <span className="alpine-overview-indicator-delta">{delta}</span> : null}
 
-      {valid.length >= 2 ? (
-        <div className="alpine-overview-indicator-bars" aria-hidden="true">
-          {series.map((v, idx) => {
-            const isLast = idx === series.length - 1;
-            if (v == null || !Number.isFinite(v) || v <= 0) {
-              return <span key={idx} className="alpine-overview-indicator-bar is-empty" />;
-            }
-            const h = Math.max(8, (v / Math.max(1, max)) * 100);
-            return (
-              <span
-                key={idx}
-                className={`alpine-overview-indicator-bar tone-${safeTone} ${isLast ? "is-last" : ""}`.trim()}
-                style={{ height: `${h}%` }}
-              />
-            );
-          })}
-        </div>
+      {rangeBar ? (
+        <OverviewRangeBar
+          value={rangeBar.value}
+          min={rangeBar.min ?? 0}
+          max={rangeBar.max ?? 100}
+          ticks={rangeBar.ticks || []}
+          gradient={rangeBar.gradient || "warm"}
+          ariaLabel={label}
+        />
       ) : null}
+
+      {delta ? <span className="alpine-overview-indicator-delta">{delta}</span> : null}
     </article>
   );
 }

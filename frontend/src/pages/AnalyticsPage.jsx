@@ -40,7 +40,9 @@ import { buildRecoveryCorrelationDataset } from "../utils/recoveryCorrelations.j
 import { buildRecoveryViewModel } from "../utils/recoveryViewModel.js";
 import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
 import { buildTrailAnalyticsSummary } from "../utils/trailProfile.js";
-import { computeTrainingStateScore } from "../utils/analyticsTrainingState.js";
+// computeTrainingStateScore conservé dans utils mais plus consommé par Vue
+// d'ensemble (bandeau retiré, décision §1). Util laissé en place pour usage
+// futur éventuel sans casser la base scientifique.
 
 function addDays(date, days) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
@@ -270,20 +272,8 @@ export default function AnalyticsPage() {
     [analyticsActivities, analyticsScopeActivities, recoverySnapshots, sharedRange.end, trailAnalytics],
   );
 
-  // Score composite état d'entraînement (Lot 04 ajout C)
-  const tsbValue = trainingLoadModel?.summary?.tsb ?? null;
-  const acwrValue = loadDynamicsProfile?.acwrEwma?.value ?? null;
-  const monotonyValue = loadVarianceModel?.monotony ?? null;
-  const hrvDeltaPct = recoveryVm?.hrv?.deltaPct ?? null;
-  const trainingState = useMemo(
-    () => computeTrainingStateScore({
-      tsb: tsbValue,
-      acwr: acwrValue,
-      monotony: monotonyValue,
-      hrvDeltaPct,
-    }),
-    [tsbValue, acwrValue, monotonyValue, hrvDeltaPct],
-  );
+  // Score composite état d'entraînement (Lot 04 v1) — non affiché en Vue
+  // d'ensemble v2 (décision utilisateur §1). Util conservé pour usage futur.
 
   // ---------------------------------------------------------------------------
   // Wording sections (FR avec accents)
@@ -398,13 +388,13 @@ export default function AnalyticsPage() {
 
       {activeTabId === "overview" ? (
         <AnalyticsOverviewTab
-          trainingState={trainingState}
           trainingLoadModel={trainingLoadModel}
           efficiencyModel={efficiencyModel}
           intensityModel={intensityModel}
           loadDynamicsProfile={loadDynamicsProfile}
           weeklySummary={weeklySummary}
           analyticsActivities={analyticsActivities}
+          sharedRangeEnd={sharedRange.end}
         />
       ) : null}
 
