@@ -69,8 +69,10 @@ function AnalyticsOverviewTab({
   const fatigueValue = Number(summary?.atl) || 0;
 
   // --- Volume 7j (heures) ---
+  // buildRegularitySummary expose `movingHours` (pas `hours`) sur les
+  // éléments weeklySeries — bug initial corrigé : on lit le bon champ.
   const lastWeek = weeklySummary?.weeklySeries?.slice(-1)?.[0];
-  const volumeHours = Number(lastWeek?.hours) || 0;
+  const volumeHours = Number(lastWeek?.movingHours ?? lastWeek?.hours) || 0;
 
   // --- Comparaison 4 semaines avant ---
   const fourWeeksBack = useMemo(

@@ -113,13 +113,21 @@ export function buildFourWeeksBackComparison({ chartData = [], weeklySeries = []
     ? atlRefValues.reduce((s, v) => s + v, 0) / atlRefValues.length
     : 0;
 
-  // Volume référence sur la fenêtre 4 semaines avant
+  // Volume référence sur la fenêtre 4 semaines avant.
+  // buildRegularitySummary expose `movingHours` (pas `hours`). On lit les deux
+  // pour rester compatible avec d'éventuelles autres sources.
   let volumeRefHours = 0;
   for (const w of weeklySeries) {
-    const d = w?.date instanceof Date ? startOfDay(w.date) : null;
+    // Champ `date` ou `weekStart` selon la source
+    const rawDate = w?.date ?? w?.weekStart;
+    const d = rawDate instanceof Date
+      ? startOfDay(rawDate)
+      : (typeof rawDate === "string" || typeof rawDate === "number")
+        ? startOfDay(new Date(rawDate))
+        : null;
     if (!d || !refRange) continue;
     if (d >= refRange.startDate && d <= refRange.endDate) {
-      volumeRefHours += Number(w?.hours) || 0;
+      volumeRefHours += Number(w?.movingHours ?? w?.hours) || 0;
     }
   }
 
