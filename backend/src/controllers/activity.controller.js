@@ -26,6 +26,31 @@ function buildActivityDetailResponse(activity) {
   };
 }
 
+/**
+ * Sérialise une activité pour la liste — version allégée :
+ * - Retire le tableau `providerEnrichments` (réduit la taille payload).
+ * - Expose un `garminActivityEnrichment` parsé identique à la fiche détail
+ *   pour que le frontend ait un accès uniforme à EPOC / recoveryTime /
+ *   trainingEffect sur la liste comme sur le détail.
+ */
+function buildActivityListResponse(activity) {
+  if (!activity) return null;
+
+  const providerEnrichments = Array.isArray(activity.providerEnrichments)
+    ? activity.providerEnrichments
+    : [];
+  const garminEnrichment = providerEnrichments.find(
+    (enrichment) => enrichment.providerCode === EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL,
+  );
+
+  // eslint-disable-next-line no-unused-vars
+  const { providerEnrichments: _omit, ...rest } = activity;
+  return {
+    ...rest,
+    garminActivityEnrichment: buildPublicGarminActivityEnrichment(garminEnrichment),
+  };
+}
+
 export async function getActivities(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
@@ -39,7 +64,7 @@ export async function getActivities(req, res, next) {
       sportType,
     });
 
-    return res.json(activities);
+    return res.json(activities.map(buildActivityListResponse));
   } catch (error) {
     next(error);
   }

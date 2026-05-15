@@ -336,11 +336,31 @@ export async function listActivities(filters = {}) {
     requireStartDate: true,
   });
 
+  // Inclusion des enrichissements Garmin (EPOC, recoveryTime, training effect)
+  // pour que la liste expose les mêmes signaux que la fiche détail. Sans cela,
+  // la Vue d'ensemble Analyse ne peut pas afficher EPOC sur la période.
+  // Le `normalizedJson` est string ; il est parsé côté controller via
+  // `buildPublicGarminActivityEnrichment`.
   return prisma.activity.findMany({
     where,
-    orderBy: {
-      startDate: "desc"
-    }
+    orderBy: { startDate: "desc" },
+    include: {
+      providerEnrichments: {
+        select: {
+          id: true,
+          providerCode: true,
+          providerActivityId: true,
+          matchConfidence: true,
+          matchedAt: true,
+          status: true,
+          normalizedJson: true,
+          rawDataId: true,
+          lastErrorCode: true,
+          lastErrorMessage: true,
+          updatedAt: true,
+        },
+      },
+    },
   });
 }
 

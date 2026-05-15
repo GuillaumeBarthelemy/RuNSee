@@ -282,12 +282,21 @@ export function buildPeriodDecouplingSummary(activities = []) {
 
 /**
  * Extrait la valeur EPOC (mlO₂/kg) depuis une activité Strava enrichie Garmin.
- * Cherche dans providerEnrichments le bloc Garmin et son champ epoc.
+ *
+ * Sources cherchées dans l'ordre :
+ *  1. Champ direct `activity.epoc` ou `activity.epocMlKg` (rare)
+ *  2. `activity.garminActivityEnrichment.normalized.epoc` (chemin API liste &
+ *     fiche détail depuis le serializer backend `buildPublicGarminActivityEnrichment`)
+ *  3. `activity.providerEnrichments[].epoc` (legacy, conservé en fallback)
  */
 function extractEpocFromActivity(activity) {
   if (!activity) return null;
   if (Number.isFinite(Number(activity?.epoc))) return Number(activity.epoc);
   if (Number.isFinite(Number(activity?.epocMlKg))) return Number(activity.epocMlKg);
+  // Chemin canonique API : garminActivityEnrichment.normalized.epoc
+  const fromEnrichment = Number(activity?.garminActivityEnrichment?.normalized?.epoc);
+  if (Number.isFinite(fromEnrichment) && fromEnrichment > 0) return fromEnrichment;
+  // Legacy fallback
   if (Array.isArray(activity?.providerEnrichments)) {
     for (const enr of activity.providerEnrichments) {
       const v = Number(enr?.epoc ?? enr?.payload?.epoc);
@@ -301,15 +310,37 @@ function extractEpocFromActivity(activity) {
  * Extrait le temps de récupération Garmin (secondes) — champ natif Garmin
  * dérivé de l'EPOC. Décision utilisateur §3 : afficher ce champ au lieu de
  * recalculer une heuristique.
+ *
+ * Note : Garmin expose recoveryTime tantôt en heures, tantôt en secondes.
+ * Le serializer backend normalise en HEURES (cf. garminActivityEnrichment.service
+ * `getGarminRecoveryTimeHours`). On convertit en secondes pour la cohérence
+ * de l'affichage.
  */
 function extractRecoveryTimeFromActivity(activity) {
   if (!activity) return null;
-  if (Number.isFinite(Number(activity?.recoveryTime))) return Number(activity.recoveryTime);
-  if (Number.isFinite(Number(activity?.recoveryTimeSeconds))) return Number(activity.recoveryTimeSeconds);
+
+  // Champ direct activity.recoveryTimeSeconds (rare)
+  if (Number.isFinite(Number(activity?.recoveryTimeSeconds))) {
+    return Number(activity.recoveryTimeSeconds);
+  }
+
+  // Champ direct activity.recoveryTime (interprété en heures par défaut Garmin)
+  if (Number.isFinite(Number(activity?.recoveryTime))) {
+    const v = Number(activity.recoveryTime);
+    return v > 0 && v < 200 ? v * 3600 : v; // si valeur petite (< 200), probablement heures
+  }
+
+  // Chemin canonique API : garminActivityEnrichment.normalized.recoveryTime (en heures)
+  const fromEnrichment = Number(activity?.garminActivityEnrichment?.normalized?.recoveryTime);
+  if (Number.isFinite(fromEnrichment) && fromEnrichment > 0) {
+    return fromEnrichment < 200 ? fromEnrichment * 3600 : fromEnrichment;
+  }
+
+  // Legacy fallback
   if (Array.isArray(activity?.providerEnrichments)) {
     for (const enr of activity.providerEnrichments) {
       const v = Number(enr?.recoveryTime ?? enr?.payload?.recoveryTime);
-      if (Number.isFinite(v) && v > 0) return v;
+      if (Number.isFinite(v) && v > 0) return v < 200 ? v * 3600 : v;
     }
   }
   return null;
