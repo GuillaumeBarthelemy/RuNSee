@@ -553,11 +553,82 @@ def fetch_activities(request: dict) -> dict:
             "lactateThresholdSpeed",
         )
 
+        # Champs additionnels fournis uniquement par l'endpoint DETAIL
+        # (`api.get_activity(id)` → `summaryDTO`). L'endpoint LIST utilisé
+        # ci-dessus n'expose pas EPOC, recoveryTime, lactateThreshold, etc.
+        # → cf. diagnostic 2026-05 : 601 enrichments / 0 EPOC / 0 recoveryTime.
+        detail_only_keys = (
+            "epoc",
+            "recoveryTime",
+            "recoveryTimeInHours",
+            "recoveryTimeMinutes",
+            "recoveryTimeSeconds",
+            "recoveryHeartRate",
+            "performanceCondition",
+            "trainingLoad",
+            "trainingStressScore",
+            "intensityFactor",
+            "lactateThresholdBpm",
+            "lactateThresholdSpeed",
+            "averagePower",
+            "maxPower",
+            "anaerobicTrainingEffectScore",
+            "aerobicTrainingEffectScore",
+        )
+
+        # Pacing entre appels DETAIL pour éviter rate-limit Garmin.
+        # 30 activités * 1s ≈ 30s — acceptable pour un enrichissement utilisateur.
+        detail_pacing_seconds = 1.0
+        # Garde-fou : si la list renvoie un volume inattendu, on coupe.
+        detail_fetch_limit = 200
+        detail_fetched_count = 0
+        detail_failed_count = 0
+        detail_rate_limited = False
+
         activities = []
         field_coverage = {}
         for raw in raw_activities or []:
             if not isinstance(raw, dict):
                 continue
+
+            # Enrichissement via endpoint DETAIL : merge des champs Firstbeat
+            # absents du summary LIST (EPOC, recoveryTime, etc.).
+            activity_id = raw.get("activityId") or raw.get("activityIdStr")
+            if (
+                activity_id is not None
+                and not detail_rate_limited
+                and detail_fetched_count < detail_fetch_limit
+            ):
+                try:
+                    details = api.get_activity(activity_id)
+                    detail_fetched_count += 1
+                    summary_dto = (details or {}).get("summaryDTO") if isinstance(details, dict) else None
+                    if isinstance(summary_dto, dict):
+                        for detail_key in detail_only_keys:
+                            value = summary_dto.get(detail_key)
+                            if value is not None:
+                                raw[detail_key] = value
+                except GarminConnectTooManyRequestsError:
+                    # On stoppe l'enrichissement détail mais on garde les
+                    # données list déjà fetchées (pas de perte utilisateur).
+                    detail_rate_limited = True
+                except (GarminConnectAuthenticationError, GarthHTTPError) as detail_exc:
+                    # Session expirée pendant l'enrichissement → on remonte.
+                    detail_status = get_http_status_from_exception(detail_exc)
+                    if detail_status in (401, 403):
+                        return {
+                            "status": "expired",
+                            "code": "GARMINCONNECT_SESSION_EXPIRED",
+                            "message": "Session Garmin expiree.",
+                            "activities": [],
+                        }
+                    detail_failed_count += 1
+                except Exception:  # pylint: disable=broad-except
+                    # Échec ponctuel d'une activité : on tolère et on continue.
+                    detail_failed_count += 1
+                finally:
+                    time.sleep(detail_pacing_seconds)
+
             kept = {key: raw.get(key) for key in kept_keys if key in raw}
             for key, value in kept.items():
                 if value is not None:
@@ -569,6 +640,9 @@ def fetch_activities(request: dict) -> dict:
             "activities": activities,
             "count": len(activities),
             "fieldCoverage": field_coverage,
+            "detailFetchedCount": detail_fetched_count,
+            "detailFailedCount": detail_failed_count,
+            "detailRateLimited": detail_rate_limited,
         }
 
 
