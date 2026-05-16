@@ -11945,3 +11945,423 @@ button.alert-banner-positive-item {
 .alpine-charges-rail-state-head strong.tone-3 { color: #475569; }
 .alpine-charges-rail-state-head strong.tone-4 { color: #d97706; }
 .alpine-charges-rail-state-head strong.tone-5 { color: #dc2626; }
+
+/* =========================================================================
+ * Onglet Tendances (Lot 04 V5, PDF page 9)
+ * ========================================================================= */
+.alpine-trends-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .alpine-trends-grid { grid-template-columns: 1fr; }
+}
+.alpine-trends-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* KPI Row */
+.alpine-trends-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1280px) {
+  .alpine-trends-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.alpine-trends-kpi-card {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 130px;
+}
+.alpine-trends-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+  text-transform: none;
+}
+.alpine-trends-kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.alpine-trends-kpi-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--al-text, #0f2147);
+  line-height: 1;
+}
+.alpine-trends-kpi-unit {
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-trends-kpi-delta {
+  font-size: 11px;
+  font-weight: 700;
+}
+.alpine-trends-kpi-delta.is-up { color: #15803d; }
+.alpine-trends-kpi-delta.is-down { color: #dc2626; }
+.alpine-trends-kpi-delta small {
+  font-weight: 500;
+  color: var(--al-muted, #64748b);
+}
+.alpine-trends-sparkline {
+  display: block;
+  width: 100%;
+  height: 40px;
+  margin-top: auto;
+}
+
+/* Generic card */
+.alpine-trends-card {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+}
+.alpine-trends-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.alpine-trends-card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-trends-period-toggle {
+  display: inline-flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Row 2 layout */
+.alpine-trends-row-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+@media (max-width: 1100px) {
+  .alpine-trends-row-2 { grid-template-columns: 1fr; }
+}
+
+/* Évolution du volume */
+.alpine-trends-evolution-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.alpine-trends-evolution-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--al-text, #0f2147);
+  line-height: 1;
+}
+.alpine-trends-evolution-label {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-trends-evolution-delta {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+}
+.alpine-trends-evolution-delta.is-up   { color: #15803d; }
+.alpine-trends-evolution-delta.is-down { color: #dc2626; }
+.alpine-trends-evolution-delta small {
+  font-weight: 500;
+  color: var(--al-muted, #64748b);
+  display: block;
+}
+
+/* Mini legend (bar comparison) */
+.alpine-trends-mini-legend {
+  list-style: none;
+  display: flex;
+  gap: 16px;
+  padding: 0;
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+}
+.alpine-trends-mini-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.alpine-trends-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Régularité */
+.alpine-trends-regularity-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .alpine-trends-regularity-body { grid-template-columns: 1fr; }
+}
+.alpine-trends-regularity-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.alpine-trends-regularity-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.alpine-trends-stat-label {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+  font-weight: 600;
+}
+.alpine-trends-stat-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--al-text, #0f2147);
+  line-height: 1;
+}
+.alpine-trends-stat-unit {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-trends-stat-extra {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+
+/* Heatmap */
+.alpine-trends-heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-x: auto;
+}
+.alpine-trends-heatmap-months {
+  position: relative;
+  height: 14px;
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-trends-heatmap-month {
+  position: absolute;
+  top: 0;
+  text-align: center;
+}
+.alpine-trends-heatmap-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.alpine-trends-heatmap-day-labels {
+  display: flex;
+  flex-direction: column;
+  font-size: 9px;
+  color: var(--al-muted, #64748b);
+  width: 14px;
+}
+.alpine-trends-heatmap-day-labels span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.alpine-trends-heatmap-legend {
+  display: flex;
+  gap: 14px;
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.alpine-trends-heatmap-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Comparaison de périodes */
+.alpine-trends-period-compare-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+}
+.alpine-trends-period-compare-range > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.alpine-trends-period-compare-tag {
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-trends-period-compare-value {
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-trends-period-compare-sep {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+  margin: 0 4px;
+}
+.alpine-trends-period-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1100px) {
+  .alpine-trends-period-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.alpine-trends-period-card {
+  border: 1px solid #eaf0fa;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.alpine-trends-period-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-trends-period-card-icon {
+  color: var(--al-primary, #1268f3);
+  display: inline-flex;
+  align-items: center;
+}
+.alpine-trends-period-card-label {
+  font-weight: 600;
+}
+.alpine-trends-period-card-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.alpine-trends-period-card-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--al-text, #0f2147);
+  line-height: 1;
+}
+.alpine-trends-period-card-unit {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-trends-period-card-delta-abs {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+}
+.alpine-trends-period-card-delta-abs.is-up   { color: #15803d; }
+.alpine-trends-period-card-delta-abs.is-down { color: #dc2626; }
+.alpine-trends-period-card-prev {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-trends-period-card-delta-pct.is-up   { color: #15803d; font-weight: 600; }
+.alpine-trends-period-card-delta-pct.is-down { color: #dc2626; font-weight: 600; }
+
+/* Right rail */
+.alpine-trends-rail {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 16px;
+}
+.alpine-trends-rail-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-trends-rail-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alpine-trends-rail-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.alpine-trends-rail-bullet-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.alpine-trends-rail-bullet.tone-1 .alpine-trends-rail-bullet-icon { color: #1268f3; background: #dbeafe; }
+.alpine-trends-rail-bullet.tone-2 .alpine-trends-rail-bullet-icon { color: #65a30d; background: #ecfccb; }
+.alpine-trends-rail-bullet.tone-3 .alpine-trends-rail-bullet-icon { color: #475569; background: #f1f5f9; }
+.alpine-trends-rail-bullet-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.alpine-trends-rail-bullet-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-trends-rail-bullet-body {
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  line-height: 1.4;
+}
+.alpine-trends-rail-cta {
+  margin-top: auto;
+  background: var(--al-primary-soft, #dbeafe);
+  color: var(--al-primary, #1268f3);
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+.alpine-trends-rail-cta:hover { filter: brightness(0.97); }

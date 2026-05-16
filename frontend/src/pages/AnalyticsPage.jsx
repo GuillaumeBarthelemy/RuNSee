@@ -15,8 +15,7 @@ import {
 } from "../content/trainingMvpCopy.js";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import AppShell from "../layouts/AppShell.jsx";
-import { buildMonthlySeries, filterActivities } from "../utils/activityAggregations.js";
-import { buildAnalyticsConfidence } from "../utils/analysisConfidence.js";
+import { filterActivities } from "../utils/activityAggregations.js";
 import { buildRegularitySummary } from "../utils/activityInsights.js";
 import { getAnalyticsGranularity } from "../utils/analyticsPeriods.js";
 import {
@@ -24,18 +23,12 @@ import {
   buildEfficiencyHistoryModel,
   buildTrainingLoadStateModel,
 } from "../utils/trainingMetrics.js";
-import {
-  buildEfficiencyInterpretation,
-  buildIntensityNarrative,
-  buildMonthlyVolumeNarrative,
-  buildWeeklyVolumeNarrative,
-} from "../utils/performanceNarratives.js";
+import { buildIntensityNarrative } from "../utils/performanceNarratives.js";
 import { buildIntensityPolarizationProfile } from "../utils/trainingIntelligence.js";
 import { buildLoadDynamicsProfile } from "../utils/loadDynamics.js";
 import { buildRecoveryCorrelationDataset } from "../utils/recoveryCorrelations.js";
 import { buildRecoveryViewModel } from "../utils/recoveryViewModel.js";
 import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
-import { buildTrailAnalyticsSummary } from "../utils/trailProfile.js";
 // computeTrainingStateScore conservé dans utils mais plus consommé par Vue
 // d'ensemble (bandeau retiré, décision §1). Util laissé en place pour usage
 // futur éventuel sans casser la base scientifique.
@@ -190,47 +183,11 @@ export default function AnalyticsPage() {
     [analyticsScopeActivities, analyticsVolumeGrouping, options.userWeekStartsOn, periodWeeks, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
   );
 
-  const weeklyChartData = weeklySummary.weeklySeries;
-  const weeklyTrendSourceData = useMemo(
-    () => buildRegularitySummary(analyticsScopeActivities, {
-      weeks: periodWeeks + 3,
-      startDate: addDays(sharedRange.start, -21),
-      endDate: sharedRange.end,
-      weekStartsOn: options.userWeekStartsOn,
-      viewMode: analyticsVolumeGrouping,
-      settings: trainingAnalyticsSettings,
-    }).weeklySeries,
-    [analyticsScopeActivities, analyticsVolumeGrouping, options.userWeekStartsOn, periodWeeks, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
-  );
-
-  const analyticsWeeklyMetric = options.analyticsWeeklyMetric === "distanceKm" ? "distanceKm" : "count";
-  const analyticsMonthlyMetric = options.analyticsMonthlyMetric === "distanceKm" ? "distanceKm" : "load";
   const analyticsIntensityMetric = options.analyticsHeartRateDistributionMetric === "duration" ? "duration" : "load";
 
-  const monthlySeries = useMemo(
-    () => buildMonthlySeries(analyticsActivities, {
-      metric: analyticsMonthlyMetric,
-      startDate: sharedRange.start,
-      endDate: sharedRange.end,
-      grouping: analyticsVolumeGrouping,
-      settings: trainingAnalyticsSettings,
-    }),
-    [analyticsActivities, analyticsMonthlyMetric, analyticsVolumeGrouping, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
-  );
-  const monthlyAxisGranularity = analyticsVolumeGrouping === "calendar" ? "month" : "day";
-
-  const efficiencyNarrative = useMemo(() => buildEfficiencyInterpretation(efficiencyModel), [efficiencyModel]);
   const intensityNarrative = useMemo(
     () => buildIntensityNarrative(intensityModel, analyticsIntensityMetric),
     [analyticsIntensityMetric, intensityModel],
-  );
-  const weeklyNarrative = useMemo(
-    () => buildWeeklyVolumeNarrative(weeklyChartData, analyticsWeeklyMetric, analyticsVolumeGrouping),
-    [analyticsWeeklyMetric, analyticsVolumeGrouping, weeklyChartData],
-  );
-  const monthlyNarrative = useMemo(
-    () => buildMonthlyVolumeNarrative(monthlySeries, analyticsMonthlyMetric, analyticsVolumeGrouping),
-    [analyticsMonthlyMetric, analyticsVolumeGrouping, monthlySeries],
   );
 
   const polarizationModel = useMemo(
@@ -251,72 +208,6 @@ export default function AnalyticsPage() {
   const recoveryVm = useMemo(
     () => buildRecoveryViewModel(recoverySnapshots),
     [recoverySnapshots],
-  );
-
-  const trailAnalytics = useMemo(
-    () => buildTrailAnalyticsSummary(analyticsActivities),
-    [analyticsActivities],
-  );
-
-  const analyticsConfidence = useMemo(
-    () => buildAnalyticsConfidence({
-      activities: analyticsScopeActivities,
-      periodActivities: analyticsActivities,
-      trailModel: trailAnalytics,
-      recoverySnapshots,
-      referenceDate: sharedRange.end,
-    }),
-    [analyticsActivities, analyticsScopeActivities, recoverySnapshots, sharedRange.end, trailAnalytics],
-  );
-
-  // Score composite état d'entraînement (Lot 04 v1) — non affiché en Vue
-  // d'ensemble v2 (décision utilisateur §1). Util conservé pour usage futur.
-
-  // ---------------------------------------------------------------------------
-  // Wording sections (FR avec accents)
-  // ---------------------------------------------------------------------------
-
-  const scopeLabel = filters.sportGroup === "all" ? "tous les sports" : filters.sportGroup;
-  const searchNote = filters.search ? ` Recherche active : "${filters.search}".` : "";
-  const comparisonScopeText = useMemo(() => {
-    const cutoffLabel = sharedRange.end.toLocaleDateString("fr-FR", {
-      day: "2-digit", month: "short", year: "numeric",
-    });
-    return `Cumul annuel au ${cutoffLabel} — ${scopeLabel}.${searchNote}`;
-  }, [scopeLabel, searchNote, sharedRange.end]);
-
-  const weeklyChartConfig = useMemo(
-    () => (
-      analyticsWeeklyMetric === "distanceKm"
-        ? {
-            title: "Volume hebdomadaire",
-            subtitle: "",
-            dataKey: "distanceKm",
-            name: "Distance",
-            unit: "km",
-            fill: "#F97316",
-            trendLabel: "Moyenne 4 sem.",
-            trendColor: "#355886",
-            valueFormatter: (value) => `${Number(value || 0).toLocaleString("fr-FR", {
-              minimumFractionDigits: 1, maximumFractionDigits: 1,
-            })} km`,
-          }
-        : {
-            title: "Séances hebdomadaires",
-            subtitle: "",
-            dataKey: "count",
-            name: "Séances",
-            unit: "",
-            fill: "#355886",
-            trendLabel: "Tendance 4 sem.",
-            trendColor: "#F97316",
-            valueFormatter: (value) => `${Number(value || 0).toLocaleString("fr-FR", {
-              minimumFractionDigits: Number.isInteger(Number(value || 0)) ? 0 : 1,
-              maximumFractionDigits: 1,
-            })} séance(s)`,
-          }
-    ),
-    [analyticsWeeklyMetric],
   );
 
   // ---------------------------------------------------------------------------
@@ -405,41 +296,9 @@ export default function AnalyticsPage() {
 
       {activeTabId === "tendances" ? (
         <AnalyticsTrendsTab
-          weeklyChartData={weeklyChartData}
-          weeklyTrendSourceData={weeklyTrendSourceData}
-          weeklyChartConfig={weeklyChartConfig}
-          weeklySupportInfo={TRAINING_MVP_SECTION_INFO.weeklySupport}
-          weeklyNarrative={weeklyNarrative}
-          weeklyMetric={analyticsWeeklyMetric}
-          onWeeklyMetricChange={(value) => setOption("analyticsWeeklyMetric", value)}
-
-          monthlySeries={monthlySeries}
-          monthlyAxisGranularity={monthlyAxisGranularity}
-          monthlyMetric={analyticsMonthlyMetric}
-          monthlySupportInfo={TRAINING_MVP_SECTION_INFO.monthlySupport}
-          monthlyNarrative={monthlyNarrative}
-          onMonthlyMetricChange={(value) => setOption("analyticsMonthlyMetric", value)}
-
-          efficiencyModel={efficiencyModel}
-          efficiencyInfo={TRAINING_MVP_SECTION_INFO.efficiencyChart}
-          efficiencyNarrative={efficiencyNarrative}
-
-          trailAnalytics={trailAnalytics}
-          trailInfo={TRAINING_MVP_SECTION_INFO.trailSpecificity}
-          analyticsConfidence={analyticsConfidence}
-
-          comparisonActivities={analyticsScopeActivities}
-          comparisonRange={sharedRange}
-          comparisonMetric={options.comparisonMetric}
-          comparisonSelectedYears={options.comparisonSelectedYears}
-          comparisonSettings={trainingAnalyticsSettings}
-          comparisonScopeText={comparisonScopeText}
-          comparisonInfo={TRAINING_MVP_SECTION_INFO.comparison}
-          onComparisonMetricChange={(value) => setOption("comparisonMetric", value)}
-          onComparisonYearsChange={(value) => setOption("comparisonSelectedYears", value)}
-
-          volumeGroupingValue={analyticsVolumeGrouping}
-          onVolumeGroupingChange={(value) => setOption("analyticsVolumeGrouping", value)}
+          activities={analyticsScopeActivities}
+          sharedRange={sharedRange}
+          sharedRangeEnd={sharedRange.end}
         />
       ) : null}
 
