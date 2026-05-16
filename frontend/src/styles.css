@@ -11598,3 +11598,328 @@ button.alert-banner-positive-item {
   font-weight: 500;
   color: var(--al-muted, #64748b);
 }
+
+/* =========================================================================
+ * Onglet Charges (Lot 04 V5, PDF page 8)
+ * ========================================================================= */
+.alpine-charges-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .alpine-charges-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.alpine-charges-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.alpine-charges-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1280px) {
+  .alpine-charges-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* --- Évolution chart --- */
+.alpine-charges-chart-card {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+}
+.alpine-charges-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.alpine-charges-chart-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-charges-period-toggle {
+  display: inline-flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.alpine-charges-period-pill {
+  border: 0;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+  cursor: pointer;
+  border-right: 1px solid #cbd5e1;
+}
+.alpine-charges-period-pill:last-child { border-right: 0; }
+.alpine-charges-period-pill.is-active {
+  background: var(--al-primary, #1268f3);
+  color: #ffffff;
+}
+.alpine-charges-chart-legend {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+.alpine-charges-chart-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.alpine-charges-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.alpine-charges-legend-label {
+  color: var(--al-text-soft, #2a3f6b);
+  font-weight: 600;
+}
+.alpine-charges-legend-value {
+  color: var(--al-text, #0f2147);
+  font-weight: 700;
+  margin-left: 4px;
+}
+.alpine-charges-chart-body {
+  margin-top: 4px;
+}
+
+/* --- Hebdo histogram --- */
+.alpine-charges-weekly-card {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+}
+.alpine-charges-weekly-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.alpine-charges-weekly-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-charges-weekly-avg-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--al-text-soft, #2a3f6b);
+  background: #eef4ff;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.alpine-charges-weekly-graph {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 130px;
+  padding-top: 18px;
+}
+.alpine-charges-weekly-avg-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 0;
+  border-top: 1px dashed #94a3b8;
+  opacity: 0.85;
+  z-index: 3;
+}
+.alpine-charges-weekly-avg-line-label {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translate(0, -50%);
+  background: #ffffff;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 1px 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 4;
+}
+.alpine-charges-weekly-col {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+.alpine-charges-weekly-value {
+  position: absolute;
+  top: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-charges-weekly-bar {
+  width: 100%;
+  max-width: 36px;
+  border-radius: 4px 4px 0 0;
+  background: rgba(99, 152, 240, 0.55);
+  z-index: 2;
+}
+.alpine-charges-weekly-bar.is-last {
+  background: var(--al-primary, #1268f3);
+}
+.alpine-charges-weekly-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-charges-weekly-labels span {
+  flex: 1;
+  text-align: center;
+}
+
+/* --- Sources consolidées --- */
+.alpine-charges-sources {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--al-muted, #64748b);
+}
+.alpine-charges-sources i {
+  font-style: italic;
+}
+
+/* --- Right rail --- */
+.alpine-charges-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+  position: sticky;
+  top: 16px;
+}
+.alpine-charges-rail-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-charges-rail-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alpine-charges-rail-bullet {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 3px solid #cbd5e1;
+  padding: 4px 0 4px 10px;
+}
+.alpine-charges-rail-bullet.tone-1 { border-left-color: #35a853; }
+.alpine-charges-rail-bullet.tone-2 { border-left-color: #84cc16; }
+.alpine-charges-rail-bullet.tone-3 { border-left-color: #64748b; }
+.alpine-charges-rail-bullet.tone-4 { border-left-color: #f59e0b; }
+.alpine-charges-rail-bullet.tone-5 { border-left-color: #ef4444; }
+.alpine-charges-rail-bullet-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-charges-rail-bullet-body {
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  line-height: 1.4;
+}
+.alpine-charges-rail-subtitle {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-charges-rail-thresholds-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+.alpine-charges-rail-thresholds-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.alpine-charges-rail-thresholds-list dt {
+  font-weight: 700;
+  color: var(--al-text-soft, #2a3f6b);
+}
+.alpine-charges-rail-thresholds-list dd {
+  margin: 0;
+  color: var(--al-text, #0f2147);
+}
+.alpine-charges-rail-state {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alpine-charges-rail-state-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.alpine-charges-rail-state-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+}
+.alpine-charges-rail-state-head span {
+  color: var(--al-text-soft, #2a3f6b);
+  font-weight: 600;
+}
+.alpine-charges-rail-state-head strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+.alpine-charges-rail-state-head small {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+}
+.alpine-charges-rail-state-head strong.tone-1 { color: #15803d; }
+.alpine-charges-rail-state-head strong.tone-2 { color: #65a30d; }
+.alpine-charges-rail-state-head strong.tone-3 { color: #475569; }
+.alpine-charges-rail-state-head strong.tone-4 { color: #d97706; }
+.alpine-charges-rail-state-head strong.tone-5 { color: #dc2626; }

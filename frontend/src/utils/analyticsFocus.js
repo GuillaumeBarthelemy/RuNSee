@@ -98,6 +98,8 @@ export function buildFourWeeksBackComparison({ chartData = [], weeklySeries = []
   // Calculs sur la fenêtre référence
   let chargeRef = 0;
   let atlRefValues = [];
+  let ctlRefValues = [];
+  let tsbRefValues = [];
 
   for (const point of chartData) {
     const d = point?.date instanceof Date ? startOfDay(point.date) : null;
@@ -106,11 +108,21 @@ export function buildFourWeeksBackComparison({ chartData = [], weeklySeries = []
       chargeRef += Number(point?.load) || 0;
       const a = Number(point?.atl);
       if (Number.isFinite(a)) atlRefValues.push(a);
+      const c = Number(point?.ctl);
+      if (Number.isFinite(c)) ctlRefValues.push(c);
+      const t = Number(point?.tsb);
+      if (Number.isFinite(t)) tsbRefValues.push(t);
     }
   }
   const atlRef = atlRefValues.length
     ? atlRefValues.reduce((s, v) => s + v, 0) / atlRefValues.length
     : 0;
+  const ctlRef = ctlRefValues.length
+    ? ctlRefValues.reduce((s, v) => s + v, 0) / ctlRefValues.length
+    : 0;
+  const tsbRef = tsbRefValues.length
+    ? tsbRefValues.reduce((s, v) => s + v, 0) / tsbRefValues.length
+    : null;
 
   // Volume référence sur la fenêtre 4 semaines avant.
   // buildRegularitySummary expose `movingHours` (pas `hours`). On lit les deux
@@ -133,6 +145,8 @@ export function buildFourWeeksBackComparison({ chartData = [], weeklySeries = []
   return {
     chargeRef,
     atlRef,
+    ctlRef,
+    tsbRef,
     volumeRefHours,
     rangeLabel,
   };

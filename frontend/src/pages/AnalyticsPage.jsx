@@ -17,7 +17,7 @@ import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import AppShell from "../layouts/AppShell.jsx";
 import { buildMonthlySeries, filterActivities } from "../utils/activityAggregations.js";
 import { buildAnalyticsConfidence } from "../utils/analysisConfidence.js";
-import { buildCriticalSpeed, buildRegularitySummary } from "../utils/activityInsights.js";
+import { buildRegularitySummary } from "../utils/activityInsights.js";
 import { getAnalyticsGranularity } from "../utils/analyticsPeriods.js";
 import {
   buildConsolidatedIntensityDistributionModel,
@@ -27,14 +27,10 @@ import {
 import {
   buildEfficiencyInterpretation,
   buildIntensityNarrative,
-  buildLoadChartNarrative,
   buildMonthlyVolumeNarrative,
   buildWeeklyVolumeNarrative,
 } from "../utils/performanceNarratives.js";
-import {
-  buildIntensityPolarizationProfile,
-  buildLoadVarianceProfile,
-} from "../utils/trainingIntelligence.js";
+import { buildIntensityPolarizationProfile } from "../utils/trainingIntelligence.js";
 import { buildLoadDynamicsProfile } from "../utils/loadDynamics.js";
 import { buildRecoveryCorrelationDataset } from "../utils/recoveryCorrelations.js";
 import { buildRecoveryViewModel } from "../utils/recoveryViewModel.js";
@@ -208,7 +204,6 @@ export default function AnalyticsPage() {
   );
   const monthlyAxisGranularity = analyticsVolumeGrouping === "calendar" ? "month" : "day";
 
-  const loadChartNarrative = useMemo(() => buildLoadChartNarrative(trainingLoadModel), [trainingLoadModel]);
   const efficiencyNarrative = useMemo(() => buildEfficiencyInterpretation(efficiencyModel), [efficiencyModel]);
   const intensityNarrative = useMemo(
     () => buildIntensityNarrative(intensityModel, analyticsIntensityMetric),
@@ -223,22 +218,9 @@ export default function AnalyticsPage() {
     [analyticsMonthlyMetric, analyticsVolumeGrouping, monthlySeries],
   );
 
-  const loadVarianceModel = useMemo(
-    () => buildLoadVarianceProfile(analyticsScopeActivities, {
-      endDate: sharedRange.end,
-      settings: trainingAnalyticsSettings,
-    }),
-    [analyticsScopeActivities, sharedRange.end, trainingAnalyticsSettings],
-  );
-
   const polarizationModel = useMemo(
     () => buildIntensityPolarizationProfile(intensityModel, analyticsIntensityMetric),
     [analyticsIntensityMetric, intensityModel],
-  );
-
-  const criticalSpeedModel = useMemo(
-    () => buildCriticalSpeed(analyticsScopeActivities, { settings: trainingAnalyticsSettings }),
-    [analyticsScopeActivities, trainingAnalyticsSettings],
   );
 
   const loadDynamicsProfile = useMemo(
@@ -401,15 +383,8 @@ export default function AnalyticsPage() {
       {activeTabId === "charges" ? (
         <AnalyticsChargesTab
           trainingLoadModel={trainingLoadModel}
-          loadVarianceModel={loadVarianceModel}
-          polarizationModel={polarizationModel}
-          loadDynamicsProfile={loadDynamicsProfile}
-          criticalSpeedModel={criticalSpeedModel}
-          signalInfo={TRAINING_MVP_ADVANCED_SIGNAL_INFO}
-          loadDynamicsInfo={TRAINING_MVP_LOAD_DYNAMICS_SIGNAL_INFO}
-          dynamicsCardInfo={TRAINING_MVP_SECTION_INFO.dynamicsGrid}
-          loadChartInfo={TRAINING_MVP_SECTION_INFO.loadChart}
-          loadChartNarrative={loadChartNarrative}
+          weeklySummary={weeklySummary}
+          sharedRangeEnd={sharedRange.end}
         />
       ) : null}
 
