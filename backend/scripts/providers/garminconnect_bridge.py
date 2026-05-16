@@ -551,15 +551,27 @@ def fetch_activities(request: dict) -> dict:
             "aerobicTrainingEffectScore",
             "lactateThresholdBpm",
             "lactateThresholdSpeed",
+            "activityTrainingLoad",
+            "trainingEffect",
+            "beginPotentialStamina",
+            "endPotentialStamina",
+            "differenceBodyBattery",
+            "moderateIntensityMinutes",
+            "vigorousIntensityMinutes",
         )
 
         # Champs additionnels fournis uniquement par l'endpoint DETAIL
-        # (`api.get_activity(id)` → `summaryDTO`). L'endpoint LIST utilisé
-        # ci-dessus n'expose pas EPOC, recoveryTime, lactateThreshold, etc.
-        # → cf. diagnostic 2026-05 : 601 enrichments / 0 EPOC / 0 recoveryTime.
+        # (`api.get_activity(id)` → `summaryDTO`). L'endpoint LIST n'expose
+        # pas Training Load, Stamina, etc.
+        # Note 2026-05 : EPOC et recoveryTime ne sont PAS exposés par l'API
+        # web Garmin pour les utilisateurs testés — ces champs vivent dans
+        # le FIT brut. On surface `activityTrainingLoad` qui est le
+        # successeur Firstbeat de l'EPOC (modèle Training Load moderne).
         detail_only_keys = (
-            "epoc",
-            "recoveryTime",
+            "activityTrainingLoad",
+            "trainingEffect",
+            "epoc",                       # gardé : présent sur certaines montres
+            "recoveryTime",               # gardé : idem
             "recoveryTimeInHours",
             "recoveryTimeMinutes",
             "recoveryTimeSeconds",
@@ -574,6 +586,11 @@ def fetch_activities(request: dict) -> dict:
             "maxPower",
             "anaerobicTrainingEffectScore",
             "aerobicTrainingEffectScore",
+            "beginPotentialStamina",
+            "endPotentialStamina",
+            "differenceBodyBattery",
+            "moderateIntensityMinutes",
+            "vigorousIntensityMinutes",
         )
 
         # Pacing entre appels DETAIL pour éviter rate-limit Garmin.
@@ -600,12 +617,46 @@ def fetch_activities(request: dict) -> dict:
                 and detail_fetched_count < detail_fetch_limit
             ):
                 try:
-                    details = api.get_activity(activity_id)
+                    # python-garminconnect propose plusieurs méthodes pour
+                    # l'endpoint Activity. get_activity_evaluation renvoie
+                    # le bloc Firstbeat (EPOC, recoveryTime, lactate, etc.).
+                    # get_activity_details renvoie les métriques granulaires
+                    # (polyline, samples) — pas utiles ici.
+                    details = None
+                    last_method_exc = None
+                    for method_name in ("get_activity", "get_activity_evaluation", "get_activity_summary"):
+                        method = getattr(api, method_name, None)
+                        if not callable(method):
+                            continue
+                        try:
+                            details = method(activity_id)
+                            if isinstance(details, dict):
+                                break
+                        except Exception as method_exc:  # pylint: disable=broad-except
+                            last_method_exc = method_exc
+                            details = None
+                    if details is None and last_method_exc is not None:
+                        raise last_method_exc
                     detail_fetched_count += 1
-                    summary_dto = (details or {}).get("summaryDTO") if isinstance(details, dict) else None
+                    # Garmin range les champs Firstbeat sous summaryDTO selon
+                    # l'endpoint ; fallback sur les clés top-level si absent.
+                    summary_dto = None
+                    if isinstance(details, dict):
+                        for candidate_key in ("summaryDTO", "activitySummaryDTO", "summary"):
+                            cand = details.get(candidate_key)
+                            if isinstance(cand, dict):
+                                summary_dto = cand
+                                break
+                    sources = []
                     if isinstance(summary_dto, dict):
+                        sources.append(summary_dto)
+                    if isinstance(details, dict):
+                        sources.append(details)
+                    for source in sources:
                         for detail_key in detail_only_keys:
-                            value = summary_dto.get(detail_key)
+                            if raw.get(detail_key) is not None:
+                                continue
+                            value = source.get(detail_key)
                             if value is not None:
                                 raw[detail_key] = value
                 except GarminConnectTooManyRequestsError:

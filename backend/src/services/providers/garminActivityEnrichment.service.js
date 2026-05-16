@@ -195,6 +195,15 @@ function normalizeGarminActivity(rawActivity) {
     epoc: toNumber(rawActivity.epoc),
     lactateThresholdBpm: toNumber(rawActivity.lactateThresholdBpm),
     lactateThresholdSpeed: toNumber(rawActivity.lactateThresholdSpeed),
+    // Successeur Firstbeat de l'EPOC (modèle Garmin Training Load) — voir
+    // Firstbeat 2014 ; en 2026 la web API n'expose plus l'EPOC brut.
+    activityTrainingLoad: toNumber(rawActivity.activityTrainingLoad),
+    trainingEffect: toNumber(rawActivity.trainingEffect),
+    beginPotentialStamina: toNumber(rawActivity.beginPotentialStamina),
+    endPotentialStamina: toNumber(rawActivity.endPotentialStamina),
+    differenceBodyBattery: toNumber(rawActivity.differenceBodyBattery),
+    moderateIntensityMinutes: toNumber(rawActivity.moderateIntensityMinutes),
+    vigorousIntensityMinutes: toNumber(rawActivity.vigorousIntensityMinutes),
   };
 }
 

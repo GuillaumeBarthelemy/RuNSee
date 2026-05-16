@@ -28,7 +28,6 @@
  *    sortie EPOC élevé compte plus qu'une courte sortie EPOC faible.
  */
 
-import { classifyEpoc } from "./epocLevel.js";
 
 function toFiniteNumber(v) {
   const n = Number(v);
@@ -324,6 +323,45 @@ function extractEpocFromActivity(activity) {
 }
 
 /**
+ * Extrait le Garmin Activity Training Load (modèle Firstbeat 2014).
+ * Successeur moderne de l'EPOC : l'API web Garmin n'expose plus l'EPOC brut.
+ * Le Training Load est calculé à partir du même algorithme Firstbeat
+ * (EPOC sous-jacent) mais exposé dans `summaryDTO.activityTrainingLoad`.
+ *
+ * Échelle indicative par séance (Firstbeat 2014, Garmin Connect docs) :
+ *  - < 100         : faible
+ *  - 100 - 200     : modéré
+ *  - 200 - 350     : élevé
+ *  - ≥ 350         : très élevé
+ */
+function extractTrainingLoadFromActivity(activity) {
+  if (!activity) return null;
+  const direct = Number(activity?.activityTrainingLoad);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  const fromEnrichment = Number(
+    activity?.garminActivityEnrichment?.normalized?.activityTrainingLoad,
+  );
+  if (Number.isFinite(fromEnrichment) && fromEnrichment > 0) return fromEnrichment;
+  if (Array.isArray(activity?.providerEnrichments)) {
+    for (const enr of activity.providerEnrichments) {
+      const v = Number(enr?.activityTrainingLoad ?? enr?.payload?.activityTrainingLoad);
+      if (Number.isFinite(v) && v > 0) return v;
+    }
+  }
+  return null;
+}
+
+function classifyTrainingLoad(value) {
+  if (!Number.isFinite(Number(value)) || value <= 0) {
+    return { hasData: false, level: "—", tone: 3 };
+  }
+  if (value < 100)  return { hasData: true, level: "Léger",      tone: 1 };
+  if (value < 200)  return { hasData: true, level: "Modéré",     tone: 2 };
+  if (value < 350)  return { hasData: true, level: "Élevé",      tone: 4 };
+  return                  { hasData: true, level: "Très élevé", tone: 5 };
+}
+
+/**
  * Extrait le temps de récupération Garmin (secondes) — champ natif Garmin
  * dérivé de l'EPOC. Décision utilisateur §3.
  *
@@ -413,23 +451,37 @@ export function formatRecoveryTime(seconds) {
  */
 export function buildPeriodEpocSummary(activities = []) {
   const buckets = new Map();
+  let weightedSumLoad = 0;
   let weightedSumEpoc = 0;
   let weightedSumRecovery = 0;
   let weightTotal = 0;
+  let weightTotalEpoc = 0;
   let sampleSize = 0;
   let recoverySampleCount = 0;
+  let epocSampleCount = 0;
 
   for (const a of activities) {
+    const trainingLoad = extractTrainingLoadFromActivity(a);
     const epoc = extractEpocFromActivity(a);
     const recoveryTime = extractRecoveryTimeFromActivity(a);
     const duration = toFiniteNumber(a?.movingTime);
-    if (epoc == null || duration <= 0) continue;
-    const cls = classifyEpoc(epoc);
+    if (duration <= 0) continue;
+
+    // Le Training Load Firstbeat est désormais la source primaire (l'EPOC
+    // brut n'est plus exposé par l'API Garmin web). On agrège dessus si
+    // disponible, et on garde l'EPOC comme info secondaire si présent.
+    const cls = classifyTrainingLoad(trainingLoad);
     if (!cls.hasData) continue;
 
-    weightedSumEpoc += epoc * duration;
+    weightedSumLoad += trainingLoad * duration;
     weightTotal += duration;
     sampleSize += 1;
+
+    if (Number.isFinite(epoc) && epoc > 0) {
+      weightedSumEpoc += epoc * duration;
+      weightTotalEpoc += duration;
+      epocSampleCount += 1;
+    }
 
     if (Number.isFinite(recoveryTime) && recoveryTime > 0) {
       weightedSumRecovery += recoveryTime * duration;
@@ -447,14 +499,15 @@ export function buildPeriodEpocSummary(activities = []) {
   // Dev logging discret pour diagnostic prod
   if (typeof window !== "undefined" && import.meta?.env?.DEV && activities.length > 0) {
     console.debug(
-      `[analyticsFocus] epoc: ${sampleSize}/${activities.length} activités avec EPOC, ` +
-      `${recoverySampleCount} avec recoveryTime`,
+      `[analyticsFocus] trainingLoad: ${sampleSize}/${activities.length} activités, ` +
+      `EPOC brut sur ${epocSampleCount}, recoveryTime sur ${recoverySampleCount}`,
     );
   }
 
   if (sampleSize === 0 || weightTotal === 0) {
     return {
       hasData: false,
+      averageTrainingLoad: null,
       averageRecoverySeconds: null,
       averageRecoveryLabel: null,
       averageMlKg: null,
@@ -465,7 +518,10 @@ export function buildPeriodEpocSummary(activities = []) {
     };
   }
 
-  const averageMlKg = Math.round(weightedSumEpoc / weightTotal);
+  const averageTrainingLoad = Math.round(weightedSumLoad / weightTotal);
+  const averageMlKg = epocSampleCount > 0 && weightTotalEpoc > 0
+    ? Math.round(weightedSumEpoc / weightTotalEpoc)
+    : null;
   const averageRecoverySeconds = recoverySampleCount > 0
     ? Math.round(weightedSumRecovery / weightTotal)
     : null;
@@ -489,13 +545,14 @@ export function buildPeriodEpocSummary(activities = []) {
 
   return {
     hasData: true,
+    averageTrainingLoad,
     averageRecoverySeconds,
     averageRecoveryLabel,
     averageMlKg,
     distribution,
     sampleSize,
     tone: majority?.tone ?? 3,
-    label: classifyEpoc(averageMlKg).level || "—",
+    label: classifyTrainingLoad(averageTrainingLoad).level || "—",
   };
 }
 

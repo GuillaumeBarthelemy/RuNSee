@@ -60,7 +60,9 @@ describe("buildPeriodDecouplingSummary", () => {
 });
 
 describe("buildPeriodEpocSummary", () => {
-  it("retourne hasData=false sans données EPOC", () => {
+  // Repivot 2026-05 : source primaire = activityTrainingLoad (Firstbeat),
+  // l'EPOC brut n'étant plus exposé par l'API web Garmin.
+  it("retourne hasData=false sans Training Load", () => {
     const r = buildPeriodEpocSummary([{ movingTime: 3600 }]);
     expect(r.hasData).toBe(false);
     expect(r.distribution).toEqual([]);
@@ -68,9 +70,9 @@ describe("buildPeriodEpocSummary", () => {
 
   it("agrège distribution pondérée par durée", () => {
     const activities = [
-      { movingTime: 3600, epoc: 20 },    // Léger (<30)
-      { movingTime: 3600, epoc: 50 },    // Modéré (30-89)
-      { movingTime: 7200, epoc: 100 },   // Élevé (90-149)
+      { movingTime: 3600, activityTrainingLoad: 50 },   // Léger (<100)
+      { movingTime: 3600, activityTrainingLoad: 150 },  // Modéré (100-200)
+      { movingTime: 7200, activityTrainingLoad: 280 },  // Élevé (200-350)
     ];
     const r = buildPeriodEpocSummary(activities);
     expect(r.hasData).toBe(true);
@@ -83,38 +85,35 @@ describe("buildPeriodEpocSummary", () => {
     expect(r.tone).toBe(4);
   });
 
-  it("supporte providerEnrichments[].epoc", () => {
+  it("supporte providerEnrichments[].activityTrainingLoad", () => {
     const activities = [
-      { movingTime: 3600, providerEnrichments: [{ providerCode: "garmin", epoc: 100 }] },
+      { movingTime: 3600, providerEnrichments: [{ providerCode: "garmin", activityTrainingLoad: 150 }] },
     ];
     const r = buildPeriodEpocSummary(activities);
     expect(r.hasData).toBe(true);
-    expect(r.averageMlKg).toBe(100);
+    expect(r.averageTrainingLoad).toBe(150);
   });
 
-  it("agrège recoveryTime Garmin pondéré durée", () => {
+  it("agrège recoveryTime Garmin pondéré durée si présent", () => {
     const activities = [
-      { movingTime: 3600, epoc: 50, recoveryTime: 3600 },    // 1h récup pour 1h activité
-      { movingTime: 7200, epoc: 100, recoveryTime: 18000 },  // 5h récup pour 2h activité
+      { movingTime: 3600, activityTrainingLoad: 120, recoveryTime: 3600 },
+      { movingTime: 7200, activityTrainingLoad: 220, recoveryTime: 18000 },
     ];
     const r = buildPeriodEpocSummary(activities);
-    // weightedSumRecovery = 3600*3600 + 18000*7200 = 12 960 000 + 129 600 000 = 142 560 000
-    // weightTotal = 10 800
-    // moyenne = 142 560 000 / 10 800 = 13 200 sec = 3h 40
     expect(r.averageRecoverySeconds).toBe(13200);
     expect(r.averageRecoveryLabel).toMatch(/3h\s*40/);
   });
 
   it("averageRecoverySeconds null si aucun recoveryTime", () => {
-    const r = buildPeriodEpocSummary([{ movingTime: 3600, epoc: 50 }]);
+    const r = buildPeriodEpocSummary([{ movingTime: 3600, activityTrainingLoad: 150 }]);
     expect(r.averageRecoverySeconds).toBeNull();
     expect(r.averageRecoveryLabel).toBeNull();
   });
 
-  it("ignore activités sans durée ou sans EPOC", () => {
+  it("ignore activités sans durée ou sans Training Load", () => {
     const r = buildPeriodEpocSummary([
-      { movingTime: 0, epoc: 50 },
-      { movingTime: 3600, epoc: 0 },
+      { movingTime: 0, activityTrainingLoad: 150 },
+      { movingTime: 3600, activityTrainingLoad: 0 },
     ]);
     expect(r.hasData).toBe(false);
   });

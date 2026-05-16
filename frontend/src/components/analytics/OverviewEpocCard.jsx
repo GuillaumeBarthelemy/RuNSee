@@ -4,15 +4,24 @@ import { clampTone } from "../../utils/tonePicker.js";
 import { enrichGarminActivities, getGarminConnectionStatus } from "../../services/externalProvider.service.js";
 
 /**
- * OverviewEpocCard — Section FOCUS, "Dette d'oxygène (EPOC)" (Lot 04 v2).
+ * OverviewEpocCard — Section FOCUS, "Stimulus aérobie · Charge d'entraînement"
+ * (Lot 04 v2, repivot 2026-05).
+ *
+ * Décision technique 2026-05 : l'API web Garmin n'expose plus l'EPOC brut
+ * (`summaryDTO.epoc`) ni le `recoveryTime` par activité — ces champs ne
+ * vivent plus que dans le FIT exporté. On surface donc le **Training Load
+ * Firstbeat** (`activityTrainingLoad`), successeur moderne de l'EPOC dans
+ * le modèle Garmin/Firstbeat.
  *
  * Mockup PDF page 7 :
- *   - Donut avec **temps de récupération Garmin** au centre (décision §3)
- *   - Légende : Léger 14 (50%), Modéré 9 (32%), etc. — comptes absolus + %
- *   - Bouton "Voir le détail" en bas (CTA proéminent)
+ *   - Donut avec **Training Load moyen** au centre
+ *   - Légende : Léger 14 (50%), Modéré 9 (32%), etc.
+ *   - Bouton "Voir le détail" en bas
  *
- * Source : Børsheim & Bahr (2003), classification EPOC ; champ recoveryTime
- * natif Garmin Firstbeat.
+ * Sources :
+ *  - Firstbeat (2014), "Automated Method for Detecting Acute Insufficient
+ *    Recovery from Training Load" — Training Load comme intégration EPOC.
+ *  - Børsheim & Bahr (2003) Sports Med 33(14) — base EPOC originelle.
  */
 
 const COLOR_LIGHT = "#35a853";
@@ -105,15 +114,20 @@ function OverviewEpocCard({ summary = {}, linkTo = "/analytics#charges" }) {
     }
   }
 
-  // Valeur centrale du donut : temps de récupération moyen Garmin
-  const centerLabel = summary.averageRecoveryLabel || "—";
-  const centerHint = summary.averageRecoveryLabel ? "récupération" : "";
+  // Valeur centrale du donut : Training Load moyen Firstbeat
+  // (l'API web Garmin n'expose plus le recoveryTime par activité).
+  const centerLabel = Number.isFinite(Number(summary?.averageTrainingLoad))
+    ? String(summary.averageTrainingLoad)
+    : "—";
+  const centerHint = Number.isFinite(Number(summary?.averageTrainingLoad))
+    ? "Training Load"
+    : "";
 
   return (
     <article className={`alpine-overview-focus-card tone-${tone}`}>
       <header className="alpine-overview-focus-head">
-        <span className="alpine-overview-focus-kicker">Stimulation aérobie</span>
-        <h3 className="alpine-overview-focus-title">Dette d'oxygène (EPOC)</h3>
+        <span className="alpine-overview-focus-kicker">Stimulus aérobie</span>
+        <h3 className="alpine-overview-focus-title">Charge d'entraînement Garmin</h3>
       </header>
 
       <div className="alpine-overview-focus-body alpine-overview-epoc-body">
@@ -142,8 +156,9 @@ function OverviewEpocCard({ summary = {}, linkTo = "/analytics#charges" }) {
         ) : (
           <div className="alpine-overview-focus-empty-block">
             <p className="alpine-overview-focus-empty">
-              Aucune activité enrichie Garmin sur la période. L'EPOC est mesurée
-              par les montres Garmin compatibles.
+              Aucune activité enrichie Garmin sur la période. La charge
+              d'entraînement (Training Load Firstbeat) est calculée par les
+              montres Garmin compatibles.
             </p>
 
             <button
@@ -177,8 +192,8 @@ function OverviewEpocCard({ summary = {}, linkTo = "/analytics#charges" }) {
       ) : null}
 
       <p className="alpine-overview-focus-source">
-        Méthode : Børsheim E, Bahr R (2003), <i>Sports Med</i> 33(14):1037–1060.
-        Temps de récupération : champ natif Garmin Firstbeat.
+        Méthode : Garmin/Firstbeat (2014), <i>Training Load</i> dérivé EPOC.
+        Børsheim &amp; Bahr (2003) <i>Sports Med</i> 33(14):1037–1060 — base EPOC.
       </p>
     </article>
   );

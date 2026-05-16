@@ -15,8 +15,10 @@
 import "dotenv/config";
 import prisma from "../../src/config/prisma.js";
 import { enrichGarminActivitiesForUser } from "../../src/services/providers/garminActivityEnrichment.service.js";
-import { EXTERNAL_PROVIDER_CODES } from "../../src/services/providers/externalProvider.constants.js";
-import { EXTERNAL_PROVIDER_STATUSES } from "../../src/services/providers/externalProviderConnection.service.js";
+import {
+  EXTERNAL_PROVIDER_CODES,
+  EXTERNAL_PROVIDER_STATUSES,
+} from "../../src/services/providers/externalProvider.constants.js";
 
 function parseArgs() {
   const args = { days: 30, appUserId: null, force: false };

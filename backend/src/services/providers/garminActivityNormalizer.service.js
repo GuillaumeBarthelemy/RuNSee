@@ -197,6 +197,13 @@ export function normalizeGarminActivity(rawActivity) {
     epoc: toNumber(rawActivity.epoc),
     lactateThresholdBpm: toNumber(rawActivity.lactateThresholdBpm),
     lactateThresholdSpeed: toNumber(rawActivity.lactateThresholdSpeed),
+    activityTrainingLoad: toNumber(rawActivity.activityTrainingLoad),
+    trainingEffect: toNumber(rawActivity.trainingEffect),
+    beginPotentialStamina: toNumber(rawActivity.beginPotentialStamina),
+    endPotentialStamina: toNumber(rawActivity.endPotentialStamina),
+    differenceBodyBattery: toNumber(rawActivity.differenceBodyBattery),
+    moderateIntensityMinutes: toNumber(rawActivity.moderateIntensityMinutes),
+    vigorousIntensityMinutes: toNumber(rawActivity.vigorousIntensityMinutes),
     supported: isSupportedGarminActivityType(rawActivity),
   };
 }
