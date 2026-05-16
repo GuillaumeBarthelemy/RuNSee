@@ -11842,8 +11842,8 @@ button.alert-banner-positive-item {
 }
 .alpine-charges-rail-bullet {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: flex-start;
+  gap: 8px;
   border-left: 3px solid #cbd5e1;
   padding: 4px 0 4px 10px;
 }
@@ -11852,6 +11852,28 @@ button.alert-banner-positive-item {
 .alpine-charges-rail-bullet.tone-3 { border-left-color: #64748b; }
 .alpine-charges-rail-bullet.tone-4 { border-left-color: #f59e0b; }
 .alpine-charges-rail-bullet.tone-5 { border-left-color: #ef4444; }
+.alpine-charges-rail-bullet-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.alpine-charges-rail-bullet.tone-1 .alpine-charges-rail-bullet-icon { color: #15803d; background: #dcfce7; }
+.alpine-charges-rail-bullet.tone-2 .alpine-charges-rail-bullet-icon { color: #65a30d; background: #ecfccb; }
+.alpine-charges-rail-bullet.tone-3 .alpine-charges-rail-bullet-icon { color: #475569; background: #f1f5f9; }
+.alpine-charges-rail-bullet.tone-4 .alpine-charges-rail-bullet-icon { color: #d97706; background: #fef3c7; }
+.alpine-charges-rail-bullet.tone-5 .alpine-charges-rail-bullet-icon { color: #dc2626; background: #fee2e2; }
+.alpine-charges-rail-bullet-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
 .alpine-charges-rail-bullet-title {
   font-size: 12px;
   font-weight: 700;

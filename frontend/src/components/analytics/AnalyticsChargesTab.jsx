@@ -111,6 +111,36 @@ function classifyTsb(v) {
   return                { tone: 5, hint: "Surcharge" };
 }
 
+// Pictogrammes SVG (À retenir, mockup PDF page 8).
+// Chaque icône hérite de currentColor pour s'adapter au tone du bullet.
+function IconWarning() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+      <path fill="currentColor" d="M8 1.4 15 14H1L8 1.4Zm0 4.6v4h-1.4v-4H8Zm-.7 6.4a.9.9 0 1 0 0-1.8.9.9 0 0 0 0 1.8Z"/>
+    </svg>
+  );
+}
+function IconBalance() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+      <path fill="currentColor" d="M8 1.5a.7.7 0 0 1 .7.7v.6h4.6v1.4H8.7v9h2v1.4H5.3v-1.4h2v-9H2.7V2.8h4.6v-.6c0-.4.3-.7.7-.7Zm-4.3 4 2 4H1.7l2-4Zm8.6 0 2 4h-4l2-4Z"/>
+    </svg>
+  );
+}
+function IconTrendUp() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+      <path fill="currentColor" d="M2 12.5 6.4 8 9 10.5 14 5.6V8h1.4V3H10.4v1.4h2.6L9 8.5 6.4 6 1 11.5l1 1Z"/>
+    </svg>
+  );
+}
+function bulletIcon(key) {
+  if (key === "atl") return <IconWarning />;
+  if (key === "tsb") return <IconBalance />;
+  if (key === "ctl") return <IconTrendUp />;
+  return null;
+}
+
 function classifySessionLoad(v) {
   if (v >= 130) return { tone: 4, hint: "Très élevée" };
   if (v >= 80)  return { tone: 3, hint: "Soutenue" };
@@ -356,8 +386,11 @@ function ChargesRightRail({ chargeDeltaPct, ctl, atl, tsb, atlOverCtl }) {
       <ul className="alpine-charges-rail-bullets">
         {bullets.map((b) => (
           <li key={b.key} className={`alpine-charges-rail-bullet tone-${clampTone(b.tone)}`}>
-            <span className="alpine-charges-rail-bullet-title">{b.title}</span>
-            <span className="alpine-charges-rail-bullet-body">{b.body}</span>
+            <span className="alpine-charges-rail-bullet-icon" aria-hidden="true">{bulletIcon(b.key)}</span>
+            <div className="alpine-charges-rail-bullet-text">
+              <span className="alpine-charges-rail-bullet-title">{b.title}</span>
+              <span className="alpine-charges-rail-bullet-body">{b.body}</span>
+            </div>
           </li>
         ))}
       </ul>
@@ -520,7 +553,11 @@ function AnalyticsChargesTab({
           />
           <OverviewIndicatorCard
             label="Équilibre charge/fatigue (TSB)"
-            value={tsb} unit="UA" hint={tsbCls.hint} delta={tsbDeltaText} tone={tsbCls.tone}
+            value={tsb > 0 ? `+${tsb}` : `${tsb}`}
+            unit="UA"
+            hint={tsbCls.hint}
+            delta={tsbDeltaText}
+            tone={tsbCls.tone}
             rangeBar={{
               value: tsb, min: -60, max: 60,
               ticks: [

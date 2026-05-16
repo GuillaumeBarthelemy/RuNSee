@@ -141,6 +141,21 @@ export default function AnalyticsPage() {
     [analyticsScopeActivities, chartGranularity, options.userWeekStartsOn, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
   );
 
+  // Modèle de charge sur 1 an glissant pour l'onglet Charges : permet au
+  // sélecteur local (6 sem / 3 mois / 6 mois / 1 an) de filtrer indépendamment
+  // de la période globale "1-31 mai". Le coût est négligeable (même calcul
+  // que ci-dessus mais sur un range plus large).
+  const chargesTrainingLoadModel = useMemo(
+    () => buildTrainingLoadStateModel(analyticsScopeActivities, {
+      startDate: addDays(sharedRange.end, -365),
+      endDate: sharedRange.end,
+      granularity: "day",
+      weekStartsOn: options.userWeekStartsOn,
+      settings: trainingAnalyticsSettings,
+    }),
+    [analyticsScopeActivities, options.userWeekStartsOn, sharedRange.end, trainingAnalyticsSettings],
+  );
+
   const efficiencyModel = useMemo(
     () => buildEfficiencyHistoryModel(analyticsScopeActivities, {
       startDate: sharedRange.start,
@@ -382,7 +397,7 @@ export default function AnalyticsPage() {
 
       {activeTabId === "charges" ? (
         <AnalyticsChargesTab
-          trainingLoadModel={trainingLoadModel}
+          trainingLoadModel={chargesTrainingLoadModel}
           weeklySummary={weeklySummary}
           sharedRangeEnd={sharedRange.end}
         />
