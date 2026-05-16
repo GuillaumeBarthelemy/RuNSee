@@ -12420,6 +12420,14 @@ button.alert-banner-positive-item {
   color: #ea580c;
   background: #ffedd5;
 }
+.alpine-trends-rail-bullet.tk-amber-watch .alpine-trends-rail-bullet-icon {
+  color: #b45309;
+  background: #fef3c7;
+}
+.alpine-trends-rail-bullet.tk-neutral .alpine-trends-rail-bullet-icon {
+  color: #475569;
+  background: #f1f5f9;
+}
 
 /* Heatmap layout horizontal : grille à gauche, légende verticale à droite */
 .alpine-trends-heatmap {

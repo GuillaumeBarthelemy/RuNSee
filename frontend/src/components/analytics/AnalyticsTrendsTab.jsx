@@ -588,11 +588,17 @@ function TrendsPeriodComparison({ activities = [], currentRange = {} }) {
 function RailIconTrendUp() {
   return <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M2 12.5 6.4 8 9 10.5 14 5.6V8h1.4V3H10.4v1.4h2.6L9 8.5 6.4 6 1 11.5l1 1Z"/></svg>;
 }
+function RailIconTrendDown() {
+  return <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M2 3.5 6.4 8 9 5.5 14 10.4V8h1.4v5H10.4v-1.4h2.6L9 7.5 6.4 10 1 4.5l1-1Z"/></svg>;
+}
 function RailIconMountain() {
   return <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M1 13 5 6l2.3 4.2L10 5l5 8H1Z"/></svg>;
 }
 function RailIconSparkle() {
   return <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 1 9.3 6.7 15 8l-5.7 1.3L8 15l-1.3-5.7L1 8l5.7-1.3L8 1Z"/></svg>;
+}
+function RailIconAlert() {
+  return <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 1.4 15 14H1L8 1.4Zm0 4.6v4h-1.4v-4H8Zm-.7 6.4a.9.9 0 1 0 0-1.8.9.9 0 0 0 0 1.8Z"/></svg>;
 }
 
 function TrendsRightRail({ matrix = [], regularityPercent = 0 }) {
@@ -605,40 +611,75 @@ function TrendsRightRail({ matrix = [], regularityPercent = 0 }) {
     ? Math.round(((last.elevationGain - prev.elevationGain) / prev.elevationGain) * 100)
     : null;
 
-  // Narration sans pourcentage explicite (mockup) — tone-key dirige la
-  // pastille colorée via la palette warm dédiée au rail Tendances.
+  // Narration cohérente — icône reflète la DIRECTION du signal :
+  //   ↗ TrendUp pour hausse, ↘ TrendDown pour baisse, ▲ Mountain spécifique
+  //   au dénivelé, ✦ Sparkle pour régularité positive, ⚠ Alert pour fragile.
+  // toneKey choisit la pastille colorée (palette mockup conservée par sujet).
   const bullets = [];
-  if (Number.isFinite(distanceDeltaPct) && distanceDeltaPct > 0) {
+
+  // --- Volume ---
+  if (Number.isFinite(distanceDeltaPct) && distanceDeltaPct >= 5) {
     bullets.push({
       key: "vol", toneKey: "warm-volume", icon: <RailIconTrendUp />,
       title: "Volume en hausse",
       body: "Ton volume progresse régulièrement sur la dernière période.",
     });
-  } else if (Number.isFinite(distanceDeltaPct) && distanceDeltaPct < 0) {
+  } else if (Number.isFinite(distanceDeltaPct) && distanceDeltaPct <= -10) {
     bullets.push({
-      key: "vol", toneKey: "warm-volume", icon: <RailIconTrendUp />,
+      key: "vol", toneKey: "amber-watch", icon: <RailIconTrendDown />,
       title: "Volume en baisse",
       body: "Ton volume diminue — phase de récupération ou allègement programmé ?",
     });
+  } else if (Number.isFinite(distanceDeltaPct)) {
+    bullets.push({
+      key: "vol", toneKey: "neutral", icon: <RailIconTrendUp />,
+      title: "Volume stable",
+      body: "Charge maintenue d'un mois sur l'autre.",
+    });
   }
-  if (Number.isFinite(elevationDeltaPct) && elevationDeltaPct > 10) {
+
+  // --- Dénivelé ---
+  if (Number.isFinite(elevationDeltaPct) && elevationDeltaPct >= 10) {
     bullets.push({
       key: "elev", toneKey: "cool-elevation", icon: <RailIconMountain />,
       title: "Dénivelé en progression",
       body: "Forte montée du dénivelé sur les 2 derniers mois.",
     });
+  } else if (Number.isFinite(elevationDeltaPct) && elevationDeltaPct <= -15) {
+    bullets.push({
+      key: "elev", toneKey: "neutral", icon: <RailIconMountain />,
+      title: "Dénivelé en repli",
+      body: "Le profil de tes sorties s'aplanit ce mois-ci.",
+    });
   }
+
+  // --- Régularité (seuils scientifiquement alignés Tudor-Locke 2011) ---
+  //   < 40 % = fragile, 40-60 % = perfectible, 60-75 % = correcte,
+  //   >= 75 % = ancrée. On utilise les valeurs absolues du dernier
+  //   mois (regularityPercent), sans pourcentage dans le body.
   if (regularityPercent >= 75) {
     bullets.push({
       key: "reg", toneKey: "warm-regularity", icon: <RailIconSparkle />,
-      title: "Régularité en amélioration",
-      body: "Ta constance s'améliore nettement, continue sur cette lancée.",
+      title: "Régularité ancrée",
+      body: "Ta constance est exemplaire, continue sur cette lancée.",
     });
-  } else if (regularityPercent >= 50) {
+  } else if (regularityPercent >= 60) {
     bullets.push({
       key: "reg", toneKey: "warm-regularity", icon: <RailIconSparkle />,
       title: "Régularité correcte",
-      body: "Bonne assiduité ce mois-ci. Vise 4 sorties / sem pour ancrer l'habitude.",
+      body: "Bonne assiduité. Vise 4 sorties / sem pour ancrer l'habitude.",
+    });
+  } else if (regularityPercent >= 40) {
+    bullets.push({
+      key: "reg", toneKey: "amber-watch", icon: <RailIconAlert />,
+      title: "Régularité perfectible",
+      body: "Trop d'écarts entre les sorties. Cible 3 séances / sem minimum.",
+    });
+  } else if (Number.isFinite(regularityPercent)) {
+    bullets.push({
+      key: "reg", toneKey: "amber-watch", icon: <RailIconAlert />,
+      title: "Régularité à reconstruire",
+      body: "Trop de jours sans activité. Repars sur 2-3 sorties courtes par semaine.",
     });
   }
 
