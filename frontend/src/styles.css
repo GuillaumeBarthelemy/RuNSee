@@ -12136,6 +12136,11 @@ button.alert-banner-positive-item {
   gap: 2px;
   min-width: 92px;
 }
+.alpine-trends-stat-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
 .alpine-trends-stat-label {
   font-size: 11px;
   color: var(--al-muted, #64748b);

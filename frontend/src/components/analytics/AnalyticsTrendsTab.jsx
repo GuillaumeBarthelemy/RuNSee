@@ -367,14 +367,18 @@ function TrendsRegularitySection({ activities = [], sharedRangeEnd }) {
         <div className="alpine-trends-regularity-stats">
           <div>
             <span className="alpine-trends-stat-label">Meilleure série</span>
-            <strong className="alpine-trends-stat-value">{stats.longestStreak}</strong>
-            <span className="alpine-trends-stat-unit">jours</span>
+            <div className="alpine-trends-stat-value-row">
+              <strong className="alpine-trends-stat-value">{stats.longestStreak}</strong>
+              <span className="alpine-trends-stat-unit">jours</span>
+            </div>
             {streakLabel ? <span className="alpine-trends-stat-extra">{streakLabel}</span> : null}
           </div>
           <div>
             <span className="alpine-trends-stat-label">Jours actifs</span>
-            <strong className="alpine-trends-stat-value">{stats.activeDays}</strong>
-            <span className="alpine-trends-stat-unit">/ {stats.totalDays}</span>
+            <div className="alpine-trends-stat-value-row">
+              <strong className="alpine-trends-stat-value">{stats.activeDays}</strong>
+              <span className="alpine-trends-stat-unit">/{stats.totalDays}</span>
+            </div>
             <span className="alpine-trends-stat-extra">{stats.regularityPercent} %</span>
           </div>
         </div>
