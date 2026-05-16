@@ -339,8 +339,11 @@ async function resolveEnrichmentPeriod(appUserId, payload = {}) {
   }
 
   if (payload.mode === "recent_missing") {
+    // Cap relevé de DEFAULT_LOOKBACK_DAYS (30) à MAX_LOOKBACK_DAYS (180) pour
+    // permettre le rebackfill complet des enrichments existants. Au-delà,
+    // Garmin pagine ses données et le risque de rate-limit augmente fortement.
     const days = Math.min(
-      DEFAULT_LOOKBACK_DAYS,
+      MAX_LOOKBACK_DAYS,
       Math.max(1, Number(payload.days || DEFAULT_LOOKBACK_DAYS)),
     );
     const endDate = new Date();
