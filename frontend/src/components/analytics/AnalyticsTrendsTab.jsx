@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import TrendsRegularityHeatmap from "./TrendsRegularityHeatmap.jsx";
+import AlpineSelect from "../visuals/alpine/AlpineSelect.jsx";
 import {
   buildMonthlyTrendsMatrix,
   buildPeriodComparison,
@@ -96,24 +97,33 @@ function Sparkline({ values = [], color = PRIMARY, height = 40 }) {
   const span = max - min || 1;
   const w = 100;
   const h = height;
+  // preserveAspectRatio="none" → x s'étire, mais y reste fidèle au viewBox
+  // → on garde un viewBox dont les coordonnées sont en "unités logiques"
+  //   et on stylise via SVG natif (les cercles paraissent ronds en CSS car
+  //   on les positionne en valeurs absolues sur le viewBox).
   const pts = values.map((v, i) => {
     const x = (i / Math.max(1, values.length - 1)) * w;
-    const y = h - ((v - min) / span) * (h - 4) - 2;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
+    const y = h - ((v - min) / span) * (h - 6) - 3;
+    return { x, y };
   });
-  const linePath = `M ${pts.join(" L ")}`;
-  const areaPath = `${linePath} L ${w},${h} L 0,${h} Z`;
-  const gid = `spark-${color.replace("#", "")}-${values.length}`;
+  const linePath = `M ${pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L ")}`;
+  const lastPt = pts[pts.length - 1];
   return (
     <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="alpine-trends-sparkline" aria-hidden="true">
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor={color} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={areaPath} fill={`url(#${gid})`} />
-      <path d={linePath} fill="none" stroke={color} strokeWidth="1.5" />
+      {/* Ligne nue, sans aire — fidélité mockup */}
+      <path d={linePath} fill="none" stroke={color} strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
+      {/* Point de fin marqué (mise en valeur dernière valeur) */}
+      {lastPt ? (
+        <circle
+          cx={lastPt.x}
+          cy={lastPt.y}
+          r="2.4"
+          fill={color}
+          stroke="#ffffff"
+          strokeWidth="1"
+          vectorEffect="non-scaling-stroke"
+        />
+      ) : null}
     </svg>
   );
 }
@@ -148,7 +158,13 @@ function SparkBars({ values = [], color = SUCCESS, height = 40 }) {
 // 1. KPI Row
 // ---------------------------------------------------------------------------
 
-function TrendsKpiRow({ monthlyMatrix = [], sharedRangeEnd, weeklyFrequencySeries = [], regularitySeries = [] }) {
+function TrendsKpiRow({
+  monthlyMatrix = [],
+  sharedRangeEnd,
+  weeklyFrequencySeries = [],
+  regularityMonthlySeries = [],   // [%] par mois (KPI delta)
+  regularityDailySpark = [],      // [0|1] par jour (~30) pour la mini-bar
+}) {
   const last = monthlyMatrix[monthlyMatrix.length - 1] || {};
   const prev = monthlyMatrix[monthlyMatrix.length - 2] || {};
 
@@ -164,8 +180,8 @@ function TrendsKpiRow({ monthlyMatrix = [], sharedRangeEnd, weeklyFrequencySerie
   const prevFreq = Math.round((safeNum(prev.runs) / lastMonthWeeks) * 10) / 10;
   const freqDelta = Math.round((lastFreq - prevFreq) * 10) / 10;
 
-  const lastReg = regularitySeries.length ? regularitySeries[regularitySeries.length - 1] : 0;
-  const prevReg = regularitySeries.length > 1 ? regularitySeries[regularitySeries.length - 2] : 0;
+  const lastReg = regularityMonthlySeries.length ? regularityMonthlySeries[regularityMonthlySeries.length - 1] : 0;
+  const prevReg = regularityMonthlySeries.length > 1 ? regularityMonthlySeries[regularityMonthlySeries.length - 2] : 0;
   const regDeltaPts = lastReg - prevReg;
 
   const prevLabel = previousMonthLabel(sharedRangeEnd);
@@ -228,7 +244,7 @@ function TrendsKpiRow({ monthlyMatrix = [], sharedRangeEnd, weeklyFrequencySerie
             {regDeltaPts > 0 ? "+" : ""}{regDeltaPts} <small>pts vs {prevLabel}</small>
           </span>
         ) : null}
-        <SparkBars values={regularitySeries} color={SUCCESS} />
+        <SparkBars values={regularityDailySpark} color={SUCCESS} />
       </article>
     </section>
   );
@@ -254,16 +270,12 @@ function TrendsMonthlyEvolution({ matrix = [] }) {
     <section className="alpine-trends-card">
       <header className="alpine-trends-card-head">
         <h3 className="alpine-trends-card-title">Progression du volume</h3>
-        <div className="alpine-trends-period-toggle" role="tablist">
-          {RANGE_OPTIONS.map((opt) => (
-            <button key={opt.id} type="button" role="tab"
-              aria-selected={rangeId === opt.id}
-              className={`alpine-charges-period-pill ${rangeId === opt.id ? "is-active" : ""}`}
-              onClick={() => setRangeId(opt.id)}>
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        <AlpineSelect
+          value={rangeId}
+          options={RANGE_OPTIONS.map((o) => ({ value: o.id, label: o.label }))}
+          onChange={setRangeId}
+          ariaLabel="Période d'analyse de la progression du volume"
+        />
       </header>
 
       <div className="alpine-trends-evolution-value-row">
@@ -382,16 +394,12 @@ function TrendsRegularitySection({ activities = [], sharedRangeEnd }) {
     <section className="alpine-trends-card">
       <header className="alpine-trends-card-head">
         <h3 className="alpine-trends-card-title">Régularité &amp; constance</h3>
-        <div className="alpine-trends-period-toggle" role="tablist">
-          {RANGE_OPTIONS.map((opt) => (
-            <button key={opt.id} type="button" role="tab"
-              aria-selected={rangeId === opt.id}
-              className={`alpine-charges-period-pill ${rangeId === opt.id ? "is-active" : ""}`}
-              onClick={() => setRangeId(opt.id)}>
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        <AlpineSelect
+          value={rangeId}
+          options={RANGE_OPTIONS.map((o) => ({ value: o.id, label: o.label }))}
+          onChange={setRangeId}
+          ariaLabel="Période d'analyse de la régularité"
+        />
       </header>
 
       <div className="alpine-trends-regularity-body">
@@ -553,33 +561,40 @@ function TrendsRightRail({ matrix = [], regularityPercent = 0 }) {
     ? Math.round(((last.elevationGain - prev.elevationGain) / prev.elevationGain) * 100)
     : null;
 
+  // Narration sans pourcentage explicite (mockup) — tone-key dirige la
+  // pastille colorée via la palette warm dédiée au rail Tendances.
   const bullets = [];
   if (Number.isFinite(distanceDeltaPct) && distanceDeltaPct > 0) {
     bullets.push({
-      key: "vol", tone: 1, icon: <RailIconTrendUp />, title: "Volume en hausse",
-      body: `Ton volume progresse de ${formatDeltaPct(distanceDeltaPct)} ce mois-ci.`,
+      key: "vol", toneKey: "warm-volume", icon: <RailIconTrendUp />,
+      title: "Volume en hausse",
+      body: "Ton volume progresse régulièrement sur la dernière période.",
     });
   } else if (Number.isFinite(distanceDeltaPct) && distanceDeltaPct < 0) {
     bullets.push({
-      key: "vol", tone: 3, icon: <RailIconTrendUp />, title: "Volume en baisse",
-      body: `${formatDeltaPct(distanceDeltaPct)} ce mois-ci — phase de récupération ?`,
+      key: "vol", toneKey: "warm-volume", icon: <RailIconTrendUp />,
+      title: "Volume en baisse",
+      body: "Ton volume diminue — phase de récupération ou allègement programmé ?",
     });
   }
   if (Number.isFinite(elevationDeltaPct) && elevationDeltaPct > 10) {
     bullets.push({
-      key: "elev", tone: 1, icon: <RailIconMountain />, title: "Dénivelé en progression",
-      body: `Forte montée du dénivelé sur le dernier mois (${formatDeltaPct(elevationDeltaPct)}).`,
+      key: "elev", toneKey: "cool-elevation", icon: <RailIconMountain />,
+      title: "Dénivelé en progression",
+      body: "Forte montée du dénivelé sur les 2 derniers mois.",
     });
   }
   if (regularityPercent >= 75) {
     bullets.push({
-      key: "reg", tone: 1, icon: <RailIconSparkle />, title: "Régularité en amélioration",
-      body: `Ta constance s'améliore nettement (${regularityPercent} %). Continue sur cette lancée.`,
+      key: "reg", toneKey: "warm-regularity", icon: <RailIconSparkle />,
+      title: "Régularité en amélioration",
+      body: "Ta constance s'améliore nettement, continue sur cette lancée.",
     });
   } else if (regularityPercent >= 50) {
     bullets.push({
-      key: "reg", tone: 2, icon: <RailIconSparkle />, title: "Régularité correcte",
-      body: `${regularityPercent} % de jours actifs. Cible 60 % pour ancrer l'habitude.`,
+      key: "reg", toneKey: "warm-regularity", icon: <RailIconSparkle />,
+      title: "Régularité correcte",
+      body: "Bonne assiduité ce mois-ci. Vise 4 sorties / sem pour ancrer l'habitude.",
     });
   }
 
@@ -588,7 +603,7 @@ function TrendsRightRail({ matrix = [], regularityPercent = 0 }) {
       <h3 className="alpine-trends-rail-title">À retenir</h3>
       <ul className="alpine-trends-rail-bullets">
         {bullets.map((b) => (
-          <li key={b.key} className={`alpine-trends-rail-bullet tone-${b.tone}`}>
+          <li key={b.key} className={`alpine-trends-rail-bullet ${b.toneKey ? `tk-${b.toneKey}` : ""}`}>
             <span className="alpine-trends-rail-bullet-icon">{b.icon}</span>
             <div className="alpine-trends-rail-bullet-text">
               <span className="alpine-trends-rail-bullet-title">{b.title}</span>
@@ -633,10 +648,34 @@ function AnalyticsTrendsTab({
     [matrix6],
   );
 
-  const regularitySeries = useMemo(() => matrix6.map((m) => {
+  const regularityMonthlySeries = useMemo(() => matrix6.map((m) => {
     const stats = buildRegularityStats(activities, { start: m.periodStart, end: m.periodEnd });
     return stats.regularityPercent;
   }), [matrix6, activities]);
+
+  // Spark journalier régularité : 30 dernières journées, hauteur de barre
+  // proportionnelle à la durée totale d'activité du jour (min). Reproduit
+  // visuellement la trame "barcode" du mockup avec hauteurs variables.
+  const regularityDailySpark = useMemo(() => {
+    const e = endDate instanceof Date ? endDate : new Date();
+    const minutesByDay = new Map();
+    for (const a of activities) {
+      const raw = a?.startDateLocal || a?.startDate;
+      if (!raw) continue;
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const minutes = Number(a?.movingTime || 0) / 60;
+      minutesByDay.set(key, (minutesByDay.get(key) || 0) + minutes);
+    }
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(e.getTime() - i * 86400000);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      days.push(Math.round(minutesByDay.get(key) || 0));
+    }
+    return days;
+  }, [activities, endDate]);
 
   const last30 = useMemo(() => {
     const e = endDate;
@@ -651,7 +690,8 @@ function AnalyticsTrendsTab({
           monthlyMatrix={matrix6}
           sharedRangeEnd={endDate}
           weeklyFrequencySeries={weeklyFrequencySeries}
-          regularitySeries={regularitySeries}
+          regularityMonthlySeries={regularityMonthlySeries}
+          regularityDailySpark={regularityDailySpark}
         />
 
         <div className="alpine-trends-row-2">

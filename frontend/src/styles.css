@@ -12365,3 +12365,108 @@ button.alert-banner-positive-item {
   cursor: pointer;
 }
 .alpine-trends-rail-cta:hover { filter: brightness(0.97); }
+
+/* AlpineSelect — sélecteur dropdown réutilisable (Tendances P1) */
+.alpine-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.alpine-select-control {
+  appearance: none;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 28px 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--al-text, #0f2147);
+  cursor: pointer;
+  line-height: 1.2;
+}
+.alpine-select-control:hover {
+  border-color: #94a3b8;
+}
+.alpine-select-control:focus {
+  outline: none;
+  border-color: var(--al-primary, #1268f3);
+  box-shadow: 0 0 0 2px rgba(18, 104, 243, 0.15);
+}
+.alpine-select-chevron {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+}
+.alpine-select--md .alpine-select-control {
+  padding: 8px 32px 8px 14px;
+  font-size: 13px;
+}
+
+/* Right rail bullet — palette mockup chaleureuse par toneKey */
+.alpine-trends-rail-bullet.tk-warm-volume .alpine-trends-rail-bullet-icon {
+  color: #d97706;
+  background: #fef3c7;
+}
+.alpine-trends-rail-bullet.tk-cool-elevation .alpine-trends-rail-bullet-icon {
+  color: #1e40af;
+  background: #dbeafe;
+}
+.alpine-trends-rail-bullet.tk-warm-regularity .alpine-trends-rail-bullet-icon {
+  color: #ea580c;
+  background: #ffedd5;
+}
+
+/* Heatmap layout horizontal : grille à gauche, légende verticale à droite */
+.alpine-trends-heatmap {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: start;
+  overflow-x: auto;
+}
+.alpine-trends-heatmap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.alpine-trends-heatmap-legend--vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--al-text-soft, #2a3f6b);
+  white-space: nowrap;
+  margin-top: 0;
+}
+.alpine-trends-heatmap-legend--vertical span {
+  display: inline-flex;
+  align-items: center;
+}
+.alpine-trends-heatmap-legend--vertical i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+@media (max-width: 900px) {
+  .alpine-trends-heatmap {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Visibilité chart : axes plus marqués (Tendances P1 visibility) */
+.alpine-trends-card .recharts-cartesian-axis-tick-value {
+  fill: #475569 !important;
+  font-weight: 500;
+}
+.alpine-trends-card .recharts-cartesian-axis-line,
+.alpine-trends-card .recharts-cartesian-axis-tick line {
+  stroke: #cbd5e1;
+}
