@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import TrendsRegularityHeatmap from "./TrendsRegularityHeatmap.jsx";
 import AlpineSelect from "../visuals/alpine/AlpineSelect.jsx";
+import RecoveryKpiCard from "../visuals/alpine/RecoveryKpiCard.jsx";
 import {
   buildMonthlyTrendsMatrix,
   buildPeriodComparison,
@@ -40,7 +41,6 @@ import {
 
 const PRIMARY = "#1268f3";
 const PRIMARY_SOFT = "#bfdbfe";
-const SUCCESS = "#16a34a";
 
 const RANGE_OPTIONS = [
   { id: "6m",  label: "6 derniers mois",  months: 6 },
@@ -86,97 +86,34 @@ function previousMonthLabel(periodEnd) {
   return prev.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
 }
 
-// ---------------------------------------------------------------------------
-// Sparkline inline (SVG)
-// ---------------------------------------------------------------------------
-
-function Sparkline({ values = [], color = PRIMARY, height = 40 }) {
-  if (!values.length) return null;
-  const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
-  const span = max - min || 1;
-  const w = 100;
-  const h = height;
-  const pts = values.map((v, i) => {
-    const x = (i / Math.max(1, values.length - 1)) * w;
-    const y = h - ((v - min) / span) * (h - 6) - 3;
-    return { x, y };
-  });
-  const linePath = `M ${pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L ")}`;
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="alpine-trends-sparkline" aria-hidden="true">
-      <path d={linePath} fill="none" stroke={color} strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
-      {/* Points sur chaque valeur — lisibilité accrue des mois individuels */}
-      {pts.map((p, i) => (
-        <circle
-          key={i}
-          cx={p.x}
-          cy={p.y}
-          r={i === pts.length - 1 ? "2.4" : "1.5"}
-          fill={i === pts.length - 1 ? color : "#ffffff"}
-          stroke={color}
-          strokeWidth={i === pts.length - 1 ? "1" : "1.2"}
-          vectorEffect="non-scaling-stroke"
-        />
-      ))}
-    </svg>
-  );
-}
-
-// Renvoie min/max d'une série en arrondissant pour affichage
-function rangeMinMax(values = []) {
-  if (!values.length) return { min: 0, max: 0 };
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  return { min, max };
-}
-
-// Régularité KPI : 3 niveaux discrets pour stabiliser la trame "barcode".
-// Hauteur de barre selon classification :
-//   - 0 min        → barre absente (cellule vide)
-//   - 1 à 44 min   → 50 % de hauteur (activité légère)
-//   - ≥ 45 min     → 100 % de hauteur (activité soutenue)
-function SparkBars({ values = [], color = SUCCESS, height = 40 }) {
-  if (!values.length) return null;
-  const w = 100;
-  const barW = w / values.length;
-  function levelHeight(v) {
-    if (!Number.isFinite(v) || v <= 0) return 0;
-    if (v < 45) return (height - 2) * 0.5;
-    return height - 2;
-  }
-  return (
-    <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" className="alpine-trends-sparkline" aria-hidden="true">
-      {values.map((v, i) => {
-        const bh = levelHeight(v);
-        if (bh <= 0) return null;
-        return (
-          <rect
-            key={i}
-            x={i * barW + 0.5}
-            y={height - bh}
-            width={Math.max(0.5, barW - 1)}
-            height={bh}
-            fill={color}
-            opacity={v >= 45 ? 0.95 : 0.65}
-            rx={1}
-          />
-        );
-      })}
-    </svg>
-  );
-}
+// Note : sparklines et bars inline retirés. La rangée KPI utilise désormais
+// RecoveryKpiCard (visuals/alpine), aligné avec la page Accueil — layout
+// header + valeur à gauche + line chart gradient à droite.
 
 // ---------------------------------------------------------------------------
 // 1. KPI Row
 // ---------------------------------------------------------------------------
 
+// Icônes inline 24×24 (cohérence avec DashboardPage)
+function KpiIconRoute() {
+  return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4v4l6 8v4M18 4v6l-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+function KpiIconCalendar() {
+  return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>;
+}
+function KpiIconMountain() {
+  return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 19l5-10 4 7 3-5 6 8H3z" fill="currentColor" /></svg>;
+}
+function KpiIconSpark() {
+  return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l1.8 6.2L20 11l-6.2 1.8L12 19l-1.8-6.2L4 11l6.2-1.8L12 3z" fill="currentColor" /></svg>;
+}
+
 function TrendsKpiRow({
   monthlyMatrix = [],
   sharedRangeEnd,
   weeklyFrequencySeries = [],
-  regularityMonthlySeries = [],   // [%] par mois (KPI delta)
-  regularityDailySpark = [],      // [0|1] par jour (~30) pour la mini-bar
+  regularityMonthlySeries = [],
+  regularityDailySpark = [],
 }) {
   const last = monthlyMatrix[monthlyMatrix.length - 1] || {};
   const prev = monthlyMatrix[monthlyMatrix.length - 2] || {};
@@ -202,85 +139,65 @@ function TrendsKpiRow({
   const distanceSpark = monthlyMatrix.map((m) => m.distanceKm);
   const elevationSpark = monthlyMatrix.map((m) => m.elevationGain);
 
-  const distanceRange = rangeMinMax(distanceSpark);
-  const elevationRange = rangeMinMax(elevationSpark);
-  const freqRange = rangeMinMax(weeklyFrequencySeries);
+  // Tone par direction : vert si hausse claire, ambre si baisse claire, neutre sinon.
+  // → tone affecte la couleur du chart + icône + valeur (cohérence visuelle).
+  function toneOfDeltaPct(p) {
+    if (!Number.isFinite(p)) return 3;
+    if (p >= 10) return 1;
+    if (p <= -10) return 4;
+    return 3;
+  }
 
   return (
     <section className="alpine-trends-kpi-row">
-      <article className="alpine-trends-kpi-card">
-        <span className="alpine-trends-kpi-label">Volume mensuel</span>
-        <div className="alpine-trends-kpi-value-row">
-          <strong className="alpine-trends-kpi-value">{Math.round(last.distanceKm * 10) / 10 || "—"}</strong>
-          <span className="alpine-trends-kpi-unit">km</span>
-        </div>
-        {distanceDeltaPct != null ? (
-          <span className={`alpine-trends-kpi-delta ${distanceDeltaPct >= 0 ? "is-up" : "is-down"}`}>
-            {formatDeltaPct(distanceDeltaPct)} <small>vs {prevLabel}</small>
-          </span>
-        ) : null}
-        <Sparkline values={distanceSpark} color={PRIMARY} />
-        {distanceSpark.length > 1 ? (
-          <span className="alpine-trends-kpi-range">
-            {Math.round(distanceRange.min * 10) / 10} – {Math.round(distanceRange.max * 10) / 10} km
-          </span>
-        ) : null}
-      </article>
-
-      <article className="alpine-trends-kpi-card">
-        <span className="alpine-trends-kpi-label">Fréquence hebdomadaire</span>
-        <div className="alpine-trends-kpi-value-row">
-          <strong className="alpine-trends-kpi-value">{lastFreq || "—"}</strong>
-          <span className="alpine-trends-kpi-unit">sorties</span>
-        </div>
-        {Number.isFinite(freqDelta) && freqDelta !== 0 ? (
-          <span className={`alpine-trends-kpi-delta ${freqDelta >= 0 ? "is-up" : "is-down"}`}>
-            {formatDeltaAbs(freqDelta)} <small>vs {prevLabel}</small>
-          </span>
-        ) : null}
-        <Sparkline values={weeklyFrequencySeries} color={PRIMARY} />
-        {weeklyFrequencySeries.length > 1 ? (
-          <span className="alpine-trends-kpi-range">
-            {Math.round(freqRange.min * 10) / 10} – {Math.round(freqRange.max * 10) / 10} sorties
-          </span>
-        ) : null}
-      </article>
-
-      <article className="alpine-trends-kpi-card">
-        <span className="alpine-trends-kpi-label">Dénivelé mensuel</span>
-        <div className="alpine-trends-kpi-value-row">
-          <strong className="alpine-trends-kpi-value">{(last.elevationGain || 0).toLocaleString("fr-FR")}</strong>
-          <span className="alpine-trends-kpi-unit">m</span>
-        </div>
-        {elevationDeltaPct != null ? (
-          <span className={`alpine-trends-kpi-delta ${elevationDeltaPct >= 0 ? "is-up" : "is-down"}`}>
-            {formatDeltaPct(elevationDeltaPct)} <small>vs {prevLabel}</small>
-          </span>
-        ) : null}
-        <Sparkline values={elevationSpark} color={PRIMARY} />
-        {elevationSpark.length > 1 ? (
-          <span className="alpine-trends-kpi-range">
-            {elevationRange.min.toLocaleString("fr-FR")} – {elevationRange.max.toLocaleString("fr-FR")} m
-          </span>
-        ) : null}
-      </article>
-
-      <article className="alpine-trends-kpi-card">
-        <span className="alpine-trends-kpi-label">Régularité</span>
-        <div className="alpine-trends-kpi-value-row">
-          <strong className="alpine-trends-kpi-value">{lastReg || "—"}</strong>
-          <span className="alpine-trends-kpi-unit">%</span>
-        </div>
-        {Number.isFinite(regDeltaPts) && regDeltaPts !== 0 ? (
-          <span className={`alpine-trends-kpi-delta ${regDeltaPts >= 0 ? "is-up" : "is-down"}`}>
-            {regDeltaPts > 0 ? "+" : ""}{regDeltaPts} <small>pts vs {prevLabel}</small>
-          </span>
-        ) : null}
-        <SparkBars values={regularityDailySpark} color={SUCCESS} />
-        <span className="alpine-trends-kpi-range">
-          30 derniers jours
-        </span>
-      </article>
+      <RecoveryKpiCard
+        icon={<KpiIconRoute />}
+        label="Volume mensuel"
+        value={Math.round(safeNum(last.distanceKm) * 10) / 10 || "—"}
+        unit=" km"
+        delta={distanceDeltaPct != null
+          ? `${distanceDeltaPct > 0 ? "+" : ""}${distanceDeltaPct} % vs ${prevLabel}`
+          : ""}
+        tone={toneOfDeltaPct(distanceDeltaPct)}
+        chartData={distanceSpark}
+        chartType="line"
+      />
+      <RecoveryKpiCard
+        icon={<KpiIconCalendar />}
+        label="Fréquence hebdomadaire"
+        value={lastFreq || "—"}
+        unit=" sorties"
+        delta={Number.isFinite(freqDelta) && freqDelta !== 0
+          ? `${freqDelta > 0 ? "+" : ""}${freqDelta} vs ${prevLabel}`
+          : ""}
+        tone={toneOfDeltaPct(prevFreq > 0 ? ((lastFreq - prevFreq) / prevFreq) * 100 : null)}
+        chartData={weeklyFrequencySeries}
+        chartType="line"
+      />
+      <RecoveryKpiCard
+        icon={<KpiIconMountain />}
+        label="Dénivelé mensuel"
+        value={(safeNum(last.elevationGain) || 0).toLocaleString("fr-FR")}
+        unit=" m"
+        delta={elevationDeltaPct != null
+          ? `${elevationDeltaPct > 0 ? "+" : ""}${elevationDeltaPct} % vs ${prevLabel}`
+          : ""}
+        tone={toneOfDeltaPct(elevationDeltaPct)}
+        chartData={elevationSpark}
+        chartType="line"
+      />
+      <RecoveryKpiCard
+        icon={<KpiIconSpark />}
+        label="Régularité"
+        value={lastReg || "—"}
+        unit=" %"
+        delta={Number.isFinite(regDeltaPts) && regDeltaPts !== 0
+          ? `${regDeltaPts > 0 ? "+" : ""}${regDeltaPts} pts vs ${prevLabel}`
+          : ""}
+        tone={lastReg >= 75 ? 1 : lastReg >= 60 ? 2 : lastReg >= 40 ? 4 : 5}
+        chartData={regularityDailySpark}
+        chartType="bar"
+      />
     </section>
   );
 }
