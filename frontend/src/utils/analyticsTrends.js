@@ -294,19 +294,21 @@ export function buildHeatmapMatrix(activities = [], options = {}) {
   // Début = 1er du mois (end - nMonths + 1)
   const startMonth = new Date(end.getFullYear(), end.getMonth() - nMonths + 1, 1);
 
-  // Compte activités par jour + flag "légère" (durée < 30 min)
-  const countsByDay = new Map(); // key -> { count, hasSubstantial }
+  // Compte activités par jour + détails (distance/durée) pour tooltip riche
+  const statsByDay = new Map(); // key -> { count, hasSubstantial, distanceKm, durationMinutes }
   for (const a of activities) {
     const d = activityDate(a);
     if (!d) continue;
     const dd = startOfDay(d);
     if (dd < startMonth || dd > end) continue;
     const key = localDateKey(dd);
-    const entry = countsByDay.get(key) || { count: 0, hasSubstantial: false };
+    const entry = statsByDay.get(key) || { count: 0, hasSubstantial: false, distanceKm: 0, durationMinutes: 0 };
     entry.count += 1;
     const movingMin = safeNum(a.movingTime) / 60;
+    entry.durationMinutes += movingMin;
+    entry.distanceKm += safeNum(a.distance) / 1000;
     if (movingMin >= 30) entry.hasSubstantial = true;
-    countsByDay.set(key, entry);
+    statsByDay.set(key, entry);
   }
 
   function classify(entry) {
@@ -333,10 +335,17 @@ export function buildHeatmapMatrix(activities = [], options = {}) {
       const day = new Date(cursor);
       day.setDate(cursor.getDate() + i);
       if (day < startMonth || day > end) {
-        days.push({ date: day, level: -1 }); // hors période
+        days.push({ date: day, level: -1, count: 0, distanceKm: 0, durationMinutes: 0 });
       } else {
         const key = localDateKey(day);
-        days.push({ date: day, level: classify(countsByDay.get(key)) });
+        const entry = statsByDay.get(key);
+        days.push({
+          date: day,
+          level: classify(entry),
+          count: entry?.count || 0,
+          distanceKm: Math.round((entry?.distanceKm || 0) * 10) / 10,
+          durationMinutes: Math.round(entry?.durationMinutes || 0),
+        });
       }
       // Track les colonnes par mois pour le label entête
       if (day >= startMonth && day <= end) {

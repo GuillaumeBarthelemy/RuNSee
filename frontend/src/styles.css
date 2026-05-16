@@ -12470,3 +12470,65 @@ button.alert-banner-positive-item {
 .alpine-trends-card .recharts-cartesian-axis-tick line {
   stroke: #cbd5e1;
 }
+
+/* KPI sparkline : amplitude min–max */
+.alpine-trends-kpi-range {
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+  text-align: right;
+  margin-top: -4px;
+}
+
+/* Heatmap tooltip HTML enrichi */
+.alpine-trends-heatmap {
+  position: relative; /* ancrage tooltip absolute */
+}
+.alpine-trends-heatmap rect {
+  cursor: pointer;
+}
+.alpine-trends-heatmap-tooltip {
+  position: fixed;
+  z-index: 50;
+  background: #0f2147;
+  color: #ffffff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  box-shadow: 0 6px 24px rgba(15, 33, 71, 0.18);
+  min-width: 160px;
+  pointer-events: none;
+}
+.alpine-trends-heatmap-tooltip-head {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+.alpine-trends-heatmap-tooltip-head strong {
+  font-weight: 700;
+}
+.alpine-trends-heatmap-tooltip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.alpine-trends-heatmap-tooltip-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+}
+.alpine-trends-heatmap-tooltip-list li span {
+  color: rgba(255, 255, 255, 0.7);
+}
+.alpine-trends-heatmap-tooltip-list li strong {
+  font-weight: 700;
+}
+.alpine-trends-heatmap-tooltip-empty {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+}

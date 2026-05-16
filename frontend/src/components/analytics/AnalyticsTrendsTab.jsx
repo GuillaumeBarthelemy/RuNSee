@@ -97,46 +97,59 @@ function Sparkline({ values = [], color = PRIMARY, height = 40 }) {
   const span = max - min || 1;
   const w = 100;
   const h = height;
-  // preserveAspectRatio="none" → x s'étire, mais y reste fidèle au viewBox
-  // → on garde un viewBox dont les coordonnées sont en "unités logiques"
-  //   et on stylise via SVG natif (les cercles paraissent ronds en CSS car
-  //   on les positionne en valeurs absolues sur le viewBox).
   const pts = values.map((v, i) => {
     const x = (i / Math.max(1, values.length - 1)) * w;
     const y = h - ((v - min) / span) * (h - 6) - 3;
     return { x, y };
   });
   const linePath = `M ${pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L ")}`;
-  const lastPt = pts[pts.length - 1];
   return (
     <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="alpine-trends-sparkline" aria-hidden="true">
-      {/* Ligne nue, sans aire — fidélité mockup */}
       <path d={linePath} fill="none" stroke={color} strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
-      {/* Point de fin marqué (mise en valeur dernière valeur) */}
-      {lastPt ? (
+      {/* Points sur chaque valeur — lisibilité accrue des mois individuels */}
+      {pts.map((p, i) => (
         <circle
-          cx={lastPt.x}
-          cy={lastPt.y}
-          r="2.4"
-          fill={color}
-          stroke="#ffffff"
-          strokeWidth="1"
+          key={i}
+          cx={p.x}
+          cy={p.y}
+          r={i === pts.length - 1 ? "2.4" : "1.5"}
+          fill={i === pts.length - 1 ? color : "#ffffff"}
+          stroke={color}
+          strokeWidth={i === pts.length - 1 ? "1" : "1.2"}
           vectorEffect="non-scaling-stroke"
         />
-      ) : null}
+      ))}
     </svg>
   );
 }
 
+// Renvoie min/max d'une série en arrondissant pour affichage
+function rangeMinMax(values = []) {
+  if (!values.length) return { min: 0, max: 0 };
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  return { min, max };
+}
+
+// Régularité KPI : 3 niveaux discrets pour stabiliser la trame "barcode".
+// Hauteur de barre selon classification :
+//   - 0 min        → barre absente (cellule vide)
+//   - 1 à 44 min   → 50 % de hauteur (activité légère)
+//   - ≥ 45 min     → 100 % de hauteur (activité soutenue)
 function SparkBars({ values = [], color = SUCCESS, height = 40 }) {
   if (!values.length) return null;
-  const max = Math.max(...values, 1);
   const w = 100;
   const barW = w / values.length;
+  function levelHeight(v) {
+    if (!Number.isFinite(v) || v <= 0) return 0;
+    if (v < 45) return (height - 2) * 0.5;
+    return height - 2;
+  }
   return (
     <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" className="alpine-trends-sparkline" aria-hidden="true">
       {values.map((v, i) => {
-        const bh = (v / max) * (height - 2);
+        const bh = levelHeight(v);
+        if (bh <= 0) return null;
         return (
           <rect
             key={i}
@@ -145,7 +158,7 @@ function SparkBars({ values = [], color = SUCCESS, height = 40 }) {
             width={Math.max(0.5, barW - 1)}
             height={bh}
             fill={color}
-            opacity={0.8}
+            opacity={v >= 45 ? 0.95 : 0.65}
             rx={1}
           />
         );
@@ -189,6 +202,10 @@ function TrendsKpiRow({
   const distanceSpark = monthlyMatrix.map((m) => m.distanceKm);
   const elevationSpark = monthlyMatrix.map((m) => m.elevationGain);
 
+  const distanceRange = rangeMinMax(distanceSpark);
+  const elevationRange = rangeMinMax(elevationSpark);
+  const freqRange = rangeMinMax(weeklyFrequencySeries);
+
   return (
     <section className="alpine-trends-kpi-row">
       <article className="alpine-trends-kpi-card">
@@ -203,6 +220,11 @@ function TrendsKpiRow({
           </span>
         ) : null}
         <Sparkline values={distanceSpark} color={PRIMARY} />
+        {distanceSpark.length > 1 ? (
+          <span className="alpine-trends-kpi-range">
+            {Math.round(distanceRange.min * 10) / 10} – {Math.round(distanceRange.max * 10) / 10} km
+          </span>
+        ) : null}
       </article>
 
       <article className="alpine-trends-kpi-card">
@@ -217,6 +239,11 @@ function TrendsKpiRow({
           </span>
         ) : null}
         <Sparkline values={weeklyFrequencySeries} color={PRIMARY} />
+        {weeklyFrequencySeries.length > 1 ? (
+          <span className="alpine-trends-kpi-range">
+            {Math.round(freqRange.min * 10) / 10} – {Math.round(freqRange.max * 10) / 10} sorties
+          </span>
+        ) : null}
       </article>
 
       <article className="alpine-trends-kpi-card">
@@ -231,6 +258,11 @@ function TrendsKpiRow({
           </span>
         ) : null}
         <Sparkline values={elevationSpark} color={PRIMARY} />
+        {elevationSpark.length > 1 ? (
+          <span className="alpine-trends-kpi-range">
+            {elevationRange.min.toLocaleString("fr-FR")} – {elevationRange.max.toLocaleString("fr-FR")} m
+          </span>
+        ) : null}
       </article>
 
       <article className="alpine-trends-kpi-card">
@@ -245,6 +277,9 @@ function TrendsKpiRow({
           </span>
         ) : null}
         <SparkBars values={regularityDailySpark} color={SUCCESS} />
+        <span className="alpine-trends-kpi-range">
+          30 derniers jours
+        </span>
       </article>
     </section>
   );
