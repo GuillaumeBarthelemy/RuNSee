@@ -68,6 +68,15 @@ function buildLastSevenDays(chartData = [], referenceEnd = new Date()) {
   return days;
 }
 
+// CSS : `.alpine-overview-daily-histo-graph` a height: 110px + padding-top: 16px.
+// Les barres remplissent la zone utile (94px) ; la ligne moyenne est position-
+// née absolute sur le total (110px). On rescale donc avgPct sur le rapport
+// 94/110 pour que la ligne et les barres aient le même référentiel.
+const HISTO_GRAPH_HEIGHT_PX = 110;
+const HISTO_GRAPH_PADDING_TOP_PX = 16;
+const HISTO_BAR_AREA_RATIO = (HISTO_GRAPH_HEIGHT_PX - HISTO_GRAPH_PADDING_TOP_PX)
+  / HISTO_GRAPH_HEIGHT_PX;
+
 function DailyHistogram({ data = [], dataKey = "load", color = "#1268f3", unit = "UA" }) {
   if (!data.length) {
     return <p className="alpine-overview-focus-empty">Pas assez de données.</p>;
@@ -75,7 +84,7 @@ function DailyHistogram({ data = [], dataKey = "load", color = "#1268f3", unit =
   const values = data.map((d) => Number(d[dataKey]) || 0);
   const max = Math.max(...values, 1) * 1.15;
   const avg = values.reduce((s, v) => s + v, 0) / values.length;
-  const avgPct = (avg / max) * 100;
+  const avgPct = (avg / max) * 100 * HISTO_BAR_AREA_RATIO;
 
   return (
     <div className="alpine-overview-daily-histo">
