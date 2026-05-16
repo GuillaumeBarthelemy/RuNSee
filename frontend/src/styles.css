@@ -12017,8 +12017,10 @@ button.alert-banner-positive-item {
 .alpine-trends-sparkline {
   display: block;
   width: 100%;
+  max-width: 220px;
   height: 40px;
   margin-top: auto;
+  margin-left: auto;
 }
 
 /* Generic card */

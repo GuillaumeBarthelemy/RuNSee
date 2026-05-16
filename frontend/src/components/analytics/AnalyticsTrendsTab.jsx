@@ -338,7 +338,16 @@ function TrendsMonthlyEvolution({ matrix = [] }) {
               contentStyle={{ fontSize: 12, borderRadius: 6, border: "1px solid #cbd5e1" }}
             />
             <Legend wrapperStyle={{ display: "none" }} />
-            <Line type="monotone" dataKey="distanceKm" stroke={PRIMARY} strokeWidth={2} dot={{ r: 3 }} />
+            <Line
+              type="monotone"
+              dataKey="distanceKm"
+              stroke={PRIMARY}
+              strokeWidth={2}
+              dot={{ r: 3, fill: PRIMARY, stroke: PRIMARY, strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: PRIMARY, stroke: "#ffffff", strokeWidth: 2 }}
+              isAnimationActive={false}
+              connectNulls
+            />
           </LineChart>
         </ResponsiveContainer>
       )}

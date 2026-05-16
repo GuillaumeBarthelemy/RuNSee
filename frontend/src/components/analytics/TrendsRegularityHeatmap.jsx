@@ -28,13 +28,16 @@ const COLORS = {
   3: "#15803d",
 };
 
-// Bornes de cellule (px) — clamp pour rester lisible quelles que soient
-// la largeur disponible et le nombre de colonnes.
+// Bornes de cellule (px) — les cellules grandissent pour remplir la
+// largeur disponible. Cap haut généreux pour que les périodes courtes
+// (6 mois ≈ 26 col.) ne laissent pas trop de blanc à droite tout en
+// gardant des cellules carrées (pas d'étirement horizontal).
 const CELL_MIN = 9;
-const CELL_MAX = 18;
+const CELL_MAX = 26;
 const CELL_GAP = 2;
-const DAY_LABEL_COL_WIDTH = 22; // largeur réservée à la colonne L/M/J/...
+const DAY_LABEL_COL_WIDTH = 22;
 const MONTHS_HEADER_HEIGHT = 18;
+const LEGEND_WIDTH = 110;
 
 function formatDuration(min) {
   if (!Number.isFinite(min) || min <= 0) return "0 min";
@@ -77,17 +80,20 @@ function TrendsRegularityHeatmap({ matrix = { months: [], columns: [] } }) {
     );
   }
 
-  // Largeur dispo pour la grille (hors colonne day-labels et légende ~110px)
-  const LEGEND_WIDTH = 110;
+  // Largeur dispo pour la grille (hors colonne day-labels et légende)
   const gridAvailable = Math.max(0, availableWidth - DAY_LABEL_COL_WIDTH - LEGEND_WIDTH - 24);
-  // colWidth = cellSize + gap
   const ideal = columns.length > 0
     ? (gridAvailable - CELL_GAP) / columns.length
     : CELL_MIN + CELL_GAP;
   const colWidth = Math.max(CELL_MIN + CELL_GAP, Math.min(CELL_MAX + CELL_GAP, ideal));
   const cellSize = colWidth - CELL_GAP;
+  // En unités de viewBox SVG — cellules toujours carrées
   const totalWidth = columns.length * colWidth;
   const totalHeight = 7 * colWidth;
+  // SVG width fixée (px) pour éviter l'étirement horizontal de la viewBox.
+  // Le conteneur parent ajuste sa largeur — la grille fait totalWidth, point.
+  const svgPixelWidth = totalWidth;
+  const svgPixelHeight = totalHeight;
 
   return (
     <div className="alpine-trends-heatmap" ref={wrapperRef}>
@@ -125,13 +131,14 @@ function TrendsRegularityHeatmap({ matrix = { months: [], columns: [] } }) {
           </div>
 
           <svg
-            width="100%"
-            height={totalHeight}
+            width={svgPixelWidth}
+            height={svgPixelHeight}
             viewBox={`0 0 ${totalWidth} ${totalHeight}`}
-            preserveAspectRatio="none"
+            preserveAspectRatio="xMidYMid meet"
             role="img"
             aria-label="Heatmap calendrier régularité"
             onMouseLeave={() => setHover(null)}
+            style={{ display: "block" }}
           >
             {columns.map((col, cIdx) => (
               col.days.map((day, dIdx) => {
