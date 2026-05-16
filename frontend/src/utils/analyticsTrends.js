@@ -201,6 +201,70 @@ export function buildPeriodComparison(activities = [], currentRange = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// 2bis. Rolling 30-day comparison — évite le biais du mois courant partiel.
+// Compare la fenêtre "30 derniers jours" à la fenêtre "30 jours précédents".
+// Toutes les fenêtres font 30 jours, donc les deltas sont honnêtes même
+// au milieu du mois calendaire.
+// ---------------------------------------------------------------------------
+
+const MS_PER_DAY_ROLLING = MS_PER_DAY;
+
+export function buildRolling30Comparison(activities = [], endDate = new Date()) {
+  const e = endDate instanceof Date ? new Date(endDate) : new Date();
+  e.setHours(23, 59, 59, 999);
+  const startCurrent = new Date(e.getTime() - 29 * MS_PER_DAY_ROLLING);
+  startCurrent.setHours(0, 0, 0, 0);
+  const endPrevious = new Date(startCurrent.getTime() - 1);
+  const startPrevious = new Date(endPrevious.getTime() - 29 * MS_PER_DAY_ROLLING);
+  startPrevious.setHours(0, 0, 0, 0);
+
+  function aggregate(start, end) {
+    let distanceKm = 0, durationHours = 0, elevationGain = 0, runs = 0;
+    const activeDays = new Set();
+    for (const a of activities) {
+      const d = activityDate(a);
+      if (!d) continue;
+      if (d < start || d > end) continue;
+      distanceKm += safeNum(a.distance) / 1000;
+      durationHours += safeNum(a.movingTime) / 3600;
+      elevationGain += safeNum(a.totalElevationGain);
+      runs += 1;
+      activeDays.add(localDateKey(startOfDay(d)));
+    }
+    return {
+      distanceKm: Math.round(distanceKm * 10) / 10,
+      durationHours: Math.round(durationHours * 10) / 10,
+      elevationGain: Math.round(elevationGain),
+      runs,
+      activeDays: activeDays.size,
+      regularityPercent: Math.round((activeDays.size / 30) * 100),
+      // Fréquence hebdo lissée sur 30 jours = runs / (30/7)
+      frequencyPerWeek: Math.round((runs / (30 / 7)) * 10) / 10,
+    };
+  }
+
+  const current = aggregate(startCurrent, e);
+  const previous = aggregate(startPrevious, endPrevious);
+
+  function pct(cur, prev) {
+    return prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null;
+  }
+
+  return {
+    current,
+    previous,
+    deltaPct: {
+      distanceKm: pct(current.distanceKm, previous.distanceKm),
+      durationHours: pct(current.durationHours, previous.durationHours),
+      elevationGain: pct(current.elevationGain, previous.elevationGain),
+      runs: pct(current.runs, previous.runs),
+      regularity: current.regularityPercent - previous.regularityPercent, // en points (pas %)
+      frequencyPerWeek: Math.round((current.frequencyPerWeek - previous.frequencyPerWeek) * 10) / 10,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // 3. Regularity stats (active days, longest streak)
 // ---------------------------------------------------------------------------
 

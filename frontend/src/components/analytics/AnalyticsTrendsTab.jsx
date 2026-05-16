@@ -19,6 +19,7 @@ import {
   buildPeriodComparison,
   buildRegularityStats,
   buildHeatmapMatrix,
+  buildRolling30Comparison,
 } from "../../utils/analyticsTrends.js";
 
 /**
@@ -80,12 +81,6 @@ function formatHoursDelta(h) {
   return hours === 0 ? `${sign}${m} min` : `${sign}${hours}h ${String(m).padStart(2, "0")}`;
 }
 
-function previousMonthLabel(periodEnd) {
-  const d = periodEnd instanceof Date ? new Date(periodEnd) : new Date();
-  const prev = new Date(d.getFullYear(), d.getMonth() - 1, 1);
-  return prev.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
-}
-
 // Note : sparklines et bars inline retirés. La rangée KPI utilise désormais
 // RecoveryKpiCard (visuals/alpine), aligné avec la page Accueil — layout
 // header + valeur à gauche + line chart gradient à droite.
@@ -110,37 +105,27 @@ function KpiIconSpark() {
 
 function TrendsKpiRow({
   monthlyMatrix = [],
-  sharedRangeEnd,
+  rolling30 = null,
   weeklyFrequencySeries = [],
-  regularityMonthlySeries = [],
   regularityDailySpark = [],
 }) {
-  const last = monthlyMatrix[monthlyMatrix.length - 1] || {};
-  const prev = monthlyMatrix[monthlyMatrix.length - 2] || {};
+  // Source unique de vérité : rolling30 (current + previous + deltaPct).
+  // Évite le biais du mois courant partiel (ex. mi-mai vs avril complet).
+  const cur = rolling30?.current || {};
+  const deltaPct = rolling30?.deltaPct || {};
 
-  const distanceDeltaPct = prev.distanceKm > 0
-    ? Math.round(((last.distanceKm - prev.distanceKm) / prev.distanceKm) * 100)
-    : null;
-  const elevationDeltaPct = prev.elevationGain > 0
-    ? Math.round(((last.elevationGain - prev.elevationGain) / prev.elevationGain) * 100)
-    : null;
+  const distanceDeltaPct = deltaPct.distanceKm;
+  const elevationDeltaPct = deltaPct.elevationGain;
+  const freqDelta = deltaPct.frequencyPerWeek;
+  const regDeltaPts = deltaPct.regularity;
+  const compareLabel = "30 j précédents";
 
-  const lastMonthWeeks = 4.345;
-  const lastFreq = Math.round((safeNum(last.runs) / lastMonthWeeks) * 10) / 10;
-  const prevFreq = Math.round((safeNum(prev.runs) / lastMonthWeeks) * 10) / 10;
-  const freqDelta = Math.round((lastFreq - prevFreq) * 10) / 10;
-
-  const lastReg = regularityMonthlySeries.length ? regularityMonthlySeries[regularityMonthlySeries.length - 1] : 0;
-  const prevReg = regularityMonthlySeries.length > 1 ? regularityMonthlySeries[regularityMonthlySeries.length - 2] : 0;
-  const regDeltaPts = lastReg - prevReg;
-
-  const prevLabel = previousMonthLabel(sharedRangeEnd);
-
+  // Sparklines : tendance mensuelle (6 mois) — visualisation séparée de
+  // la valeur (qui est rolling). C'est OK : la sparkline montre l'historique,
+  // la valeur affiche l'état actuel.
   const distanceSpark = monthlyMatrix.map((m) => m.distanceKm);
   const elevationSpark = monthlyMatrix.map((m) => m.elevationGain);
 
-  // Tone par direction : vert si hausse claire, ambre si baisse claire, neutre sinon.
-  // → tone affecte la couleur du chart + icône + valeur (cohérence visuelle).
   function toneOfDeltaPct(p) {
     if (!Number.isFinite(p)) return 3;
     if (p >= 10) return 1;
@@ -148,15 +133,18 @@ function TrendsKpiRow({
     return 3;
   }
 
+  const lastReg = cur.regularityPercent ?? 0;
+
   return (
     <section className="alpine-trends-kpi-row">
       <RecoveryKpiCard
         icon={<KpiIconRoute />}
         label="Volume mensuel"
-        value={Math.round(safeNum(last.distanceKm) * 10) / 10 || "—"}
+        value={cur.distanceKm != null ? cur.distanceKm : "—"}
         unit=" km"
+        hint="30 derniers jours"
         delta={distanceDeltaPct != null
-          ? `${distanceDeltaPct > 0 ? "+" : ""}${distanceDeltaPct} % vs ${prevLabel}`
+          ? `${distanceDeltaPct > 0 ? "+" : ""}${distanceDeltaPct} % vs ${compareLabel}`
           : ""}
         tone={toneOfDeltaPct(distanceDeltaPct)}
         chartData={distanceSpark}
@@ -165,22 +153,26 @@ function TrendsKpiRow({
       <RecoveryKpiCard
         icon={<KpiIconCalendar />}
         label="Fréquence hebdomadaire"
-        value={lastFreq || "—"}
+        value={cur.frequencyPerWeek != null ? cur.frequencyPerWeek : "—"}
         unit=" sorties"
+        hint="moyenne 30 j"
         delta={Number.isFinite(freqDelta) && freqDelta !== 0
-          ? `${freqDelta > 0 ? "+" : ""}${freqDelta} vs ${prevLabel}`
+          ? `${freqDelta > 0 ? "+" : ""}${freqDelta} vs ${compareLabel}`
           : ""}
-        tone={toneOfDeltaPct(prevFreq > 0 ? ((lastFreq - prevFreq) / prevFreq) * 100 : null)}
+        tone={toneOfDeltaPct(rolling30?.previous?.frequencyPerWeek > 0
+          ? ((cur.frequencyPerWeek - rolling30.previous.frequencyPerWeek) / rolling30.previous.frequencyPerWeek) * 100
+          : null)}
         chartData={weeklyFrequencySeries}
         chartType="line"
       />
       <RecoveryKpiCard
         icon={<KpiIconMountain />}
         label="Dénivelé mensuel"
-        value={(safeNum(last.elevationGain) || 0).toLocaleString("fr-FR")}
+        value={(safeNum(cur.elevationGain) || 0).toLocaleString("fr-FR")}
         unit=" m"
+        hint="30 derniers jours"
         delta={elevationDeltaPct != null
-          ? `${elevationDeltaPct > 0 ? "+" : ""}${elevationDeltaPct} % vs ${prevLabel}`
+          ? `${elevationDeltaPct > 0 ? "+" : ""}${elevationDeltaPct} % vs ${compareLabel}`
           : ""}
         tone={toneOfDeltaPct(elevationDeltaPct)}
         chartData={elevationSpark}
@@ -191,8 +183,9 @@ function TrendsKpiRow({
         label="Régularité"
         value={lastReg || "—"}
         unit=" %"
+        hint="jours actifs sur 30"
         delta={Number.isFinite(regDeltaPts) && regDeltaPts !== 0
-          ? `${regDeltaPts > 0 ? "+" : ""}${regDeltaPts} pts vs ${prevLabel}`
+          ? `${regDeltaPts > 0 ? "+" : ""}${regDeltaPts} pts vs ${compareLabel}`
           : ""}
         tone={lastReg >= 75 ? 1 : lastReg >= 60 ? 2 : lastReg >= 40 ? 4 : 5}
         chartData={regularityDailySpark}
@@ -522,15 +515,11 @@ function RailIconAlert() {
   return <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 1.4 15 14H1L8 1.4Zm0 4.6v4h-1.4v-4H8Zm-.7 6.4a.9.9 0 1 0 0-1.8.9.9 0 0 0 0 1.8Z"/></svg>;
 }
 
-function TrendsRightRail({ matrix = [], regularityPercent = 0 }) {
-  const last = matrix[matrix.length - 1] || {};
-  const prev = matrix[matrix.length - 2] || {};
-  const distanceDeltaPct = prev.distanceKm > 0
-    ? Math.round(((last.distanceKm - prev.distanceKm) / prev.distanceKm) * 100)
-    : null;
-  const elevationDeltaPct = prev.elevationGain > 0
-    ? Math.round(((last.elevationGain - prev.elevationGain) / prev.elevationGain) * 100)
-    : null;
+function TrendsRightRail({ rolling30 = null, regularityPercent = 0 }) {
+  // Aligné sur la même source que les KPI : rolling 30 j (pas de biais
+  // mois partiel). Cohérence delta direction + bullets garantie.
+  const distanceDeltaPct = rolling30?.deltaPct?.distanceKm ?? null;
+  const elevationDeltaPct = rolling30?.deltaPct?.elevationGain ?? null;
 
   // Narration cohérente — icône reflète la DIRECTION du signal :
   //   ↗ TrendUp pour hausse, ↘ TrendDown pour baisse, ▲ Mountain spécifique
@@ -654,10 +643,11 @@ function AnalyticsTrendsTab({
     [matrix6],
   );
 
-  const regularityMonthlySeries = useMemo(() => matrix6.map((m) => {
-    const stats = buildRegularityStats(activities, { start: m.periodStart, end: m.periodEnd });
-    return stats.regularityPercent;
-  }), [matrix6, activities]);
+  // Rolling 30 j vs 30 j précédents — source unique des valeurs KPI + bullets.
+  const rolling30 = useMemo(
+    () => buildRolling30Comparison(activities, endDate),
+    [activities, endDate],
+  );
 
   // Spark journalier régularité : 30 dernières journées, hauteur de barre
   // proportionnelle à la durée totale d'activité du jour (min). Reproduit
@@ -683,20 +673,13 @@ function AnalyticsTrendsTab({
     return days;
   }, [activities, endDate]);
 
-  const last30 = useMemo(() => {
-    const e = endDate;
-    const s = new Date(e.getTime() - 29 * 86400000);
-    return buildRegularityStats(activities, { start: s, end: e });
-  }, [activities, endDate]);
-
   return (
     <div className="alpine-analytics-tab alpine-analytics-tab--trends alpine-trends-grid">
       <div className="alpine-trends-main">
         <TrendsKpiRow
           monthlyMatrix={matrix6}
-          sharedRangeEnd={endDate}
+          rolling30={rolling30}
           weeklyFrequencySeries={weeklyFrequencySeries}
-          regularityMonthlySeries={regularityMonthlySeries}
           regularityDailySpark={regularityDailySpark}
         />
 
@@ -717,7 +700,7 @@ function AnalyticsTrendsTab({
         </p>
       </div>
 
-      <TrendsRightRail matrix={matrix6} regularityPercent={last30.regularityPercent} />
+      <TrendsRightRail rolling30={rolling30} regularityPercent={rolling30?.current?.regularityPercent || 0} />
     </div>
   );
 }
