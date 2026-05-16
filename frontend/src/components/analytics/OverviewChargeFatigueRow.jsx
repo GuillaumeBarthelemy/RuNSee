@@ -83,7 +83,11 @@ function DailyHistogram({ data = [], dataKey = "load", color = "#1268f3", unit =
         <span
           className="alpine-overview-daily-histo-avg-line"
           style={{ bottom: `${avgPct}%` }}
-        />
+        >
+          <span className="alpine-overview-daily-histo-avg-line-label">
+            {Math.round(avg)}
+          </span>
+        </span>
         {data.map((d, idx) => {
           const v = Number(d[dataKey]) || 0;
           const h = v <= 0 ? 4 : Math.max(10, (v / max) * 100);

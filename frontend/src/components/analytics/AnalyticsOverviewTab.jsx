@@ -204,18 +204,18 @@ function AnalyticsOverviewTab({
               <OverviewIndicatorCard
                 label="Volume (7 j)"
                 value={volumeHours > 0 ? formatHours(volumeHours) : "—"}
-                hint={volumeHours >= 8 ? "Élevé" : volumeHours >= 4 ? "Standard" : "Léger"}
+                hint={volumeHours >= 8 ? "Élevé" : volumeHours >= 5 ? "Soutenu" : volumeHours >= 2 ? "Régulier" : "Léger"}
                 delta={volumeDeltaText}
                 tone={volumeTone}
                 rangeBar={{
                   value: volumeHours,
                   min: 0,
-                  max: 15,
+                  max: 10,
                   ticks: [
                     { value: 0,  label: "0" },
-                    { value: 5,  label: "5h" },
+                    { value: 3,  label: "3h" },
+                    { value: 6,  label: "6h" },
                     { value: 10, label: "10h" },
-                    { value: 15, label: "15h" },
                   ],
                   gradient: "cool",
                 }}
