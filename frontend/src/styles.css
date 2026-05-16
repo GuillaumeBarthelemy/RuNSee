@@ -12114,11 +12114,12 @@ button.alert-banner-positive-item {
   display: inline-block;
 }
 
-/* Régularité */
+/* Régularité — layout mockup PDF : 2 stats côte à côte + heatmap qui prend
+ * tout l'espace restant. La heatmap est responsive (ResizeObserver). */
 .alpine-trends-regularity-body {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 24px;
+  grid-template-columns: auto 1fr;
+  gap: 28px;
   align-items: start;
 }
 @media (max-width: 900px) {
@@ -12126,13 +12127,14 @@ button.alert-banner-positive-item {
 }
 .alpine-trends-regularity-stats {
   display: flex;
-  flex-direction: column;
-  gap: 18px;
+  flex-direction: row;   /* côte à côte — fidélité mockup */
+  gap: 28px;
 }
 .alpine-trends-regularity-stats > div {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 92px;
 }
 .alpine-trends-stat-label {
   font-size: 11px;
