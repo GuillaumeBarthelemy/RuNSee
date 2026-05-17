@@ -71,7 +71,7 @@ export function decorateZone(zone) {
 // 1. KPI agrégés (temps total / séances qualité / allure soutenue)
 // ---------------------------------------------------------------------------
 
-export function buildIntensityKpi(intensityModel = {}, activities = []) {
+export function buildIntensityKpi(intensityModel = {}, activities = [], range = null) {
   const zones = Array.isArray(intensityModel?.zones) ? intensityModel.zones : [];
 
   // Temps total (sec) tracké dans les zones
@@ -82,19 +82,26 @@ export function buildIntensityKpi(intensityModel = {}, activities = []) {
     .filter((z) => ["z3", "z4", "z5"].includes((z.key || "").toLowerCase()))
     .reduce((s, z) => s + safeNum(z.durationSeconds), 0);
 
-  // Séances de qualité = activités avec > 0 sec en Z4 OU Z5
-  // Approximation : on considère qu'une activité est "qualitative" si son
-  // averageHeartrate atteint le seuil Z4 OU si on a un %time-in-Z4-Z5 calculé.
-  // En l'absence du détail par activité dans le modèle agrégé, on heuristique
-  // sur averageHeartrate × FCmax ref → ratio en zones.
+  // Séances de qualité = activités avec FC moyenne ≥ 88 % FCmax OU FC max ≥ 95 %.
+  // On filtre PAR PÉRIODE pour rester cohérent avec totalSeconds / sustainedSeconds
+  // (sinon on retombe sur le cumul total user, biaisé).
+  const start = range?.start instanceof Date ? range.start : null;
+  const end = range?.end instanceof Date ? range.end : null;
+  const inRange = (d) => {
+    if (!start || !end) return true;
+    return d >= start && d <= end;
+  };
+  const filteredActivities = activities.filter((a) => {
+    const d = activityDate(a);
+    return d && inRange(d);
+  });
+
   const ref = safeNum(intensityModel?.referenceMaxHeartrate);
   let qualitySessionCount = 0;
   if (ref > 0) {
-    for (const a of activities) {
+    for (const a of filteredActivities) {
       const hr = safeNum(a?.averageHeartrate);
       if (hr <= 0) continue;
-      // Activité "qualitative" si FC moyenne ≥ 88 % FCmax (entrée Z4)
-      // OU si maxHeartrate atteint le seuil VO2max
       const maxHr = safeNum(a?.maxHeartrate);
       const meanRatio = hr / ref;
       const maxRatio = maxHr > 0 ? maxHr / ref : 0;
@@ -104,7 +111,7 @@ export function buildIntensityKpi(intensityModel = {}, activities = []) {
     }
   }
 
-  const totalActivities = activities.filter((a) => activityDate(a)).length;
+  const totalActivities = filteredActivities.length;
 
   return {
     totalSeconds,
@@ -239,7 +246,7 @@ export function buildIntensityRolling30Comparison(activities = [], endDate = new
     const model = buildConsolidatedIntensityDistributionModel(filtered, {
       startDate: start, endDate: end, settings,
     });
-    const kpi = buildIntensityKpi(model, filtered);
+    const kpi = buildIntensityKpi(model, filtered, { start, end });
     return { model, kpi, activities: filtered };
   }
 

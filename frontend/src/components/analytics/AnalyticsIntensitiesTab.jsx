@@ -650,13 +650,18 @@ function AnalyticsIntensitiesTab({
   const zones = Array.isArray(intensityModel?.zones) ? intensityModel.zones : [];
 
   const kpi = useMemo(
-    () => buildIntensityKpi(intensityModel, activities),
-    [intensityModel, activities],
+    () => buildIntensityKpi(intensityModel, activities, {
+      start: sharedRange?.start,
+      end: endDate,
+    }),
+    [intensityModel, activities, sharedRange?.start, endDate],
   );
 
+  // 12 semaines pour densifier l'histogramme (barres plus fines, cohérent
+  // avec le mockup et la largeur de la card 2/3 colonne principale).
   const weekly = useMemo(
     () => buildIntensityWeeklySeries(activities, {
-      endDate, nWeeks: 6, settings: trainingAnalyticsSettings,
+      endDate, nWeeks: 12, settings: trainingAnalyticsSettings,
     }),
     [activities, endDate, trainingAnalyticsSettings],
   );
