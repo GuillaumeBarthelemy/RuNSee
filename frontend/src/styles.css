@@ -12608,14 +12608,22 @@ button.alert-banner-positive-item {
   font-style: italic;
 }
 
-/* §1 + §2 : Top row */
+/* §1 + §2 : Top row — donut + 3 KPI en ligne (mockup p.10) */
 .alpine-intensities-top-row {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1280px) {
+  .alpine-intensities-top-row {
+    grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+  }
 }
 @media (max-width: 1100px) {
-  .alpine-intensities-top-row { grid-template-columns: 1fr; }
+  .alpine-intensities-top-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .alpine-intensities-distribution-card { grid-column: 1 / -1; }
 }
 .alpine-intensities-distribution-card {
   background: #ffffff;
@@ -12677,12 +12685,6 @@ button.alert-banner-positive-item {
   font-weight: 500;
 }
 
-/* KPI mini cards stack */
-.alpine-intensities-kpi-stack {
-  display: grid;
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
 .alpine-intensities-kpi-card {
   background: #ffffff;
   border: 1px solid #eaf0fa;
@@ -12814,30 +12816,46 @@ button.alert-banner-positive-item {
 }
 .alpine-intensities-insight-icon { margin-right: 6px; }
 
-/* Route vs Trail */
-.alpine-intensities-rt-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  align-items: stretch;
-}
-.alpine-intensities-rt-half {
+/* Route vs Trail — donut unique scindé verticalement (mockup p.10) */
+.alpine-intensities-rt-split {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 14px 8px;
-  border-radius: 8px;
+  gap: 12px;
 }
-.alpine-intensities-rt-half--road { background: #f1f5f9; }
-.alpine-intensities-rt-half--trail { background: #dcfce7; }
-.alpine-intensities-rt-icon {
-  font-size: 22px;
-  line-height: 1;
+.alpine-intensities-rt-split-viz {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+.alpine-intensities-rt-glyph {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.alpine-intensities-rt-glyph--left  { left: 16px; }
+.alpine-intensities-rt-glyph--right { right: 16px; }
+.alpine-intensities-rt-split-labels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+  margin-top: 4px;
+}
+.alpine-intensities-rt-split-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
 }
 .alpine-intensities-rt-context {
   font-size: 12px;
-  color: var(--al-text-soft, #2a3f6b);
   font-weight: 700;
 }
 .alpine-intensities-rt-zone {
@@ -12846,6 +12864,7 @@ button.alert-banner-positive-item {
   gap: 5px;
   font-size: 11px;
   font-weight: 600;
+  color: var(--al-text, #0f2147);
 }
 .alpine-intensities-rt-zone .dot {
   width: 8px;
@@ -12858,10 +12877,11 @@ button.alert-banner-positive-item {
   color: var(--al-muted, #64748b);
 }
 .alpine-intensities-rt-insight {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   font-size: 11px;
   color: var(--al-text-soft, #2a3f6b);
   font-style: italic;
+  text-align: center;
 }
 
 /* Lecture intensité */

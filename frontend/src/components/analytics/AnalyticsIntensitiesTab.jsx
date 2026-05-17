@@ -3,6 +3,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -368,6 +369,19 @@ function IntensitiesWeeklyStack({ weekly = [] }) {
           <XAxis dataKey="label" stroke="#64748b" fontSize={10} />
           <YAxis stroke="#64748b" fontSize={11} tickFormatter={(v) => `${v}h`} />
           <Tooltip content={<WeeklyStackedTooltip />} cursor={{ fill: "rgba(123,140,163,0.08)" }} />
+          {/* Cadre de la semaine en cours — fidélité mockup */}
+          {last?.label ? (
+            <ReferenceArea
+              x1={last.label}
+              x2={last.label}
+              stroke="#0f2147"
+              strokeOpacity={0.55}
+              strokeWidth={1.2}
+              strokeDasharray="3 3"
+              fill="transparent"
+              ifOverflow="extendDomain"
+            />
+          ) : null}
           {["z1", "z2", "z3", "z4", "z5"].map((k) => (
             <Bar key={k} dataKey={k} stackId="zones" fill={ZONE_COLORS[k]} radius={k === "z5" ? [3, 3, 0, 0] : 0} />
           ))}
@@ -385,10 +399,63 @@ function IntensitiesWeeklyStack({ weekly = [] }) {
 // Sub-component : Route vs Trail
 // ---------------------------------------------------------------------------
 
+function RoadGlyph({ color = "#1268f3" }) {
+  return (
+    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
+      <path
+        fill={color}
+        d="M11 5h10l3 22h-5l-1-7h-4l-1 7H8l3-22Zm3 2-.8 6h5.6L18 7h-4Zm-.4 8 -.5 3h5.8l-.5-3h-4.8Z"
+      />
+    </svg>
+  );
+}
+function TreeGlyph({ color = "#16a34a" }) {
+  return (
+    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
+      <path
+        fill={color}
+        d="M16 3 23 13H19l4 7H17v6h-2v-6H9l4-7H9l7-10Z"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Donut unique scindé verticalement Route | Trail.
+ * Chaque moitié prend la couleur de la zone dominante de son terrain.
+ */
+function RouteTrailSplitDonut({ roadColor, trailColor }) {
+  // 2 arcs SVG : demi-cercle gauche (Route) et demi-cercle droit (Trail).
+  // Rayon 50, centre (60,60), stroke épais → effet donut.
+  return (
+    <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+      {/* Demi-anneau gauche (Route) */}
+      <path
+        d="M60 12 A 48 48 0 0 0 60 108"
+        fill="none"
+        stroke={roadColor}
+        strokeWidth="18"
+      />
+      {/* Demi-anneau droit (Trail) */}
+      <path
+        d="M60 12 A 48 48 0 0 1 60 108"
+        fill="none"
+        stroke={trailColor}
+        strokeWidth="18"
+      />
+      {/* Trait de séparation vertical au milieu */}
+      <line x1="60" y1="6" x2="60" y2="114" stroke="#ffffff" strokeWidth="3" />
+    </svg>
+  );
+}
+
 function IntensitiesRouteVsTrail({ data }) {
-  if (!data) return null; // Carte cachée si l'un des deux manque
+  if (!data) return null;
   const { road, trail } = data;
   if (!road || !trail) return null;
+
+  const roadColor = ZONE_COLORS[road.zoneKey] || "#94a3b8";
+  const trailColor = ZONE_COLORS[trail.zoneKey] || "#94a3b8";
 
   return (
     <section className="alpine-intensities-card">
@@ -397,30 +464,36 @@ function IntensitiesRouteVsTrail({ data }) {
         <span className="alpine-intensities-card-subtitle">Comparaison route vs trail</span>
       </header>
 
-      <div className="alpine-intensities-rt-body">
-        <div className="alpine-intensities-rt-half alpine-intensities-rt-half--road">
-          <span className="alpine-intensities-rt-icon" aria-hidden="true">🛣️</span>
-          <strong className="alpine-intensities-rt-context">Route</strong>
-          <span
-            className="alpine-intensities-rt-zone"
-            style={{ color: ZONE_COLORS[road.zoneKey] }}
-          >
-            <span className="dot" style={{ background: ZONE_COLORS[road.zoneKey] }} />
-            <strong>{road.zoneKey.toUpperCase()}</strong> {ZONE_LABELS[road.zoneKey]}
-          </span>
-          <span className="alpine-intensities-rt-share">{road.sharePercent} % du temps</span>
+      <div className="alpine-intensities-rt-split">
+        {/* SVG donut split */}
+        <div className="alpine-intensities-rt-split-viz">
+          <RouteTrailSplitDonut roadColor={roadColor} trailColor={trailColor} />
+          <div className="alpine-intensities-rt-glyph alpine-intensities-rt-glyph--left">
+            <RoadGlyph color={roadColor} />
+          </div>
+          <div className="alpine-intensities-rt-glyph alpine-intensities-rt-glyph--right">
+            <TreeGlyph color={trailColor} />
+          </div>
         </div>
-        <div className="alpine-intensities-rt-half alpine-intensities-rt-half--trail">
-          <span className="alpine-intensities-rt-icon" aria-hidden="true">🌲</span>
-          <strong className="alpine-intensities-rt-context">Trail</strong>
-          <span
-            className="alpine-intensities-rt-zone"
-            style={{ color: ZONE_COLORS[trail.zoneKey] }}
-          >
-            <span className="dot" style={{ background: ZONE_COLORS[trail.zoneKey] }} />
-            <strong>{trail.zoneKey.toUpperCase()}</strong> {ZONE_LABELS[trail.zoneKey]}
-          </span>
-          <span className="alpine-intensities-rt-share">{trail.sharePercent} % du temps</span>
+
+        {/* Labels sous le donut, alignés avec leur moitié */}
+        <div className="alpine-intensities-rt-split-labels">
+          <div className="alpine-intensities-rt-split-col">
+            <strong className="alpine-intensities-rt-context" style={{ color: roadColor }}>Route</strong>
+            <span className="alpine-intensities-rt-zone">
+              <span className="dot" style={{ background: roadColor }} />
+              <strong>{road.zoneKey.toUpperCase()}</strong> {ZONE_LABELS[road.zoneKey]}
+            </span>
+            <span className="alpine-intensities-rt-share">{road.sharePercent} % du temps</span>
+          </div>
+          <div className="alpine-intensities-rt-split-col">
+            <strong className="alpine-intensities-rt-context" style={{ color: trailColor }}>Trail</strong>
+            <span className="alpine-intensities-rt-zone">
+              <span className="dot" style={{ background: trailColor }} />
+              <strong>{trail.zoneKey.toUpperCase()}</strong> {ZONE_LABELS[trail.zoneKey]}
+            </span>
+            <span className="alpine-intensities-rt-share">{trail.sharePercent} % du temps</span>
+          </div>
         </div>
       </div>
 
@@ -624,7 +697,7 @@ function AnalyticsIntensitiesTab({
   return (
     <div className="alpine-analytics-tab alpine-analytics-tab--intensities alpine-intensities-grid">
       <div className="alpine-intensities-main">
-        {/* §1 + §2 : Répartition + KPI */}
+        {/* §1 + §2 : Répartition + 3 KPI en ligne (mockup p.10) */}
         <section className="alpine-intensities-top-row">
           <article className="alpine-intensities-distribution-card">
             <header className="alpine-intensities-card-head">
@@ -637,35 +710,33 @@ function AnalyticsIntensitiesTab({
             </div>
           </article>
 
-          <div className="alpine-intensities-kpi-stack">
-            <IntensityKpiCard
-              icon={<KpiIconClock />}
-              iconClass="icon-tone-blue"
-              label="Temps en zones"
-              value={formatHmin(kpi.totalHours)}
-              valueUnit=""
-              subtitle="100 % du temps"
-              delta={formatDeltaPct(rolling30?.deltaPct?.totalHours)}
-            />
-            <IntensityKpiCard
-              icon={<KpiIconFlame />}
-              iconClass="icon-tone-red"
-              label="Séances de qualité"
-              value={kpi.qualitySessionCount}
-              valueUnit="séances"
-              subtitle={`${kpi.qualitySessionShare} % du total`}
-              delta={formatDeltaAbs(rolling30?.delta?.qualitySessionCount)}
-            />
-            <IntensityKpiCard
-              icon={<KpiIconGauge />}
-              iconClass="icon-tone-green"
-              label="Allure soutenue"
-              value={formatHmin(kpi.sustainedHours)}
-              valueUnit=""
-              subtitle={`${kpi.sustainedShare} % du temps`}
-              delta={formatDeltaPct(rolling30?.deltaPct?.sustainedHours)}
-            />
-          </div>
+          <IntensityKpiCard
+            icon={<KpiIconClock />}
+            iconClass="icon-tone-blue"
+            label="Temps en zones"
+            value={formatHmin(kpi.totalHours)}
+            valueUnit=""
+            subtitle="100 % du temps"
+            delta={formatDeltaPct(rolling30?.deltaPct?.totalHours)}
+          />
+          <IntensityKpiCard
+            icon={<KpiIconFlame />}
+            iconClass="icon-tone-red"
+            label="Séances de qualité"
+            value={kpi.qualitySessionCount}
+            valueUnit="séances"
+            subtitle={`${kpi.qualitySessionShare} % du total`}
+            delta={formatDeltaAbs(rolling30?.delta?.qualitySessionCount)}
+          />
+          <IntensityKpiCard
+            icon={<KpiIconGauge />}
+            iconClass="icon-tone-green"
+            label="Allure soutenue"
+            value={formatHmin(kpi.sustainedHours)}
+            valueUnit=""
+            subtitle={`${kpi.sustainedShare} % du temps`}
+            delta={formatDeltaPct(rolling30?.deltaPct?.sustainedHours)}
+          />
         </section>
 
         {/* §4 + §5 : Évolution + Route vs Trail */}
