@@ -77,9 +77,14 @@ export function buildIntensityKpi(intensityModel = {}, activities = [], range = 
   // Temps total (sec) tracké dans les zones
   const totalSeconds = zones.reduce((s, z) => s + safeNum(z.durationSeconds), 0);
 
-  // Allure soutenue = Z3 + Z4 + Z5
+  // Allure soutenue = Z4 + Z5 (HIT, au-dessus du seuil lactique LT2).
+  // Réf : Seiler 2010 (HIT > LT2), Allen & Coggan 2010 (Threshold = Z4),
+  // Daniels 2014 (Threshold pace ~ LT2), Skiba 2007 (supra-threshold).
+  // Z3 (Tempo) reste classé comme "Intensité modérée" (MIT) dans la
+  // Lecture intensité — cf. card §7. Cette séparation rend la frontière
+  // modéré / soutenu scientifiquement honnête.
   const sustainedSeconds = zones
-    .filter((z) => ["z3", "z4", "z5"].includes((z.key || "").toLowerCase()))
+    .filter((z) => ["z4", "z5"].includes((z.key || "").toLowerCase()))
     .reduce((s, z) => s + safeNum(z.durationSeconds), 0);
 
   // Séances de qualité = activités avec FC moyenne ≥ 88 % FCmax OU FC max ≥ 95 %.
