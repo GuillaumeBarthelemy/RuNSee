@@ -573,7 +573,7 @@ function AnalyticsRecoveryTab({
             delta={delta.sleepHours != null ? `${formatHminDelta(delta.sleepHours)} vs 30 j précédents` : ""}
             rangeBar={{ value: cur.sleepHours, min: 5, max: 9,
               ticks: [{ value: 5, label: "5h" }, { value: 7, label: "7h" }, { value: 9, label: "9h" }],
-              gradient: "warm" }}
+              gradient: "cool" }}
           />
           <RecoveryKpiCard
             icon={<IconPulse />} iconClass="icon-tone-green"
@@ -583,7 +583,7 @@ function AnalyticsRecoveryTab({
             delta={delta.hrvMs != null && delta.hrvMs !== 0 ? `${formatDelta(delta.hrvMs)} vs 30 j précédents` : ""}
             rangeBar={{ value: cur.hrvMs, min: 30, max: 90,
               ticks: [{ value: 30, label: "30" }, { value: 60, label: "60" }, { value: 90, label: "90" }],
-              gradient: "warm" }}
+              gradient: "cool" }}
           />
           <RecoveryKpiCard
             icon={<IconHeart />} iconClass="icon-tone-red"
@@ -593,7 +593,7 @@ function AnalyticsRecoveryTab({
             delta={delta.restingHr != null && delta.restingHr !== 0 ? `${formatDelta(delta.restingHr)} bpm vs 30 j précédents` : ""}
             rangeBar={{ value: cur.restingHr, min: 40, max: 70,
               ticks: [{ value: 40, label: "40" }, { value: 55, label: "55" }, { value: 70, label: "70" }],
-              gradient: "cool" }}
+              gradient: "warm" }}
           />
           <RecoveryKpiCard
             icon={<IconLotus />} iconClass="icon-tone-orange"
@@ -634,7 +634,7 @@ function AnalyticsRecoveryTab({
               label="Sommeil"
               value={formatHmin(cur.sleepHours)} unit=""
               hint={sleepCls.hint} hintTone={sleepCls.tone}
-              rangeBar={{ value: cur.sleepHours, min: 5, max: 9, gradient: "warm" }}
+              rangeBar={{ value: cur.sleepHours, min: 5, max: 9, gradient: "cool" }}
               objectif="Objectif : 7-9h"
               spark={daily7.map((d) => d.sleepHours)}
               sparkColor={COL_SLEEP} sparkType="bars"
@@ -645,7 +645,7 @@ function AnalyticsRecoveryTab({
               label="HRV"
               value={cur.hrvMs != null ? Math.round(cur.hrvMs) : "—"} unit="ms"
               hint={hrvCls.hint} hintTone={hrvCls.tone}
-              rangeBar={{ value: cur.hrvMs, min: 30, max: 90, gradient: "warm" }}
+              rangeBar={{ value: cur.hrvMs, min: 30, max: 90, gradient: "cool" }}
               objectif="Objectif : > 60 ms"
               spark={daily7.map((d) => d.hrvMs)}
               sparkColor={COL_HRV} sparkType="line"
@@ -656,7 +656,7 @@ function AnalyticsRecoveryTab({
               label="FC repos"
               value={cur.restingHr != null ? Math.round(cur.restingHr) : "—"} unit="bpm"
               hint={rhrCls.hint} hintTone={rhrCls.tone}
-              rangeBar={{ value: cur.restingHr, min: 40, max: 70, gradient: "cool" }}
+              rangeBar={{ value: cur.restingHr, min: 40, max: 70, gradient: "warm" }}
               objectif="Objectif : 40-50 bpm"
               spark={daily7.map((d) => d.restingHr)}
               sparkColor={COL_RHR} sparkType="line"
