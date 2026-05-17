@@ -17,6 +17,7 @@
 ## Dette / hors scope non bloquant
 
 - [ ] **Tooltips pedagogiques globaux Alpine Light** — Brancher le composant `InfoTooltip` sur les indicateurs cles a travers RunNSee (Analyse onglets Vue d'ensemble / Charges / Tendances / Intensites / Sommeil, ainsi que Performance, Progression, Activites). Textes pedagogiques scientifiquement sources. Decision 2026-05-16 : reporte volontairement pour une passe globale unique, plutot que onglet par onglet.
+- [ ] **CTAs Analyse "Voir l'analyse complete" / "En savoir plus" / "Voir tous les conseils"** — Brancher les boutons CTAs des rails et footers (Tendances, Intensites...) sur des destinations concretes. Pour le moment ils sont en placeholders sans `onClick`. Decision 2026-05-16 : passe globale apres la stabilisation des contenus.
 - [ ] Completer des tests backend providers plus larges si une strategie de tests backend avec mocks DB est ajoutee.
 - [ ] Ajouter des tests workflow backfill avec repository mocke pour couvrir start/pause/resume et preflight/post-window duplicats de bout en bout.
 - [ ] Valider l'import PostgreSQL sur une base cible uniquement avec backup et option explicite (`--truncate` ou `--allow-append`).

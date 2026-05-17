@@ -12549,3 +12549,559 @@ button.alert-banner-positive-item {
   color: rgba(255, 255, 255, 0.7);
   font-size: 11px;
 }
+
+/* =========================================================================
+ * Onglet Intensités (Lot 04 V5, PDF page 10)
+ * ========================================================================= */
+.alpine-intensities-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .alpine-intensities-grid { grid-template-columns: 1fr; }
+}
+.alpine-intensities-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.alpine-intensities-right-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 16px;
+}
+
+/* Card commune */
+.alpine-intensities-card {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+}
+.alpine-intensities-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.alpine-intensities-card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-intensities-card-subtitle {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+  font-weight: 500;
+}
+.alpine-intensities-card-sub-hint {
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+  font-style: italic;
+}
+
+/* §1 + §2 : Top row */
+.alpine-intensities-top-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 16px;
+}
+@media (max-width: 1100px) {
+  .alpine-intensities-top-row { grid-template-columns: 1fr; }
+}
+.alpine-intensities-distribution-card {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+}
+.alpine-intensities-distribution-body {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 20px;
+  align-items: center;
+}
+@media (max-width: 700px) {
+  .alpine-intensities-distribution-body { grid-template-columns: 1fr; }
+}
+.alpine-intensities-donut {
+  width: 100%;
+  height: auto;
+  max-width: 160px;
+}
+
+.alpine-intensities-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.alpine-intensities-legend li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 12px;
+}
+.alpine-intensities-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  align-self: center;
+}
+.alpine-intensities-legend-label {
+  color: var(--al-text, #0f2147);
+}
+.alpine-intensities-legend-label strong {
+  font-weight: 700;
+  margin-right: 4px;
+}
+.alpine-intensities-legend-value {
+  color: var(--al-text-soft, #2a3f6b);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.alpine-intensities-legend-pct {
+  color: var(--al-muted, #64748b);
+  font-weight: 500;
+}
+
+/* KPI mini cards stack */
+.alpine-intensities-kpi-stack {
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.alpine-intensities-kpi-card {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.alpine-intensities-kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--al-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.alpine-intensities-kpi-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.alpine-intensities-kpi-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.alpine-intensities-kpi-icon.icon-tone-blue  { color: #1268f3; background: #dbeafe; }
+.alpine-intensities-kpi-icon.icon-tone-red   { color: #dc2626; background: #fee2e2; }
+.alpine-intensities-kpi-icon.icon-tone-green { color: #15803d; background: #dcfce7; }
+.alpine-intensities-kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.alpine-intensities-kpi-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--al-text, #0f2147);
+  line-height: 1;
+}
+.alpine-intensities-kpi-unit {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-intensities-kpi-sub {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-intensities-kpi-delta {
+  font-size: 10px;
+  font-weight: 700;
+}
+.alpine-intensities-kpi-delta.is-up   { color: #15803d; }
+.alpine-intensities-kpi-delta.is-down { color: #dc2626; }
+.alpine-intensities-kpi-delta small {
+  font-weight: 500;
+  color: var(--al-muted, #64748b);
+}
+
+/* Row 2 : weekly + route vs trail */
+.alpine-intensities-row-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+}
+@media (max-width: 1100px) {
+  .alpine-intensities-row-2 { grid-template-columns: 1fr; }
+}
+
+/* Weekly stacked */
+.alpine-intensities-weekly-legend {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  font-weight: 600;
+}
+.alpine-intensities-weekly-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.alpine-intensities-weekly-legend .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.alpine-intensities-weekly-tooltip {
+  background: #0f2147;
+  color: #ffffff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  box-shadow: 0 6px 24px rgba(15, 33, 71, 0.18);
+}
+.alpine-intensities-weekly-tooltip strong {
+  display: block;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  padding-bottom: 3px;
+}
+.alpine-intensities-weekly-tooltip .dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 4px;
+}
+.alpine-intensities-weekly-tooltip-total {
+  margin-top: 4px;
+  padding-top: 3px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+.alpine-intensities-weekly-insight {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  background: #f8fafc;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.alpine-intensities-insight-icon { margin-right: 6px; }
+
+/* Route vs Trail */
+.alpine-intensities-rt-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: stretch;
+}
+.alpine-intensities-rt-half {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: 8px;
+}
+.alpine-intensities-rt-half--road { background: #f1f5f9; }
+.alpine-intensities-rt-half--trail { background: #dcfce7; }
+.alpine-intensities-rt-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.alpine-intensities-rt-context {
+  font-size: 12px;
+  color: var(--al-text-soft, #2a3f6b);
+  font-weight: 700;
+}
+.alpine-intensities-rt-zone {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.alpine-intensities-rt-zone .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.alpine-intensities-rt-share {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-intensities-rt-insight {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  font-style: italic;
+}
+
+/* Lecture intensité */
+.alpine-intensities-lecture-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .alpine-intensities-lecture-grid { grid-template-columns: 1fr; }
+}
+.alpine-intensities-lecture-card {
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #ffffff;
+}
+.alpine-intensities-lecture-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.alpine-intensities-lecture-card.lecture-tone-1 .alpine-intensities-lecture-icon { color: #15803d; background: #dcfce7; }
+.alpine-intensities-lecture-card.lecture-tone-2 .alpine-intensities-lecture-icon { color: #ea580c; background: #ffedd5; }
+.alpine-intensities-lecture-card.lecture-tone-3 .alpine-intensities-lecture-icon { color: #1268f3; background: #dbeafe; }
+.alpine-intensities-lecture-card.lecture-tone-4 .alpine-intensities-lecture-icon { color: #b45309; background: #fef3c7; }
+.alpine-intensities-lecture-card.lecture-tone-5 .alpine-intensities-lecture-icon { color: #dc2626; background: #fee2e2; }
+.alpine-intensities-lecture-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-intensities-lecture-body {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--al-text-soft, #2a3f6b);
+}
+.alpine-intensities-lecture-tag {
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #475569;
+  margin-top: 4px;
+}
+.alpine-intensities-lecture-card.lecture-tone-1 .alpine-intensities-lecture-tag { background: #dcfce7; color: #15803d; }
+.alpine-intensities-lecture-card.lecture-tone-2 .alpine-intensities-lecture-tag { background: #ffedd5; color: #ea580c; }
+.alpine-intensities-lecture-card.lecture-tone-3 .alpine-intensities-lecture-tag { background: #dbeafe; color: #1268f3; }
+.alpine-intensities-lecture-card.lecture-tone-4 .alpine-intensities-lecture-tag { background: #fef3c7; color: #b45309; }
+
+/* Footer takeaway */
+.alpine-intensities-footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.alpine-intensities-footer-icon {
+  color: #1268f3;
+  background: #dbeafe;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.alpine-intensities-footer-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.alpine-intensities-footer-text strong {
+  font-size: 13px;
+  color: var(--al-text, #0f2147);
+}
+.alpine-intensities-footer-text p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--al-text-soft, #2a3f6b);
+  line-height: 1.45;
+}
+.alpine-intensities-footer-cta {
+  background: transparent;
+  border: 0;
+  color: var(--al-primary, #1268f3);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Right rail "À retenir" */
+.alpine-intensities-rail {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.alpine-intensities-rail-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-intensities-rail-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alpine-intensities-rail-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.alpine-intensities-rail-bullet-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.alpine-intensities-rail-bullet.tk-endurance .alpine-intensities-rail-bullet-icon { color: #15803d; background: #dcfce7; }
+.alpine-intensities-rail-bullet.tk-moderate  .alpine-intensities-rail-bullet-icon { color: #ea580c; background: #ffedd5; }
+.alpine-intensities-rail-bullet.tk-trend-up  .alpine-intensities-rail-bullet-icon { color: #1268f3; background: #dbeafe; }
+.alpine-intensities-rail-bullet.tk-amber-watch .alpine-intensities-rail-bullet-icon { color: #b45309; background: #fef3c7; }
+.alpine-intensities-rail-bullet.tk-neutral .alpine-intensities-rail-bullet-icon { color: #475569; background: #f1f5f9; }
+.alpine-intensities-rail-bullet-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.alpine-intensities-rail-bullet-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-intensities-rail-bullet-body {
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  line-height: 1.4;
+}
+.alpine-intensities-rail-cta {
+  margin-top: auto;
+  background: var(--al-primary-soft, #dbeafe);
+  color: var(--al-primary, #1268f3);
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Right rail "Légende des zones" */
+.alpine-intensities-zones-legend {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.alpine-intensities-zones-legend-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-intensities-zones-legend-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.alpine-intensities-zones-legend-list li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 11.5px;
+}
+.alpine-intensities-zones-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.alpine-intensities-zones-legend-label strong {
+  font-weight: 700;
+  margin-right: 4px;
+}
+.alpine-intensities-zones-legend-range {
+  color: var(--al-muted, #64748b);
+  font-weight: 600;
+  font-size: 11px;
+}
+.alpine-intensities-zones-legend-foot {
+  margin: 0;
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+}
+.alpine-intensities-zones-legend-est {
+  font-style: italic;
+}
+.alpine-intensities-zones-legend-cta {
+  background: var(--al-primary-soft, #dbeafe);
+  color: var(--al-primary, #1268f3);
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}

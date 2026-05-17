@@ -23,8 +23,6 @@ import {
   buildEfficiencyHistoryModel,
   buildTrainingLoadStateModel,
 } from "../utils/trainingMetrics.js";
-import { buildIntensityNarrative } from "../utils/performanceNarratives.js";
-import { buildIntensityPolarizationProfile } from "../utils/trainingIntelligence.js";
 import { buildLoadDynamicsProfile } from "../utils/loadDynamics.js";
 import { buildRecoveryCorrelationDataset } from "../utils/recoveryCorrelations.js";
 import { buildRecoveryViewModel } from "../utils/recoveryViewModel.js";
@@ -183,18 +181,6 @@ export default function AnalyticsPage() {
     [analyticsScopeActivities, analyticsVolumeGrouping, options.userWeekStartsOn, periodWeeks, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
   );
 
-  const analyticsIntensityMetric = options.analyticsHeartRateDistributionMetric === "duration" ? "duration" : "load";
-
-  const intensityNarrative = useMemo(
-    () => buildIntensityNarrative(intensityModel, analyticsIntensityMetric),
-    [analyticsIntensityMetric, intensityModel],
-  );
-
-  const polarizationModel = useMemo(
-    () => buildIntensityPolarizationProfile(intensityModel, analyticsIntensityMetric),
-    [analyticsIntensityMetric, intensityModel],
-  );
-
   const loadDynamicsProfile = useMemo(
     () => buildLoadDynamicsProfile({ loadModel: trainingLoadModel, efficiencyModel }),
     [trainingLoadModel, efficiencyModel],
@@ -305,15 +291,10 @@ export default function AnalyticsPage() {
       {activeTabId === "intensites" ? (
         <AnalyticsIntensitiesTab
           intensityModel={intensityModel}
-          polarizationModel={polarizationModel}
-          intensityInfo={TRAINING_MVP_SECTION_INFO.intensity}
-          intensityNarrative={intensityNarrative}
-          selectedMetric={analyticsIntensityMetric}
-          metricOptions={[
-            { value: "load",     label: "Charge" },
-            { value: "duration", label: "Durée" },
-          ]}
-          onMetricChange={(value) => setOption("analyticsHeartRateDistributionMetric", value)}
+          activities={analyticsScopeActivities}
+          sharedRange={sharedRange}
+          sharedRangeEnd={sharedRange.end}
+          trainingAnalyticsSettings={trainingAnalyticsSettings}
         />
       ) : null}
 
