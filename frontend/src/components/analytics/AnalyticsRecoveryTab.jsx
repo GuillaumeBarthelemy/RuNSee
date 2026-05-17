@@ -302,15 +302,30 @@ function MiniSparkLine({ values = [], color = COL_RECOVERY, height = 28 }) {
   const min = Math.min(...valid, 0);
   const span = max - min || 1;
   const w = 100;
-  const pts = values.map((v, i) => {
+  const coords = values.map((v, i) => {
     if (v == null) return null;
     const x = (i / Math.max(1, values.length - 1)) * w;
     const y = height - ((v - min) / span) * (height - 4) - 2;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
+    return { x, y };
   }).filter(Boolean);
+  if (!coords.length) return null;
+  const linePath = `M ${coords.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L ")}`;
+  // Aire sous la courbe (refermée en bas de la viewBox)
+  const firstX = coords[0].x.toFixed(1);
+  const lastX = coords[coords.length - 1].x.toFixed(1);
+  const areaPath = `${linePath} L ${lastX},${height} L ${firstX},${height} Z`;
+  // ID gradient unique (color + count) pour éviter collisions multi-instances
+  const gradId = `mini-spark-${color.replace("#", "")}-${values.length}`;
   return (
     <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" className="alpine-recovery-mini-spark" aria-hidden="true">
-      <path d={`M ${pts.join(" L ")}`} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor={color} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill={`url(#${gradId})`} />
+      <path d={linePath} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
