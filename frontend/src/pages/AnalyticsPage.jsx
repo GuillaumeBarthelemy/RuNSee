@@ -24,7 +24,6 @@ import {
   buildTrainingLoadStateModel,
 } from "../utils/trainingMetrics.js";
 import { buildLoadDynamicsProfile } from "../utils/loadDynamics.js";
-import { buildRecoveryCorrelationDataset } from "../utils/recoveryCorrelations.js";
 import { buildRecoveryViewModel } from "../utils/recoveryViewModel.js";
 import { getGarminRecoverySnapshots } from "../services/externalProvider.service.js";
 // computeTrainingStateScore conservé dans utils mais plus consommé par Vue
@@ -186,11 +185,6 @@ export default function AnalyticsPage() {
     [trainingLoadModel, efficiencyModel],
   );
 
-  const recoveryCorrelation = useMemo(
-    () => buildRecoveryCorrelationDataset(recoverySnapshots, trainingLoadModel.chartData || [], 56),
-    [recoverySnapshots, trainingLoadModel.chartData],
-  );
-
   const recoveryVm = useMemo(
     () => buildRecoveryViewModel(recoverySnapshots),
     [recoverySnapshots],
@@ -301,9 +295,8 @@ export default function AnalyticsPage() {
       {activeTabId === "recuperation" ? (
         <AnalyticsRecoveryTab
           recoveryVm={recoveryVm}
-          recoveryCorrelation={recoveryCorrelation}
-          activities={analyticsScopeActivities}
           snapshots={recoverySnapshots}
+          sharedRangeEnd={sharedRange.end}
         />
       ) : null}
     </AppShell>

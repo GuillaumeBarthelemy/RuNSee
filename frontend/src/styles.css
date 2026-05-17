@@ -13144,3 +13144,389 @@ button.alert-banner-positive-item {
   font-size: 12px;
   cursor: pointer;
 }
+
+/* =========================================================================
+ * Onglet Sommeil & récupération (Lot 04 V5, PDF page 11)
+ * ========================================================================= */
+.alpine-recovery-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .alpine-recovery-grid { grid-template-columns: 1fr; }
+}
+.alpine-recovery-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.alpine-recovery-right-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 16px;
+}
+.alpine-recovery-card {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+}
+.alpine-recovery-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.alpine-recovery-card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+
+/* §1 KPI row */
+.alpine-recovery-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1280px) { .alpine-recovery-kpi-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px)  { .alpine-recovery-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.alpine-recovery-kpi-card {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 180px;
+}
+.alpine-recovery-kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.alpine-recovery-kpi-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.alpine-recovery-kpi-icon.icon-tone-blue   { color: #1268f3; background: #dbeafe; }
+.alpine-recovery-kpi-icon.icon-tone-green  { color: #15803d; background: #dcfce7; }
+.alpine-recovery-kpi-icon.icon-tone-red    { color: #dc2626; background: #fee2e2; }
+.alpine-recovery-kpi-icon.icon-tone-orange { color: #ea580c; background: #ffedd5; }
+.alpine-recovery-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--al-muted, #64748b);
+}
+.alpine-recovery-kpi-value-row { display: flex; align-items: baseline; gap: 4px; }
+.alpine-recovery-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--al-text, #0f2147);
+  line-height: 1;
+}
+.alpine-recovery-kpi-unit { font-size: 12px; color: var(--al-muted, #64748b); }
+.alpine-recovery-kpi-hint { font-size: 11px; font-weight: 700; }
+.alpine-recovery-kpi-hint.tone-1 { color: #15803d; }
+.alpine-recovery-kpi-hint.tone-2 { color: #65a30d; }
+.alpine-recovery-kpi-hint.tone-3 { color: #475569; }
+.alpine-recovery-kpi-hint.tone-4 { color: #d97706; }
+.alpine-recovery-kpi-hint.tone-5 { color: #dc2626; }
+.alpine-recovery-kpi-delta {
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+  margin-top: auto;
+}
+
+/* Row 2 charts */
+.alpine-recovery-row-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 16px;
+}
+@media (max-width: 1100px) { .alpine-recovery-row-2 { grid-template-columns: 1fr; } }
+.alpine-recovery-chart-legend {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  font-weight: 600;
+}
+.alpine-recovery-chart-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.alpine-recovery-chart-legend .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.alpine-recovery-chart-insight {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  background: #f8fafc;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+/* §6 Lecture récupération */
+.alpine-recovery-lecture-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1280px) { .alpine-recovery-lecture-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px)  { .alpine-recovery-lecture-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.alpine-recovery-lecture-card {
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #ffffff;
+}
+.alpine-recovery-lecture-head { display: flex; align-items: center; gap: 6px; }
+.alpine-recovery-lecture-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.alpine-recovery-lecture-icon.icon-tone-blue   { color: #1268f3; background: #dbeafe; }
+.alpine-recovery-lecture-icon.icon-tone-green  { color: #15803d; background: #dcfce7; }
+.alpine-recovery-lecture-icon.icon-tone-red    { color: #dc2626; background: #fee2e2; }
+.alpine-recovery-lecture-icon.icon-tone-orange { color: #ea580c; background: #ffedd5; }
+.alpine-recovery-lecture-label {
+  font-size: 11px;
+  color: var(--al-muted, #64748b);
+  font-weight: 600;
+}
+.alpine-recovery-lecture-value-row { display: flex; align-items: baseline; gap: 4px; }
+.alpine-recovery-lecture-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--al-text, #0f2147);
+  line-height: 1;
+}
+.alpine-recovery-lecture-unit { font-size: 11px; color: var(--al-muted, #64748b); }
+.alpine-recovery-lecture-hint { font-size: 11px; font-weight: 700; }
+.alpine-recovery-lecture-hint.tone-1 { color: #15803d; }
+.alpine-recovery-lecture-hint.tone-2 { color: #65a30d; }
+.alpine-recovery-lecture-hint.tone-3 { color: #475569; }
+.alpine-recovery-lecture-hint.tone-4 { color: #d97706; }
+.alpine-recovery-lecture-hint.tone-5 { color: #dc2626; }
+.alpine-recovery-lecture-objectif { font-size: 10px; color: var(--al-muted, #64748b); }
+.alpine-recovery-mini-spark { display: block; width: 100%; height: 28px; }
+.alpine-recovery-lecture-delta {
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+  margin-top: auto;
+}
+
+/* Recommendation card */
+.alpine-recovery-recommendation {
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #eaf0fa;
+  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+}
+.alpine-recovery-recommendation.tone-4,
+.alpine-recovery-recommendation.tone-5 {
+  background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+}
+.alpine-recovery-recommendation-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  color: #1e40af;
+}
+.alpine-recovery-recommendation-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.alpine-recovery-recommendation-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-recovery-recommendation-body {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--al-text-soft, #2a3f6b);
+}
+.alpine-recovery-recommendation-cta {
+  align-self: flex-start;
+  margin-top: auto;
+  background: transparent;
+  border: 0;
+  color: var(--al-primary, #1268f3);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* §7 Footer */
+.alpine-recovery-footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.alpine-recovery-footer-icon {
+  color: #1268f3;
+  background: #dbeafe;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.alpine-recovery-footer-text { flex: 1; min-width: 0; }
+.alpine-recovery-footer-text strong { font-size: 13px; color: var(--al-text, #0f2147); }
+.alpine-recovery-footer-text p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--al-text-soft, #2a3f6b);
+  line-height: 1.45;
+}
+.alpine-recovery-footer-cta {
+  background: transparent;
+  border: 0;
+  color: var(--al-primary, #1268f3);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* §2 Right rail + §3 Tips */
+.alpine-recovery-rail,
+.alpine-recovery-tips {
+  background: #ffffff;
+  border: 1px solid #eaf0fa;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.alpine-recovery-rail-title,
+.alpine-recovery-tips-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-recovery-rail-bullets,
+.alpine-recovery-tips-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alpine-recovery-rail-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.alpine-recovery-rail-bullet-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.alpine-recovery-rail-bullet.tk-endurance .alpine-recovery-rail-bullet-icon { color: #15803d; background: #dcfce7; }
+.alpine-recovery-rail-bullet.tk-amber-watch .alpine-recovery-rail-bullet-icon { color: #b45309; background: #fef3c7; }
+.alpine-recovery-rail-bullet.tk-neutral .alpine-recovery-rail-bullet-icon { color: #475569; background: #f1f5f9; }
+.alpine-recovery-rail-bullet-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.alpine-recovery-rail-bullet-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+}
+.alpine-recovery-rail-bullet-body {
+  font-size: 11px;
+  color: var(--al-text-soft, #2a3f6b);
+  line-height: 1.4;
+}
+.alpine-recovery-rail-cta,
+.alpine-recovery-tips-cta {
+  margin-top: auto;
+  background: var(--al-primary-soft, #dbeafe);
+  color: var(--al-primary, #1268f3);
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* §3 Tips */
+.alpine-recovery-tips-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--al-text-soft, #2a3f6b);
+  line-height: 1.4;
+}
+.alpine-recovery-tips-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #1268f3;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
