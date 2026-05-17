@@ -3,6 +3,7 @@ import {
   Bar,
   CartesianGrid,
   ComposedChart,
+  LabelList,
   Legend,
   Line,
   LineChart,
@@ -178,11 +179,29 @@ function SleepRecoveryChart({ daily = [] }) {
               contentStyle={{ fontSize: 12, borderRadius: 6, border: "1px solid #cbd5e1" }}
             />
             <Legend wrapperStyle={{ display: "none" }} />
-            <Bar yAxisId="left" dataKey="sleepHours" fill={COL_SLEEP} fillOpacity={0.6} radius={[3, 3, 0, 0]} maxBarSize={30} />
+            <Bar yAxisId="left" dataKey="sleepHours" fill={COL_SLEEP} fillOpacity={0.6} radius={[3, 3, 0, 0]} maxBarSize={30}>
+              <LabelList
+                dataKey="sleepHours"
+                position="top"
+                fontSize={10}
+                fill="#1e3a8a"
+                fontWeight={700}
+                formatter={(v) => (v != null ? formatHmin(v) : "")}
+              />
+            </Bar>
             <Line yAxisId="right" type="monotone" dataKey="recoveryPct" stroke={COL_RECOVERY} strokeWidth={2}
                   dot={{ r: 3, fill: COL_RECOVERY, strokeWidth: 0 }}
                   activeDot={{ r: 4, fill: COL_RECOVERY, stroke: "#ffffff", strokeWidth: 2 }}
-                  isAnimationActive={false} connectNulls />
+                  isAnimationActive={false} connectNulls>
+              <LabelList
+                dataKey="recoveryPct"
+                position="top"
+                fontSize={10}
+                fill="#166534"
+                fontWeight={700}
+                formatter={(v) => (v != null ? `${Math.round(v)} %` : "")}
+              />
+            </Line>
           </ComposedChart>
         </ResponsiveContainer>
       )}
@@ -243,9 +262,27 @@ function HrvRhrTrendsChart({ daily = [] }) {
             />
             <Legend wrapperStyle={{ display: "none" }} />
             <Line yAxisId="left" type="monotone" dataKey="hrvMs" stroke={COL_HRV} strokeWidth={2}
-                  dot={{ r: 3, fill: COL_HRV, strokeWidth: 0 }} isAnimationActive={false} connectNulls />
+                  dot={{ r: 3, fill: COL_HRV, strokeWidth: 0 }} isAnimationActive={false} connectNulls>
+              <LabelList
+                dataKey="hrvMs"
+                position="top"
+                fontSize={10}
+                fill="#1e3a8a"
+                fontWeight={700}
+                formatter={(v) => (v != null ? Math.round(v) : "")}
+              />
+            </Line>
             <Line yAxisId="right" type="monotone" dataKey="restingHr" stroke={COL_RHR} strokeWidth={2}
-                  dot={{ r: 3, fill: COL_RHR, strokeWidth: 0 }} isAnimationActive={false} connectNulls />
+                  dot={{ r: 3, fill: COL_RHR, strokeWidth: 0 }} isAnimationActive={false} connectNulls>
+              <LabelList
+                dataKey="restingHr"
+                position="bottom"
+                fontSize={10}
+                fill="#9a3412"
+                fontWeight={700}
+                formatter={(v) => (v != null ? Math.round(v) : "")}
+              />
+            </Line>
           </LineChart>
         </ResponsiveContainer>
       )}

@@ -13234,7 +13234,7 @@ button.alert-banner-positive-item {
 }
 .alpine-recovery-kpi-value-row { display: flex; align-items: baseline; gap: 4px; }
 .alpine-recovery-kpi-value {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
   color: var(--al-text, #0f2147);
   line-height: 1;
