@@ -6,6 +6,7 @@
 
 ## Actif / non bloquant
 
+- [ ] Poursuivre la page Performance V5 strict onglet par onglet : prochain lot recommandé `VDOT & profil`, puis `Allures de référence`, `FC de performance`, `Records`.
 - [ ] Surveiller la prochaine fenetre automatique du backfill Garmin historique.
 - [ ] Relancer `detect-provider-activity-duplicates.js` en production apres la prochaine fenetre importante.
 - [ ] Confirmer que le backfill poursuit jusqu'a `GARMIN_BACKFILL_MIN_DATE` sans status `error`.

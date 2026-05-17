@@ -41,6 +41,11 @@ Monorepo `C:\Services\RuNSee` :
 
 ## Frontend critique
 
+- `pages/PerformancePage.jsx` : orchestrateur Performance V5 en cours ; onglet `Vue d'ensemble` livré, filtres compacts, activités canoniques sans `isMerged`.
+- `components/performance/PerformanceOverviewTab.jsx` : rendu Alpine Light de la synthèse Performance.
+- `components/performance/PerformanceMetricCard.jsx`, `PerformanceMiniTrend.jsx`, `PerformanceEmptyState.jsx` : primitives Performance V5.
+- `utils/performanceOverviewModel.js` : modèle pur de la Vue d'ensemble Performance (allure ajustée, VDOT estimé, économie de course, endurance fondamentale, zones FC légères, distribution d'allures, tendances, confiance).
+- `utils/performanceOverviewModel.test.js` : tests anti-doublon `isMerged` et garde-fous économie de course.
 - `pages/ActivityDetailPage.jsx` : charge detail activite, snapshots Garmin, action enrichment Garmin ciblee.
 - `components/ActivityDetailCard.jsx` : compose la fiche activite.
 - `components/ActivityDetailTabs.jsx` : onglets Carte/Splits/Intra/RPE/Garmin.

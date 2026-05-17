@@ -1,5 +1,20 @@
 # Regression Risks
 
+## Page Performance V5 strict — Vue d'ensemble
+
+- Zone : `frontend/src/pages/PerformancePage.jsx`, `frontend/src/utils/performanceOverviewModel.js`, `frontend/src/components/performance/*`.
+- Risque : reintroduire un double comptage Garmin/Strava dans les signaux Performance.
+- Garde-fous présents : `getCanonicalPerformanceActivities` exclut `isMerged === true` et la page l'utilise avant best efforts, confiance, enrichissement record et modèle Vue d'ensemble.
+- Validation requise : vérifier qu'une activité Garmin soft-merged n'apparaît pas dans les compteurs, records ou métriques Performance.
+
+- Risque : afficher une valeur Performance inventée quand le signal n'est pas calculable.
+- Garde-fous présents : chaque signal du modèle retourne `hasData=false` + `emptyReason`; l'UI affiche un état de données insuffisantes plutôt qu'une valeur de substitution.
+- Validation requise : tester une période sans cardio fiable, sans records route ou sans sorties comparables.
+
+- Risque : dériver la page Performance vers Analyse/Progression.
+- Garde-fous présents : aucun bloc sommeil, VFC, énergie, charge, cumul annuel, volume hebdo ou récupération globale n'est rendu dans la Vue d'ensemble.
+- Validation requise : comparer visuellement avec les onglets Analyse et Progression pour éviter les doublons fonctionnels.
+
 ## Page Analyse Alpine Light V5 (Lot 04, livre 2026-05-17)
 
 ### Helpers metier analytics

@@ -17,18 +17,18 @@ Source de verite :
 | Champ | Valeur |
 |---|---|
 | Chantier | Refonte UX/UI Alpine Light |
-| Statut global | **Lot 04 V5 livre et valide visuellement utilisateur 2026-05-17** |
-| Dernier lot traite | **Lot 04 V5 — Refonte complete Page Analyse 5 onglets** (Vue d'ensemble, Charges, Tendances, Intensites, Sommeil & recuperation) |
-| Dernier commit | `c9c4321 fix(analytics): Sommeil — align range-bar gradients with physiological direction` |
+| Statut global | **Performance V5 strict demarre — Vue d'ensemble livree techniquement 2026-05-17** |
+| Dernier lot traite | **Performance V5 strict — Vue d'ensemble** (allure ajustee, VDOT estime, economie de course, endurance fondamentale, apercus FC/allures/performances) |
+| Dernier commit | En attente commit/push du lot Performance V5 strict - Vue d'ensemble |
 | Note importante | Lot 04 V5 : 5 onglets refondus mockup-faithful, seuils valides scientifiquement (Seiler, Coggan, Mujika, Gabbett, Foster, Esteve-Lanao, Millet, Tudor-Locke, NSF/AASM, Plews, Buchheit, Halson, Le Meur). 4 nouveaux helpers utils (`analyticsFocus`, `analyticsTrends`, `analyticsIntensities`, `analyticsRecovery`). Bridge Python Garmin corrige (DETAIL endpoint pour `activityTrainingLoad`). Tooltips (i) et CTAs reportes en TODO globales. |
 | Process acte (2026-05-16) | **Double validation post-deploy** : (i) quality gate, (ii) auto-comparaison capture prod vs mockup, (iii) correctif cible si ecart, (iv) validation utilisateur. Voir `.ai/dev_rules.md`. |
 | Derniere archive review | `runsee-source-review-analysis-confidence-final.zip` (chantier precedent) |
-| Dernier test frontend | **211/211 Vitest verts** |
+| Dernier test frontend | **214/214 Vitest verts** |
 | Dernier test backend | **31/31 verts** |
 | Dernier build | OK (Vite, ~470 ms, charts bundle 382 KB gzipped 111 KB) |
 | Dernier deploy | CI/CD GitHub Actions verte, prod VM healthy |
-| Derniere decision GO/NO-GO | **GO Lot 04 V5** valide visuellement 2026-05-17 |
-| Documents references | **`.ai/dev_rules.md`** (regles consolidees), `.ai/current_context.md` (section Lot 04), `.ai/handoff.md` (passage CODEX) |
+| Derniere decision GO/NO-GO | **GO Performance Vue d'ensemble** apres validation matrice blocs utilisateur 2026-05-17 |
+| Documents references | **`.ai/dev_rules.md`** (regles consolidees), `.ai/current_context.md` (section Performance V5 strict), `.ai/handoff.md` (passage CODEX) |
 
 ---
 
@@ -60,7 +60,7 @@ Source de verite :
 
 ### Conflit detecte plan/PDF (plan prime)
 
-- Performance : PDF mentionne 5 sous-onglets (avec "Records") ; le plan en valide 4 (Vue d'ensemble / VDOT & profil / Allures de reference / FC de performance). Decision : suivre le plan, integrer les records dans la "Vue d'ensemble" comme prevu.
+- Performance : le plan MAJ `05_PAGE_PERFORMANCE_V5_STRICT_MAJ.md` valide 5 sous-onglets (Vue d'ensemble / VDOT & profil / Allures de reference / FC de performance / Records). Decision 2026-05-17 : traiter chaque onglet comme un lot dedie. Aucun onglet vide ou placeholder ne doit etre expose avant son lot.
 - Progression : PDF mentionne Cumul annuel / Volume / Regularite / Comparaisons ; le plan valide Cumul annuel / Evolution depuis le debut de l'annee / Comparaisons / Tendances long terme. Decision : suivre le plan.
 
 ---
@@ -276,7 +276,7 @@ Le Lot 3 d'origine (commit `810e4fe`) ne correspondait pas au mockup. Repris int
 | Analyse - Tendances | a faire | a faire | |
 | Analyse - Intensites | a faire | a faire | |
 | Analyse - Sommeil & recuperation | a faire | a faire | |
-| Performance - Vue d'ensemble | a faire | a faire | |
+| Performance - Vue d'ensemble | code OK | recette utilisateur a faire | Premier onglet livre sans placeholder ; autres onglets non exposes avant leurs lots dedies. |
 | Performance - VDOT & profil | a faire | a faire | |
 | Performance - Allures de reference | a faire | a faire | |
 | Performance - FC de performance | a faire | a faire | |
@@ -298,13 +298,13 @@ Le Lot 3 d'origine (commit `810e4fe`) ne correspondait pas au mockup. Repris int
 | Controle | Resultat | Commentaire |
 |---|---|---|
 | Aucune activite doublonnee visible | a faire | |
-| Activites merged exclues | a faire | |
+| Activites merged exclues | OK technique | Helpers Performance filtrent explicitement `isMerged !== true`. |
 | Garmin-only reel visible | a faire | |
 | Randonnees exclues des records route | a faire | |
 | Pas de double comptage volume | a faire | |
 | Pas de double comptage charge | a faire | |
-| Analyse / Performance / Progression non redondants | a faire | |
-| Performance sans Puissance | a faire | |
+| Analyse / Performance / Progression non redondants | OK pour Vue d'ensemble Performance | Bloc centre sur niveau/repere performance, sans reprendre les graphes Analyse/Progression. |
+| Performance sans Puissance | OK | Aucun libelle/bloc Puissance ajoute dans Vue d'ensemble. |
 | YTD absent de l'UI | a faire | |
 | Reglages 5 onglets conserves | a faire | |
 
@@ -312,18 +312,18 @@ Le Lot 3 d'origine (commit `810e4fe`) ne correspondait pas au mockup. Repris int
 
 ## 9. Checklist finale
 
-- [ ] Tests frontend OK
-- [ ] Build frontend OK
+- [x] Tests frontend OK
+- [x] Build frontend OK
 - [ ] Tests backend OK
 - [ ] Prisma SQLite OK
 - [ ] Prisma PostgreSQL OK
 - [ ] Compare schemas OK
-- [ ] Git diff check OK
+- [x] Git diff check OK
 - [ ] Recette desktop OK
 - [ ] Recette mobile OK
 - [ ] Recette donnees reelles OK
 - [ ] Documentation `docs/quality` mise a jour
-- [ ] `.ai/*.md` mis a jour
+- [x] `.ai/*.md` mis a jour
 - [ ] Archive review generee
 - [ ] Archive review controlee
 - [ ] Repo clean
@@ -334,14 +334,13 @@ Le Lot 3 d'origine (commit `810e4fe`) ne correspondait pas au mockup. Repris int
 ## 10. Etat de reprise rapide
 
 ```text
-Derniere action realisee : Lot 2-bis termine - sidebar/topbar refondues mockup-faithful (V1-V5 + V10 validees user)
+Derniere action realisee : Performance V5 strict - Vue d'ensemble livree techniquement, tests frontend/build OK.
 Dernier fichier modifie : SUIVI_CHANTIER_ALPINE_LIGHT.md
-Dernier lot en cours : Lot 2-bis (termine, en attente commit + recette utilisateur)
-Prochaine action exacte : Commit "feat(ui): rebuild alpine light layout per mockup (Lot 2-bis)", push, puis STOP recette visuelle utilisateur sur sidebar + topbar avant de demarrer Lot 3-bis
-Blocage eventuel : Aucun. Recette utilisateur OBLIGATOIRE sur sidebar/topbar avant Lot 3-bis (le user a explicitement demande "valider a chaque fin de lot").
-Tests a relancer apres codage Lot 3-bis : npm test, npm run build, ESLint sur fichiers touches
-Pages a verifier en navigation reelle : / (Accueil), /activities, /analytics, /performance, /progression (placeholder), /admin, /glossaire
-Recette visuelle requise : sidebar (brand RunNSee + ALPINE LIGHT, nav 7 items, ObjectiveCard avec/sans course, AdviceCard, UserMenu dropdown, bouton sync), topbar (titre + date longue francaise + 3 icones sans meteo)
-Lot 3-bis composants prevus : KpiGaugeCircular (jauges 72%/80%), TodayReadingCard (Lecture du jour mockup-faithful avec icone + verdict + ConfidenceDots + bouton ->), KpiChartCard (4 cartes graphiques charge/fatigue/volume/denivele 14j), RecoveryKpiCard (4 cards recup compactes avec lien detail), SuggestedWorkoutCard (sortie suggeree placeholder), ConfidenceDots (5 dots colores)
+Dernier lot en cours : Performance V5 strict - Vue d'ensemble (pret commit/push puis recette utilisateur).
+Prochaine action exacte : Commit/push du lot Vue d'ensemble, puis recette visuelle utilisateur sur /performance avant d'ouvrir le lot VDOT & profil.
+Blocage eventuel : Aucun cote code. Point d'attention : les autres sous-onglets Performance restent volontairement non exposes tant que leurs lots dedies ne sont pas livres.
+Tests a relancer apres prochain lot Performance : eslint fichiers touches, npm test -- --run, npm run build, git diff --check.
+Pages a verifier en navigation reelle : /performance prioritaire, puis /analytics et /progression pour non-redondance.
+Lot Performance suivant recommande : VDOT & profil, avec matrice de blocs prealable puis developpement apres validation.
 Backlog dettes journalisees : docs/backlog/BACKLOG_FONCTIONNALITES_FUTURES.md (Meteo, Sortie suggeree, Disponibilite a valider sci, Page Progression, Algorithme conseil)
 ```

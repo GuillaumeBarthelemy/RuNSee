@@ -1,5 +1,20 @@
 # Current Context
 
+## Lot Performance V5 strict — Vue d'ensemble (2026-05-17)
+
+- Plan actif MAJ lu : `docs/plans/active/runsee_ux_page_plans/05_PAGE_PERFORMANCE_V5_STRICT_MAJ.md` + PDF corrigé pages 12 à 16.
+- Décision utilisateur avant dev : pas de placeholder automatique. Chaque bloc doit être prouvé calculable ou explicitement reporté après analyse.
+- Onglet livré dans cette passe : `Performance > Vue d'ensemble` uniquement.
+- La page Performance utilise désormais une barre de filtres compacte et un sous-onglet `Vue d'ensemble`; les autres onglets Performance seront ajoutés lot par lot pour éviter les demi-pages.
+- Nouveau modèle métier : `frontend/src/utils/performanceOverviewModel.js`.
+  - Exclut systématiquement les activités `isMerged === true`.
+  - Construit des signaux réels : allure ajustée, VDOT estimé, économie de course, endurance fondamentale.
+  - Garmin/Strava sont traités comme enrichissements d'une activité canonique unique, pas comme deux séances séparées.
+  - Les blocs non calculables retournent un état de données insuffisantes avec raison, sans inventer de valeur.
+- Nouveaux composants : `frontend/src/components/performance/PerformanceOverviewTab.jsx`, `PerformanceMetricCard.jsx`, `PerformanceMiniTrend.jsx`, `PerformanceEmptyState.jsx`.
+- Tests ajoutés : `frontend/src/utils/performanceOverviewModel.test.js`.
+- Validations effectuées : ESLint ciblé zéro warning, `npm test -- --run` 214/214, `npm run build` OK, `git diff --check` OK.
+
 ## Lot 04 Alpine Light V5 — Page Analyse refonte complete (2026-05-16/17)
 
 - Refonte integrale des 5 onglets de la page Analyse selon le mockup PDF V5 (pages 7 a 11) :
