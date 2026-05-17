@@ -100,9 +100,66 @@ Monorepo `C:\Services\RuNSee` :
 - `/sync/all` : retourne un mode provider-aware (`strava_primary_garmin_enrichment_with_fallback`, `strava_only`, `garmin_primary`, `no_provider`).
 - `frontend/src/utils/activityLinks.js` : construction d'identifiants/liens publics multi-source pour les composants UI.
 
+## Page Analyse Alpine Light V5 (Lot 04, refondu 2026-05-16/17)
+
+### Onglets et composants
+
+- `pages/AnalyticsPage.jsx` : orchestrateur, monte les 5 onglets, calcule `analyticsScopeActivities`, `trainingLoadModel`, `chargesTrainingLoadModel` (1 an glissant dedie a Charges), `weeklySummary`, `intensityModel`, `recoveryVm`, `recoverySnapshots`.
+- `components/analytics/AnalyticsOverviewTab.jsx` : Vue d'ensemble (PDF p.7).
+- `components/analytics/AnalyticsChargesTab.jsx` : Charges (PDF p.8).
+- `components/analytics/AnalyticsTrendsTab.jsx` : Tendances (PDF p.9).
+- `components/analytics/AnalyticsIntensitiesTab.jsx` : Intensites (PDF p.10).
+- `components/analytics/AnalyticsRecoveryTab.jsx` : Sommeil & recuperation (PDF p.11).
+
+### Sub-composants partages Alpine Light V5
+
+- `components/analytics/OverviewIndicatorCard.jsx` : KPI card uniforme (label + valeur + hint + range bar + delta).
+- `components/analytics/OverviewRangeBar.jsx` : SVG gradient + curseur HTML, 3 gradients (`warm`, `cool`, `polar`). Direction physiologique : LOW good = warm, HIGH good = cool, OPTIMAL middle = polar.
+- `components/analytics/OverviewChargeFatigueRow.jsx` : ligne Charge/Fatigue Vue d'ensemble + carte Etat actuel.
+- `components/analytics/OverviewPaceAdjustedCard.jsx` : carte Allure ajustee (Minetti 2002).
+- `components/analytics/OverviewDecouplingCard.jsx` : carte Derive cardiaque (Allen & Coggan 2010).
+- `components/analytics/OverviewEpocCard.jsx` : carte Charge d'entrainement Garmin (Firstbeat Training Load).
+- `components/analytics/OverviewIntensityDonut.jsx`, `OverviewTakeawayBullets.jsx`.
+- `components/analytics/TrendsRegularityHeatmap.jsx` : heatmap calendrier SVG, responsive via ResizeObserver, tooltip HTML enrichi, marqueur "aujourd'hui", palette WCAG verte.
+- `components/visuals/alpine/AlpineSelect.jsx` : dropdown stylise reutilisable (chevron + a11y native).
+
+### Helpers metier (utils/)
+
+- `utils/analyticsFocus.js` : `buildPeriodPaceAdjustedSummary`, `buildPeriodDecouplingSummary`, `buildPeriodEpocSummary` (consomme `activityTrainingLoad`), `buildOverviewTakeaways`, `buildFourWeeksBackComparison` (avec ctlRef, tsbRef), `formatRecoveryTime`. Tests : `analyticsFocus.test.js`.
+- `utils/analyticsTrends.js` : `buildMonthlyTrendsMatrix`, `buildPeriodComparison`, `buildRegularityStats` (active days, longest streak), `buildHeatmapMatrix` (avec per-day count/distance/duration), `buildRolling30Comparison`.
+- `utils/analyticsIntensities.js` : `ZONE_COLORS`, `ZONE_LABELS`, `buildIntensityKpi` (filtre par range), `buildIntensityWeeklySeries`, `buildIntensityRouteVsTrail` (returns null si l'un des deux types manque), `buildIntensityRolling30Comparison`, `shareZ1Z2/Z3Z5/Z4Z5`, `activeZonesCount`, `classifyEndurance/Moderate/Variety`, `buildFooterTakeaway`. Convention "Allure soutenue" = Z4+Z5 (above LT2, Seiler/Coggan/Daniels/Skiba).
+- `utils/analyticsRecovery.js` : `buildRecoveryRolling30` (accepte un `readinessOverride` issu du composite `recoveryVm.readiness.score`), `buildRecoveryDailySeries`, classifiers (`classifySleep`, `classifyHrv`, `classifyRestingHr`, `classifyStress`, `classifyReadiness`), `buildRecoveryRecommendation` (4 branches Halson 2014 / Plews 2013 / Buchheit 2014 / Le Meur 2013). Helper `snapshotDate(s)` accepte les deux shapes `s.date` (API) et `s.snapshotDate` (raw DB).
+
+### Sources scientifiques referencees dans les commentaires JSDoc
+
+- Sommeil : NSF 2015, AASM 2015.
+- Charges/CTL/ATL/TSB : Banister 1991, Allen & Coggan 2010, Mujika 2017, Friel 2009, Gabbett 2016, Foster 2001, Skiba 2007.
+- Intensites zones FC : Seiler 2010, Stoggl & Sperlich 2014, Treff 2019, Daniels 2014.
+- Volume/Frequence/Denivelle : Esteve-Lanao 2007, Jones 2006, Haugen 2022, Millet 2011, OMS 2020, Tudor-Locke 2011.
+- HRV/Recuperation : Plews & Laursen 2013, Buchheit 2014, Le Meur 2013, Halson 2014.
+- Decouplage cardiaque : Allen & Coggan 2010 (Pa:Hr).
+- Allure ajustee : Minetti 2002 (GAP).
+- EPOC/Training Load : Borsheim & Bahr 2003 (EPOC originel), Firstbeat 2014 (Training Load successeur).
+
+## Garmin bridge (Python) — endpoint DETAIL
+
+- `backend/scripts/providers/garminconnect_bridge.py` : `api.get_activities_by_date` (LIST) + `api.get_activity(id)` (DETAIL) pour merge `summaryDTO` avec `activityTrainingLoad`, `trainingEffect`, `beginPotentialStamina`, etc. Pacing 1s entre appels DETAIL pour eviter rate-limit. Stop propre sur 429.
+- `backend/src/services/providers/garminActivityEnrichment.service.js` : `MAX_LOOKBACK_DAYS=180` (Garmin hard cap). Mode `recent_missing` capable de couvrir jusqu'a 180 j en un appel apres relevement du cap.
+- Champs Firstbeat exposes par le normalizer : `activityTrainingLoad`, `trainingEffect`, `beginPotentialStamina`, `endPotentialStamina`, `differenceBodyBattery`, `moderateIntensityMinutes`, `vigorousIntensityMinutes` (+ legacy epoc/recoveryTime/lactate gardes si la montre les expose).
+
+## Scripts maintenance ops (backend/scripts/maintenance/)
+
+- `backfill-cardiac-decoupling.js` : batch backfill du champ `cardiacDecouplingPercent` sur Activity (Allen & Coggan 2010).
+- `trigger-garmin-enrichment.js` : declenche l'enrichissement Garmin pour tous les users connectes (`--days=180 --force`).
+- `inspect-garmin-enrichments.js` : compte les enrichments, expose un sample (epoc, recoveryTime, AET).
+- `renormalize-garmin-recovery.js` : renormalise les snapshots recovery existants.
+- `diagnose-overview-data.js`, `diagnose-enrichments-content.js`, `diagnose-raw-garmin-keys.js`, `diagnose-recovery-snapshots.js`, `check-training-load.js`, `check-tl-coverage.js`, `probe-bridge-detail.js`, `inspect-garmin-sleep-payload.js` : scripts one-shot diagnostiques, utilisables via `docker exec runsee-backend node scripts/maintenance/<script>.js`.
+
 ## Contraintes de conception
 
 - Strava reste source principale des activites.
 - Garmin non officiel reste un enrichissement temporaire.
 - Les dashboards ne doivent pas consommer directement le payload Garmin brut.
 - Les imports DB reels doivent etre explicites et precedes d'un backup.
+- Page Analyse : ne pas reintroduire de calcul metier dans les composants Tab — passer par les utils dedies (`analyticsFocus`, `analyticsTrends`, `analyticsIntensities`, `analyticsRecovery`).
+- Tous les KPI Analyse utilisent la comparaison **rolling 30 j vs 30 j precedents** (eviter le biais "mois courant partiel").

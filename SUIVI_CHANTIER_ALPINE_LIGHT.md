@@ -17,15 +17,18 @@ Source de verite :
 | Champ | Valeur |
 |---|---|
 | Chantier | Refonte UX/UI Alpine Light |
-| Statut global | En cours - Lot 3-bis termine, en attente recette utilisateur |
-| Dernier lot traite | Lot 3-bis - Refonte page Aujourd'hui mockup-faithful |
-| Dernier commit | `b356d4b feat(ui): rebuild alpine light layout per mockup (Lot 2-bis)` puis Lot 3-bis a commiter |
-| Note importante | Lot 3-bis : refonte complete DashboardPage selon mockup avec 6 KpiCardCompact + TodayReadingCard + 4 KpiChartCard + 4 RecoveryKpiCard + SuggestedWorkoutCard + CoachAdviceBar. Helper Disponibilite (computeAvailabilityScore) cree avec validation scientifique (Plews+Buchheit+Banister). |
+| Statut global | **Lot 04 V5 livre et valide visuellement utilisateur 2026-05-17** |
+| Dernier lot traite | **Lot 04 V5 — Refonte complete Page Analyse 5 onglets** (Vue d'ensemble, Charges, Tendances, Intensites, Sommeil & recuperation) |
+| Dernier commit | `c9c4321 fix(analytics): Sommeil — align range-bar gradients with physiological direction` |
+| Note importante | Lot 04 V5 : 5 onglets refondus mockup-faithful, seuils valides scientifiquement (Seiler, Coggan, Mujika, Gabbett, Foster, Esteve-Lanao, Millet, Tudor-Locke, NSF/AASM, Plews, Buchheit, Halson, Le Meur). 4 nouveaux helpers utils (`analyticsFocus`, `analyticsTrends`, `analyticsIntensities`, `analyticsRecovery`). Bridge Python Garmin corrige (DETAIL endpoint pour `activityTrainingLoad`). Tooltips (i) et CTAs reportes en TODO globales. |
+| Process acte (2026-05-16) | **Double validation post-deploy** : (i) quality gate, (ii) auto-comparaison capture prod vs mockup, (iii) correctif cible si ecart, (iv) validation utilisateur. Voir `.ai/dev_rules.md`. |
 | Derniere archive review | `runsee-source-review-analysis-confidence-final.zip` (chantier precedent) |
-| Dernier test frontend | 156/156 (chantier precedent, post correctif Charge) |
-| Dernier test backend | 21/21 |
-| Dernier build | OK (Vite, chantier precedent) |
-| Derniere decision GO/NO-GO | GO chantier precedent (`runsee-stable-analysis-confidence` pose) |
+| Dernier test frontend | **211/211 Vitest verts** |
+| Dernier test backend | **31/31 verts** |
+| Dernier build | OK (Vite, ~470 ms, charts bundle 382 KB gzipped 111 KB) |
+| Dernier deploy | CI/CD GitHub Actions verte, prod VM healthy |
+| Derniere decision GO/NO-GO | **GO Lot 04 V5** valide visuellement 2026-05-17 |
+| Documents references | **`.ai/dev_rules.md`** (regles consolidees), `.ai/current_context.md` (section Lot 04), `.ai/handoff.md` (passage CODEX) |
 
 ---
 

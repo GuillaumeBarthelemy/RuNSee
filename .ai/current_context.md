@@ -1,5 +1,65 @@
 # Current Context
 
+## Lot 04 Alpine Light V5 — Page Analyse refonte complete (2026-05-16/17)
+
+- Refonte integrale des 5 onglets de la page Analyse selon le mockup PDF V5 (pages 7 a 11) :
+  - **Vue d'ensemble** (p.7) : OverviewIndicatorCard reutilises, range bars graduees, Charge & Fatigue avec histogrammes 7j et moyenne, Focus Performance & Efficience (Pace adjusted / Decoupling / EPOC pivote en Training Load).
+  - **Charges** (p.8) : 5 KPI (Charge 7j, CTL, ATL, TSB, Charge moy/seance) + chart evolution ATL/CTL/TSB recharts + histo hebdo 6 sem + right rail "A retenir" + seuils recommandes + etat actuel.
+  - **Tendances** (p.9) : 4 KPI sparklines + Progression du volume + Comparaison mensuelle 12 mois N vs N-1 + Heatmap regularite & constance responsive + Comparaison de periodes (4 sub-cards).
+  - **Intensites** (p.10) : Repartition zones FC (donut 5 zones), 3 mini-KPI (Temps en zones, Seances de qualite, Allure soutenue), Evolution hebdomadaire stacked, Intensite dominante route vs trail (split donut), Legende zones FC sync settings user, Lecture intensite (3 sub-cards classifiees), Footer dynamique.
+  - **Sommeil & recuperation** (p.11) : 5 KPI (Sommeil, HRV, FC repos, Stress, Etat de recuperation), 2 charts dual axis (Evolution sommeil+recup + HRV+FC repos), Lecture recuperation (4 sub-cards + 1 Recommandation dynamique), right rail "A retenir" + "Conseils recuperation", footer Conseil du jour.
+
+### Decisions metier scientifiques actees
+
+- Tous les seuils KPI alignes sur la litterature : Seiler 2010 (polarized), Allen & Coggan 2010 (CTL/TSB), Mujika 2017 (TSB taper), Gabbett 2016 (ACWR), Foster 2001 (session-RPE), Esteve-Lanao 2007 (volume amateur), Millet 2011 (trail/denivele), Tudor-Locke 2011 (regularite), NSF/AASM 2015 (sommeil), Plews & Laursen 2013 (HRV), Buchheit 2014 (readiness multi-signal), Halson 2014 (composite recovery scoring), Le Meur 2013 (HRV-load monitoring).
+- "Allure soutenue" recalibre = Z4+Z5 (above LT2), pas Z3+Z4+Z5 (Seiler 2010, Allen & Coggan 2010, Daniels 2014, Skiba 2007).
+- Carte EPOC pivot vers Garmin Training Load (Firstbeat 2014) : l'API web Garmin n'exposant plus EPOC brut ni recoveryTime, on consomme `activityTrainingLoad` du summaryDTO via `api.get_activity()`. Bridge Python corrige pour appeler le DETAIL endpoint apres la LIST.
+- Rolling 30j vs 30j precedents pour tous les deltas (cohrent multi-onglets, evite le biais "mois courant partiel vs mois precedent complet").
+- Indicateurs avec direction physiologique explicite pour les gradients de range bar :
+  - LOW good = `warm` gradient (FC repos, Stress)
+  - HIGH good = `cool` gradient (Sommeil, HRV, Etat de recuperation)
+  - OPTIMAL middle = `polar` gradient (TSB autour de 0)
+
+### Process de qualite acte pour la suite
+
+- Avant DEV : analyse rigoureuse du mockup (inventaire visuel + verifications scientifiques + couleurs + decisions a valider en bloc).
+- Apres DEV : auto-comparaison capture prod vs mockup avec tableau d'ecarts (severite 🔴/🟡/⚪) et correctif cible en 1 commit.
+- Regles UX internes :
+  - Optimiser l'espace (jamais d'images etirees, preservAspectRatio meet par defaut).
+  - Pour les graphiques temporels : 8-12 points pour une carte 2/3 colonne.
+  - Mockup KPI principaux : value >= 24px, icon pill >= 40px, SVG interne >= 20px.
+  - Gradient range bar : choisir warm/cool/polar selon direction physiologique, pas selon estethique.
+
+### Helpers nouveaux
+
+- `frontend/src/utils/analyticsFocus.js` (etendu) : `buildPeriodPaceAdjustedSummary`, `buildPeriodDecouplingSummary`, `buildPeriodEpocSummary` (pivot Training Load), `buildOverviewTakeaways`, `buildFourWeeksBackComparison` (avec ctlRef, tsbRef).
+- `frontend/src/utils/analyticsTrends.js` : `buildMonthlyTrendsMatrix`, `buildPeriodComparison`, `buildRegularityStats`, `buildHeatmapMatrix`, `buildRolling30Comparison`.
+- `frontend/src/utils/analyticsIntensities.js` : `buildIntensityKpi` (filtre par range), `buildIntensityWeeklySeries`, `buildIntensityRouteVsTrail`, `buildIntensityRolling30Comparison`, classifiers + footer takeaway.
+- `frontend/src/utils/analyticsRecovery.js` : `buildRecoveryRolling30` (avec readinessOverride composite), `buildRecoveryDailySeries`, classifiers (sleep/hrv/rhr/stress/readiness), `buildRecoveryRecommendation` (4 branches Halson 2014).
+
+### Bug fixes notables livres dans ce lot
+
+- Onglet Sommeil rendait empty state car le serializer API expose `date` alors que le helper lisait `snapshotDate` (cf. `serializeRecoverySnapshot` dans `garminRecoveryBackfill.service.js`). Fix : helper accepte les deux.
+- Garmin bridge Python : `api.get_activity()` n'expose pas EPOC mais `activityTrainingLoad`. Bridge etend `summaryDTO` parsing.
+- KPI Tendances biaises par mois courant partiel : passage en rolling 30 j vs 30 j precedents (cf. `buildRolling30Comparison`).
+- Charges tab : nouveau modele 1 an dedie (`chargesTrainingLoadModel`) pour decoupler le selecteur local 6 sem/1 an de la periode globale.
+- Heatmap regularite : ResizeObserver + cellSize dynamique (CELL_MIN=9, CELL_MAX=26 cap pour cellules toujours carrees independamment de la periode 6 ou 12 mois).
+- Intensites "Seances de qualite" filtre maintenant par range (etait sur cumul global).
+
+### Quality gate final
+
+- 211/211 tests frontend Vitest verts.
+- ESLint --max-warnings 0 sur tout le repo.
+- Build Vite OK (~470 ms typique, charts bundle ~382 KB).
+- Backend tests : 31/31 verts.
+- Deploy CI/CD GitHub Actions verte sur chaque commit.
+- 5 onglets deployes en production sur la VM (containers Docker), valides visuellement par l'utilisateur final.
+
+### TODO globales reportees (non bloquant pour livraison Lot 04)
+
+- Tooltips pedagogiques (i) sur l'ensemble des pages RunNSee : passe globale unique apres stabilisation.
+- CTAs "Voir l'analyse complete" / "En savoir plus" / "Voir tous les conseils" : placeholders sans onClick, a brancher quand destinations definies.
+
 ## Validation post-backfill Garmin
 
 - Plan traite : `docs/plans/active/runsee_analyse_actualisee_plan_suite.md`, a archiver sous `docs/plans/old/` apres commit.

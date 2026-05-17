@@ -1,5 +1,49 @@
 # Regression Risks
 
+## Page Analyse Alpine Light V5 (Lot 04, livre 2026-05-17)
+
+### Helpers metier analytics
+
+- Zone : `frontend/src/utils/analyticsFocus.js`, `analyticsTrends.js`, `analyticsIntensities.js`, `analyticsRecovery.js`.
+- Risque : modification d'un seuil de classification sans verifier l'impact sur les bullets "A retenir" et les cards "Lecture xxx" qui reutilisent les memes classifiers.
+- Garde-fous presents : tous les seuils ont leur source en JSDoc, tests Vitest sur les helpers principaux (`analyticsFocus.test.js`).
+- Validation requise : si modification d'un classifier, verifier (i) le tone applique sur la range bar, (ii) le hint texte, (iii) la coherence avec le bullet correspondant dans le rail "A retenir".
+
+### Direction gradient range bar
+
+- Zone : tous les composants `Tab` qui utilisent `OverviewRangeBar`.
+- Risque : choisir `warm` au lieu de `cool` (ou inverse) lance une incoherence majeure : le curseur tombe dans le rouge alors que le hint dit "Excellente". Erreur deja observee et corrigee sur FC repos, HRV, Sommeil.
+- Garde-fous presents : convention documentee dans `.ai/dev_rules.md` section 3.3.
+- Validation requise : pour chaque range bar, placer une valeur "good" (cote vert attendu) et verifier visuellement que le curseur tombe bien dans le vert.
+
+### Calcul rolling 30 j
+
+- Zone : `buildRolling30Comparison` dans `analyticsTrends.js`, `buildIntensityRolling30Comparison`, `buildRecoveryRolling30`.
+- Risque : revenir a un calcul base "mois calendaire" reintroduit le biais "mois courant partiel" qui sous-estime tout (Volume -39 % deja observe avec un comportement reel +14 %).
+- Garde-fous presents : convention explicite "rolling 30 j vs 30 j precedents" actee dans `.ai/dev_rules.md` section 4.3.
+- Validation requise : tout nouveau KPI delta doit utiliser le pattern rolling 30 j et non un mois calendaire.
+
+### Garmin bridge DETAIL endpoint
+
+- Zone : `backend/scripts/providers/garminconnect_bridge.py`, `garminActivityEnrichment.service.js`.
+- Risque : `api.get_activity()` n'expose pas EPOC (champ obsolete cote Garmin web API). Confusion possible avec `api.get_activity_details(id)` qui renvoie les metriques granulaires (samples, polyline) sans `summaryDTO`.
+- Garde-fous presents : multi-method probe (`get_activity / get_activity_evaluation / get_activity_summary`) avec fallback automatique. Pacing 1s entre appels DETAIL. Stop propre sur 429.
+- Validation requise : si modification du bridge, verifier que la couverture `activityTrainingLoad` reste >= 90 % sur les activites enrichies (script `check-training-load.js`).
+
+### Serialisation snapshots recovery
+
+- Zone : `serializeRecoverySnapshot` dans `backend/src/services/providers/garminRecoveryBackfill.service.js`.
+- Risque : le serializer renomme `snapshotDate` (Prisma DB) -> `date` (API). Tout helper frontend qui lit `snapshotDate` est invalide (bug observe : onglet Sommeil rendait empty state malgre 191 snapshots en DB).
+- Garde-fous presents : le helper `snapshotDate(s)` dans `analyticsRecovery.js` accepte les deux shapes (`s.date || s.snapshotDate`).
+- Validation requise : si modification du serializer, repercuter sur les helpers analytics.
+
+### Heatmap regularite responsive
+
+- Zone : `TrendsRegularityHeatmap.jsx`, helper `buildHeatmapMatrix`.
+- Risque : changer `preserveAspectRatio` de `meet` a `none` ou `slice` etire/decoupe les cellules — ecart visuel majeur.
+- Garde-fous presents : cellules toujours carrees via `preserveAspectRatio="xMidYMid meet"`. ResizeObserver + cellSize clampe `[CELL_MIN=9, CELL_MAX=26]`.
+- Validation requise : tester sur les 2 modes (6 mois ~26 cols / 12 mois ~52 cols) ET sur largeur viewport reduite (responsive).
+
 ## Documentation / quality gate
 
 - Zone : `docs/quality/`, `docs/decisions/`, `docs/plans/*`, `.ai/*`.

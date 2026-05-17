@@ -27,6 +27,7 @@
 
 ## Termines recemment
 
+- [x] **Lot 04 Alpine Light V5 — Page Analyse refonte complete (2026-05-16/17)**. 5 onglets refondus selon mockup PDF V5 (Vue d'ensemble, Charges, Tendances, Intensites, Sommeil & recuperation). Seuils scientifiques valides (Seiler, Coggan, Mujika, Gabbett, Foster, Esteve-Lanao, Millet, Tudor-Locke, NSF/AASM, Plews, Buchheit, Halson, Le Meur). 4 nouveaux helpers utils (`analyticsFocus`, `analyticsTrends`, `analyticsIntensities`, `analyticsRecovery`). Bridge Garmin Python corrige pour exposer `activityTrainingLoad` (pivot EPOC -> Training Load Firstbeat). 211/211 tests, ESLint 0, build OK, deploye en production sur la VM, valide visuellement.
 - [x] Creer le cadre qualite permanent (`docs/quality`, ADR, releases, plans actifs/archives).
 - [x] Archiver les anciens plans sous `docs/plans/old/`.
 - [x] Valider les fenetres Garmin reelles 1 et 2.

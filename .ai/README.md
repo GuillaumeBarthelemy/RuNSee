@@ -10,6 +10,7 @@ Ce dossier contient uniquement les fichiers de contexte court terme pour CODEX /
 | `open_tasks.md` | Taches ouvertes reellement actives |
 | `regression_risks.md` | Risques de regression actifs |
 | `codebase_map.md` | Cartographie courte du code |
+| `dev_rules.md` | **Regles de developpement consolidees (UX, science, archi, git, qualite)** — a lire en premier |
 | `handoff.md` | Passage de relais du dernier chantier, si necessaire |
 
 ## References longues
