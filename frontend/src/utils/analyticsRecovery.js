@@ -17,7 +17,9 @@ function safeNum(v) {
 }
 
 function snapshotDate(s) {
-  const raw = s?.snapshotDate;
+  // Le serializer API expose `date` (string YYYY-MM-DD) ; en interne le
+  // modèle Prisma utilise `snapshotDate` (DateTime). On accepte les deux.
+  const raw = s?.date || s?.snapshotDate;
   if (!raw) return null;
   const d = new Date(raw);
   return Number.isNaN(d.getTime()) ? null : d;
