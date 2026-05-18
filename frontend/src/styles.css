@@ -13574,6 +13574,65 @@ button.alert-banner-positive-item {
   font-size: 11px;
 }
 
+.performance-filter-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 4px 2px 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.performance-filter-compact > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.performance-filter-compact label {
+  min-height: 34px;
+  border: 1px solid rgba(53, 88, 134, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.86);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 9px;
+}
+
+.performance-filter-compact small {
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.performance-filter-compact select {
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.performance-filter-compact button {
+  min-height: 34px;
+  border: 1px solid rgba(53, 88, 134, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
 .performance-page .alpine-subtabs {
   margin: 0;
 }
@@ -13960,6 +14019,15 @@ button.alert-banner-positive-item {
 }
 
 @media (max-width: 760px) {
+  .performance-filter-compact {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .performance-filter-compact > div {
+    justify-content: flex-start;
+  }
+
   .performance-hero-card,
   .performance-takeaway {
     grid-template-columns: 1fr;
