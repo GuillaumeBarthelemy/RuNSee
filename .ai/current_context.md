@@ -1,5 +1,16 @@
 # Current Context
 
+## Revue pixel-perfect Performance (2026-05-18)
+
+- Regle projet ajoutee dans `.ai/dev_rules.md` : tout chantier UI avec mockup doit passer par une capture cible + comparaison mockup avant commit/push, avec correction des ecarts bloquants/importants ou validation explicite.
+- Reference utilisee pour Performance : `docs/plans/active/runsee_ux_page_plans/runsee_mockups_support_presentation_final_PERFORMANCE_CORRIGE.pdf`, page 12.
+- Capture prod authentifiee finale : `.tmp/performance_visual_review/performance_prod_1440_after_compact_filters.png`.
+- Corrections deja poussees :
+  - `2e10a87 fix(performance): align overview with mockup`
+  - `7e96905 fix(performance): compact overview controls`
+- Etat apres correction : structure beaucoup plus proche du mockup, page densifiee, hero retire, filtres compactes, onglets Performance visibles, `A retenir` replace dans la grille.
+- Ecarts assumes restants : valeurs issues des donnees reelles, controles sport/periode conserves pour non-regression des filtres, sous-onglets futurs visibles mais inactifs tant que leurs lots dedies ne sont pas livres.
+
 ## Lot Performance V5 strict — Vue d'ensemble (2026-05-17)
 
 - Plan actif MAJ lu : `docs/plans/active/runsee_ux_page_plans/05_PAGE_PERFORMANCE_V5_STRICT_MAJ.md` + PDF corrigé pages 12 à 16.

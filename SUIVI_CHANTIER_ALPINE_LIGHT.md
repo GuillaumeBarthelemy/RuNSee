@@ -17,9 +17,9 @@ Source de verite :
 | Champ | Valeur |
 |---|---|
 | Chantier | Refonte UX/UI Alpine Light |
-| Statut global | **Performance V5 strict demarre — Vue d'ensemble livree techniquement 2026-05-17** |
+| Statut global | **Performance V5 strict demarre — Vue d'ensemble livree et alignee mockup en prod 2026-05-18** |
 | Dernier lot traite | **Performance V5 strict — Vue d'ensemble** (allure ajustee, VDOT estime, economie de course, endurance fondamentale, apercus FC/allures/performances) |
-| Dernier commit | En attente commit/push du lot Performance V5 strict - Vue d'ensemble |
+| Dernier commit | `7e96905 fix(performance): compact overview controls` |
 | Note importante | Lot 04 V5 : 5 onglets refondus mockup-faithful, seuils valides scientifiquement (Seiler, Coggan, Mujika, Gabbett, Foster, Esteve-Lanao, Millet, Tudor-Locke, NSF/AASM, Plews, Buchheit, Halson, Le Meur). 4 nouveaux helpers utils (`analyticsFocus`, `analyticsTrends`, `analyticsIntensities`, `analyticsRecovery`). Bridge Python Garmin corrige (DETAIL endpoint pour `activityTrainingLoad`). Tooltips (i) et CTAs reportes en TODO globales. |
 | Process acte (2026-05-16) | **Double validation post-deploy** : (i) quality gate, (ii) auto-comparaison capture prod vs mockup, (iii) correctif cible si ecart, (iv) validation utilisateur. Voir `.ai/dev_rules.md`. |
 | Derniere archive review | `runsee-source-review-analysis-confidence-final.zip` (chantier precedent) |
@@ -276,7 +276,7 @@ Le Lot 3 d'origine (commit `810e4fe`) ne correspondait pas au mockup. Repris int
 | Analyse - Tendances | a faire | a faire | |
 | Analyse - Intensites | a faire | a faire | |
 | Analyse - Sommeil & recuperation | a faire | a faire | |
-| Performance - Vue d'ensemble | code OK | recette utilisateur a faire | Premier onglet livre sans placeholder ; autres onglets non exposes avant leurs lots dedies. |
+| Performance - Vue d'ensemble | prod capture OK | mobile a verifier lot suivant | Revue mockup page 12 effectuee en session authentifiee ; hero retire, filtres compactes, densite corrigee. Capture : `.tmp/performance_visual_review/performance_prod_1440_after_compact_filters.png`. |
 | Performance - VDOT & profil | a faire | a faire | |
 | Performance - Allures de reference | a faire | a faire | |
 | Performance - FC de performance | a faire | a faire | |
@@ -334,10 +334,10 @@ Le Lot 3 d'origine (commit `810e4fe`) ne correspondait pas au mockup. Repris int
 ## 10. Etat de reprise rapide
 
 ```text
-Derniere action realisee : Performance V5 strict - Vue d'ensemble livree techniquement, tests frontend/build OK.
+Derniere action realisee : Performance V5 strict - Vue d'ensemble corrigee apres revue prod vs mockup PDF, puis deployee en prod.
 Dernier fichier modifie : SUIVI_CHANTIER_ALPINE_LIGHT.md
-Dernier lot en cours : Performance V5 strict - Vue d'ensemble (pret commit/push puis recette utilisateur).
-Prochaine action exacte : Commit/push du lot Vue d'ensemble, puis recette visuelle utilisateur sur /performance avant d'ouvrir le lot VDOT & profil.
+Dernier lot en cours : Performance V5 strict - Vue d'ensemble (corrigee et deployee ; regle pixel-perfect ajoutee au process).
+Prochaine action exacte : ouvrir le lot Performance suivant (VDOT & profil) avec matrice pre-dev puis revue pixel-perfect obligatoire avant commit/push.
 Blocage eventuel : Aucun cote code. Point d'attention : les autres sous-onglets Performance restent volontairement non exposes tant que leurs lots dedies ne sont pas livres.
 Tests a relancer apres prochain lot Performance : eslint fichiers touches, npm test -- --run, npm run build, git diff --check.
 Pages a verifier en navigation reelle : /performance prioritaire, puis /analytics et /progression pour non-redondance.

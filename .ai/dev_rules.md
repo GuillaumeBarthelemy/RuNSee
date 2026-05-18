@@ -322,5 +322,39 @@ Tones standardises : 1 = positif fort (vert), 2 = positif (lime), 3 = neutre (gr
 
 ---
 
+## 11. Revue pixel-perfect obligatoire avant commit/push UI
+
+Regle actee le 2026-05-18 apres le chantier `Performance > Vue d'ensemble`.
+
+Pour tout chantier UI disposant d'un mockup, le commit/push ne doit plus etre fait avant une revue visuelle explicite :
+
+1. **Reference mockup**
+   - Identifier le fichier de reference (PDF/PNG/Figma export) et la page ou frame exacte.
+   - Si la reference est un PDF, rendre la page utile en image locale avant comparaison.
+
+2. **Capture cible**
+   - Capturer la page applicative reelle, idealement en production apres deploiement si la validation concerne le rendu final.
+   - Utiliser une session authentifiee automatisable quand la page depend de donnees utilisateur.
+   - Viewport desktop par defaut : `1440x900`, sauf specification contraire du plan.
+   - Ajouter une capture mobile/tablette si le plan cible explicitement ces formats.
+
+3. **Comparaison**
+   - Comparer structure, hierarchie, espacements, densite, alignements, typographie, couleurs, et etats des composants.
+   - Distinguer les ecarts :
+     - bloquant : structure ou usage divergent du mockup ;
+     - important : densite, alignement ou priorite visuelle notablement differents ;
+     - mineur : ecart cosmetique acceptable ;
+     - assume : difference volontaire liee aux donnees reelles, a la securite ou a la non-regression.
+
+4. **Decision avant push**
+   - Corriger les ecarts bloquants et importants avant commit/push.
+   - Si un ecart important doit etre conserve, le documenter explicitement et demander validation utilisateur.
+   - Ne jamais pousser une page UI majeure en indiquant seulement "a verifier visuellement" si une session/capture automatisable est disponible.
+
+5. **Trace**
+   - Conserver les captures dans `.tmp/` ou dans l'archive de review si necessaire.
+   - Tracer les references et les ecarts dans `.ai/current_context.md` ou dans le suivi chantier.
+   - En cas d'impossibilite technique de capture authentifiee, le dire avant commit/push et demander une capture/session utilisateur.
+
 **Auteur** : Claude (Lot 04 Alpine Light V5, 2026-05-16/17).
 **A revoir** : a chaque chantier majeur, completer ce document avec les regles nouvellement actees.
