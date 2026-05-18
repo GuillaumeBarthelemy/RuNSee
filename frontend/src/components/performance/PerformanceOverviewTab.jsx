@@ -165,6 +165,13 @@ function PerformanceOverviewTab({ model = {} }) {
 
   return (
     <div className="performance-overview-tab">
+      <div className="performance-overview-context">
+        <span>Performance actuelle sur {periodLabel || "la période active"}.</span>
+        <strong>
+          {model.canonicalCounts?.period || 0} sorties uniques
+          {excluded ? ` · ${excluded} doublon${excluded > 1 ? "s" : ""} ignoré${excluded > 1 ? "s" : ""}` : ""}
+        </strong>
+      </div>
       <section className="performance-hero-card">
         <div>
           <span className="performance-eyebrow">Vue d'ensemble</span>
@@ -191,9 +198,8 @@ function PerformanceOverviewTab({ model = {} }) {
         <PaceDistribution distribution={model.paceDistribution} />
         <BestPerformancePreview preview={model.bestPerformancePreview} />
         <PerformanceTrendPanel trend={model.trendSummary} />
+        <TakeawayPanel takeaway={model.takeaway} confidence={model.confidence} />
       </div>
-
-      <TakeawayPanel takeaway={model.takeaway} confidence={model.confidence} />
 
       <CoachAdviceBar tone={coachTone} icon={<span aria-hidden="true">i</span>}>
         {model.takeaway?.text || "Continue à consolider tes repères avec des sorties comparables."}

@@ -19,6 +19,10 @@ import { buildVdotProfile } from "../utils/runningPerformance.js";
 
 const PERFORMANCE_TABS = [
   { id: "overview", label: "Vue d'ensemble" },
+  { id: "vdot", label: "VDOT & profil", disabled: true, title: "Onglet prévu au lot Performance suivant" },
+  { id: "allures", label: "Allures de référence", disabled: true, title: "Onglet prévu au lot Performance suivant" },
+  { id: "fc-performance", label: "FC de performance", disabled: true, title: "Onglet prévu au lot Performance suivant" },
+  { id: "records", label: "Records", disabled: true, title: "Onglet prévu au lot Performance suivant" },
 ];
 
 /**
@@ -210,23 +214,27 @@ export default function PerformancePage() {
         <div className="card section">Chargement de la performance...</div>
       ) : null}
 
-      <AnalyticsCompactFilters
-        search={filters.search}
-        sportGroup={filters.sportGroup}
-        preset={options.sharedPeriodPreset}
-        periodLabel={sharedRange.label}
-        availableSports={availableSports}
-        filteredCount={canonicalPerformanceActivities.length}
-        totalCount={canonicalPerformanceScopeActivities.length}
-        onSearchChange={(value) => setFilter("search", value)}
-        onSportChange={(value) => setFilter("sportGroup", value)}
-        onPresetChange={handleSharedPresetChange}
-        onReset={handleResetSharedFilters}
-      />
+      <div className="performance-page">
+        <div className="performance-filter-compact">
+          <AnalyticsCompactFilters
+            search={filters.search}
+            sportGroup={filters.sportGroup}
+            preset={options.sharedPeriodPreset}
+            periodLabel={sharedRange.label}
+            availableSports={availableSports}
+            filteredCount={canonicalPerformanceActivities.length}
+            totalCount={canonicalPerformanceScopeActivities.length}
+            onSearchChange={(value) => setFilter("search", value)}
+            onSportChange={(value) => setFilter("sportGroup", value)}
+            onPresetChange={handleSharedPresetChange}
+            onReset={handleResetSharedFilters}
+          />
+        </div>
 
-      <SubTabs tabs={PERFORMANCE_TABS} defaultTabId="overview" />
+        <SubTabs tabs={PERFORMANCE_TABS} defaultTabId="overview" />
 
-      <PerformanceOverviewTab model={overviewModel} />
+        <PerformanceOverviewTab model={overviewModel} />
+      </div>
     </AppShell>
   );
 }

@@ -37,14 +37,19 @@ function SubTabs({ tabs = [], defaultTabId = null, onChange = null }) {
       <div className="alpine-subtabs-track">
         {tabs.map((tab) => {
           const isActive = tab.id === activeId;
+          const isDisabled = Boolean(tab.disabled);
           return (
             <button
               key={tab.id}
               type="button"
               role="tab"
               aria-selected={isActive}
-              className={`alpine-subtab ${isActive ? "is-active" : ""}`.trim()}
-              onClick={() => handleClick(tab.id)}
+              aria-disabled={isDisabled}
+              className={`alpine-subtab ${isActive ? "is-active" : ""} ${isDisabled ? "is-disabled" : ""}`.trim()}
+              onClick={() => {
+                if (!isDisabled) handleClick(tab.id);
+              }}
+              title={tab.title || undefined}
             >
               <span className="alpine-subtab-label">{tab.label}</span>
               {typeof tab.count === "number" ? (

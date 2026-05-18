@@ -27,7 +27,7 @@ Source de verite :
 | Dernier test backend | **31/31 verts** |
 | Dernier build | OK (Vite, ~470 ms, charts bundle 382 KB gzipped 111 KB) |
 | Dernier deploy | CI/CD GitHub Actions verte, prod VM healthy |
-| Derniere decision GO/NO-GO | **GO Performance Vue d'ensemble** apres validation matrice blocs utilisateur 2026-05-17 |
+| Derniere decision GO/NO-GO | **GO Performance Vue d'ensemble** apres validation matrice blocs utilisateur 2026-05-17 ; recette structurelle prod vs mockup PDF realisee apres deploy |
 | Documents references | **`.ai/dev_rules.md`** (regles consolidees), `.ai/current_context.md` (section Performance V5 strict), `.ai/handoff.md` (passage CODEX) |
 
 ---

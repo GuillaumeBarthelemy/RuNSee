@@ -15,6 +15,14 @@
 - Tests ajoutés : `frontend/src/utils/performanceOverviewModel.test.js`.
 - Validations effectuées : ESLint ciblé zéro warning, `npm test -- --run` 214/214, `npm run build` OK, `git diff --check` OK.
 
+### Recette post-deploy Performance Vue d'ensemble
+
+- VM `runsee-vm` controlee : commit deploiement `1cb2d53`, conteneurs frontend/backend healthy.
+- Smoke prod : `https://runsee.runnsee.net` HTTP 200, `https://api.runnsee.net/health` OK avec Postgres joignable.
+- Mockup officiel : PDF `runsee_mockups_support_presentation_final_PERFORMANCE_CORRIGE.pdf` rendu localement ; page 12 utilisee comme reference `Performance - Vue d'ensemble`.
+- Verification structurelle prod : blocs attendus presents dans le bundle (`Performance actuelle`, `Allure ajustee`, `Endurance fondamentale`, `Distribution des allures`, `Meilleures performances`, `Tendances de performance`).
+- Limite assumee : pas de capture pixel-perfect authentifiee automatisee disponible depuis l'environnement courant ; recette utilisateur visuelle reste necessaire.
+
 ## Lot 04 Alpine Light V5 — Page Analyse refonte complete (2026-05-16/17)
 
 - Refonte integrale des 5 onglets de la page Analyse selon le mockup PDF V5 (pages 7 a 11) :
