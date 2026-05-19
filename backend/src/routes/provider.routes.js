@@ -7,12 +7,14 @@ import {
   getGarminConnectionStatusController,
   getGarminSyncMetricsController,
   getProviderStatusesController,
+  listGarminFitnessSnapshotsController,
   listGarminRecoverySnapshotsController,
   pauseGarminActivityBackfillController,
   purgeGarminDataController,
   renormalizeGarminRecoveryController,
   resumeGarminActivityBackfillController,
   runGarminActivityBackfillWindowController,
+  syncRecentGarminFitnessController,
   syncRecentGarminRecoveryController,
   startGarminActivityBackfillController,
   startGarminRecoveryBackfillController,
@@ -37,5 +39,7 @@ router.post("/garmin/recovery/backfill", requireAuth, startGarminRecoveryBackfil
 router.post("/garmin/recovery/sync-recent", requireAuth, syncRecentGarminRecoveryController);
 router.post("/garmin/recovery/renormalize", requireAuth, renormalizeGarminRecoveryController);
 router.get("/garmin/recovery/snapshots", requireAuth, listGarminRecoverySnapshotsController);
+router.get("/garmin/fitness/snapshots", requireAuth, listGarminFitnessSnapshotsController);
+router.post("/garmin/fitness/sync-recent", requireAuth, syncRecentGarminFitnessController);
 
 export default router;

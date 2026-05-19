@@ -21,6 +21,10 @@ import {
   startGarminRecoveryBackfillForUser,
   syncRecentGarminRecoveryForUser,
 } from "../services/providers/garminRecoveryBackfill.service.js";
+import {
+  listGarminFitnessSnapshotsForUser,
+  syncGarminFitnessForUser,
+} from "../services/providers/garminFitnessSync.service.js";
 
 export async function getGarminConnectionStatusController(req, res, next) {
   try {
@@ -201,6 +205,31 @@ export async function listGarminRecoverySnapshotsController(req, res, next) {
       days: req.query?.days,
     });
 
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+// --- Lot 5 Performance V5 — VO2max wellness Garmin ---
+
+export async function listGarminFitnessSnapshotsController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await listGarminFitnessSnapshotsForUser(user.id, {
+      days: req.query?.days,
+    });
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function syncRecentGarminFitnessController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const days = req.body?.days ? Number(req.body.days) : 30;
+    const result = await syncGarminFitnessForUser(user.id, { days });
     return res.json(result);
   } catch (error) {
     return next(error);

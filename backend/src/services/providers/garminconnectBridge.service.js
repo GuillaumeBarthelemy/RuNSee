@@ -150,3 +150,19 @@ export async function fetchGarminActivities({ session, startDate, endDate }) {
     endDate,
   });
 }
+
+/**
+ * Récupère les métriques fitness quotidiennes Garmin (VO2max running/cycling,
+ * fitness age, acclimatations) via le bridge Python `fetch_fitness_days`.
+ *
+ * Source scientifique : `api.get_max_metrics(date)` → endpoint
+ * `/userstats-service/wellness/<userId>/maxmetrics`. Donnée Firstbeat
+ * validée labo (Knaier 2019, r=0.93 vs VO2max mesuré en gaz expirés).
+ */
+export async function fetchGarminFitnessDays({ session, dates = [] }) {
+  return runGarminconnectBridge({
+    operation: "fetch_fitness_days",
+    session,
+    dates,
+  });
+}

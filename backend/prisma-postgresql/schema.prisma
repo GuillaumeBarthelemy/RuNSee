@@ -30,6 +30,8 @@ model AppUser {
   externalProviderConnections ExternalProviderConnection[]
   providerRawData ExternalProviderRawData[]
   recoverySnapshots ExternalDailyRecoverySnapshot[]
+  fitnessSnapshots ExternalDailyFitnessSnapshot[]
+  vdotHistory VdotHistorySnapshot[]
   activityProviderEnrichments ActivityProviderEnrichment[]
   activities Activity[]
   activityProviderLinks ActivityProviderLink[]
@@ -361,6 +363,50 @@ model ExternalDailyRecoverySnapshot {
   @@index([appUserId, snapshotDate])
   @@index([sourceProvider, snapshotDate])
   @@index([dataQuality])
+}
+
+// Donnees fitness quotidiennes provider brutes : VO2max wellness, fitness age,
+// acclimatation chaleur/altitude. Distincte de ExternalDailyRecoverySnapshot.
+//
+// Source primaire : Garmin Connect via `api.get_max_metrics(date)`.
+model ExternalDailyFitnessSnapshot {
+  id                         String   @id @default(cuid())
+  appUserId                  String
+  appUser                    AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  sourceProvider             String
+  snapshotDate               DateTime
+  timezone                   String?
+  vo2MaxRunning              Float?
+  vo2MaxCycling              Float?
+  fitnessAge                 Int?
+  heatAcclimationPercent     Int?
+  altitudeAcclimationPercent Int?
+  dataQuality                String   @default("partial")
+  syncedAt                   DateTime @default(now())
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  @@unique([appUserId, sourceProvider, snapshotDate])
+  @@index([appUserId, snapshotDate])
+  @@index([sourceProvider, snapshotDate])
+}
+
+// Historique consolide du VDOT estime par utilisateur, une valeur par jour.
+// Source unique de verite pour l'UI Performance.
+model VdotHistorySnapshot {
+  id                String   @id @default(cuid())
+  appUserId         String
+  appUser           AppUser  @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  snapshotDate      DateTime
+  vdotValue         Float
+  source            String
+  basedOnActivityId String?
+  notes             String?
+  createdAt         DateTime @default(now())
+
+  @@unique([appUserId, snapshotDate])
+  @@index([appUserId, snapshotDate])
+  @@index([source])
 }
 
 model ActivityProviderEnrichment {

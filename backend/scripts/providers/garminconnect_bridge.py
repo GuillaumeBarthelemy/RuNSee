@@ -697,6 +697,111 @@ def fetch_activities(request: dict) -> dict:
         }
 
 
+def fetch_fitness_days(request: dict) -> dict:
+    """Recupere les metriques fitness quotidiennes Garmin (VO2max running,
+    VO2max cycling, fitness age, acclimatations chaleur/altitude) via
+    `api.get_max_metrics(date)`.
+
+    Source : endpoint `/userstats-service/wellness/<userId>/maxmetrics`,
+    qui expose le VO2max Firstbeat consolide par jour. Validation labo
+    Knaier 2019 : r=0.93 vs VO2max mesure en CO2 expire.
+
+    Pacing 1s entre dates pour eviter rate-limit Garmin. Stop propre 429.
+    """
+    try:
+        from garminconnect import (  # pylint: disable=import-outside-toplevel
+            Garmin,
+            GarminConnectAuthenticationError,
+            GarminConnectConnectionError,
+            GarminConnectTooManyRequestsError,
+        )
+        from garth.exc import GarthException, GarthHTTPError  # pylint: disable=import-outside-toplevel
+    except Exception as exc:  # pragma: no cover - depends on runtime image
+        return build_error(
+            "GARMINCONNECT_DEPENDENCY_MISSING",
+            f"La librairie garminconnect n'est pas disponible: {exc}",
+        )
+
+    dates = normalize_date_list(request.get("dates"))
+    if not dates:
+        return build_error(
+            "GARMINCONNECT_DATES_REQUIRED",
+            "Aucune date Garmin valide n'a ete demandee.",
+        )
+
+    with tempfile.TemporaryDirectory(prefix="runsee-garmin-session-") as tokenstore:
+        tokenstore_path = Path(tokenstore)
+        try:
+            restore_tokenstore_files(request.get("session"), tokenstore_path)
+            api = Garmin()
+            api.login(tokenstore=str(tokenstore_path))
+        except (ValueError, GarminConnectAuthenticationError):
+            return build_error(
+                "GARMINCONNECT_SESSION_EXPIRED",
+                "La session Garmin n'est plus valide. Reconnecte Garmin.",
+            )
+        except (GarminConnectConnectionError, GarthHTTPError, GarthException) as exc:
+            if is_rate_limit_exception(exc):
+                return build_error(
+                    "GARMINCONNECT_RATE_LIMITED",
+                    "Garmin limite temporairement la recuperation. RunNSee reprendra plus tard.",
+                    retryable=True,
+                )
+            return build_garth_error(exc)
+        except Exception:
+            return build_error(
+                "GARMINCONNECT_SESSION_RESTORE_FAILED",
+                "La session Garmin stockee ne peut pas etre rechargee.",
+                retryable=True,
+            )
+
+        days = []
+        for cdate in dates:
+            day_payload = {
+                "date": cdate,
+                "raw": None,
+                "errors": [],
+            }
+            try:
+                day_payload["raw"] = api.get_max_metrics(cdate)
+            except GarminConnectTooManyRequestsError:
+                return {
+                    "status": "rate_limited",
+                    "code": "GARMINCONNECT_RATE_LIMITED",
+                    "message": "Garmin limite temporairement la recuperation. RunNSee reprendra plus tard.",
+                    "retryable": True,
+                    "days": days,
+                }
+            except (GarminConnectAuthenticationError, GarthHTTPError) as exc:
+                status_code = get_http_status_from_exception(exc)
+                if status_code == 429:
+                    return {
+                        "status": "rate_limited",
+                        "code": "GARMINCONNECT_RATE_LIMITED",
+                        "message": "Garmin limite temporairement la recuperation. RunNSee reprendra plus tard.",
+                        "retryable": True,
+                        "days": days,
+                    }
+                if status_code in (401, 403) or isinstance(exc, GarminConnectAuthenticationError):
+                    return {
+                        "status": "expired",
+                        "code": "GARMINCONNECT_SESSION_EXPIRED",
+                        "message": "La session Garmin n'est plus valide. Reconnecte Garmin.",
+                        "days": days,
+                    }
+                day_payload["errors"].append(build_source_error("maxMetrics", exc))
+            except Exception as exc:  # pylint: disable=broad-except
+                day_payload["errors"].append(build_source_error("maxMetrics", exc))
+
+            days.append(day_payload)
+            time.sleep(1.0)
+
+        return {
+            "status": "success",
+            "days": days,
+        }
+
+
 def login_with_tokens(request: dict) -> dict:
     try:
         from garminconnect import (  # pylint: disable=import-outside-toplevel
@@ -871,6 +976,10 @@ def main() -> None:
 
     if operation == "fetch_activities":
         write_response(fetch_activities(request))
+        return
+
+    if operation == "fetch_fitness_days":
+        write_response(fetch_fitness_days(request))
         return
 
     write_response(build_error("GARMINCONNECT_UNSUPPORTED_OPERATION", "Operation non supportee."))
