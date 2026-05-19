@@ -13892,6 +13892,14 @@ button.alert-banner-positive-item {
   margin-left: 4px;
 }
 
+/* Source label sous KPI (ex. "via Garmin" / "via Estimation interne") */
+.performance-metric-source {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--al-muted, #64748b);
+  margin-top: 4px;
+}
+
 /* CTA "Voir tous les records" sous Meilleures performances */
 .performance-best-cta {
   background: transparent;

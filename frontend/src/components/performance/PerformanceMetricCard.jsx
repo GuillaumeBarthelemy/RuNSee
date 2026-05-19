@@ -35,7 +35,10 @@ function PerformanceMetricCard({ metric = {} }) {
             tone={tone}
             label={`Tendance ${metric.label}`}
           />
-          {metric.activityCount ? (
+          {metric.sourceLabel ? (
+            <span className="performance-metric-source">via {metric.sourceLabel}</span>
+          ) : null}
+          {metric.activityCount && !metric.sourceLabel ? (
             <span className="performance-metric-sample">
               {metric.activityCount} sortie{metric.activityCount > 1 ? "s" : ""} retenue{metric.activityCount > 1 ? "s" : ""}
             </span>

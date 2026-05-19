@@ -16,7 +16,7 @@ import {
   shareZ1Z2,
   shareZ3Z5,
 } from "./analyticsIntensities.js";
-import { buildVdotProfile } from "./runningPerformance.js";
+import { buildVdotProfile, describeVdotLevel } from "./runningPerformance.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_TREND_POINTS = 6;
@@ -465,6 +465,8 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
       lowerIsBetter: false,
     });
     const sourceLabel = latest.source === "garmin" ? "Garmin" : "Estimation interne";
+    // Classification user-friendly via la table VDOT (Compétiteur amateur, etc.)
+    const level = describeVdotLevel(currentValue);
 
     return {
       key: "vdot",
@@ -472,7 +474,7 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
       value: currentValue,
       formattedValue: currentValue.toFixed(1),
       unit: "",
-      hint: sourceLabel, // remplace l'ancien levelLabel par la source
+      hint: level.label || "Profil estimé",
       tone: delta.direction === "positive" ? "positive" : delta.direction === "negative" ? "warning" : "neutral",
       trendLabel: delta.value != null ? `${delta.value > 0 ? "+" : ""}${delta.value.toFixed(1)} vs point préc.` : "",
       trendDirection: delta.direction,
@@ -507,13 +509,14 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
     lowerIsBetter: false,
   });
 
+  const fallbackLevelLabel = vdotProfile.level?.label || "Profil estimé";
   return {
     key: "vdot",
     label: "VDOT estimé",
     value: Number(vdotProfile.vdot),
     formattedValue: Number(vdotProfile.vdot).toFixed(1),
     unit: "",
-    hint: "Estimation interne",
+    hint: fallbackLevelLabel,
     tone: delta.direction === "positive" ? "positive" : delta.direction === "negative" ? "warning" : "neutral",
     trendLabel: delta.value != null ? `${delta.value > 0 ? "+" : ""}${delta.value} vs point préc.` : "",
     trendDirection: delta.direction,
