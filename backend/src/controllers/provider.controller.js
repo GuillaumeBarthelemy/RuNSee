@@ -25,6 +25,10 @@ import {
   listGarminFitnessSnapshotsForUser,
   syncGarminFitnessForUser,
 } from "../services/providers/garminFitnessSync.service.js";
+import {
+  backfillVdotHistoryForUser,
+  listVdotHistoryForUser,
+} from "../services/vdotHistory.service.js";
 
 export async function getGarminConnectionStatusController(req, res, next) {
   try {
@@ -230,6 +234,31 @@ export async function syncRecentGarminFitnessController(req, res, next) {
     const user = getRequiredAuthUser(req);
     const days = req.body?.days ? Number(req.body.days) : 30;
     const result = await syncGarminFitnessForUser(user.id, { days });
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+// --- Lot 5 Performance V5 — VDOT history consolide ---
+
+export async function listVdotHistoryController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const result = await listVdotHistoryForUser(user.id, {
+      days: req.query?.days,
+    });
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function backfillVdotHistoryController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const days = req.body?.days ? Number(req.body.days) : 90;
+    const result = await backfillVdotHistoryForUser(user.id, { days });
     return res.json(result);
   } catch (error) {
     return next(error);

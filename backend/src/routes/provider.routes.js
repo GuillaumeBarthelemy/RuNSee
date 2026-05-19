@@ -7,8 +7,10 @@ import {
   getGarminConnectionStatusController,
   getGarminSyncMetricsController,
   getProviderStatusesController,
+  backfillVdotHistoryController,
   listGarminFitnessSnapshotsController,
   listGarminRecoverySnapshotsController,
+  listVdotHistoryController,
   pauseGarminActivityBackfillController,
   purgeGarminDataController,
   renormalizeGarminRecoveryController,
@@ -41,5 +43,7 @@ router.post("/garmin/recovery/renormalize", requireAuth, renormalizeGarminRecove
 router.get("/garmin/recovery/snapshots", requireAuth, listGarminRecoverySnapshotsController);
 router.get("/garmin/fitness/snapshots", requireAuth, listGarminFitnessSnapshotsController);
 router.post("/garmin/fitness/sync-recent", requireAuth, syncRecentGarminFitnessController);
+router.get("/vdot/history", requireAuth, listVdotHistoryController);
+router.post("/vdot/backfill", requireAuth, backfillVdotHistoryController);
 
 export default router;

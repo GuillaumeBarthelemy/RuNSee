@@ -22,6 +22,8 @@ import {
   EXTERNAL_PROVIDER_STATUSES,
 } from "../providers/externalProvider.constants.js";
 import { syncRecentGarminRecoveryForUser } from "../providers/garminRecoveryBackfill.service.js";
+import { syncGarminFitnessForUser } from "../providers/garminFitnessSync.service.js";
+import { backfillVdotHistoryForUser } from "../vdotHistory.service.js";
 import { enrichGarminActivitiesForUser } from "../providers/garminActivityEnrichment.service.js";
 
 const ACTIVE_JOB_STATUSES = ["queued", "running"];
@@ -355,6 +357,45 @@ async function executeGlobalIncrementalSyncJob(jobId) {
     } catch (error) {
       providers.garminActivities = buildProviderResultFromError(error);
     }
+
+    // VO2max wellness quotidien (sync legere ~30 j, pacing 1s/jour)
+    await updateGlobalJob(jobId, {
+      message: "Synchronisation globale : VO₂max wellness Garmin.",
+      progressPercent: 88,
+      resultJson: JSON.stringify({ providers }),
+    });
+    try {
+      const fitnessResult = await syncGarminFitnessForUser(job.appUserId, { days: 30 });
+      providers.garminFitness = {
+        requested: true,
+        status: fitnessResult.status,
+        syncedCount: fitnessResult.syncedCount,
+        requestedCount: fitnessResult.requestedCount,
+        message: fitnessResult.message || null,
+      };
+    } catch (error) {
+      providers.garminFitness = buildProviderResultFromError(error);
+    }
+  }
+
+  // Consolidation VDOT history (Lot 5 Performance V5) — toujours executee
+  // si l'utilisateur a au moins un signal Garmin OU des activites running.
+  await updateGlobalJob(jobId, {
+    message: "Synchronisation globale : consolidation VDOT historique.",
+    progressPercent: 94,
+    resultJson: JSON.stringify({ providers }),
+  });
+  try {
+    const vdotResult = await backfillVdotHistoryForUser(job.appUserId, { days: 90 });
+    providers.vdotHistory = {
+      requested: true,
+      status: "success",
+      processedDays: vdotResult.processed,
+      writtenDays: vdotResult.written,
+      perSource: vdotResult.perSource,
+    };
+  } catch (error) {
+    providers.vdotHistory = buildProviderResultFromError(error);
   }
 
   const warning = hasProviderError(providers);
