@@ -68,7 +68,13 @@ function buildRecentDates(days) {
  * Tolère plusieurs shapes selon la version Garmin Connect.
  */
 export function extractFitnessSnapshotFromPayload(rawPayload, date) {
-  if (!rawPayload || typeof rawPayload !== "object") {
+  // Garmin `get_max_metrics(date)` peut renvoyer un tableau `[{...}]` ou
+  // directement un objet selon la version de la librairie. On normalise :
+  let payload = rawPayload;
+  if (Array.isArray(payload)) {
+    payload = payload.length > 0 ? payload[0] : null;
+  }
+  if (!payload || typeof payload !== "object") {
     return {
       snapshotDate: buildUtcDate(date),
       vo2MaxRunning: null,
@@ -80,9 +86,9 @@ export function extractFitnessSnapshotFromPayload(rawPayload, date) {
     };
   }
 
-  const generic = rawPayload.generic || {};
-  const cycling = rawPayload.cycling || {};
-  const heatAltitude = rawPayload.heatAltitudeAcclimation || rawPayload.heatAcclimation || {};
+  const generic = payload.generic || {};
+  const cycling = payload.cycling || {};
+  const heatAltitude = payload.heatAltitudeAcclimation || payload.heatAcclimation || {};
 
   const vo2Running = toNumberOrNull(
     generic.vo2MaxPreciseValue ?? generic.vo2MaxValue ?? generic.vo2max ?? generic.vO2MaxValue,

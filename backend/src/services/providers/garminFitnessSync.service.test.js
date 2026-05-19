@@ -67,3 +67,23 @@ test("ignores non-numeric values cleanly", () => {
   assert.equal(result.fitnessAge, null);
   assert.equal(result.dataQuality, "partial");
 });
+
+test("unwraps array-shaped payload (Garmin get_max_metrics returns [{...}])", () => {
+  const payload = [
+    {
+      userId: 117821269,
+      generic: { calendarDate: "2026-05-18", vo2MaxPreciseValue: 56.4, vo2MaxValue: 56 },
+      cycling: null,
+      heatAltitudeAcclimation: { heatAcclimationPercentage: 0, altitudeAcclimationPercentage: 0 },
+    },
+  ];
+  const result = extractFitnessSnapshotFromPayload(payload, "2026-05-18");
+  assert.equal(result.vo2MaxRunning, 56.4);
+  assert.equal(result.dataQuality, "complete");
+});
+
+test("returns partial when array payload is empty (Garmin pas de data pour ce jour)", () => {
+  const result = extractFitnessSnapshotFromPayload([], "2026-05-19");
+  assert.equal(result.vo2MaxRunning, null);
+  assert.equal(result.dataQuality, "partial");
+});
