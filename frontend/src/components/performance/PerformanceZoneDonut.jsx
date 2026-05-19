@@ -37,14 +37,21 @@ function PerformanceZoneDonut({ preview = {} }) {
 
   const zones = Array.isArray(preview.zones) ? preview.zones : [];
 
+  // Vocabulaire V5 acte : Z3 Tempo (pas active) / Z5 VO2max (pas intensif).
+  const V5_ZONE_LABELS = {
+    z1: "Récupération",
+    z2: "Endurance",
+    z3: "Tempo",
+    z4: "Seuil",
+    z5: "VO₂max",
+  };
+
   return (
     <section className="performance-panel performance-zone-donut-card">
       <div className="performance-panel-head">
         <div>
-          <span className="performance-panel-kicker">{preview.sourceLabel || "Zones FC"}</span>
-          <h3>Zones de fréquence cardiaque</h3>
+          <h3>Zones de fréquence cardiaque <span className="performance-panel-sub">(aperçu)</span></h3>
         </div>
-        <strong>{Math.round(preview.easyShare || 0)} % facile</strong>
       </div>
 
       <div className="performance-zone-donut-layout">
@@ -56,18 +63,21 @@ function PerformanceZoneDonut({ preview = {} }) {
         </div>
 
         <div className="performance-zone-legend">
-          {zones.map((zone) => (
-            <div className="performance-zone-legend-row" key={zone.key}>
-              <span
-                className="performance-zone-dot"
-                style={{ background: ZONE_COLORS[String(zone.key || "").toLowerCase()] || "#94a3b8" }}
-              />
-              <span>{zone.shortLabel || zone.label}</span>
-              <small>{zone.label?.replace(zone.shortLabel || "", "").trim() || zone.rangeLabel || ""}</small>
-              <b>{zone.durationLabel}</b>
-              <strong>{Math.round(zone.share || 0)} %</strong>
-            </div>
-          ))}
+          {zones.map((zone) => {
+            const key = String(zone.key || "").toLowerCase();
+            const v5Label = V5_ZONE_LABELS[key] || zone.shortLabel || zone.label;
+            return (
+              <div className="performance-zone-legend-row" key={zone.key}>
+                <span
+                  className="performance-zone-dot"
+                  style={{ background: ZONE_COLORS[key] || "#94a3b8" }}
+                />
+                <span><strong>{zone.shortLabel || key.toUpperCase()}</strong> {v5Label}</span>
+                <b>{zone.durationLabel}</b>
+                <strong>({Math.round(zone.share || 0)} %)</strong>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

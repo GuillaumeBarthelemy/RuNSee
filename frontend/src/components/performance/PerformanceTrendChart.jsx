@@ -46,12 +46,16 @@ function PerformanceTrendChart({ trend = {} }) {
     <section className="performance-panel performance-trend-chart-card">
       <div className="performance-trend-chart-head">
         <div>
-          <span className="performance-panel-kicker">Tendance</span>
           <h3>Tendances de performance</h3>
         </div>
-        <div>
+        <div className="performance-trend-chart-head-value">
           <small>{trend.primaryLabel || "Signal"}</small>
           <strong>{trend.primaryValue}</strong>
+          {trend.primaryHint ? (
+            <span className={`performance-trend-hint tone-${trend.primaryHintTone || "neutral"}`}>
+              {trend.primaryHint}
+            </span>
+          ) : null}
         </div>
       </div>
 

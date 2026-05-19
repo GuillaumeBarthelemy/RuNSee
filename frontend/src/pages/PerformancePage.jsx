@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import PerformanceOverviewTab from "../components/performance/PerformanceOverviewTab.jsx";
 import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import AppShell from "../layouts/AppShell.jsx";
 import { enrichActivity } from "../services/activity.service.js";
+import { getVdotHistory } from "../services/externalProvider.service.js";
 import { filterActivities } from "../utils/activityAggregations.js";
 import {
   buildBestEfforts,
@@ -62,6 +63,18 @@ export default function PerformancePage() {
   });
   const attemptedRecordEnrichmentsRef = useRef(new Set());
   const isAutoEnrichingRecordsRef = useRef(false);
+
+  // VDOT history consolide (3 niveaux : Garmin daily, Garmin per-activity,
+  // Daniels interne). Source unique de verite pour le KPI VDOT estime.
+  // Fetch async au montage de la page.
+  const [vdotHistory, setVdotHistory] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    getVdotHistory({ days: 90 })
+      .then((data) => { if (!cancelled) setVdotHistory(data); })
+      .catch(() => { /* fallback silencieux sur l'estimation interne */ });
+    return () => { cancelled = true; };
+  }, []);
 
   const performanceFilters = useMemo(
     () => ({
@@ -132,10 +145,12 @@ export default function PerformancePage() {
       settings: trainingAnalyticsSettings,
       bestEfforts,
       vdotProfile,
+      vdotHistory,
       confidence: performanceConfidence,
     }),
     [
       bestEfforts,
+      vdotHistory,
       canonicalPerformanceActivities,
       canonicalPerformanceScopeActivities,
       performanceConfidence,
@@ -215,7 +230,7 @@ export default function PerformancePage() {
     <AppShell
       eyebrow="Performance"
       title="Performance"
-      subtitle="Mesure ton niveau, tes repères d'allure et tes signaux de performance."
+      subtitle="Analyse les performances et les records."
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {isLoading && !safeActivities.length ? (

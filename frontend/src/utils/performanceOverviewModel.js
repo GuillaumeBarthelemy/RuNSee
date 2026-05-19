@@ -435,7 +435,61 @@ function buildVdotTrend(scopeItems, range, settings) {
     .filter((point) => Number.isFinite(point.value));
 }
 
-function buildVdotSignal({ scopeItems, vdotProfile, range, settings }) {
+/**
+ * Construit le signal VDOT en priorisant l'historique consolidé serveur
+ * (VdotHistorySnapshot) qui couvre 3 niveaux : Garmin wellness daily
+ * VO2max, Garmin per-activity, fallback Daniels interne.
+ *
+ * Cf. backend/src/services/vdotHistory.service.js — la logique de
+ * cascade est faite côté serveur, le frontend consomme juste la valeur
+ * consolidée + le label source.
+ *
+ * Si vdotHistory est null/vide, fallback sur le calcul interne historique
+ * (vdotProfile via buildVdotProfile sur les records récents).
+ */
+function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory }) {
+  // Niveau 1+2 : VdotHistorySnapshot (Garmin priorité + fallback interne consolidé)
+  const historySnapshots = Array.isArray(vdotHistory?.snapshots) ? vdotHistory.snapshots : [];
+  const latest = vdotHistory?.latestSnapshot
+    || (historySnapshots.length ? historySnapshots[historySnapshots.length - 1] : null);
+
+  if (latest && Number.isFinite(Number(latest.vdotValue)) && Number(latest.vdotValue) > 0) {
+    const series = historySnapshots
+      .filter((s) => Number.isFinite(Number(s.vdotValue)) && Number(s.vdotValue) > 0)
+      .map((s) => ({ label: s.date, value: Number(s.vdotValue) }));
+    const currentValue = Number(latest.vdotValue);
+    const previousValue = series.length >= 2 ? series.at(-2).value : null;
+    const delta = buildMetricDelta({
+      current: currentValue,
+      previous: previousValue,
+      lowerIsBetter: false,
+    });
+    const sourceLabel = latest.source === "garmin" ? "Garmin" : "Estimation interne";
+
+    return {
+      key: "vdot",
+      label: "VDOT estimé",
+      value: currentValue,
+      formattedValue: currentValue.toFixed(1),
+      unit: "",
+      hint: sourceLabel, // remplace l'ancien levelLabel par la source
+      tone: delta.direction === "positive" ? "positive" : delta.direction === "negative" ? "warning" : "neutral",
+      trendLabel: delta.value != null ? `${delta.value > 0 ? "+" : ""}${delta.value.toFixed(1)} vs point préc.` : "",
+      trendDirection: delta.direction,
+      hasData: true,
+      activityCount: series.length,
+      series,
+      sourceLabel,
+      info: [
+        { label: "Source", text: latest.source === "garmin"
+          ? "Valeur Garmin (wellness quotidien Firstbeat ou activité récente). Cohérent avec ta montre."
+          : "Estimation Daniels interne basée sur tes meilleures performances récentes." },
+        { label: "Lecture", text: "C'est un repère de niveau, pas une mesure de laboratoire ni une prédiction certaine." },
+      ],
+    };
+  }
+
+  // Niveau 3 (fallback final si vdotHistory n'est pas encore branché) : ancienne logique
   if (!vdotProfile?.hasData || !Number.isFinite(Number(vdotProfile.vdot)) || Number(vdotProfile.vdot) <= 0) {
     return {
       key: "vdot",
@@ -452,7 +506,6 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings }) {
     previous: previousValue,
     lowerIsBetter: false,
   });
-  const levelLabel = vdotProfile.level?.label || "Profil estimé";
 
   return {
     key: "vdot",
@@ -460,13 +513,14 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings }) {
     value: Number(vdotProfile.vdot),
     formattedValue: Number(vdotProfile.vdot).toFixed(1),
     unit: "",
-    hint: levelLabel,
+    hint: "Estimation interne",
     tone: delta.direction === "positive" ? "positive" : delta.direction === "negative" ? "warning" : "neutral",
     trendLabel: delta.value != null ? `${delta.value > 0 ? "+" : ""}${delta.value} vs point préc.` : "",
     trendDirection: delta.direction,
     hasData: true,
     activityCount: vdotProfile.usedSampleSize || vdotProfile.sampleSize || 0,
     series,
+    sourceLabel: "Estimation interne",
     info: [
       { label: "Calcul", text: "Estimation Daniels consolidée à partir de tes records route exploitables." },
       { label: "Lecture", text: "C'est un repère de niveau, pas une mesure de laboratoire ni une prédiction certaine." },
@@ -690,7 +744,56 @@ function buildPaceDistribution(periodItems, vdotProfile) {
   };
 }
 
-function buildBestPerformancePreview(bestEfforts = {}) {
+/**
+ * Catégorisation trail ITRA simplifiée (International Trail Running Assoc.).
+ * Source : ITRA standards 2023.
+ *
+ * Court  : 10-25 km, D+ < 1000 m
+ * Moyen  : 25-50 km, D+ 1000-2400 m
+ * Long   : 50-100 km, D+ 2400-3500 m
+ * Ultra  : > 100 km, D+ > 3500 m
+ *
+ * On retourne 1 ligne par catégorie peuplée (option C — conditionnel).
+ */
+function categorizeTrailRecord(activity) {
+  const type = String(activity?.type || activity?.sportType || "").toLowerCase();
+  if (!type.includes("trail")) return null;
+  const distKm = Number(activity?.distance || 0) / 1000;
+  const elev = Number(activity?.totalElevationGain || 0);
+  if (distKm >= 100 || elev >= 3500) return { key: "trail-ultra", label: "Ultra trail" };
+  if (distKm >= 50 || elev >= 2400) return { key: "trail-long", label: "Trail long" };
+  if (distKm >= 25 || elev >= 1000) return { key: "trail-moyen", label: "Trail moyen" };
+  if (distKm >= 10) return { key: "trail-court", label: "Trail court" };
+  return null;
+}
+
+function buildTrailBestPerformanceRows(scopeActivities = []) {
+  // Best per category (= plus longue distance par catégorie)
+  const byCategory = new Map();
+  for (const a of scopeActivities) {
+    const cat = categorizeTrailRecord(a);
+    if (!cat) continue;
+    const distKm = Number(a?.distance || 0) / 1000;
+    const existing = byCategory.get(cat.key);
+    if (!existing || distKm > existing.distKm) {
+      byCategory.set(cat.key, { ...cat, activity: a, distKm, elev: Number(a?.totalElevationGain || 0) });
+    }
+  }
+  const order = ["trail-court", "trail-moyen", "trail-long", "trail-ultra"];
+  return order
+    .map((k) => byCategory.get(k))
+    .filter(Boolean)
+    .map((entry) => ({
+      key: entry.key,
+      iconKey: "climb",
+      label: entry.label,
+      title: entry.activity?.name || "Trail",
+      value: `${formatRaceDuration(entry.activity?.movingTime || 0)}`,
+      meta: `${Math.round(entry.distKm)} km · ${Math.round(entry.elev)} m D+`,
+    }));
+}
+
+function buildBestPerformancePreview(bestEfforts = {}, scopeActivities = []) {
   const rows = [];
   const records = Array.isArray(bestEfforts.records)
     ? bestEfforts.records.filter((record) => record?.isAvailable)
@@ -706,6 +809,10 @@ function buildBestPerformancePreview(bestEfforts = {}) {
       meta: record.dateLabel || "",
     });
   });
+
+  // Trail ITRA (1 à 4 lignes conditionnelles)
+  const trailRows = buildTrailBestPerformanceRows(scopeActivities);
+  trailRows.forEach((row) => rows.push(row));
 
   const fastest = Array.isArray(bestEfforts.fastest) ? bestEfforts.fastest[0] : null;
   const longest = Array.isArray(bestEfforts.longest) ? bestEfforts.longest[0] : null;
@@ -839,6 +946,7 @@ export function buildPerformanceOverviewModel({
   settings = {},
   bestEfforts = null,
   vdotProfile = null,
+  vdotHistory = null,
   confidence = null,
 } = {}) {
   const canonicalPeriodActivities = getCanonicalPerformanceActivities(periodActivities);
@@ -865,6 +973,7 @@ export function buildPerformanceOverviewModel({
     vdotProfile: resolvedVdotProfile,
     range: resolvedRange,
     settings,
+    vdotHistory,
   });
   const economySignal = buildEconomySignal({
     periodItems,
@@ -880,7 +989,7 @@ export function buildPerformanceOverviewModel({
   });
   const zonePreview = buildHeartRateZonePreview(enduranceSignal.intensityModel);
   const paceDistribution = buildPaceDistribution(periodItems, resolvedVdotProfile);
-  const bestPerformancePreview = buildBestPerformancePreview(resolvedBestEfforts);
+  const bestPerformancePreview = buildBestPerformancePreview(resolvedBestEfforts, canonicalScopeActivities);
   const signals = [adjustedPaceSignal, vdotSignal, economySignal, enduranceSignal];
   const trendSummary = buildPerformanceTrendSummary(signals);
   const takeaway = buildTakeaway({

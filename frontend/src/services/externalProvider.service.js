@@ -58,6 +58,27 @@ export async function getGarminRecoverySnapshots({ days = 56 } = {}) {
   return response.data;
 }
 
+/**
+ * Récupère l'historique VDOT consolidé (3 niveaux : Garmin wellness daily,
+ * Garmin per-activity, fallback Daniels). Source unique de vérité pour la
+ * page Performance / Vue d'ensemble.
+ */
+export async function getVdotHistory({ days = 90 } = {}) {
+  const response = await api.get("/providers/vdot/history", {
+    params: { days },
+  });
+  return response.data;
+}
+
+/**
+ * Déclenche un backfill manuel du VDOT history pour l'utilisateur courant.
+ * Idempotent. Réutilise la cascade 3 niveaux côté serveur.
+ */
+export async function backfillVdotHistory({ days = 90 } = {}) {
+  const response = await api.post("/providers/vdot/backfill", { days });
+  return response.data;
+}
+
 export async function enrichGarminActivities(payload = {}) {
   const response = await api.post("/providers/garmin/activities/enrich", payload);
   return response.data;

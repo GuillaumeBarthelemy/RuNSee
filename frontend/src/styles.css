@@ -13860,26 +13860,112 @@ button.alert-banner-positive-item {
 
 .performance-overview-grid {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 12px;
+}
+
+/* Row 1 — Zones FC + Distribution allures (chacun 1/2) */
+.performance-overview-row-1 {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* Row 2 — Meilleures perf + Tendances + À retenir (chacun 1/3) */
+.performance-overview-row-2 {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+@media (max-width: 1100px) {
+  .performance-overview-row-1,
+  .performance-overview-row-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .performance-panel {
   padding: 16px 18px;
 }
 
-.performance-overview-grid > .performance-panel:nth-child(1),
-.performance-overview-grid > .performance-panel:nth-child(2) {
-  grid-column: span 6;
+/* Sub-titre apres titre principal (ex. "Zones FC (apercu)") */
+.performance-panel-sub {
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--al-muted, #64748b);
+  margin-left: 4px;
 }
 
-.performance-overview-grid > .performance-panel:nth-child(3) {
-  grid-column: span 6;
+/* CTA "Voir tous les records" sous Meilleures performances */
+.performance-best-cta {
+  background: transparent;
+  border: 0;
+  color: var(--al-primary, #1268f3);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 8px 0 0;
+  text-align: left;
+  width: 100%;
 }
 
-.performance-overview-grid > .performance-panel:nth-child(4),
-.performance-overview-grid > .performance-takeaway:nth-child(5) {
-  grid-column: span 3;
+/* Delta dans Best table (++/- vs precedent record) */
+.performance-best-delta { font-size: 11px; font-style: normal; }
+.performance-best-delta.tone-positive { color: #15803d; font-weight: 700; }
+.performance-best-delta.tone-warning  { color: #b45309; font-weight: 700; }
+.performance-best-delta.tone-negative { color: #dc2626; font-weight: 700; }
+
+/* Hint badge sous valeur Tendances (ex. "Bonne" green) */
+.performance-trend-chart-head-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.performance-trend-hint {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.performance-trend-hint.tone-positive { background: #dcfce7; color: #15803d; }
+.performance-trend-hint.tone-neutral  { background: #f1f5f9; color: #475569; }
+.performance-trend-hint.tone-warning  { background: #fef3c7; color: #b45309; }
+
+/* Takeaway — titre principal "À retenir" + sous-titre dynamique */
+.performance-takeaway-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin: 0 0 8px;
+}
+.performance-takeaway-subtitle {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--al-text, #0f2147);
+  margin-bottom: 4px;
+}
+.performance-takeaway-confidence-label {
+  display: block;
+  font-size: 10px;
+  color: var(--al-muted, #64748b);
+  margin-bottom: 4px;
+}
+
+/* Bandeau Conseil du jour + lien droite */
+.performance-coach-bar-with-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.performance-coach-bar-with-link > :first-child {
+  flex: 1;
+}
+.performance-coach-bar-cta {
+  background: transparent;
+  border: 0;
+  color: var(--al-primary, #1268f3);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .performance-panel-head {

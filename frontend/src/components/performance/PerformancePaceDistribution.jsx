@@ -17,8 +17,7 @@ function PerformancePaceDistribution({ distribution = {} }) {
     <section className="performance-panel performance-pace-distribution-card">
       <div className="performance-panel-head">
         <div>
-          <span className="performance-panel-kicker">Allures</span>
-          <h3>Distribution des allures</h3>
+          <h3>Distribution des allures <span className="performance-panel-sub">(durée estimée)</span></h3>
         </div>
       </div>
 
@@ -34,7 +33,7 @@ function PerformancePaceDistribution({ distribution = {} }) {
               />
             </div>
             <b>{bucket.durationLabel}</b>
-            <strong>{Math.round(bucket.share || 0)}%</strong>
+            <strong>({Math.round(bucket.share || 0)}%)</strong>
           </div>
         ))}
       </div>
