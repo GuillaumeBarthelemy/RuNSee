@@ -1,5 +1,16 @@
 import { memo } from "react";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
+import { formatPercentFr } from "../../utils/frenchFormatters.js";
+
+// Bars color-coded mockup PDF p.12 : tres-facile/facile/moderee = bleu pale -> bleu,
+// soutenue = orange, rapide = rouge. Couleur deduite de bucket.key.
+const PACE_BUCKET_COLORS = {
+  "tres-facile": "#dbeafe",
+  "facile": "#93c5fd",
+  "moderee": "#3b82f6",
+  "soutenue": "#f97316",
+  "rapide": "#ef4444",
+};
 
 function PerformancePaceDistribution({ distribution = {} }) {
   if (!distribution?.hasData) {
@@ -22,20 +33,26 @@ function PerformancePaceDistribution({ distribution = {} }) {
       </div>
 
       <div className="performance-pace-distribution-list">
-        {buckets.map((bucket) => (
-          <div className="performance-pace-distribution-row" key={bucket.key}>
-            <span>{bucket.label}</span>
-            <small>{bucket.rangeLabel}</small>
-            <div className="performance-pace-track">
-              <span
-                className={`performance-pace-fill performance-pace-${bucket.tone}`}
-                style={{ width: `${Math.max(2, Math.min(100, Number(bucket.share) || 0))}%` }}
-              />
+        {buckets.map((bucket) => {
+          const barColor = PACE_BUCKET_COLORS[String(bucket.key || "").toLowerCase()] || "#94a3b8";
+          return (
+            <div className="performance-pace-distribution-row" key={bucket.key}>
+              <span>{bucket.label}</span>
+              <small>{bucket.rangeLabel}</small>
+              <div className="performance-pace-track">
+                <span
+                  className="performance-pace-fill"
+                  style={{
+                    width: `${Math.max(2, Math.min(100, Number(bucket.share) || 0))}%`,
+                    background: barColor,
+                  }}
+                />
+              </div>
+              <b>{bucket.durationLabel}</b>
+              <strong>{formatPercentFr(bucket.share || 0, 0)}</strong>
             </div>
-            <b>{bucket.durationLabel}</b>
-            <strong>({Math.round(bucket.share || 0)}%)</strong>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

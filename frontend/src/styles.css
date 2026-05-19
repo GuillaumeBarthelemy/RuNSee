@@ -14303,9 +14303,16 @@ button.alert-banner-positive-item {
   color: #16a34a;
 }
 
-.performance-mini-trend-warning,
-.performance-mini-trend-danger {
+.performance-mini-trend-warning {
   color: #f97316;
+}
+
+.performance-mini-trend-danger {
+  color: #dc2626;
+}
+
+.performance-mini-trend-neutral {
+  color: #64748b;
 }
 
 .performance-metric-sample {

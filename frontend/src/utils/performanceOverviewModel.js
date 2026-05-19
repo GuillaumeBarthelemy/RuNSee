@@ -11,7 +11,6 @@ import {
 } from "./trainingMetrics.js";
 import {
   buildFooterTakeaway,
-  classifyEndurance,
   decorateZone,
   shareZ1Z2,
   shareZ3Z5,
@@ -337,22 +336,23 @@ function buildAdjustedPaceSignal({ periodItems, previousItems, range }) {
     (items) => aggregateAdjustedPace(items)?.value ?? null,
   );
   const improvement = delta.percent;
+  // Classification mockup : "Bonne" par defaut (vert), "En retrait" si delta
+  // negatif >= 2 % (orange). Cohérent avec le ton sparkline.
   const hint = improvement == null
-    ? "Repère actuel"
-    : improvement >= 2
-      ? "Plus rapide"
-      : improvement <= -2
-        ? "En retrait"
-        : "Stable";
+    ? "Bonne"
+    : improvement <= -2
+      ? "En retrait"
+      : "Bonne";
+  const adjustedTone = improvement != null && improvement <= -2 ? "warning" : "positive";
 
   return {
     key: "adjustedPace",
-    label: "Allure ajustée",
+    label: "Allure ajustée (GAP)",
     value: current.value,
     formattedValue: formatPace(current.value),
     unit: "",
     hint,
-    tone: delta.direction === "positive" ? "positive" : delta.direction === "negative" ? "warning" : "neutral",
+    tone: adjustedTone,
     trendLabel: delta.label ? `${delta.label} vs période préc.` : "",
     trendDirection: delta.direction,
     hasData: true,
@@ -388,13 +388,14 @@ function buildEconomySignal({ periodItems, previousItems, range, settings }) {
     range,
     (items) => aggregateEconomy(items, settings)?.value ?? null,
   );
+  // Classification + tone aligne mockup : "Bonne" par defaut, "Moins efficiente"
+  // si delta negatif >= 2 %, sinon tone positive (sparkline verte).
   const hint = delta.percent == null
-    ? "Sorties comparables"
-    : delta.percent >= 2
-      ? "Plus efficiente"
-      : delta.percent <= -2
-        ? "Moins efficiente"
-        : "Stable";
+    ? "Bonne"
+    : delta.percent <= -2
+      ? "Moins efficiente"
+      : "Bonne";
+  const economyTone = delta.percent != null && delta.percent <= -2 ? "warning" : "positive";
 
   return {
     key: "economy",
@@ -403,7 +404,7 @@ function buildEconomySignal({ periodItems, previousItems, range, settings }) {
     formattedValue: current.value.toFixed(2),
     unit: "indice",
     hint,
-    tone: delta.direction === "positive" ? "positive" : delta.direction === "negative" ? "warning" : "neutral",
+    tone: economyTone,
     trendLabel: delta.percent != null ? `${delta.percent > 0 ? "+" : ""}${delta.percent} % vs période préc.` : "",
     trendDirection: delta.direction,
     hasData: true,
@@ -467,6 +468,12 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
     const sourceLabel = latest.source === "garmin" ? "Garmin" : "Estimation interne";
     // Classification user-friendly via la table VDOT (Compétiteur amateur, etc.)
     const level = describeVdotLevel(currentValue);
+    // Tone = niveau de classification (mockup montre vert tant que niveau positif),
+    // degrade en warning si baisse delta significative.
+    const levelTone = level.tone || "neutral";
+    const deltaTone = delta.direction === "negative" && Math.abs(delta.value || 0) >= 1
+      ? "warning"
+      : levelTone;
 
     return {
       key: "vdot",
@@ -475,7 +482,7 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
       formattedValue: currentValue.toFixed(1),
       unit: "",
       hint: level.label || "Profil estimé",
-      tone: delta.direction === "positive" ? "positive" : delta.direction === "negative" ? "warning" : "neutral",
+      tone: deltaTone,
       trendLabel: delta.value != null ? `${delta.value > 0 ? "+" : ""}${delta.value.toFixed(1)} vs point préc.` : "",
       trendDirection: delta.direction,
       hasData: true,
@@ -562,7 +569,17 @@ function buildEnduranceSignal({ periodActivities, previousActivities, range, set
     lowerIsBetter: false,
     unit: "%",
   });
-  const classification = classifyEndurance(currentShare);
+  // Classification Performance V5 (mockup) — wording specifique a cette card,
+  // distinct de classifyEndurance (Analyse > Intensites) qui sert ailleurs.
+  // Seuils : >= 80 % Excellente / 65-80 Correcte / 50-65 Perfectible / < 50 Faible.
+  // Sources : Seiler 2010 (polarized 75-85 % LIT optimal), Stoggl 2014.
+  const enduranceLevel = currentShare >= 80
+    ? { tag: "Excellente", tone: "positive" }
+    : currentShare >= 65
+      ? { tag: "Correcte", tone: "warning" }
+      : currentShare >= 50
+        ? { tag: "Perfectible", tone: "warning" }
+        : { tag: "Faible", tone: "danger" };
   const series = buildTrendSeries(
     buildActivityItems(periodActivities, { settings }),
     range,
@@ -580,8 +597,8 @@ function buildEnduranceSignal({ periodActivities, previousActivities, range, set
     value: currentShare,
     formattedValue: `${Math.round(currentShare)} %`,
     unit: "",
-    hint: classification.tag,
-    tone: classification.tone === 4 ? "warning" : "positive",
+    hint: enduranceLevel.tag,
+    tone: enduranceLevel.tone,
     trendLabel: delta.value != null ? `${delta.value > 0 ? "+" : ""}${delta.value} pts vs période préc.` : "",
     trendDirection: delta.direction,
     hasData: true,

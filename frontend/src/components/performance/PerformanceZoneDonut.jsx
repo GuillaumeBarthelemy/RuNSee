@@ -1,5 +1,6 @@
 import { memo } from "react";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
+import { formatDurationMmSsFr, formatPercentFr } from "../../utils/frenchFormatters.js";
 
 const ZONE_COLORS = {
   z1: "#3b82f6",
@@ -50,7 +51,7 @@ function PerformanceZoneDonut({ preview = {} }) {
     <section className="performance-panel performance-zone-donut-card">
       <div className="performance-panel-head">
         <div>
-          <h3>Zones de fréquence cardiaque <span className="performance-panel-sub">(aperçu)</span></h3>
+          <h3>Zones de fréquence cardiaque <span className="performance-panel-sub">(moyenne)</span></h3>
         </div>
       </div>
 
@@ -66,6 +67,7 @@ function PerformanceZoneDonut({ preview = {} }) {
           {zones.map((zone) => {
             const key = String(zone.key || "").toLowerCase();
             const v5Label = V5_ZONE_LABELS[key] || zone.shortLabel || zone.label;
+            const durationSeconds = Number(zone.durationSeconds || zone.durationMinutes * 60 || 0);
             return (
               <div className="performance-zone-legend-row" key={zone.key}>
                 <span
@@ -73,8 +75,8 @@ function PerformanceZoneDonut({ preview = {} }) {
                   style={{ background: ZONE_COLORS[key] || "#94a3b8" }}
                 />
                 <span><strong>{zone.shortLabel || key.toUpperCase()}</strong> {v5Label}</span>
-                <b>{zone.durationLabel}</b>
-                <strong>({Math.round(zone.share || 0)} %)</strong>
+                <b>{formatDurationMmSsFr(durationSeconds)}</b>
+                <strong>({formatPercentFr(zone.share || 0, 0)})</strong>
               </div>
             );
           })}
