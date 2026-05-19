@@ -37,6 +37,8 @@ function PerformanceMiniTrend({ points = [], tone = "neutral", label = "Tendance
     );
   }
 
+  const areaPoints = `0,34 ${normalized.join(" ")} 120,34`;
+
   return (
     <svg
       className={`performance-mini-trend performance-mini-trend-${tone}`}
@@ -44,6 +46,7 @@ function PerformanceMiniTrend({ points = [], tone = "neutral", label = "Tendance
       role="img"
       aria-label={label}
     >
+      <polygon points={areaPoints} className="performance-mini-trend-area" />
       <polyline points={normalized.join(" ")} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );

@@ -59,6 +59,47 @@ function formatDate(value) {
   return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }).replace(".", "");
 }
 
+function formatDurationCompact(seconds) {
+  const safeSeconds = Math.max(0, Math.round(toFiniteNumber(seconds)));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.round((safeSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${String(minutes).padStart(2, "0")}`;
+  }
+
+  return `${minutes} min`;
+}
+
+function formatRaceDuration(seconds) {
+  const safeSeconds = Math.max(0, Math.round(toFiniteNumber(seconds)));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const remainingSeconds = safeSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
+function formatPaceShort(secondsPerKm) {
+  const formatted = formatPace(secondsPerKm);
+  return formatted && formatted !== "-" ? formatted.replace("/km", "") : "-";
+}
+
+function formatPaceRange(range = {}) {
+  const faster = toFiniteNumber(range.faster);
+  const slower = toFiniteNumber(range.slower);
+
+  if (faster > 0 && slower > 0) {
+    return `${formatPaceShort(faster)} - ${formatPaceShort(slower)}`;
+  }
+
+  return "-";
+}
+
 function buildRangeLabel(startDate, endDate) {
   const start = formatDate(startDate);
   const end = formatDate(endDate);
@@ -513,8 +554,11 @@ function buildHeartRateZonePreview(intensityModel = {}) {
     ...zone,
     ...decorateZone(zone),
     share: toFiniteNumber(zone.durationShare),
+    durationSeconds: toFiniteNumber(zone.durationSeconds),
+    durationLabel: formatDurationCompact(zone.durationSeconds),
     label: zone.label || zone.key?.toUpperCase() || "",
   }));
+  const totalDurationSeconds = decoratedZones.reduce((sum, zone) => sum + toFiniteNumber(zone.durationSeconds), 0);
   const easyShare = shareZ1Z2(intensityModel);
   const harderShare = shareZ3Z5(intensityModel);
 
@@ -522,6 +566,8 @@ function buildHeartRateZonePreview(intensityModel = {}) {
     hasData: true,
     title: "Zones de fréquence cardiaque",
     sourceLabel: intensityModel.sourceLabel || "Zones FC",
+    totalDurationSeconds,
+    totalDurationLabel: formatDurationCompact(totalDurationSeconds),
     easyShare,
     harderShare,
     summary: buildFooterTakeaway(intensityModel),
@@ -542,28 +588,54 @@ function getPaceBucket(item, vdotProfile) {
   const ef = findRoadPace(vdotProfile, "EF")?.paceRangeSecondsPerKm;
   const s1 = findRoadPace(vdotProfile, "S1")?.paceRangeSecondsPerKm;
   const s2 = findRoadPace(vdotProfile, "S2")?.paceRangeSecondsPerKm;
-  const vo2 = findRoadPace(vdotProfile, "VO2")?.paceRangeSecondsPerKm;
-  const speed = findRoadPace(vdotProfile, "R")?.paceRangeSecondsPerKm;
 
-  if (!ef || !s1 || !s2 || !vo2 || !speed) {
+  if (!ef || !s1 || !s2) {
     return null;
   }
 
+  if (pace >= ef.slower) return "veryEasy";
   if (pace >= ef.faster) return "easy";
-  if (pace >= s1.faster && pace < ef.faster) return "steady";
-  if (pace >= s2.faster && pace < s1.faster) return "threshold";
-  if (pace >= vo2.faster && pace < s2.faster) return "fast";
-  if (pace < vo2.faster) return "speed";
-  return "other";
+  if (pace >= s1.faster) return "moderate";
+  if (pace >= s2.faster) return "sustained";
+  return "rapid";
 }
 
 function buildPaceDistribution(periodItems, vdotProfile) {
+  const ef = findRoadPace(vdotProfile, "EF")?.paceRangeSecondsPerKm;
+  const s1 = findRoadPace(vdotProfile, "S1")?.paceRangeSecondsPerKm;
+  const s2 = findRoadPace(vdotProfile, "S2")?.paceRangeSecondsPerKm;
+
   const bucketDefinitions = [
-    { key: "easy", label: "Facile", tone: "positive" },
-    { key: "steady", label: "Endurance", tone: "neutral" },
-    { key: "threshold", label: "Seuil", tone: "warning" },
-    { key: "fast", label: "Rapide", tone: "warning" },
-    { key: "speed", label: "Très rapide", tone: "danger" },
+    {
+      key: "veryEasy",
+      label: "Très facile",
+      tone: "easy",
+      rangeLabel: ef?.slower ? `> ${formatPaceShort(ef.slower)}/km` : "-",
+    },
+    {
+      key: "easy",
+      label: "Facile",
+      tone: "positive",
+      rangeLabel: ef ? `${formatPaceRange(ef)}/km` : "-",
+    },
+    {
+      key: "moderate",
+      label: "Modérée",
+      tone: "neutral",
+      rangeLabel: s1 ? `${formatPaceRange(s1)}/km` : "-",
+    },
+    {
+      key: "sustained",
+      label: "Soutenue",
+      tone: "warning",
+      rangeLabel: s2 ? `${formatPaceRange(s2)}/km` : "-",
+    },
+    {
+      key: "rapid",
+      label: "Rapide",
+      tone: "danger",
+      rangeLabel: s2?.faster ? `< ${formatPaceShort(s2.faster)}/km` : "-",
+    },
   ];
   const buckets = new Map(bucketDefinitions.map((bucket) => [bucket.key, { ...bucket, seconds: 0, count: 0 }]));
   let totalSeconds = 0;
@@ -589,16 +661,17 @@ function buildPaceDistribution(periodItems, vdotProfile) {
     };
   }
 
+  const activeBucketCount = Array.from(buckets.values()).filter((bucket) => bucket.seconds > 0).length;
   const formattedBuckets = bucketDefinitions
     .map((definition) => buckets.get(definition.key))
-    .filter((bucket) => bucket.seconds > 0)
     .map((bucket) => ({
       ...bucket,
       share: Math.round((bucket.seconds / totalSeconds) * 100),
       minutes: Math.round(bucket.seconds / 60),
+      durationLabel: formatDurationCompact(bucket.seconds),
     }));
 
-  if (formattedBuckets.length < 1 || periodItems.length < MIN_COMPARABLE_PACE_RUNS) {
+  if (activeBucketCount < 1 || periodItems.length < MIN_COMPARABLE_PACE_RUNS) {
     return {
       hasData: false,
       title: "Distribution des allures",
@@ -611,58 +684,65 @@ function buildPaceDistribution(periodItems, vdotProfile) {
     hasData: true,
     title: "Distribution des allures",
     buckets: formattedBuckets,
+    totalDurationSeconds: totalSeconds,
+    totalDurationLabel: formatDurationCompact(totalSeconds),
     summary: `Lecture basée sur ${formattedBuckets.reduce((sum, bucket) => sum + bucket.count, 0)} sortie(s) comparables.`,
   };
 }
 
 function buildBestPerformancePreview(bestEfforts = {}) {
   const rows = [];
+  const records = Array.isArray(bestEfforts.records)
+    ? bestEfforts.records.filter((record) => record?.isAvailable)
+    : [];
+
+  records.forEach((record) => {
+    rows.push({
+      key: `record-${record.recordKey}`,
+      iconKey: "record",
+      label: record.recordLabel,
+      title: record.activity?.name || record.name || "Record route",
+      value: formatRaceDuration(record.elapsedSeconds),
+      meta: record.dateLabel || "",
+    });
+  });
+
   const fastest = Array.isArray(bestEfforts.fastest) ? bestEfforts.fastest[0] : null;
   const longest = Array.isArray(bestEfforts.longest) ? bestEfforts.longest[0] : null;
   const climbing = Array.isArray(bestEfforts.climbing) ? bestEfforts.climbing[0] : null;
-  const records = Array.isArray(bestEfforts.records)
-    ? bestEfforts.records.filter((record) => record?.isAvailable).slice(0, 2)
-    : [];
 
   if (fastest) {
     rows.push({
       key: "fastest",
+      iconKey: "speed",
       label: "Allure récente",
-      title: fastest.name || fastest.title || "Sortie rapide",
-      value: fastest.formattedValue || fastest.value || "",
-      date: fastest.dateLabel || "",
+      title: fastest.activity?.name || fastest.name || "Sortie rapide",
+      value: formatPace(fastest.value),
+      meta: fastest.dateLabel || "",
     });
   }
 
   if (longest) {
     rows.push({
       key: "longest",
+      iconKey: "distance",
       label: "Sortie longue",
-      title: longest.name || longest.title || "Sortie longue",
-      value: longest.formattedValue || longest.value || "",
-      date: longest.dateLabel || "",
+      title: longest.activity?.name || longest.name || "Sortie longue",
+      value: `${toFiniteNumber(longest.value).toFixed(1)} km`,
+      meta: longest.dateLabel || "",
     });
   }
 
   if (climbing) {
     rows.push({
       key: "climbing",
+      iconKey: "climb",
       label: "Dénivelé",
-      title: climbing.name || climbing.title || "Sortie vallonnée",
-      value: climbing.formattedValue || climbing.value || "",
-      date: climbing.dateLabel || "",
+      title: climbing.activity?.name || climbing.name || "Sortie vallonnée",
+      value: `${Math.round(toFiniteNumber(climbing.value))} m`,
+      meta: climbing.dateLabel || "",
     });
   }
-
-  records.forEach((record) => {
-    rows.push({
-      key: `record-${record.recordKey}`,
-      label: `Record ${record.recordLabel}`,
-      title: record.activity?.name || record.name || "Record route",
-      value: formatPace(record.paceSecondsPerKm).replace("/km", ""),
-      date: record.dateLabel || "",
-    });
-  });
 
   return {
     hasData: rows.length > 0,
@@ -676,6 +756,10 @@ function buildPerformanceTrendSummary(signals = []) {
   const usableSignals = signals.filter((signal) => signal?.hasData);
   const positiveCount = usableSignals.filter((signal) => signal.trendDirection === "positive").length;
   const negativeCount = usableSignals.filter((signal) => signal.trendDirection === "negative").length;
+  const primarySignal = usableSignals.find((signal) => signal.key === "vdot")
+    || usableSignals.find((signal) => Array.isArray(signal.series) && signal.series.length >= 2)
+    || usableSignals[0]
+    || null;
 
   let tone = "neutral";
   let title = "Tendance stable";
@@ -699,6 +783,9 @@ function buildPerformanceTrendSummary(signals = []) {
     tone,
     title,
     text,
+    primaryLabel: primarySignal?.label || "",
+    primaryValue: primarySignal?.formattedValue || "",
+    series: Array.isArray(primarySignal?.series) ? primarySignal.series : [],
     rows: usableSignals.map((signal) => ({
       key: signal.key,
       label: signal.label,

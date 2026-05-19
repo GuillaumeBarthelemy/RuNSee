@@ -14049,3 +14049,550 @@ button.alert-banner-positive-item {
     grid-template-columns: 1fr;
   }
 }
+
+/* === Performance overview V5 mockup alignment ========================== */
+
+.performance-page {
+  gap: 10px;
+}
+
+.performance-page .alpine-subtabs {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0 0 8px;
+  overflow: visible;
+}
+
+.performance-page .alpine-subtabs-track {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  border-bottom: 1px solid rgba(53, 88, 134, 0.13);
+}
+
+.performance-page .alpine-subtab {
+  position: relative;
+  justify-content: center;
+  min-height: 34px;
+  border-radius: 0;
+  padding: 8px 10px 10px;
+  font-size: 12px;
+  color: #355886;
+}
+
+.performance-page .alpine-subtab:hover,
+.performance-page .alpine-subtab.is-disabled:hover {
+  background: transparent;
+  color: #0f2147;
+}
+
+.performance-page .alpine-subtab.is-active {
+  background: transparent;
+  color: #1268f3;
+}
+
+.performance-page .alpine-subtab.is-active::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  bottom: -1px;
+  left: 18px;
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: #1268f3;
+}
+
+.performance-page .alpine-subtab.is-disabled {
+  color: rgba(53, 88, 134, 0.82);
+}
+
+.performance-filter-compact {
+  align-self: flex-end;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 18px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.performance-filter-compact > span {
+  color: #355886;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.performance-filter-compact label,
+.performance-filter-compact button {
+  min-height: 36px;
+  border-color: rgba(53, 88, 134, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 24px rgba(15, 34, 67, 0.06);
+}
+
+.performance-overview-context {
+  margin-top: 2px;
+  color: #355886;
+}
+
+.performance-metric-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.performance-metric-card {
+  min-height: 132px;
+  padding: 13px 14px 11px;
+  border-color: rgba(53, 88, 134, 0.12);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.74)),
+    radial-gradient(circle at right top, rgba(18, 104, 243, 0.08), transparent 42%);
+  box-shadow: 0 14px 32px rgba(15, 34, 67, 0.07);
+}
+
+.performance-metric-card.performance-tone-warning {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.74)),
+    radial-gradient(circle at right top, rgba(249, 115, 22, 0.12), transparent 42%);
+}
+
+.performance-metric-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.performance-metric-value-row strong {
+  font-size: clamp(24px, 2.1vw, 30px);
+}
+
+.performance-metric-hint {
+  color: #15803d;
+  font-size: 11px;
+}
+
+.performance-metric-card.performance-tone-warning .performance-metric-hint {
+  color: #ea580c;
+}
+
+.performance-metric-delta {
+  padding: 3px 8px;
+  font-size: 10px;
+  background: rgba(18, 104, 243, 0.08);
+}
+
+.performance-delta-positive {
+  color: #007a33;
+}
+
+.performance-delta-negative {
+  color: #ea580c;
+}
+
+.performance-mini-trend {
+  height: 36px;
+  margin-top: 3px;
+}
+
+.performance-mini-trend-area {
+  fill: currentColor;
+  opacity: 0.14;
+}
+
+.performance-mini-trend-positive {
+  color: #16a34a;
+}
+
+.performance-mini-trend-warning,
+.performance-mini-trend-danger {
+  color: #f97316;
+}
+
+.performance-metric-sample {
+  display: none;
+}
+
+.performance-overview-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.performance-panel,
+.performance-takeaway-card {
+  border: 1px solid rgba(53, 88, 134, 0.12);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.78)),
+    radial-gradient(circle at right top, rgba(249, 115, 22, 0.08), transparent 42%);
+  box-shadow: 0 14px 32px rgba(15, 34, 67, 0.07);
+}
+
+.performance-panel {
+  padding: 14px 16px;
+}
+
+.performance-panel h3,
+.performance-takeaway-card h3 {
+  font-size: 18px;
+  line-height: 1.12;
+}
+
+.performance-zone-donut-card,
+.performance-pace-distribution-card {
+  min-height: 214px;
+}
+
+.performance-overview-grid > .performance-zone-donut-card,
+.performance-overview-grid > .performance-pace-distribution-card {
+  grid-column: span 6;
+}
+
+.performance-overview-grid > .performance-best-table-card,
+.performance-overview-grid > .performance-trend-chart-card {
+  grid-column: span 4;
+}
+
+.performance-overview-grid > .performance-takeaway-card {
+  grid-column: span 4;
+}
+
+.performance-zone-donut-layout {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.performance-zone-donut {
+  width: 150px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--zone-gradient);
+  box-shadow: inset 0 0 0 1px rgba(53, 88, 134, 0.06);
+}
+
+.performance-zone-donut > div {
+  width: 86px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  border-radius: 999px;
+  background: #fff;
+  color: #0f2147;
+  box-shadow: 0 6px 20px rgba(15, 34, 67, 0.08);
+}
+
+.performance-zone-donut strong {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.performance-zone-donut span {
+  color: #6f85a4;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.performance-zone-legend {
+  display: grid;
+  gap: 7px;
+}
+
+.performance-zone-legend-row {
+  display: grid;
+  grid-template-columns: 12px 88px minmax(0, 1fr) 56px 42px;
+  gap: 8px;
+  align-items: center;
+  color: #355886;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.performance-zone-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.performance-zone-legend-row small {
+  color: #6f85a4;
+  font-size: 11px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.performance-zone-legend-row b,
+.performance-zone-legend-row strong {
+  color: #0f2147;
+  text-align: right;
+  font-style: normal;
+}
+
+.performance-pace-distribution-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.performance-pace-distribution-row {
+  display: grid;
+  grid-template-columns: 82px 96px minmax(0, 1fr) 54px 38px;
+  gap: 10px;
+  align-items: center;
+  color: #355886;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.performance-pace-distribution-row small {
+  color: #6f85a4;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.performance-pace-track {
+  height: 9px;
+  background: rgba(53, 88, 134, 0.09);
+}
+
+.performance-pace-easy {
+  background: #93c5fd;
+}
+
+.performance-pace-positive {
+  background: #1268f3;
+}
+
+.performance-pace-neutral {
+  background: #22c55e;
+}
+
+.performance-pace-warning {
+  background: #f59e0b;
+}
+
+.performance-pace-danger {
+  background: #ef4444;
+}
+
+.performance-pace-distribution-row b,
+.performance-pace-distribution-row strong {
+  color: #0f2147;
+  text-align: right;
+  font-style: normal;
+}
+
+.performance-best-table {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.performance-best-table-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(53, 88, 134, 0.08);
+}
+
+.performance-best-table-row:last-child {
+  border-bottom: 0;
+}
+
+.performance-best-icon {
+  color: #1268f3;
+  font-weight: 900;
+}
+
+.performance-best-table-row div {
+  min-width: 0;
+}
+
+.performance-best-table-row strong {
+  display: block;
+  color: #0f2147;
+  font-size: 12px;
+}
+
+.performance-best-table-row small,
+.performance-best-table-row em {
+  display: block;
+  color: #6f85a4;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.performance-best-table-row b {
+  color: #0f2147;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.performance-best-table-row em {
+  grid-column: 2 / -1;
+  margin-top: -5px;
+}
+
+.performance-trend-chart-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.performance-trend-chart-head > div:last-child {
+  text-align: right;
+}
+
+.performance-trend-chart-head small {
+  display: block;
+  color: #6f85a4;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.performance-trend-chart-head strong {
+  color: #1268f3;
+  font-size: 22px;
+}
+
+.performance-trend-chart {
+  width: 100%;
+  height: 112px;
+  margin-top: 10px;
+  color: #7c3aed;
+}
+
+.performance-trend-chart line {
+  stroke: rgba(53, 88, 134, 0.1);
+  stroke-dasharray: 3 5;
+}
+
+.performance-trend-chart circle {
+  fill: currentColor;
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+.performance-trend-caption {
+  display: inline-flex;
+  margin-top: 6px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(18, 104, 243, 0.08);
+  color: #1268f3;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.performance-takeaway-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.performance-takeaway-body {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.performance-takeaway-shield {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(18, 104, 243, 0.1);
+  color: #1268f3;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.performance-takeaway-card p {
+  margin: 7px 0 0;
+  color: #355886;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.performance-takeaway-confidence {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.performance-overview-tab > .alpine-coach-advice {
+  margin-top: 2px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 1180px) {
+  .performance-overview-grid > .performance-zone-donut-card,
+  .performance-overview-grid > .performance-pace-distribution-card,
+  .performance-overview-grid > .performance-best-table-card,
+  .performance-overview-grid > .performance-trend-chart-card,
+  .performance-overview-grid > .performance-takeaway-card {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 860px) {
+  .performance-page .alpine-subtabs-track,
+  .performance-metric-grid,
+  .performance-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-overview-grid > .performance-zone-donut-card,
+  .performance-overview-grid > .performance-pace-distribution-card,
+  .performance-overview-grid > .performance-best-table-card,
+  .performance-overview-grid > .performance-trend-chart-card,
+  .performance-overview-grid > .performance-takeaway-card {
+    grid-column: span 1;
+  }
+
+  .performance-zone-donut-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-zone-donut {
+    margin: 0 auto;
+  }
+
+  .performance-zone-legend-row,
+  .performance-pace-distribution-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .performance-zone-dot,
+  .performance-zone-legend-row small,
+  .performance-pace-distribution-row small,
+  .performance-zone-legend-row b,
+  .performance-pace-track {
+    display: none;
+  }
+}
