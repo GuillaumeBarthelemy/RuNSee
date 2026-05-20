@@ -16,7 +16,7 @@ import {
   shareZ3Z5,
 } from "./analyticsIntensities.js";
 import { buildVdotProfile, describeVdotLevel } from "./runningPerformance.js";
-import { formatShortDateFr } from "./frenchFormatters.js";
+import { formatShortDateFr, formatDateRangeFr } from "./frenchFormatters.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_TREND_POINTS = 6;
@@ -356,8 +356,12 @@ function buildAdjustedPaceSignal({ periodItems, previousItems, range }) {
     key: "adjustedPace",
     label: "Allure ajustée (GAP)",
     value: current.value,
-    formattedValue: formatPace(current.value),
-    unit: "",
+    // Mockup p.12 : valeur sans zero-padding (5:55 et non 05:55), unite separee.
+    formattedValue: (() => {
+      const s = Math.max(0, Math.round(current.value));
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    })(),
+    unit: "/km",
     hint,
     tone: adjustedTone,
     trendLabel: delta.label ? `${delta.label} vs période préc.` : "",
@@ -996,30 +1000,26 @@ function buildTakeaway({ signals, confidence, zonePreview, paceDistribution }) {
   // Multi-paragraphes scientifiques : 2 a 3 paragraphes courts, valeurs embarquees + actionnable.
   const paragraphs = [];
   const vdotSignal = availableSignals.find((s) => s.key === "vdot");
-  const paceSignal = availableSignals.find((s) => s.key === "adjustedPace");
   const economySig = availableSignals.find((s) => s.key === "economy");
   const enduranceSig = availableSignals.find((s) => s.key === "endurance");
 
   if (vdotSignal?.formattedValue) {
-    const lvl = vdotSignal.hint || "niveau a consolider";
-    const delta = vdotSignal.trendLabel ? ` (${vdotSignal.trendLabel} sur la periode)` : "";
+    const lvl = (vdotSignal.hint || "niveau a consolider").toLowerCase();
+    const deltaPart = vdotSignal.trendLabel
+      ? ` (${vdotSignal.trendLabel.split(" vs ")[0]})`
+      : "";
     paragraphs.push(
-      `VDOT estime a ${vdotSignal.formattedValue}${delta}, classe « ${lvl} » (Daniels 1979). Cette valeur reste un proxy de la capacite aerobie : croise-la avec ta FC de reserve et ton ressenti d'effort avant d'ajuster tes allures cibles.`,
+      `VDOT ${vdotSignal.formattedValue}${deltaPart}, ${lvl} (Daniels 1979).`,
     );
   }
-  if (paceSignal?.hasData && enduranceSig?.hasData) {
-    const enduranceShare = enduranceSig.formattedValue || "—";
+  if (enduranceSig?.hasData) {
     paragraphs.push(
-      `Allure ajustee (GAP) ${paceSignal.formattedValue || "—"} et part facile (Z1-Z2) ${enduranceShare} : un ratio polarise > 80 % en bas spectre soutient la mitochondriogenese (Seiler 2010). Si l'endurance recule, repasse une semaine en volume bas avant un nouveau bloc qualite.`,
-    );
-  } else if (enduranceSig?.hasData) {
-    paragraphs.push(
-      `Part facile (Z1-Z2) a ${enduranceSig.formattedValue || "—"}. Vise > 80 % pour conserver l'efficacite mitochondriale et limiter le stress sympathique (Seiler 2010).`,
+      `Part facile (Z1-Z2) ${enduranceSig.formattedValue}. Vise > 80 % pour soutenir la mitochondriogenese (Seiler 2010).`,
     );
   }
   if (economySig?.hasData) {
     paragraphs.push(
-      `Economie de course (indice base 100, reference 12 km/h @ 150 bpm) : ${economySig.formattedValue}. Une hausse durable a allure constante traduit un gain d'efficience (di Prampero 1986).`,
+      `Economie ${economySig.formattedValue} (indice base 100). Une hausse durable a allure constante = gain d'efficience (di Prampero 1986).`,
     );
   }
   if (!paragraphs.length) {
@@ -1087,7 +1087,14 @@ export function buildPerformanceOverviewModel({
   const zonePreview = buildHeartRateZonePreview(enduranceSignal.intensityModel);
   const paceDistribution = buildPaceDistribution(periodItems, resolvedVdotProfile);
   const bestPerformancePreview = buildBestPerformancePreview(resolvedBestEfforts, canonicalScopeActivities);
-  const signals = [adjustedPaceSignal, vdotSignal, economySignal, enduranceSignal];
+  // Mockup p.12 : delta wording "vs 30 avr - 4 mai" au lieu de "vs période préc."
+  const prevRangeLabel = (prevRange?.startDate && prevRange?.endDate)
+    ? formatDateRangeFr(prevRange.startDate, prevRange.endDate)
+    : "période préc.";
+  const replacePrevLabel = (signal) => (signal && signal.trendLabel
+    ? { ...signal, trendLabel: signal.trendLabel.replace("période préc.", prevRangeLabel) }
+    : signal);
+  const signals = [adjustedPaceSignal, vdotSignal, economySignal, enduranceSignal].map(replacePrevLabel);
   const trendSummary = buildPerformanceTrendSummary(signals);
   const takeaway = buildTakeaway({
     signals,

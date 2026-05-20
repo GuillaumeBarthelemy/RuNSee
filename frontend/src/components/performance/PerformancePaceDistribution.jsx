@@ -2,13 +2,13 @@ import { memo } from "react";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
 import { formatPercentFr } from "../../utils/frenchFormatters.js";
 
-// Bars color-coded mockup PDF p.12 : tres-facile/facile/moderee = bleu pale -> bleu,
+// Bars color-coded mockup PDF p.12 : allures faciles/moderees = bleu sature,
 // soutenue = orange, rapide = rouge. Couleur deduite de bucket.key.
 const PACE_BUCKET_COLORS = {
-  "tres-facile": "#dbeafe",
-  "facile": "#93c5fd",
-  "moderee": "#3b82f6",
-  "soutenue": "#f97316",
+  "tres-facile": "#1268f3",
+  "facile": "#1268f3",
+  "moderee": "#1268f3",
+  "soutenue": "#fb923c",
   "rapide": "#ef4444",
 };
 

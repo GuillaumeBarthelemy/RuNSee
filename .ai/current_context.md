@@ -1,5 +1,14 @@
 # Current Context
 
+## Conventions persistantes onglet Performance (2026-05-20)
+
+Decisions utilisateur a appliquer pour TOUS les futurs sous-onglets Performance :
+- **Topbar/filtrage** : on conserve `AnalyticsCompactFilters` (recherche + sport + periode + reset). Pas de date picker pill minimaliste mockup.
+- **Sous-onglets** : tous les onglets doivent etre actifs/cliquables (pas de `disabled: true`). Meme presentation/composant que la page Analyse : `SubTabs` + `activeTabId = hash` + rendu conditionnel d'onglet, avec un placeholder « onglet en cours de construction » pour les onglets pas encore livres.
+- **Charts** : recharts pour les graphiques avec axes (pas de SVG manuel).
+- **A retenir** : analyse scientifique conservee mais format condense (phrases courtes, references entre parentheses inline).
+
+
 ## Revue pixel-perfect Performance (2026-05-18)
 
 - Regle projet ajoutee dans `.ai/dev_rules.md` : tout chantier UI avec mockup doit passer par une capture cible + comparaison mockup avant commit/push, avec correction des ecarts bloquants/importants ou validation explicite.

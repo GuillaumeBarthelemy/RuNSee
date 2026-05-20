@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import PerformanceOverviewTab from "../components/performance/PerformanceOverviewTab.jsx";
 import AnalyticsCompactFilters from "../components/analytics/AnalyticsCompactFilters.jsx";
 import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
@@ -18,12 +19,14 @@ import {
 } from "../utils/performanceOverviewModel.js";
 import { buildVdotProfile } from "../utils/runningPerformance.js";
 
+// Tous les onglets restent cliquables (style Analyse). Les onglets non encore
+// livres rendent un placeholder "en cours de construction" — voir .ai/current_context.md.
 const PERFORMANCE_TABS = [
   { id: "overview", label: "Vue d'ensemble" },
-  { id: "vdot", label: "VDOT & profil", disabled: true, title: "Onglet prévu au lot Performance suivant" },
-  { id: "allures", label: "Allures de référence", disabled: true, title: "Onglet prévu au lot Performance suivant" },
-  { id: "fc-performance", label: "FC de performance", disabled: true, title: "Onglet prévu au lot Performance suivant" },
-  { id: "records", label: "Records", disabled: true, title: "Onglet prévu au lot Performance suivant" },
+  { id: "vdot", label: "VDOT & profil" },
+  { id: "allures", label: "Allures de référence" },
+  { id: "fc-performance", label: "FC de performance" },
+  { id: "records", label: "Records" },
 ];
 
 /**
@@ -196,6 +199,11 @@ export default function PerformancePage() {
     };
   }, [recordEnrichmentCandidates, reload]);
 
+  // Onglet actif depuis le hash URL (meme logique que AnalyticsPage).
+  const location = useLocation();
+  const hash = location.hash.replace(/^#/, "");
+  const activeTabId = PERFORMANCE_TABS.some((t) => t.id === hash) ? hash : "overview";
+
   const handleSharedPresetChange = (preset) => {
     if (preset === "custom") {
       setOption("sharedPeriodPreset", "custom");
@@ -248,7 +256,17 @@ export default function PerformancePage() {
 
         <SubTabs tabs={PERFORMANCE_TABS} defaultTabId="overview" />
 
-        <PerformanceOverviewTab model={overviewModel} />
+        {activeTabId === "overview" ? (
+          <PerformanceOverviewTab model={overviewModel} />
+        ) : (
+          <div className="card section performance-tab-placeholder">
+            <h2>Onglet en cours de construction</h2>
+            <p>
+              Ce sous-onglet sera livre dans un lot Performance dedie. Repasse sur
+              « Vue d'ensemble » pour la version actuelle.
+            </p>
+          </div>
+        )}
       </div>
     </AppShell>
   );

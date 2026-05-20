@@ -25,16 +25,17 @@ function PerformanceMetricCard({ metric = {} }) {
             {metric.unit ? <span>{metric.unit}</span> : null}
           </div>
           <p className="performance-metric-hint">{metric.hint}</p>
-          {metric.trendLabel ? (
-            <span className={`performance-metric-delta performance-delta-${metric.trendDirection || "neutral"}`}>
-              {metric.trendLabel}
-            </span>
-          ) : null}
           <PerformanceMiniTrend
             points={metric.series || []}
             tone={tone}
             label={`Tendance ${metric.label}`}
           />
+          {/* Mockup p.12 : delta pill sous la sparkline */}
+          {metric.trendLabel ? (
+            <span className={`performance-metric-delta performance-delta-${metric.trendDirection || "neutral"}`}>
+              {metric.trendLabel}
+            </span>
+          ) : null}
           {metric.sourceLabel ? (
             <span className="performance-metric-source">via {metric.sourceLabel}</span>
           ) : null}

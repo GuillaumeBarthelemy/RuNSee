@@ -1,32 +1,16 @@
 import { memo, useMemo, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
 
-function normalize(points = [], width = 248, height = 92) {
-  const values = points
-    .map((point) => Number(point?.value))
-    .filter((value) => Number.isFinite(value));
-
-  if (values.length < 2) return [];
-
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const spread = Math.max(1, max - min);
-
-  return points
-    .map((point, index) => {
-      const value = Number(point?.value);
-      if (!Number.isFinite(value)) return null;
-      const x = (index / Math.max(1, points.length - 1)) * width;
-      const y = height - ((value - min) / spread) * height;
-      return {
-        x: Math.round(x * 10) / 10,
-        y: Math.round(y * 10) / 10,
-        value,
-        label: point.label,
-      };
-    })
-    .filter(Boolean);
-}
+const TREND_COLOR = "#7c3aed"; // violet mockup p.12
 
 function PerformanceTrendChart({ trend = {} }) {
   const availableSignals = useMemo(
@@ -40,9 +24,18 @@ function PerformanceTrendChart({ trend = {} }) {
     return availableSignals.find((s) => s.key === selectedKey) || availableSignals[0];
   }, [availableSignals, selectedKey]);
 
-  const seriesToPlot = activeSignal?.series || trend.series || [];
-  const points = normalize(seriesToPlot);
-  if (!trend?.hasData || points.length < 2) {
+  const chartData = useMemo(() => {
+    const seriesToPlot = activeSignal?.series || trend.series || [];
+    if (!Array.isArray(seriesToPlot)) return [];
+    return seriesToPlot
+      .map((point) => ({
+        label: point?.label || "",
+        value: Number(point?.value),
+      }))
+      .filter((point) => Number.isFinite(point.value));
+  }, [activeSignal, trend.series]);
+
+  if (!trend?.hasData || chartData.length < 2) {
     return (
       <section className="performance-panel performance-trend-chart-card">
         <h3>Tendances de performance</h3>
@@ -51,26 +44,11 @@ function PerformanceTrendChart({ trend = {} }) {
     );
   }
 
-  const polyline = points.map((point) => `${point.x},${point.y}`).join(" ");
-  const lastPoint = points.at(-1);
-
   return (
     <section className="performance-panel performance-trend-chart-card">
       <div className="performance-trend-chart-head">
         <div>
           <h3>Tendances de performance</h3>
-          {availableSignals.length > 1 ? (
-            <select
-              className="performance-trend-signal-select"
-              value={activeSignal?.key || availableSignals[0]?.key || ""}
-              onChange={(event) => setSelectedKey(event.target.value)}
-              aria-label="Signal de tendance"
-            >
-              {availableSignals.map((signal) => (
-                <option key={signal.key} value={signal.key}>{signal.label}</option>
-              ))}
-            </select>
-          ) : null}
         </div>
         <div className="performance-trend-chart-head-value">
           <small>{activeSignal?.label || trend.primaryLabel || "Signal"}</small>
@@ -81,15 +59,60 @@ function PerformanceTrendChart({ trend = {} }) {
             </span>
           ) : null}
         </div>
+        {availableSignals.length > 1 ? (
+          <select
+            className="performance-trend-signal-select"
+            value={activeSignal?.key || availableSignals[0]?.key || ""}
+            onChange={(event) => setSelectedKey(event.target.value)}
+            aria-label="Signal de tendance"
+          >
+            {availableSignals.map((signal) => (
+              <option key={signal.key} value={signal.key}>{signal.label}</option>
+            ))}
+          </select>
+        ) : null}
       </div>
 
-      <svg className="performance-trend-chart" viewBox="0 0 248 92" role="img" aria-label="Tendance de performance">
-        <line x1="0" x2="248" y1="74" y2="74" />
-        <line x1="0" x2="248" y1="46" y2="46" />
-        <line x1="0" x2="248" y1="18" y2="18" />
-        <polyline points={polyline} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-        {lastPoint ? <circle cx={lastPoint.x} cy={lastPoint.y} r="4" /> : null}
-      </svg>
+      <div className="performance-trend-chart-recharts">
+        <ResponsiveContainer width="100%" height={180}>
+          <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="performance-trend-area" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={TREND_COLOR} stopOpacity={0.25} />
+                <stop offset="100%" stopColor={TREND_COLOR} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="#e5edf7" strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11, fill: "#64748b" }}
+              tickLine={false}
+              axisLine={{ stroke: "#e5edf7" }}
+              minTickGap={16}
+            />
+            <YAxis
+              tick={{ fontSize: 11, fill: "#64748b" }}
+              tickLine={false}
+              axisLine={false}
+              width={36}
+              domain={["dataMin", "dataMax"]}
+            />
+            <Tooltip
+              contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5edf7" }}
+              formatter={(value) => [value, activeSignal?.label || "Valeur"]}
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={TREND_COLOR}
+              strokeWidth={3}
+              fill="url(#performance-trend-area)"
+              dot={{ r: 3, stroke: TREND_COLOR, strokeWidth: 2, fill: "#fff" }}
+              activeDot={{ r: 5 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
 
       <span className="performance-trend-caption">
         {trend.rows?.[0]?.value || trend.text}

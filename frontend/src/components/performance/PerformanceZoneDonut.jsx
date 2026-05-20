@@ -5,7 +5,7 @@ import { formatDurationMmSsFr, formatPercentFr } from "../../utils/frenchFormatt
 const ZONE_COLORS = {
   z1: "#3b82f6",
   z2: "#22c55e",
-  z3: "#6bb49b",
+  z3: "#fb923c",
   z4: "#f59e0b",
   z5: "#ef4444",
 };

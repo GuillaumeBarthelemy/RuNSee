@@ -13682,10 +13682,10 @@ button.alert-banner-positive-item {
 .performance-panel-kicker,
 .performance-metric-label {
   color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .performance-hero-card h2,
@@ -13915,6 +13915,41 @@ button.alert-banner-positive-item {
 
 /* Delta dans Best table (++/- vs precedent record) */
 .performance-best-delta { font-size: 11px; font-style: normal; }
+
+.performance-best-delta-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(18, 104, 243, 0.08);
+  color: #355886;
+}
+.performance-best-delta-pill.tone-positive { background: rgba(21, 128, 61, 0.12); color: #15803d; }
+.performance-best-delta-pill.tone-warning  { background: rgba(180, 83, 9, 0.12);  color: #b45309; }
+.performance-best-delta-pill.tone-negative { background: rgba(220, 38, 38, 0.12); color: #dc2626; }
+.performance-best-meta { font-style: normal; font-size: 11px; color: #64748b; }
+
+.performance-best-cta-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #1268f3;
+  text-decoration: none;
+}
+.performance-best-cta-link:hover { text-decoration: underline; }
+
+.performance-trend-chart-recharts {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.performance-tab-placeholder {
+  padding: 32px 24px;
+  text-align: center;
+  color: #355886;
+}
+.performance-tab-placeholder h2 { margin: 0 0 6px; font-size: 18px; }
+.performance-tab-placeholder p  { margin: 0; font-size: 13px; color: #64748b; }
 .performance-best-delta.tone-positive { color: #15803d; font-weight: 700; }
 .performance-best-delta.tone-warning  { color: #b45309; font-weight: 700; }
 .performance-best-delta.tone-negative { color: #dc2626; font-weight: 700; }
@@ -14258,8 +14293,8 @@ button.alert-banner-positive-item {
 }
 
 .performance-metric-label {
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: 13px;
+  letter-spacing: 0;
 }
 
 .performance-metric-value-row strong {
