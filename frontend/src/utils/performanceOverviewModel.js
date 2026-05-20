@@ -983,6 +983,7 @@ function buildPerformanceTrendSummary(signals = []) {
       formattedValue: signal.formattedValue || "",
       hint: signal.hint || "",
       hintTone: signal.tone || "neutral",
+      trendLabel: signal.trendLabel || "",
       series: Array.isArray(signal.series) ? signal.series : [],
     })),
     rows: usableSignals.map((signal) => ({

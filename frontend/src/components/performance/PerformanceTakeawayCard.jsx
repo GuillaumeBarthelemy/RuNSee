@@ -42,7 +42,9 @@ function PerformanceTakeawayCard({ takeaway = {}, confidence = null }) {
           <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
             <path d="M4 20V10M10 20V4M16 20v-8M22 20H2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
           </svg>
-          <span>Confiance de l'estimation : <strong>{confidence.label || "—"}</strong></span>
+          {/* On retire le prefixe 'Confiance ' du label pour eviter la duplication
+              ('Confiance de l'estimation : Confiance elevee' -> ': Elevee'). */}
+          <span>Confiance de l'estimation : <strong>{(confidence.label || "—").replace(/^Confiance\s+/i, "").replace(/^./, (c) => c.toUpperCase())}</strong></span>
         </div>
       ) : null}
     </section>
