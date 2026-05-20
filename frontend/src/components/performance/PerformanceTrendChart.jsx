@@ -122,6 +122,11 @@ function PerformanceTrendChart({ trend = {} }) {
                 fill="url(#performance-trend-area)"
                 dot={{ r: 3, stroke: TREND_COLOR, strokeWidth: 2, fill: "#fff" }}
                 activeDot={{ r: 5 }}
+                // Avec YAxis reversed (adjustedPace), Recharts remplit par defaut
+                // vers baseValue=0 (hors domaine, donc visuellement vers le haut).
+                // On force vers la borne dataMax (allures lentes = bas du chart),
+                // l'aire se retrouve correctement sous la courbe.
+                baseValue={activeSignal?.key === "adjustedPace" ? "dataMax" : "dataMin"}
               />
             </AreaChart>
           </ResponsiveContainer>
