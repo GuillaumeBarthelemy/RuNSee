@@ -192,14 +192,15 @@ function isTrailLikeActivity(activity = {}) {
 }
 
 function buildHeartRatePreferences(settings = {}) {
+  const safe = settings || {};
   return {
-    heartRateMax: settings.heartRateMax ?? "",
-    restingHeartrate: settings.restingHeartrate ?? "",
-    biologicalSex: settings.biologicalSex ?? "unspecified",
-    heartRateZone1Max: settings.heartRateZone1Max ?? "",
-    heartRateZone2Max: settings.heartRateZone2Max ?? "",
-    heartRateZone3Max: settings.heartRateZone3Max ?? "",
-    heartRateZone4Max: settings.heartRateZone4Max ?? "",
+    heartRateMax: safe.heartRateMax ?? "",
+    restingHeartrate: safe.restingHeartrate ?? "",
+    biologicalSex: safe.biologicalSex ?? "unspecified",
+    heartRateZone1Max: safe.heartRateZone1Max ?? "",
+    heartRateZone2Max: safe.heartRateZone2Max ?? "",
+    heartRateZone3Max: safe.heartRateZone3Max ?? "",
+    heartRateZone4Max: safe.heartRateZone4Max ?? "",
   };
 }
 
@@ -360,11 +361,12 @@ function buildEfficiencyAggregate(items = []) {
 }
 
 function isEligibleForEfficiency(activity = {}, settings = {}) {
+  const safe = settings || {};
   if (!isRunLikeActivity(activity)) {
     return false;
   }
 
-  if (toNumber(activity.__movingSeconds) < (settings.efficiencyMinDurationMinutes * 60)) {
+  if (toNumber(activity.__movingSeconds) < (safe.efficiencyMinDurationMinutes * 60)) {
     return false;
   }
 
@@ -388,11 +390,11 @@ function isEligibleForEfficiency(activity = {}, settings = {}) {
     ? toNumber(activity.__elevationGain) / toNumber(activity.__distanceKm)
     : 0;
 
-  if (elevationPerKm > settings.efficiencyMaxElevationPerKm) {
+  if (elevationPerKm > safe.efficiencyMaxElevationPerKm) {
     return false;
   }
 
-  if (settings.efficiencyExcludeTrail && isTrailLikeActivity(activity)) {
+  if (safe.efficiencyExcludeTrail && isTrailLikeActivity(activity)) {
     return false;
   }
 
@@ -400,41 +402,44 @@ function isEligibleForEfficiency(activity = {}, settings = {}) {
 }
 
 export function normalizeTrainingAnalyticsSettings(settings = {}) {
+  // Defensive: si l'appelant passe explicitement null (l'arg default = {} ne le rattrape pas),
+  // on retombe sur un objet vide pour ne pas crasher la page Performance.
+  const safe = settings || {};
   return {
-    heartRateMax: toNullableInteger(settings.heartRateMax, DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateMax),
+    heartRateMax: toNullableInteger(safe.heartRateMax, DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateMax),
     restingHeartrate: Math.max(
       30,
       Math.min(
         120,
         toNullableInteger(
-          settings.restingHeartrate ?? settings.heartRateRest,
+          safe.restingHeartrate ?? safe.heartRateRest,
           DEFAULT_TRAINING_ANALYTICS_SETTINGS.restingHeartrate,
         )
           ?? DEFAULT_TRAINING_ANALYTICS_SETTINGS.restingHeartrate,
       ),
     ),
-    biologicalSex: resolveBiologicalSex(settings.biologicalSex),
-    heartRateZone1Max: toNullableInteger(settings.heartRateZone1Max, DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone1Max),
-    heartRateZone2Max: toNullableInteger(settings.heartRateZone2Max, DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone2Max),
-    heartRateZone3Max: toNullableInteger(settings.heartRateZone3Max, DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone3Max),
-    heartRateZone4Max: toNullableInteger(settings.heartRateZone4Max, DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone4Max),
-    intensitySourcePriority: resolveIntensitySourcePriority(settings.intensitySourcePriority),
+    biologicalSex: resolveBiologicalSex(safe.biologicalSex),
+    heartRateZone1Max: toNullableInteger(safe.heartRateZone1Max, DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone1Max),
+    heartRateZone2Max: toNullableInteger(safe.heartRateZone2Max, DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone2Max),
+    heartRateZone3Max: toNullableInteger(safe.heartRateZone3Max, DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone3Max),
+    heartRateZone4Max: toNullableInteger(safe.heartRateZone4Max, DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone4Max),
+    intensitySourcePriority: resolveIntensitySourcePriority(safe.intensitySourcePriority),
     efficiencyMinDurationMinutes: Math.max(
       5,
       toNullableInteger(
-        settings.efficiencyMinDurationMinutes,
+        safe.efficiencyMinDurationMinutes,
         DEFAULT_TRAINING_ANALYTICS_SETTINGS.efficiencyMinDurationMinutes,
       ) ?? DEFAULT_TRAINING_ANALYTICS_SETTINGS.efficiencyMinDurationMinutes,
     ),
     efficiencyMaxElevationPerKm: Math.max(
       0,
       toNullableInteger(
-        settings.efficiencyMaxElevationPerKm,
+        safe.efficiencyMaxElevationPerKm,
         DEFAULT_TRAINING_ANALYTICS_SETTINGS.efficiencyMaxElevationPerKm,
       ) ?? DEFAULT_TRAINING_ANALYTICS_SETTINGS.efficiencyMaxElevationPerKm,
     ),
     efficiencyExcludeTrail: toBoolean(
-      settings.efficiencyExcludeTrail,
+      safe.efficiencyExcludeTrail,
       DEFAULT_TRAINING_ANALYTICS_SETTINGS.efficiencyExcludeTrail,
     ),
   };
