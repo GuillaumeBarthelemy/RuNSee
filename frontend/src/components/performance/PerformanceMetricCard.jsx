@@ -9,13 +9,16 @@ function PerformanceMetricCard({ metric = {} }) {
   return (
     <article className={`performance-metric-card performance-tone-${tone}`}>
       <header className="performance-metric-card-head">
-        <span className="performance-metric-label">{metric.label || "Indicateur"}</span>
-        <InfoTooltip
-          title={metric.label || "Indicateur"}
-          content={metric.info || []}
-          compact
-          label={`Afficher l'aide ${metric.label || "indicateur"}`}
-        />
+        {/* Mockup p.12 : ⓘ inline collee au label (pas en flex space-between). */}
+        <span className="performance-metric-label">
+          {metric.label || "Indicateur"}
+          <InfoTooltip
+            title={metric.label || "Indicateur"}
+            content={metric.info || []}
+            compact
+            label={`Afficher l'aide ${metric.label || "indicateur"}`}
+          />
+        </span>
       </header>
 
       {metric.hasData ? (
@@ -23,6 +26,10 @@ function PerformanceMetricCard({ metric = {} }) {
           <div className="performance-metric-value-row">
             <strong>{metric.formattedValue}</strong>
             {metric.unit ? <span>{metric.unit}</span> : null}
+            {/* Source discret inline italique a cote de la valeur (mockup p.12). */}
+            {metric.sourceLabel ? (
+              <em className="performance-metric-source-inline">via {metric.sourceLabel}</em>
+            ) : null}
           </div>
           <p className="performance-metric-hint">{metric.hint}</p>
           <PerformanceMiniTrend
@@ -35,9 +42,6 @@ function PerformanceMetricCard({ metric = {} }) {
             <span className={`performance-metric-delta performance-delta-${metric.trendDirection || "neutral"}`}>
               {metric.trendLabel}
             </span>
-          ) : null}
-          {metric.sourceLabel ? (
-            <span className="performance-metric-source">via {metric.sourceLabel}</span>
           ) : null}
           {metric.activityCount && !metric.sourceLabel ? (
             <span className="performance-metric-sample">

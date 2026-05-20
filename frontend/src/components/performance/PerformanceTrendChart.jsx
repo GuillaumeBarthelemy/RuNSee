@@ -54,29 +54,30 @@ function PerformanceTrendChart({ trend = {} }) {
       <div className="performance-trend-chart-head">
         <div className="performance-trend-chart-title">
           <h3>Tendances de performance</h3>
-          {availableSignals.length > 1 ? (
-            <select
-              className="performance-trend-signal-select"
-              value={activeSignal?.key || availableSignals[0]?.key || ""}
-              onChange={(event) => setSelectedKey(event.target.value)}
-              aria-label="Signal de tendance"
-            >
-              {availableSignals.map((signal) => (
-                <option key={signal.key} value={signal.key}>{signal.label}</option>
-              ))}
-            </select>
+          {/* Mockup p.12 : valeur active a GAUCHE sous le titre */}
+          {activeSignal ? (
+            <div className="performance-trend-chart-head-value">
+              <strong>{activeSignal.formattedValue || "—"}</strong>
+              {activeSignal.hint ? (
+                <span className={`performance-trend-hint tone-${activeSignal.hintTone || "neutral"}`}>
+                  {activeSignal.hint}
+                </span>
+              ) : null}
+            </div>
           ) : null}
         </div>
-        {activeSignal ? (
-          <div className="performance-trend-chart-head-value">
-            <small>{activeSignal.label}</small>
-            <strong>{activeSignal.formattedValue || "—"}</strong>
-            {activeSignal.hint ? (
-              <span className={`performance-trend-hint tone-${activeSignal.hintTone || "neutral"}`}>
-                {activeSignal.hint}
-              </span>
-            ) : null}
-          </div>
+        {/* Mockup p.12 : selecteur a DROITE inline avec le titre */}
+        {availableSignals.length > 1 ? (
+          <select
+            className="performance-trend-signal-select"
+            value={activeSignal?.key || availableSignals[0]?.key || ""}
+            onChange={(event) => setSelectedKey(event.target.value)}
+            aria-label="Signal de tendance"
+          >
+            {availableSignals.map((signal) => (
+              <option key={signal.key} value={signal.key}>{signal.label}</option>
+            ))}
+          </select>
         ) : null}
       </div>
 
@@ -105,6 +106,9 @@ function PerformanceTrendChart({ trend = {} }) {
                 axisLine={false}
                 width={42}
                 domain={["dataMin", "dataMax"]}
+                // Pour adjustedPace : valeur basse (= allure rapide) = mieux,
+                // donc on inverse l'axe pour que la courbe qui monte = progression.
+                reversed={activeSignal?.key === "adjustedPace"}
               />
               <Tooltip
                 contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5edf7" }}

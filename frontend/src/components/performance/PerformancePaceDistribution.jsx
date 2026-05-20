@@ -3,14 +3,13 @@ import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
 import { formatPercentFr } from "../../utils/frenchFormatters.js";
 
 // Couleurs alignees sur les zones FC (Z1 bleu, Z2 vert, Z3 orange, Z4 ambre, Z5 rouge).
-// Mapping pace bucket -> zone FC : tres-facile = Z1, facile = Z2, moderee = Z3,
-// soutenue = Z4, rapide = Z5. Voir PerformanceZoneDonut.ZONE_COLORS.
+// Cles canoniques emises par buildPaceDistribution (camelCase) : veryEasy, easy, moderate, sustained, rapid.
 const PACE_BUCKET_COLORS = {
-  "tres-facile": "#3b82f6", // Z1
-  "facile": "#22c55e",      // Z2
-  "moderee": "#fb923c",     // Z3
-  "soutenue": "#f59e0b",    // Z4
-  "rapide": "#ef4444",      // Z5
+  veryEasy: "#3b82f6",  // Z1
+  easy: "#22c55e",      // Z2
+  moderate: "#fb923c",  // Z3
+  sustained: "#f59e0b", // Z4
+  rapid: "#ef4444",     // Z5
 };
 
 function PerformancePaceDistribution({ distribution = {} }) {

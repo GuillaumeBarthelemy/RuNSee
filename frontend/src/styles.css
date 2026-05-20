@@ -13749,8 +13749,19 @@ button.alert-banner-positive-item {
 .performance-metric-card-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
+}
+.performance-metric-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.performance-metric-source-inline {
+  font-style: italic;
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748b;
+  margin-left: 4px;
 }
 
 .performance-metric-value-row {
@@ -13923,6 +13934,8 @@ button.alert-banner-positive-item {
   border-radius: 999px;
   background: rgba(18, 104, 243, 0.08);
   color: #355886;
+  white-space: nowrap;
+  justify-self: end;
 }
 .performance-best-delta-pill.tone-positive { background: rgba(21, 128, 61, 0.12); color: #15803d; }
 .performance-best-delta-pill.tone-warning  { background: rgba(180, 83, 9, 0.12);  color: #b45309; }
@@ -14396,12 +14409,17 @@ button.alert-banner-positive-item {
 
 .performance-zone-legend-row {
   display: grid;
-  grid-template-columns: 12px 88px minmax(0, 1fr) 56px 42px;
-  gap: 8px;
+  grid-template-columns: 12px minmax(0, 1fr) auto auto;
+  gap: 10px;
   align-items: center;
   color: #355886;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.performance-zone-legend-row > span:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .performance-zone-dot {
@@ -14488,7 +14506,7 @@ button.alert-banner-positive-item {
 
 .performance-best-table-row {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto;
+  grid-template-columns: 22px minmax(0, 1fr) auto auto;
   gap: 9px;
   align-items: center;
   padding: 7px 0;

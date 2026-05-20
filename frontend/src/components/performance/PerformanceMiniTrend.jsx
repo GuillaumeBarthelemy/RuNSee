@@ -33,12 +33,10 @@ function toPathString(coords = []) {
 function PerformanceMiniTrend({ points = [], tone = "neutral", label = "Tendance" }) {
   const normalized = normalizePoints(points);
 
+  // Si pas assez de points, on n'affiche RIEN (au lieu d'un texte
+  // 'Tendance a consolider' qui ajoute du bruit visuel et double le delta).
   if (normalized.length < 2) {
-    return (
-      <span className="performance-mini-trend-empty">
-        Tendance à consolider
-      </span>
-    );
+    return null;
   }
 
   const pathString = toPathString(normalized);

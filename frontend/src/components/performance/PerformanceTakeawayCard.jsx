@@ -1,5 +1,4 @@
 import { memo } from "react";
-import AnalysisConfidenceBadge from "../AnalysisConfidenceBadge.jsx";
 
 // Mockup p.12 : pictogramme bouclier (Alpine Light) au lieu du losange.
 function ShieldIcon() {
@@ -39,8 +38,11 @@ function PerformanceTakeawayCard({ takeaway = {}, confidence = null }) {
 
       {confidence ? (
         <div className="performance-takeaway-confidence">
-          <small className="performance-takeaway-confidence-label">Confiance de l'estimation</small>
-          <AnalysisConfidenceBadge confidence={confidence} compact />
+          {/* Mockup p.12 : ligne inline simple "📊 Confiance de l'estimation : Élevée" */}
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+            <path d="M4 20V10M10 20V4M16 20v-8M22 20H2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          <span>Confiance de l'estimation : <strong>{confidence.label || "—"}</strong></span>
         </div>
       ) : null}
     </section>

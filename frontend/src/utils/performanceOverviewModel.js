@@ -15,7 +15,7 @@ import {
   shareZ1Z2,
   shareZ3Z5,
 } from "./analyticsIntensities.js";
-import { buildVdotProfile, describeVdotLevel } from "./runningPerformance.js";
+import { buildVdotProfile } from "./runningPerformance.js";
 import { formatShortDateFr, formatDateRangeFr } from "./frenchFormatters.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -65,7 +65,8 @@ function formatDurationCompact(seconds) {
   const minutes = Math.round((safeSeconds % 3600) / 60);
 
   if (hours > 0) {
-    return `${hours}h ${String(minutes).padStart(2, "0")}`;
+    // Mockup p.12 : "5h 29m" et non "5h 29" (presence de l'unite minutes)
+    return `${hours}h ${String(minutes).padStart(2, "0")}m`;
   }
 
   return `${minutes} min`;
@@ -489,22 +490,27 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
       lowerIsBetter: false,
     });
     const sourceLabel = latest.source === "garmin" ? "Garmin" : "Estimation interne";
-    // Classification user-friendly via la table VDOT (Compétiteur amateur, etc.)
-    const level = describeVdotLevel(currentValue);
-    // Tone = niveau de classification (mockup montre vert tant que niveau positif),
-    // degrade en warning si baisse delta significative.
-    const levelTone = level.tone || "neutral";
+    // Classification simple (Excellent/Bonne/Correcte/Faible) harmonisee avec les
+    // autres KPI cards, au lieu du libelle technique Daniels (Competiteur amateur, etc.).
+    // Thresholds calques sur la table Daniels.
+    const simpleLevel = currentValue >= 60
+      ? { label: "Excellent", tone: "positive" }
+      : currentValue >= 50
+        ? { label: "Bonne", tone: "positive" }
+        : currentValue >= 40
+          ? { label: "Correcte", tone: "warning" }
+          : { label: "Faible", tone: "danger" };
     const deltaTone = delta.direction === "negative" && Math.abs(delta.value || 0) >= 1
       ? "warning"
-      : levelTone;
+      : simpleLevel.tone;
 
     return {
       key: "vdot",
       label: "VDOT estimé",
       value: currentValue,
-      formattedValue: currentValue.toFixed(1),
+      formattedValue: Math.round(currentValue).toString(),
       unit: "",
-      hint: level.label || "Profil estimé",
+      hint: simpleLevel.label,
       tone: deltaTone,
       trendLabel: delta.value != null ? `${delta.value > 0 ? "+" : ""}${delta.value.toFixed(1)} vs point préc.` : "",
       trendDirection: delta.direction,
@@ -539,14 +545,21 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
     lowerIsBetter: false,
   });
 
-  const fallbackLevelLabel = vdotProfile.level?.label || "Profil estimé";
+  const vdotValueFallback = Number(vdotProfile.vdot);
+  const simpleLevelFallback = vdotValueFallback >= 60
+    ? "Excellent"
+    : vdotValueFallback >= 50
+      ? "Bonne"
+      : vdotValueFallback >= 40
+        ? "Correcte"
+        : "Faible";
   return {
     key: "vdot",
     label: "VDOT estimé",
-    value: Number(vdotProfile.vdot),
-    formattedValue: Number(vdotProfile.vdot).toFixed(1),
+    value: vdotValueFallback,
+    formattedValue: Math.round(vdotValueFallback).toString(),
     unit: "",
-    hint: fallbackLevelLabel,
+    hint: simpleLevelFallback,
     tone: delta.direction === "positive" ? "positive" : delta.direction === "negative" ? "warning" : "neutral",
     trendLabel: delta.value != null ? `${delta.value > 0 ? "+" : ""}${delta.value} vs point préc.` : "",
     trendDirection: delta.direction,
