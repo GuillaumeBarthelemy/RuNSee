@@ -14637,6 +14637,23 @@ button.alert-banner-positive-item {
   line-height: 1.45;
 }
 
+.performance-takeaway-card p + p { margin-top: 6px; }
+
+.performance-trend-signal-select {
+  margin-top: 4px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+}
+.performance-trend-signal-select:focus-visible {
+  outline: 2px solid #1268f3;
+  outline-offset: 1px;
+}
+
 .performance-takeaway-confidence {
   margin-top: auto;
   align-self: flex-start;

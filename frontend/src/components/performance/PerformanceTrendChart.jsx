@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo, useState } from "react";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
 
 function normalize(points = [], width = 248, height = 92) {
@@ -29,7 +29,19 @@ function normalize(points = [], width = 248, height = 92) {
 }
 
 function PerformanceTrendChart({ trend = {} }) {
-  const points = normalize(trend.series || []);
+  const availableSignals = useMemo(
+    () => (Array.isArray(trend.availableSignals) ? trend.availableSignals : []),
+    [trend.availableSignals],
+  );
+  const [selectedKey, setSelectedKey] = useState("");
+
+  const activeSignal = useMemo(() => {
+    if (!availableSignals.length) return null;
+    return availableSignals.find((s) => s.key === selectedKey) || availableSignals[0];
+  }, [availableSignals, selectedKey]);
+
+  const seriesToPlot = activeSignal?.series || trend.series || [];
+  const points = normalize(seriesToPlot);
   if (!trend?.hasData || points.length < 2) {
     return (
       <section className="performance-panel performance-trend-chart-card">
@@ -47,13 +59,25 @@ function PerformanceTrendChart({ trend = {} }) {
       <div className="performance-trend-chart-head">
         <div>
           <h3>Tendances de performance</h3>
+          {availableSignals.length > 1 ? (
+            <select
+              className="performance-trend-signal-select"
+              value={activeSignal?.key || availableSignals[0]?.key || ""}
+              onChange={(event) => setSelectedKey(event.target.value)}
+              aria-label="Signal de tendance"
+            >
+              {availableSignals.map((signal) => (
+                <option key={signal.key} value={signal.key}>{signal.label}</option>
+              ))}
+            </select>
+          ) : null}
         </div>
         <div className="performance-trend-chart-head-value">
-          <small>{trend.primaryLabel || "Signal"}</small>
-          <strong>{trend.primaryValue}</strong>
-          {trend.primaryHint ? (
-            <span className={`performance-trend-hint tone-${trend.primaryHintTone || "neutral"}`}>
-              {trend.primaryHint}
+          <small>{activeSignal?.label || trend.primaryLabel || "Signal"}</small>
+          <strong>{activeSignal?.formattedValue || trend.primaryValue}</strong>
+          {(activeSignal?.hint || trend.primaryHint) ? (
+            <span className={`performance-trend-hint tone-${activeSignal?.hintTone || trend.primaryHintTone || "neutral"}`}>
+              {activeSignal?.hint || trend.primaryHint}
             </span>
           ) : null}
         </div>

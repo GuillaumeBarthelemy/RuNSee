@@ -16,6 +16,7 @@ import {
   shareZ3Z5,
 } from "./analyticsIntensities.js";
 import { buildVdotProfile, describeVdotLevel } from "./runningPerformance.js";
+import { formatShortDateFr } from "./frenchFormatters.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_TREND_POINTS = 6;
@@ -820,6 +821,29 @@ function buildBestPerformancePreview(bestEfforts = {}, scopeActivities = []) {
     : [];
 
   records.forEach((record) => {
+    // Delta vs record precedent (meme distance) - mockup p.12
+    let deltaLabel = "";
+    let deltaTone = "neutral";
+    const previousSeconds = toFiniteNumber(record.previousElapsedSeconds);
+    const currentSeconds = toFiniteNumber(record.elapsedSeconds);
+    if (previousSeconds > 0 && currentSeconds > 0) {
+      const diff = currentSeconds - previousSeconds;
+      const sign = diff > 0 ? "+" : diff < 0 ? "-" : "";
+      const abs = Math.abs(Math.round(diff));
+      const mm = Math.floor(abs / 60);
+      const ss = abs % 60;
+      const durationPart = mm > 0
+        ? `${mm}:${String(ss).padStart(2, "0")}`
+        : `${ss}s`;
+      const previousDate = record.previousActivity?.__date
+        || record.previousActivity?.start_date
+        || record.previousActivity?.startDate
+        || null;
+      const dateLabel = previousDate ? formatShortDateFr(previousDate) : "record préc.";
+      deltaLabel = `${sign}${durationPart} vs ${dateLabel}`;
+      // Sur un record en temps : diff negatif = amelioration (positive)
+      deltaTone = diff < 0 ? "positive" : diff > 0 ? "warning" : "neutral";
+    }
     rows.push({
       key: `record-${record.recordKey}`,
       iconKey: "record",
@@ -827,6 +851,8 @@ function buildBestPerformancePreview(bestEfforts = {}, scopeActivities = []) {
       title: record.activity?.name || record.name || "Record route",
       value: formatRaceDuration(record.elapsedSeconds),
       meta: record.dateLabel || "",
+      deltaLabel,
+      deltaTone,
     });
   });
 
@@ -912,7 +938,18 @@ function buildPerformanceTrendSummary(signals = []) {
     text,
     primaryLabel: primarySignal?.label || "",
     primaryValue: primarySignal?.formattedValue || "",
+    primaryHint: primarySignal?.hint || "",
+    primaryHintTone: primarySignal?.tone || "neutral",
     series: Array.isArray(primarySignal?.series) ? primarySignal.series : [],
+    // Selecteur Tendances : liste les signaux exploitables pour switcher la courbe (mockup p.12)
+    availableSignals: usableSignals.map((signal) => ({
+      key: signal.key,
+      label: signal.label,
+      formattedValue: signal.formattedValue || "",
+      hint: signal.hint || "",
+      hintTone: signal.tone || "neutral",
+      series: Array.isArray(signal.series) ? signal.series : [],
+    })),
     rows: usableSignals.map((signal) => ({
       key: signal.key,
       label: signal.label,
@@ -950,10 +987,44 @@ function buildTakeaway({ signals, confidence, zonePreview, paceDistribution }) {
     tone = "positive";
   }
 
+  // Multi-paragraphes scientifiques : 2 a 3 paragraphes courts, valeurs embarquees + actionnable.
+  const paragraphs = [];
+  const vdotSignal = availableSignals.find((s) => s.key === "vdot");
+  const paceSignal = availableSignals.find((s) => s.key === "adjustedPace");
+  const economySig = availableSignals.find((s) => s.key === "economy");
+  const enduranceSig = availableSignals.find((s) => s.key === "endurance");
+
+  if (vdotSignal?.formattedValue) {
+    const lvl = vdotSignal.hint || "niveau a consolider";
+    const delta = vdotSignal.trendLabel ? ` (${vdotSignal.trendLabel} sur la periode)` : "";
+    paragraphs.push(
+      `VDOT estime a ${vdotSignal.formattedValue}${delta}, classe « ${lvl} » (Daniels 1979). Cette valeur reste un proxy de la capacite aerobie : croise-la avec ta FC de reserve et ton ressenti d'effort avant d'ajuster tes allures cibles.`,
+    );
+  }
+  if (paceSignal?.hasData && enduranceSig?.hasData) {
+    const enduranceShare = enduranceSig.formattedValue || "—";
+    paragraphs.push(
+      `Allure ajustee (GAP) ${paceSignal.formattedValue || "—"} et part facile (Z1-Z2) ${enduranceShare} : un ratio polarise > 80 % en bas spectre soutient la mitochondriogenese (Seiler 2010). Si l'endurance recule, repasse une semaine en volume bas avant un nouveau bloc qualite.`,
+    );
+  } else if (enduranceSig?.hasData) {
+    paragraphs.push(
+      `Part facile (Z1-Z2) a ${enduranceSig.formattedValue || "—"}. Vise > 80 % pour conserver l'efficacite mitochondriale et limiter le stress sympathique (Seiler 2010).`,
+    );
+  }
+  if (economySig?.hasData) {
+    paragraphs.push(
+      `Cout cardiaque (allure / FC moy.) : ${economySig.formattedValue}. Une baisse durable a allure constante traduit un gain d'economie de course (di Prampero 1986).`,
+    );
+  }
+  if (!paragraphs.length) {
+    paragraphs.push(text);
+  }
+
   return {
     title,
     text,
     tone,
+    paragraphs,
     missingSignals: missingSignals.map((signal) => signal.label),
     confidenceLabel: confidence?.label || "Confiance à consolider",
   };

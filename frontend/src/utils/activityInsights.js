@@ -1774,7 +1774,26 @@ export function buildBestEffortRecords(items = []) {
       .sort((left, right) => right.priority - left.priority || left.sortSeconds - right.sortSeconds);
 
     if (rankedCandidates.length) {
-      return rankedCandidates[0].entry;
+      const topEntry = rankedCandidates[0].entry;
+      const topDateMs = topEntry?.activity?.__date instanceof Date
+        ? topEntry.activity.__date.getTime()
+        : toDate(topEntry?.activity?.start_date || topEntry?.activity?.startDate)?.getTime() || 0;
+      // Trouve le record precedent : meilleur effort sur une activite differente, plus ancienne.
+      const previousCandidate = rankedCandidates.slice(1).find((candidate) => {
+        const entry = candidate.entry;
+        if (!entry || entry.elapsedSeconds <= 0) return false;
+        if (entry.activity && topEntry.activity && entry.activity === topEntry.activity) return false;
+        const candidateDateMs = entry?.activity?.__date instanceof Date
+          ? entry.activity.__date.getTime()
+          : toDate(entry?.activity?.start_date || entry?.activity?.startDate)?.getTime() || 0;
+        return candidateDateMs > 0 && (topDateMs === 0 || candidateDateMs < topDateMs);
+      });
+      const previousEntry = previousCandidate?.entry || null;
+      return {
+        ...topEntry,
+        previousElapsedSeconds: previousEntry ? previousEntry.elapsedSeconds : null,
+        previousActivity: previousEntry ? previousEntry.activity : null,
+      };
     }
 
     return {
