@@ -1,7 +1,7 @@
 const LEVELS = {
   high: {
-    label: "Confiance elevee",
-    title: "Confiance elevee",
+    label: "Confiance élevée",
+    title: "Confiance élevée",
     tone: "positive",
     min: 85,
   },
@@ -18,8 +18,8 @@ const LEVELS = {
     min: 25,
   },
   insufficient: {
-    label: "Donnees insuffisantes",
-    title: "Donnees insuffisantes",
+    label: "Données insuffisantes",
+    title: "Données insuffisantes",
     tone: "neutral",
     min: 0,
   },

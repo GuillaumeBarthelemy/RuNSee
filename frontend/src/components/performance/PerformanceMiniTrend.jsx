@@ -5,21 +5,31 @@ function normalizePoints(points = []) {
     .map((point) => Number(point?.value))
     .filter((value) => Number.isFinite(value));
 
-  if (values.length < 2) {
+  if (values.length === 0) {
     return [];
+  }
+
+  const width = 120;
+  const height = 34;
+
+  // Cas 1 point : ligne plate centree pour ne pas laisser la card vide (mockup p.12).
+  if (values.length === 1) {
+    const yMid = Math.round(height / 2);
+    return [
+      { x: 0, y: yMid },
+      { x: width, y: yMid },
+    ];
   }
 
   const min = Math.min(...values);
   const max = Math.max(...values);
   const spread = Math.max(1, max - min);
-  const width = 120;
-  const height = 34;
 
   return points
     .map((point, index) => {
       const value = Number(point?.value);
       if (!Number.isFinite(value)) return null;
-      const x = values.length === 1 ? width : (index / Math.max(1, points.length - 1)) * width;
+      const x = (index / Math.max(1, points.length - 1)) * width;
       const y = height - ((value - min) / spread) * height;
       return { x: Math.round(x), y: Math.round(y) };
     })
@@ -33,8 +43,7 @@ function toPathString(coords = []) {
 function PerformanceMiniTrend({ points = [], tone = "neutral", label = "Tendance" }) {
   const normalized = normalizePoints(points);
 
-  // Si pas assez de points, on n'affiche RIEN (au lieu d'un texte
-  // 'Tendance a consolider' qui ajoute du bruit visuel et double le delta).
+  // 0 point : on n'affiche rien (pas de bruit visuel, le delta pill suffit).
   if (normalized.length < 2) {
     return null;
   }

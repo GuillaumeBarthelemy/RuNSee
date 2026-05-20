@@ -1005,18 +1005,29 @@ function buildTakeaway({ signals, confidence, zonePreview, paceDistribution }) {
   let text = "Les signaux sont exploitables, mais l'estimation reste à lire avec le contexte terrain.";
   let tone = "neutral";
 
+  // Mockup p.12 : ton coach chaleureux, pas alarmiste. On reserve 'A surveiller'
+  // aux baisses majoritaires ; un seul signal en retrait reste 'Niveau actuel bon'
+  // avec une nuance ciblee.
+  const positiveCount = availableSignals.filter((s) => s.trendDirection === "positive").length;
+  const negativeCount = availableSignals.filter((s) => s.trendDirection === "negative").length;
+
   if (availableSignals.length === 0) {
     title = "Données insuffisantes";
     text = "Ajoute quelques sorties récentes avec allure et fréquence cardiaque pour fiabiliser cette vue.";
     tone = "warning";
-  } else if (topPositive && !topWarning) {
-    title = "Signaux favorables";
-    text = `${topPositive.label} progresse, avec une confiance ${confidence?.label || "à consolider"}.`;
-    tone = "positive";
-  } else if (topWarning) {
+  } else if (negativeCount >= 2 && negativeCount > positiveCount) {
     title = "À surveiller";
     text = `${topWarning.label} recule. Vérifie si cela vient du terrain, de la fatigue ou d'une semaine plus légère.`;
     tone = "warning";
+  } else if (topPositive && !topWarning) {
+    title = "Ton niveau actuel est bon.";
+    text = `${topPositive.label} progresse, avec une confiance ${confidence?.label || "à consolider"}.`;
+    tone = "positive";
+  } else if (topWarning) {
+    // Mixte : majorite OK + 1 signal en retrait -> coach chaleureux avec nuance ciblee.
+    title = "Ton niveau actuel est bon.";
+    text = `Attention toutefois à ${topWarning.label.toLowerCase()} qui recule sur la période.`;
+    tone = "positive";
   } else if (zonePreview?.hasData && zonePreview.easyShare >= 70 && paceDistribution?.hasData) {
     title = "Base cohérente";
     text = "La base facile reste lisible et les allures sont suffisamment réparties pour suivre ton niveau.";
