@@ -429,10 +429,11 @@ function buildEconomySignal({ periodItems, previousItems, range, settings }) {
 }
 
 function buildVdotTrend(scopeItems, range, settings) {
-  const trendRange = {
-    startDate: addDays(range.endDate, -89),
-    endDate: range.endDate,
-  };
+  // Aligne sur le range actif (au lieu d'une fenetre 90j fixe) pour cohérence
+  // axe X avec les autres signaux dans le selecteur Tendances.
+  const trendRange = (range?.startDate && range?.endDate)
+    ? { startDate: range.startDate, endDate: range.endDate }
+    : { startDate: addDays(range?.endDate, -89), endDate: range?.endDate };
 
   return buildBuckets(trendRange, DEFAULT_TREND_POINTS)
     .map((bucket) => {
@@ -466,7 +467,18 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
     || (historySnapshots.length ? historySnapshots[historySnapshots.length - 1] : null);
 
   if (latest && Number.isFinite(Number(latest.vdotValue)) && Number(latest.vdotValue) > 0) {
-    const series = historySnapshots
+    // Aligne la serie VDOT sur le range actif (sinon X-axis diverge des autres signaux
+    // qui utilisent buildTrendSeries(range)). Si moins de 2 points dans la fenetre,
+    // on retombe sur tout l'historique pour eviter un card vide.
+    const inRange = (snapshot) => {
+      const d = snapshot?.date ? new Date(snapshot.date) : null;
+      if (!d || Number.isNaN(d.getTime())) return false;
+      return (!range?.startDate || d >= range.startDate)
+        && (!range?.endDate || d <= range.endDate);
+    };
+    const filteredSnapshots = historySnapshots.filter(inRange);
+    const usableSnapshots = filteredSnapshots.length >= 2 ? filteredSnapshots : historySnapshots;
+    const series = usableSnapshots
       .filter((s) => Number.isFinite(Number(s.vdotValue)) && Number(s.vdotValue) > 0)
       .map((s) => ({ label: s.date, value: Number(s.vdotValue) }));
     const currentValue = Number(latest.vdotValue);

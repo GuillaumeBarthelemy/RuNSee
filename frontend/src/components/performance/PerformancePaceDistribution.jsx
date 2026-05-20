@@ -2,14 +2,15 @@ import { memo } from "react";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
 import { formatPercentFr } from "../../utils/frenchFormatters.js";
 
-// Bars color-coded mockup PDF p.12 : allures faciles/moderees = bleu sature,
-// soutenue = orange, rapide = rouge. Couleur deduite de bucket.key.
+// Couleurs alignees sur les zones FC (Z1 bleu, Z2 vert, Z3 orange, Z4 ambre, Z5 rouge).
+// Mapping pace bucket -> zone FC : tres-facile = Z1, facile = Z2, moderee = Z3,
+// soutenue = Z4, rapide = Z5. Voir PerformanceZoneDonut.ZONE_COLORS.
 const PACE_BUCKET_COLORS = {
-  "tres-facile": "#1268f3",
-  "facile": "#1268f3",
-  "moderee": "#1268f3",
-  "soutenue": "#fb923c",
-  "rapide": "#ef4444",
+  "tres-facile": "#3b82f6", // Z1
+  "facile": "#22c55e",      // Z2
+  "moderee": "#fb923c",     // Z3
+  "soutenue": "#f59e0b",    // Z4
+  "rapide": "#ef4444",      // Z5
 };
 
 function PerformancePaceDistribution({ distribution = {} }) {
