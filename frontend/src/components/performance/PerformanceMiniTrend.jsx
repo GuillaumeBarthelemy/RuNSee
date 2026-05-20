@@ -21,9 +21,13 @@ function normalizePoints(points = []) {
       if (!Number.isFinite(value)) return null;
       const x = values.length === 1 ? width : (index / Math.max(1, points.length - 1)) * width;
       const y = height - ((value - min) / spread) * height;
-      return `${Math.round(x)},${Math.round(y)}`;
+      return { x: Math.round(x), y: Math.round(y) };
     })
     .filter(Boolean);
+}
+
+function toPathString(coords = []) {
+  return coords.map((coord) => `${coord.x},${coord.y}`).join(" ");
 }
 
 function PerformanceMiniTrend({ points = [], tone = "neutral", label = "Tendance" }) {
@@ -37,7 +41,8 @@ function PerformanceMiniTrend({ points = [], tone = "neutral", label = "Tendance
     );
   }
 
-  const areaPoints = `0,34 ${normalized.join(" ")} 120,34`;
+  const pathString = toPathString(normalized);
+  const areaPoints = `0,34 ${pathString} 120,34`;
 
   return (
     <svg
@@ -47,7 +52,17 @@ function PerformanceMiniTrend({ points = [], tone = "neutral", label = "Tendance
       aria-label={label}
     >
       <polygon points={areaPoints} className="performance-mini-trend-area" />
-      <polyline points={normalized.join(" ")} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points={pathString} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Mockup p.12 : points visibles sur chaque mesure */}
+      {normalized.map((coord, index) => (
+        <circle
+          key={`mini-trend-dot-${index}`}
+          cx={coord.x}
+          cy={coord.y}
+          r="2.2"
+          fill="currentColor"
+        />
+      ))}
     </svg>
   );
 }

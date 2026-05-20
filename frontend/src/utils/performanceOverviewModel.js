@@ -302,10 +302,16 @@ function aggregateEconomy(items = [], settings = {}) {
 
   const averageSpeedKmh = weightedSpeed / durationSeconds;
   const averageHeartrate = weightedHr / durationSeconds;
-  const value = averageSpeedKmh / averageHeartrate * 100;
+  // Formule conservee (di Prampero 1986 simplifie) : vitesse / FC.
+  // Normalisation indice base 100 : reference ECONOMY_REFERENCE = 8 (~12 km/h @ 150 bpm coureur amateur).
+  // Une valeur > 100 = economie superieure a la reference, < 100 = inferieure.
+  const rawValue = averageSpeedKmh / averageHeartrate * 100;
+  const ECONOMY_REFERENCE = 8;
+  const value = (rawValue / ECONOMY_REFERENCE) * 100;
 
   return {
     value,
+    rawValue,
     averageSpeedKmh,
     averageHeartrate,
     activityCount: count,
@@ -402,8 +408,8 @@ function buildEconomySignal({ periodItems, previousItems, range, settings }) {
     key: "economy",
     label: "Économie de course",
     value: current.value,
-    formattedValue: current.value.toFixed(2),
-    unit: "indice",
+    formattedValue: Math.round(current.value).toString(),
+    unit: "indice (base 100)",
     hint,
     tone: economyTone,
     trendLabel: delta.percent != null ? `${delta.percent > 0 ? "+" : ""}${delta.percent} % vs période préc.` : "",
@@ -1013,7 +1019,7 @@ function buildTakeaway({ signals, confidence, zonePreview, paceDistribution }) {
   }
   if (economySig?.hasData) {
     paragraphs.push(
-      `Cout cardiaque (allure / FC moy.) : ${economySig.formattedValue}. Une baisse durable a allure constante traduit un gain d'economie de course (di Prampero 1986).`,
+      `Economie de course (indice base 100, reference 12 km/h @ 150 bpm) : ${economySig.formattedValue}. Une hausse durable a allure constante traduit un gain d'efficience (di Prampero 1986).`,
     );
   }
   if (!paragraphs.length) {

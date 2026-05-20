@@ -33,7 +33,15 @@ function PerformanceOverviewTab({ model = {} }) {
       </div>
 
       <div className="performance-coach-bar-with-link">
-        <CoachAdviceBar tone={coachTone} icon={<span aria-hidden="true">i</span>}>
+        <CoachAdviceBar
+          tone={coachTone}
+          icon={(
+            // Pictogramme montagne Alpine Light (mockup p.12)
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+              <path d="M3 19 9 8l4 7 2-3 6 7H3Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+            </svg>
+          )}
+        >
           {model.takeaway?.text || "Continue à consolider tes repères avec des sorties comparables."}
         </CoachAdviceBar>
         <button type="button" className="performance-coach-bar-cta">Voir tous les conseils</button>

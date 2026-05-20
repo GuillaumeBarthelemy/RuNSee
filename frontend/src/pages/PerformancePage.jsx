@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import PerformanceOverviewTab from "../components/performance/PerformanceOverviewTab.jsx";
+import AnalyticsCompactFilters from "../components/analytics/AnalyticsCompactFilters.jsx";
 import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import AppShell from "../layouts/AppShell.jsx";
@@ -23,14 +24,6 @@ const PERFORMANCE_TABS = [
   { id: "allures", label: "Allures de référence", disabled: true, title: "Onglet prévu au lot Performance suivant" },
   { id: "fc-performance", label: "FC de performance", disabled: true, title: "Onglet prévu au lot Performance suivant" },
   { id: "records", label: "Records", disabled: true, title: "Onglet prévu au lot Performance suivant" },
-];
-
-const PERIOD_OPTIONS = [
-  { key: "7d", label: "7 j" },
-  { key: "90d", label: "90 j" },
-  { key: "6m", label: "6 mois" },
-  { key: "12m", label: "12 mois" },
-  { key: "all", label: "Tout" },
 ];
 
 /**
@@ -230,7 +223,7 @@ export default function PerformancePage() {
     <AppShell
       eyebrow="Performance"
       title="Performance"
-      subtitle="Analyse les performances et les records."
+      subtitle="Analyse tes performances et suis tes records."
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {isLoading && !safeActivities.length ? (
@@ -238,32 +231,20 @@ export default function PerformancePage() {
       ) : null}
 
       <div className="performance-page">
-        <div className="performance-filter-compact" aria-label="Périmètre Performance">
-          <span>
-            {canonicalPerformanceActivities.length} sur {canonicalPerformanceScopeActivities.length} sorties
-            {sharedRange.label ? ` · ${sharedRange.label}` : ""}
-          </span>
-          <div>
-            <label>
-              <small>Sport</small>
-              <select value={filters.sportGroup} onChange={(event) => setFilter("sportGroup", event.target.value)}>
-                <option value="all">Tous</option>
-                {availableSports.map((sport) => (
-                  <option key={sport} value={sport}>{sport}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <small>Période</small>
-              <select value={options.sharedPeriodPreset} onChange={(event) => handleSharedPresetChange(event.target.value)}>
-                {PERIOD_OPTIONS.map((option) => (
-                  <option key={option.key} value={option.key}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-            <button type="button" onClick={handleResetSharedFilters}>Réinitialiser</button>
-          </div>
-        </div>
+        {/* Topbar harmonisee avec page Analyse (sans meteo). */}
+        <AnalyticsCompactFilters
+          search={filters.search}
+          sportGroup={filters.sportGroup}
+          preset={options.sharedPeriodPreset}
+          periodLabel={sharedRange.label}
+          availableSports={availableSports}
+          filteredCount={canonicalPerformanceActivities.length}
+          totalCount={canonicalPerformanceScopeActivities.length}
+          onSearchChange={(value) => setFilter("search", value)}
+          onSportChange={(value) => setFilter("sportGroup", value)}
+          onPresetChange={handleSharedPresetChange}
+          onReset={handleResetSharedFilters}
+        />
 
         <SubTabs tabs={PERFORMANCE_TABS} defaultTabId="overview" />
 
