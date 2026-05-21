@@ -7,6 +7,16 @@ import PerformanceConfidenceGauge from "./PerformanceConfidenceGauge.jsx";
 import PerformanceLimitsCard from "./PerformanceLimitsCard.jsx";
 import PerformanceTakeawayCard from "./PerformanceTakeawayCard.jsx";
 
+function formatRaceDuration(seconds) {
+  const n = Math.max(0, Math.round(Number(seconds) || 0));
+  if (n <= 0) return "—";
+  const h = Math.floor(n / 3600);
+  const m = Math.floor((n % 3600) / 60);
+  const s = n % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 /**
  * PerformanceVdotProfileTab — Onglet `Performance > VDOT & profil` (page 13 du plan).
  * Layout aligne mockup p.13.
@@ -58,9 +68,9 @@ function PerformanceVdotProfileTab({ model = {} }) {
           {Array.isArray(model.keyIndicators) && model.keyIndicators.length ? (
             <ul className="performance-vdot-key-indicators-list">
               {model.keyIndicators.map((row) => (
-                <li key={row.distanceLabel || row.label || row.key}>
-                  <span>{row.distanceLabel || row.label || ""}</span>
-                  <b>{row.timeLabel || row.value || "—"}</b>
+                <li key={row.key}>
+                  <span>{row.label || row.key}</span>
+                  <b>{formatRaceDuration(row.predictedSeconds)}</b>
                 </li>
               ))}
             </ul>
