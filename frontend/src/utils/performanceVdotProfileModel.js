@@ -221,6 +221,7 @@ export function buildVdotProfileTabModel({
   confidence = null,
   referenceDate = null,
   garminLatestFitnessSnapshot = null,
+  economySignal = null,
 } = {}) {
   const reference = safeDate(referenceDate) || new Date();
 
@@ -361,9 +362,10 @@ export function buildVdotProfileTabModel({
     thresholdPaceSecondsPerKm: tPace?.paceSecondsPerKm || 0,
     tenKPaceSecondsPerKm: pred10k?.paceSecondsPerKm || 0,
     fiveKPaceSecondsPerKm: pred5k?.paceSecondsPerKm || 0,
-    vo2maxValue: vdotMaster,
-    economyValue: null,
-    economyHint: null,
+    // Economie de course threadee depuis le modele Vue d'ensemble (Lot Q6) :
+    // valeur normalisee base 100 + hint (Bonne / Moins efficiente).
+    economyValue: economySignal?.hasData ? economySignal.value : null,
+    economyHint: economySignal?.hasData ? economySignal.hint : null,
   };
   const keyIndicators = (vdotProfile.racePredictions || []).slice(0, 4);
 

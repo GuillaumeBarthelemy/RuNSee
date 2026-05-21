@@ -10,12 +10,12 @@ function formatPace(secondsPerKm) {
 /**
  * PerformanceVdotKeyIndicators — Mockup p.13.
  *
- * 5 lignes specifiques :
+ * 4 lignes specifiques (VO2max estimée retiree : c'est le meme chiffre que
+ * la KPI VDOT en header — redondance signalee par l'utilisateur).
  *   - Allure au seuil (≈ lactate)         : T-pace Daniels
  *   - Allure 10 km (≈ performance)        : prediction race
  *   - Allure 5 km (≈ vitesse)             : prediction race
- *   - VO₂max estimée                       : valeur Garmin ou VDOT proxy (ml/kg/min)
- *   - Économie de course                   : indice normalise base 100 (cf Vue ensemble Q6)
+ *   - Économie de course                   : indice normalise base 100
  * CTA bas : "Voir les allures de référence"
  */
 function PerformanceVdotKeyIndicators({ indicators = {} }) {
@@ -48,21 +48,12 @@ function PerformanceVdotKeyIndicators({ indicators = {} }) {
         : "—",
     },
     {
-      key: "vo2",
-      label: "VO₂max estimée",
-      sub: null,
-      icon: "📈",
-      value: indicators.vo2maxValue != null
-        ? `${Number(indicators.vo2maxValue).toFixed(1)} ml/kg/min`
-        : "—",
-    },
-    {
       key: "economy",
       label: "Économie de course",
-      sub: null,
+      sub: indicators.economyHint || null,
       icon: "⚙️",
       value: indicators.economyValue != null
-        ? `${Number(indicators.economyValue).toFixed(2)} ${indicators.economyHint ? `(${indicators.economyHint})` : ""}`.trim()
+        ? `${Math.round(Number(indicators.economyValue))} (base 100)`
         : "—",
     },
   ];

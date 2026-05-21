@@ -132,19 +132,6 @@ export default function PerformancePage() {
     [bestEfforts, canonicalPerformanceScopeActivities, sharedRange.end, vdotProfile],
   );
 
-  // Modele pour l'onglet VDOT & profil — calcule independamment de overviewModel
-  // pour stabiliser sur fenetre 90j (decision utilisateur).
-  const vdotProfileTabModel = useMemo(
-    () => buildVdotProfileTabModel({
-      scopeActivities: canonicalPerformanceScopeActivities,
-      vdotHistory,
-      confidence: performanceConfidence,
-      referenceDate: sharedRange.end,
-      garminLatestFitnessSnapshot: vdotHistory?.latestFitnessSnapshot || null,
-    }),
-    [canonicalPerformanceScopeActivities, vdotHistory, performanceConfidence, sharedRange.end],
-  );
-
   const overviewModel = useMemo(
     () => buildPerformanceOverviewModel({
       periodActivities: canonicalPerformanceActivities,
@@ -170,6 +157,23 @@ export default function PerformancePage() {
       trainingAnalyticsSettings,
       vdotProfile,
     ],
+  );
+
+  // Modele onglet VDOT & profil — recoit le signal economy depuis overviewModel
+  // pour eviter de recalculer et exposer la meme valeur dans les indicateurs cles.
+  const vdotProfileTabModel = useMemo(
+    () => {
+      const economySignal = (overviewModel?.metrics || []).find((m) => m.key === "economy");
+      return buildVdotProfileTabModel({
+        scopeActivities: canonicalPerformanceScopeActivities,
+        vdotHistory,
+        confidence: performanceConfidence,
+        referenceDate: sharedRange.end,
+        garminLatestFitnessSnapshot: vdotHistory?.latestFitnessSnapshot || null,
+        economySignal,
+      });
+    },
+    [canonicalPerformanceScopeActivities, vdotHistory, performanceConfidence, sharedRange.end, overviewModel],
   );
 
   const recordEnrichmentCandidates = useMemo(
