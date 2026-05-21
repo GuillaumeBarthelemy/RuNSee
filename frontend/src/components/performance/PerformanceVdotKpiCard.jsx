@@ -93,8 +93,11 @@ function PerformanceVdotKpiCard({ kpi = {}, history = [], deltaLabel = "", delta
                 stroke={toneColor}
                 strokeWidth={3}
                 fill="url(#perf-vdot-kpi-area)"
-                dot={{ r: 2.5, stroke: toneColor, strokeWidth: 2, fill: "#fff" }}
-                activeDot={{ r: 5 }}
+                // Pas de pastille sur chaque point (90 jours = trop dense).
+                // Aligne sur PerformanceMiniTrend (Vue d'ensemble) : courbe
+                // pure, pastille visible uniquement au hover.
+                dot={false}
+                activeDot={{ r: 5, stroke: toneColor, strokeWidth: 2, fill: "#fff" }}
               />
             </AreaChart>
           </ResponsiveContainer>

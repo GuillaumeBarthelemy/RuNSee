@@ -479,9 +479,12 @@ export function buildVdotProfileTabModel({
     keyIndicators,
     indicators,
     delta90Days,
-    // Reference pour le radar / bars : master DANIELS (echelle native des axes).
-    // Distinct du headline KPI qui peut etre Garmin.
-    referenceVdot: vdotMasterDaniels,
+    // Reference affichee dans le radar/bars : valeur Garmin si dispo
+    // (coherent avec le headline KPI prioritaire Garmin valide par l'utilisateur).
+    // Note : la calibration interne des axes utilise vdotMasterDaniels en arriere
+    // plan (echelle scientifique coherente avec les records), mais l'utilisateur
+    // n'a pas a voir cette difference d'echelle.
+    referenceVdot: vdotMaster,
     confidence,
     limits,
     takeaway: { paragraphs, tone: masterLevel?.tone || "neutral" },
