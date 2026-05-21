@@ -256,10 +256,18 @@ export function buildVdotProfileTabModel({
     .map((r) => ({ ...r, distanceMeters: RECORD_KEY_TO_METERS[r.recordKey] || 0 }))
     .filter((r) => r.distanceMeters > 0);
 
-  // Master VDOT : on prend PRIORITAIREMENT la VO2max Garmin (Firstbeat) si
-  // disponible — l'utilisateur indique qu'elle reflete mieux son niveau actuel
-  // que l'estimation Daniels basee sur des records eventuellement anciens.
-  // Cascade : vdotHistory.latestSnapshot (source Garmin si dispo) -> Daniels.
+  // CALIBRATION SCIENTIFIQUE — Headline vs reference axes :
+  //
+  // VO2max Garmin Firstbeat et VDOT Daniels ne sont PAS sur la meme echelle.
+  // Garmin (Firstbeat) estime la VO2max avec l'economie de course individuelle
+  // (HR + allure + cinetique). Daniels assume une economie de course MOYENNE.
+  // Un coureur entraine -> economie > moyenne -> Garmin > Daniels (parfois 3-6 pts).
+  //
+  // Le headline KPI utilise Garmin (mieux calibre pour le niveau actuel).
+  // Mais les axes du profil 5D sont CALCULES en Daniels (axisVdotDaniels) et
+  // doivent etre compares au master Daniels (= vdotProfile.vdot consolide sur
+  // les memes records). Comparer un axe Daniels vs un master Garmin produit
+  // un biais systematique qui sous-evalue tous les axes.
   const latestVdotSnapshot = vdotHistory?.latestSnapshot
     || (Array.isArray(vdotHistory?.snapshots) && vdotHistory.snapshots.length
       ? vdotHistory.snapshots[vdotHistory.snapshots.length - 1]
@@ -269,7 +277,11 @@ export function buildVdotProfileTabModel({
     && Number(latestVdotSnapshot.vdotValue) > 0
     ? Number(latestVdotSnapshot.vdotValue)
     : null;
-  const vdotMaster = garminMasterVdot != null ? garminMasterVdot : vdotProfile.vdot;
+
+  // Master utilise pour les calculs d'axes (toujours Daniels, scale-coherente).
+  const vdotMasterDaniels = vdotProfile.vdot;
+  // Master utilise pour le headline KPI (priorite Garmin, fallback Daniels).
+  const vdotMaster = garminMasterVdot != null ? garminMasterVdot : vdotMasterDaniels;
   const vdotMasterSource = garminMasterVdot != null ? "garmin" : "daniels_internal";
 
   // VDOT specifiques par distance (avec decay age pour valoriser efforts < 90j
@@ -298,12 +310,12 @@ export function buildVdotProfileTabModel({
     riegelData = { exponent: exp, score: riegelToScore(exp), reference: "semi vs 5 km" };
   }
   // Si Riegel disponible : on utilise le score Riegel (deja centre 1.06 -> 50).
-  // Sinon : on normalise le VDOT long (marathon ou semi) vs le master VDOT
-  // (50 = equilibre, > 50 = endurance forte).
+  // Sinon : on normalise le VDOT long (marathon ou semi) vs le master DANIELS
+  // pour rester sur la meme echelle que les autres axes.
   const enduranceScore = riegelData?.score != null
     ? riegelData.score
     : (vdotMarathon || vdotHalf
-      ? normalizeAxisVdotVsMaster(vdotMarathon || vdotHalf, vdotMaster) ?? 50
+      ? normalizeAxisVdotVsMaster(vdotMarathon || vdotHalf, vdotMasterDaniels) ?? 50
       : 50);
 
   // Endurance musculaire : 60/40 Hill/Endurance Garmin, fallback Riegel, fallback composite.
@@ -314,13 +326,13 @@ export function buildVdotProfileTabModel({
     activities: scopeActivities,
   });
 
-  // Axes normalises RELATIVEMENT au master VDOT : 50 = equilibre attendu,
-  // > 50 = axe en avance sur ton niveau moyen, < 50 = a developper.
-  // Cette approche (vs absolu 0-100) reflete la decomposition du profil
-  // demandee par le mockup : "Comparé à la référence (VDOT XX)".
-  const vo2maxScore = 50; // par definition, vdotMaster = vdotMaster -> 50.
-  const vitesseScore = normalizeAxisVdotVsMaster(vdot5k, vdotMaster);
-  const seuilScore = normalizeAxisVdotVsMaster(vdot10k || vdotHalf, vdotMaster);
+  // Axes normalises RELATIVEMENT au master DANIELS (coherence d'echelle).
+  // Voir bloc 'CALIBRATION SCIENTIFIQUE' plus haut : comparer un axe Daniels
+  // a un master Garmin sous-evalue tous les axes a cause du biais d'economie
+  // de course (Daniels assume moyenne, Garmin individualise).
+  const vo2maxScore = 50; // par definition, master vs master -> 50.
+  const vitesseScore = normalizeAxisVdotVsMaster(vdot5k, vdotMasterDaniels);
+  const seuilScore = normalizeAxisVdotVsMaster(vdot10k || vdotHalf, vdotMasterDaniels);
 
   const axes = [
     {
@@ -467,7 +479,9 @@ export function buildVdotProfileTabModel({
     keyIndicators,
     indicators,
     delta90Days,
-    referenceVdot: vdotMaster,
+    // Reference pour le radar / bars : master DANIELS (echelle native des axes).
+    // Distinct du headline KPI qui peut etre Garmin.
+    referenceVdot: vdotMasterDaniels,
     confidence,
     limits,
     takeaway: { paragraphs, tone: masterLevel?.tone || "neutral" },
