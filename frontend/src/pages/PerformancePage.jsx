@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PerformanceOverviewTab from "../components/performance/PerformanceOverviewTab.jsx";
+import PerformanceVdotProfileTab from "../components/performance/PerformanceVdotProfileTab.jsx";
+import { buildVdotProfileTabModel } from "../utils/performanceVdotProfileModel.js";
 import AnalyticsCompactFilters from "../components/analytics/AnalyticsCompactFilters.jsx";
 import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
@@ -128,6 +130,19 @@ export default function PerformancePage() {
       referenceDate: sharedRange.end,
     }),
     [bestEfforts, canonicalPerformanceScopeActivities, sharedRange.end, vdotProfile],
+  );
+
+  // Modele pour l'onglet VDOT & profil — calcule independamment de overviewModel
+  // pour stabiliser sur fenetre 90j (decision utilisateur).
+  const vdotProfileTabModel = useMemo(
+    () => buildVdotProfileTabModel({
+      scopeActivities: canonicalPerformanceScopeActivities,
+      vdotHistory,
+      confidence: performanceConfidence,
+      referenceDate: sharedRange.end,
+      garminLatestFitnessSnapshot: vdotHistory?.latestFitnessSnapshot || null,
+    }),
+    [canonicalPerformanceScopeActivities, vdotHistory, performanceConfidence, sharedRange.end],
   );
 
   const overviewModel = useMemo(
@@ -258,6 +273,8 @@ export default function PerformancePage() {
 
         {activeTabId === "overview" ? (
           <PerformanceOverviewTab model={overviewModel} />
+        ) : activeTabId === "vdot" ? (
+          <PerformanceVdotProfileTab model={vdotProfileTabModel} />
         ) : (
           <div className="card section performance-tab-placeholder">
             <h2>Onglet en cours de construction</h2>
