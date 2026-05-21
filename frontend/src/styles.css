@@ -13956,105 +13956,227 @@ button.alert-banner-positive-item {
   margin-top: 8px;
 }
 
-/* --- Lot Performance V5 — Onglet VDOT & profil (page 13) --- */
+/* --- Lot Performance V5 — Onglet VDOT & profil (page 13, refonte mockup) --- */
 .performance-vdot-profile-tab {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.performance-vdot-grid-row-1 {
+
+.performance-vdot-row-top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.8fr) minmax(220px, 0.9fr);
   gap: 12px;
+  align-items: stretch;
 }
-.performance-vdot-grid-row-2,
-.performance-vdot-grid-row-3 {
+.performance-vdot-row-top-rail {
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+.performance-vdot-row-middle {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+  align-items: stretch;
 }
-.performance-vdot-grid-row-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.performance-vdot-row-middle-rail {
+  display: flex; flex-direction: column; gap: 12px;
+}
 
-.performance-vdot-kpi-card { display: flex; flex-direction: column; gap: 8px; }
-.performance-vdot-kpi-value { font-size: 48px; font-weight: 700; line-height: 1; color: #0f2147; }
-.performance-vdot-kpi-hint { font-weight: 600; font-size: 13px; }
+/* --- KPI card (combine VDOT + mini histo + delta) --- */
+.performance-vdot-kpi-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 14px 16px;
+}
+.performance-vdot-kpi-head { display: flex; align-items: center; gap: 6px; }
+.performance-vdot-kpi-label {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 600; color: #64748b;
+}
+.performance-vdot-kpi-value {
+  font-size: 42px; font-weight: 700; line-height: 1; color: #0f2147;
+  margin-top: 2px;
+}
+.performance-vdot-kpi-hint {
+  font-size: 13px; font-weight: 600;
+}
 .performance-vdot-kpi-hint.tone-positive { color: #15803d; }
 .performance-vdot-kpi-hint.tone-warning  { color: #ea580c; }
 .performance-vdot-kpi-hint.tone-danger   { color: #dc2626; }
-.performance-vdot-kpi-meta {
-  margin-top: auto;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(53, 88, 134, 0.08);
-}
-.performance-vdot-kpi-meta small { color: #64748b; font-size: 11px; }
-.performance-vdot-kpi-meta strong { color: #0f2147; font-size: 16px; }
 
-.performance-vdot-key-indicators-list {
-  list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 8px;
+.performance-vdot-kpi-evolution-label {
+  font-size: 11px; color: #64748b; margin-top: 6px;
 }
-.performance-vdot-key-indicators-list li {
-  display: flex; justify-content: space-between; align-items: baseline;
-  padding: 6px 0; border-bottom: 1px solid rgba(53, 88, 134, 0.08);
+.performance-vdot-kpi-chart { width: 100%; }
+.performance-vdot-kpi-delta {
+  align-self: flex-start;
+  padding: 3px 9px; font-size: 11px; font-weight: 600;
+  border-radius: 999px;
+  background: rgba(18, 104, 243, 0.08);
+  color: #1268f3;
+  margin-top: 4px;
 }
-.performance-vdot-key-indicators-list li:last-child { border-bottom: 0; }
-.performance-vdot-key-indicators-list li span { color: #355886; font-size: 13px; }
-.performance-vdot-key-indicators-list li b { color: #0f2147; font-size: 14px; }
+.performance-vdot-kpi-delta.tone-positive { background: rgba(21, 128, 61, 0.12); color: #15803d; }
+.performance-vdot-kpi-delta.tone-warning  { background: rgba(180, 83, 9, 0.12); color: #b45309; }
 
-.performance-profile-bars-list {
-  list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 10px;
+/* --- Radar card --- */
+.performance-profile-radar-subtitle {
+  display: block; font-size: 11px; color: #64748b; margin-top: 4px;
 }
-.performance-profile-bar-row {
+.performance-profile-radar-legend {
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+  font-size: 11px; color: #355886;
+  padding: 6px 0 0;
+}
+.performance-profile-radar-legend .legend-item {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.performance-profile-radar-legend .legend-swatch {
+  display: inline-block; width: 18px; height: 2px; background: #1268f3; border-radius: 2px;
+}
+.performance-profile-radar-legend .legend-swatch-dashed {
+  background: repeating-linear-gradient(to right, #94a3b8 0 4px, transparent 4px 8px);
+}
+
+/* --- Profil indicatif info card --- */
+.performance-profile-indicatif-card {
   display: grid;
-  grid-template-columns: 140px minmax(0, 1fr) 38px;
-  grid-template-rows: auto auto;
-  gap: 4px 12px;
-  align-items: center;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  padding: 14px 16px;
 }
-.performance-profile-bar-label { color: #0f2147; font-size: 13px; font-weight: 600; grid-row: 1; }
-.performance-profile-bar-track {
-  height: 8px; border-radius: 999px;
-  background: rgba(53, 88, 134, 0.09);
-  overflow: hidden;
-  grid-row: 1;
+.performance-profile-indicatif-icon {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  background: rgba(18, 104, 243, 0.1);
+  color: #1268f3;
 }
-.performance-profile-bar-fill { display: block; height: 100%; border-radius: inherit; }
-.performance-profile-bar-score { color: #0f2147; font-size: 14px; font-style: normal; text-align: right; grid-row: 1; }
-.performance-profile-bar-detail {
-  color: #64748b; font-size: 11px; grid-row: 2; grid-column: 2 / span 2;
+.performance-profile-indicatif-body strong {
+  display: block; font-size: 13px; color: #0f2147; margin-bottom: 4px;
+}
+.performance-profile-indicatif-body p {
+  margin: 0; font-size: 12px; color: #355886; line-height: 1.45;
 }
 
-.performance-confidence-gauge-card { display: flex; flex-direction: column; gap: 8px; }
-.performance-confidence-gauge-body {
-  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0;
+/* --- Confiance gauge --- */
+.performance-confidence-gauge-card {
+  display: flex; flex-direction: column; gap: 8px; padding: 14px 16px;
 }
-.performance-confidence-gauge-level { font-size: 14px; }
+.performance-confidence-gauge-body {
+  display: flex; gap: 12px; align-items: center;
+}
+.performance-confidence-gauge-visual {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex-shrink: 0;
+}
+.performance-confidence-gauge-level { font-size: 12px; font-weight: 700; }
 .performance-confidence-gauge-level.tone-positive { color: #15803d; }
 .performance-confidence-gauge-level.tone-warning  { color: #ea580c; }
 .performance-confidence-gauge-level.tone-negative,
 .performance-confidence-gauge-level.tone-danger   { color: #dc2626; }
 .performance-confidence-gauge-message {
-  margin: 0; font-size: 12px; color: #355886; text-align: center;
+  margin: 0; font-size: 11px; color: #355886; line-height: 1.45;
 }
 
-.performance-limits-card .performance-limits-list {
-  list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 8px;
+/* --- Décomposition bars --- */
+.performance-profile-bars-list {
+  list-style: none; padding: 0; margin: 8px 0 0;
+  display: flex; flex-direction: column; gap: 12px;
 }
-.performance-limits-list li strong {
-  display: block; font-size: 12px; font-weight: 700; color: #0f2147; margin-bottom: 2px;
+.performance-profile-bar-row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) minmax(0, 1.4fr) auto auto;
+  gap: 8px;
+  align-items: center;
 }
-.performance-limits-list li p { margin: 0; font-size: 11px; color: #355886; line-height: 1.4; }
+.performance-profile-bar-icon {
+  width: 10px; height: 10px; border-radius: 999px;
+}
+.performance-profile-bar-label {
+  color: #0f2147; font-size: 12px; font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.performance-profile-bar-label small {
+  color: #64748b; font-weight: 400; margin-left: 2px;
+}
+.performance-profile-bar-track {
+  height: 6px; border-radius: 999px;
+  background: rgba(53, 88, 134, 0.09);
+  overflow: hidden;
+}
+.performance-profile-bar-fill { display: block; height: 100%; border-radius: inherit; }
+.performance-profile-bar-score {
+  color: #0f2147; font-size: 13px; font-style: normal; text-align: right; min-width: 48px;
+}
+.performance-profile-bar-score small {
+  color: #94a3b8; font-weight: 500; margin-left: 2px;
+}
+.performance-profile-bar-qual {
+  font-size: 11px; font-weight: 600; min-width: 78px; text-align: right;
+}
+.performance-profile-bar-qual.tone-positive { color: #15803d; }
+.performance-profile-bar-qual.tone-neutral { color: #1268f3; }
+.performance-profile-bar-qual.tone-warning  { color: #ea580c; }
+.performance-profile-bars-footer {
+  margin: 12px 0 0; font-size: 11px; color: #64748b;
+}
 
-@media (max-width: 980px) {
-  .performance-vdot-grid-row-1,
-  .performance-vdot-grid-row-2,
-  .performance-vdot-grid-row-3 { grid-template-columns: 1fr; }
+/* --- Indicateurs clés --- */
+.performance-vdot-key-indicators-list {
+  list-style: none; padding: 0; margin: 8px 0 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.performance-vdot-key-indicators-list li {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(53, 88, 134, 0.08);
+}
+.performance-vdot-key-indicators-list li:last-child { border-bottom: 0; }
+.performance-vdot-key-indicators-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: #355886; font-size: 13px;
+}
+.performance-vdot-key-indicators-label small {
+  color: #94a3b8; font-weight: 400;
+}
+.performance-vdot-key-indicators-icon { font-size: 13px; }
+.performance-vdot-key-indicators-list li b {
+  color: #0f2147; font-size: 14px; font-weight: 700;
+}
+.performance-vdot-key-indicators-cta {
+  display: block; margin-top: 12px; text-align: center;
+  background: rgba(18, 104, 243, 0.08); color: #1268f3;
+  padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  text-decoration: none;
+}
+.performance-vdot-key-indicators-cta:hover { background: rgba(18, 104, 243, 0.15); }
+
+/* --- Limites de lecture --- */
+.performance-limits-card { padding: 14px 16px; }
+.performance-limits-title {
+  display: inline-flex; align-items: center; gap: 6px; color: #0f2147;
+}
+.performance-limits-icon { color: #1268f3; display: inline-flex; }
+.performance-limits-list {
+  list-style: disc; padding-left: 20px; margin: 8px 0 0;
+  display: flex; flex-direction: column; gap: 6px;
+  color: #355886; font-size: 12px; line-height: 1.45;
+}
+
+/* --- Coach footer --- */
+.performance-vdot-coach-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.performance-vdot-coach-bar > :first-child { flex: 1; }
+.performance-vdot-coach-bar-link {
+  font-size: 12px; color: #1268f3; text-decoration: none; white-space: nowrap;
+}
+.performance-vdot-coach-bar-link:hover { text-decoration: underline; }
+
+@media (max-width: 1100px) {
+  .performance-vdot-row-top,
+  .performance-vdot-row-middle { grid-template-columns: 1fr; }
 }
 
 .performance-tab-placeholder {

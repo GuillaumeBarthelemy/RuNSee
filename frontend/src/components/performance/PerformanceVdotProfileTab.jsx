@@ -1,27 +1,24 @@
 import { memo } from "react";
+import CoachAdviceBar from "../visuals/alpine/CoachAdviceBar.jsx";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
-import PerformanceVdotHistoryChart from "./PerformanceVdotHistoryChart.jsx";
+import PerformanceVdotKpiCard from "./PerformanceVdotKpiCard.jsx";
 import PerformanceProfileRadar from "./PerformanceProfileRadar.jsx";
-import PerformanceProfileBars from "./PerformanceProfileBars.jsx";
+import PerformanceProfileIndicatifCard from "./PerformanceProfileIndicatifCard.jsx";
 import PerformanceConfidenceGauge from "./PerformanceConfidenceGauge.jsx";
+import PerformanceProfileBars from "./PerformanceProfileBars.jsx";
+import PerformanceVdotKeyIndicators from "./PerformanceVdotKeyIndicators.jsx";
 import PerformanceLimitsCard from "./PerformanceLimitsCard.jsx";
 import PerformanceTakeawayCard from "./PerformanceTakeawayCard.jsx";
 
-function formatRaceDuration(seconds) {
-  const n = Math.max(0, Math.round(Number(seconds) || 0));
-  if (n <= 0) return "—";
-  const h = Math.floor(n / 3600);
-  const m = Math.floor((n % 3600) / 60);
-  const s = n % 60;
-  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
-
 /**
- * PerformanceVdotProfileTab — Onglet `Performance > VDOT & profil` (page 13 du plan).
- * Layout aligne mockup p.13.
+ * PerformanceVdotProfileTab — Onglet `Performance > VDOT & profil` (mockup p.13).
+ *
+ * Layout :
+ *   Row 1 (3 cols) : VDOT KPI+histo | Radar | Profil indicatif + Confiance empilés
+ *   Row 2 (3 cols) : Décomposition bars | Indicateurs clés | Limites + À retenir empilés
+ *   Row 3         : Conseil du jour (full width)
  */
-function PerformanceVdotProfileTab({ model = {} }) {
+function PerformanceVdotProfileTab({ model = {}, coachAdvice = null }) {
   if (!model?.hasData) {
     return (
       <div className="performance-vdot-profile-tab">
@@ -32,59 +29,44 @@ function PerformanceVdotProfileTab({ model = {} }) {
 
   return (
     <div className="performance-vdot-profile-tab">
-      {/* Row 1 : VDOT KPI (1/3) + Évolution 90j (2/3) */}
-      <div className="performance-vdot-grid-row-1">
-        <section className="performance-panel performance-vdot-kpi-card">
-          <div className="performance-panel-head">
-            <h3>VDOT estimé</h3>
-            <span className="performance-panel-sub">(Daniels 1979)</span>
-          </div>
-          <strong className="performance-vdot-kpi-value">{model.kpi.formattedVdot}</strong>
-          <span className={`performance-vdot-kpi-hint tone-${model.kpi.level?.tone || "neutral"}`}>
-            {model.kpi.level?.label || "Profil estimé"}
-          </span>
-          <div className="performance-vdot-kpi-meta">
-            <small>Score profil global</small>
-            <strong>{model.kpi.profileScore}/100</strong>
-          </div>
-        </section>
-
-        <PerformanceVdotHistoryChart history={model.history} />
+      <div className="performance-vdot-row-top">
+        <PerformanceVdotKpiCard
+          kpi={model.kpi}
+          history={model.history}
+          deltaLabel={model.delta90Days?.label || ""}
+          deltaTone={model.delta90Days?.tone || "neutral"}
+        />
+        <PerformanceProfileRadar axes={model.profile5D} referenceVdot={model.referenceVdot} />
+        <div className="performance-vdot-row-top-rail">
+          <PerformanceProfileIndicatifCard />
+          <PerformanceConfidenceGauge confidence={model.confidence} />
+        </div>
       </div>
 
-      {/* Row 2 : Radar (1/2) + Bars (1/2) */}
-      <div className="performance-vdot-grid-row-2">
-        <PerformanceProfileRadar axes={model.profile5D} />
-        <PerformanceProfileBars axes={model.profile5D} />
+      <div className="performance-vdot-row-middle">
+        <PerformanceProfileBars axes={model.profile5D} referenceVdot={model.referenceVdot} />
+        <PerformanceVdotKeyIndicators indicators={model.indicators} />
+        <div className="performance-vdot-row-middle-rail">
+          <PerformanceLimitsCard limits={model.limits} />
+          <PerformanceTakeawayCard takeaway={model.takeaway} confidence={null} />
+        </div>
       </div>
 
-      {/* Row 3 : Indicateurs clés (1/3) + Confiance gauge (1/3) + Limites (1/3) */}
-      <div className="performance-vdot-grid-row-3">
-        <section className="performance-panel performance-vdot-key-indicators">
-          <div className="performance-panel-head">
-            <h3>Indicateurs clés estimés</h3>
-            <span className="performance-panel-sub">(allures prudentes)</span>
-          </div>
-          {Array.isArray(model.keyIndicators) && model.keyIndicators.length ? (
-            <ul className="performance-vdot-key-indicators-list">
-              {model.keyIndicators.map((row) => (
-                <li key={row.key}>
-                  <span>{row.label || row.key}</span>
-                  <b>{formatRaceDuration(row.predictedSeconds)}</b>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <PerformanceEmptyState message="Pas encore assez de records pour des prédictions stables." />
-          )}
-        </section>
-
-        <PerformanceConfidenceGauge confidence={model.confidence} />
-        <PerformanceLimitsCard limits={model.limits} />
-      </div>
-
-      {/* Row 4 : À retenir (full width) */}
-      <PerformanceTakeawayCard takeaway={model.takeaway} confidence={model.confidence} />
+      {coachAdvice ? (
+        <div className="performance-vdot-coach-bar">
+          <CoachAdviceBar
+            tone="info"
+            icon={(
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                <path d="M3 19 9 8l4 7 2-3 6 7H3Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+              </svg>
+            )}
+          >
+            {coachAdvice}
+          </CoachAdviceBar>
+          <a className="performance-vdot-coach-bar-link" href="#allures">Voir tous les conseils</a>
+        </div>
+      ) : null}
     </div>
   );
 }

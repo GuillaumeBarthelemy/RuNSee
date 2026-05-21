@@ -9,45 +9,79 @@ import {
 } from "recharts";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
 
-const COLOR = "#1268f3";
+const COLOR_PROFILE = "#1268f3";
+const COLOR_REFERENCE = "#94a3b8";
 
-function PerformanceProfileRadar({ axes = [] }) {
-  const data = Array.isArray(axes)
-    ? axes.map((a) => ({ axis: a.label, score: Math.round(Number(a.score) || 0) }))
-    : [];
+// Wording axes enrichi mockup p.13
+const AXIS_LABEL = {
+  vo2max: "VO₂max (Puissance aérobie)",
+  vitesse: "Vitesse (Courtes distances)",
+  seuil: "Seuil (Tempo soutenu)",
+  endurance: "Endurance (Longue durée)",
+  muscular: "Endurance musculaire (Résistance en côte)",
+};
 
-  if (data.length < 3) {
+function PerformanceProfileRadar({ axes = [], referenceVdot = null }) {
+  if (!Array.isArray(axes) || axes.length < 3) {
     return (
       <section className="performance-panel performance-profile-radar-card">
         <div className="performance-panel-head">
-          <h3>Profil de performance indicatif</h3>
+          <h3>Profil de performance <span className="performance-panel-sub">(indicatif)</span></h3>
         </div>
         <PerformanceEmptyState message="Profil indicatif disponible dès que tu auras 5 axes exploitables." />
       </section>
     );
   }
 
+  // Donnees : pour chaque axe, on cumule "Ton profil" et "Référence" (=50 partout = niveau attendu).
+  const data = axes.map((a) => ({
+    axis: AXIS_LABEL[a.key] || a.label,
+    score: Math.round(Number(a.score) || 0),
+    reference: 50,
+  }));
+
   return (
     <section className="performance-panel performance-profile-radar-card">
       <div className="performance-panel-head">
-        <h3>Profil de performance indicatif</h3>
-        <span className="performance-panel-sub">(orientation entraînement, pas mesure laboratoire)</span>
+        <h3>Profil de performance <span className="performance-panel-sub">(indicatif)</span></h3>
+        {referenceVdot != null ? (
+          <small className="performance-profile-radar-subtitle">
+            Comparé à la référence (VDOT {Number(referenceVdot).toFixed(0)})
+          </small>
+        ) : null}
       </div>
-      <ResponsiveContainer width="100%" height={240}>
-        <RadarChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 16 }}>
+      <ResponsiveContainer width="100%" height={260}>
+        <RadarChart data={data} margin={{ top: 12, right: 32, bottom: 12, left: 32 }}>
           <PolarGrid stroke="#e5edf7" />
-          <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11, fill: "#355886" }} />
+          <PolarAngleAxis dataKey="axis" tick={{ fontSize: 10, fill: "#355886" }} />
           <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8" }} stroke="#e5edf7" />
           <Radar
-            name="Profil"
+            name="Référence (VDOT 54)"
+            dataKey="reference"
+            stroke={COLOR_REFERENCE}
+            strokeWidth={1.5}
+            strokeDasharray="4 4"
+            fill={COLOR_REFERENCE}
+            fillOpacity={0}
+          />
+          <Radar
+            name="Ton profil (estimé)"
             dataKey="score"
-            stroke={COLOR}
+            stroke={COLOR_PROFILE}
             strokeWidth={2}
-            fill={COLOR}
+            fill={COLOR_PROFILE}
             fillOpacity={0.18}
           />
         </RadarChart>
       </ResponsiveContainer>
+      <div className="performance-profile-radar-legend">
+        <span className="legend-item legend-profile">
+          <span className="legend-swatch" /> Ton profil (estimé)
+        </span>
+        <span className="legend-item legend-reference">
+          <span className="legend-swatch legend-swatch-dashed" /> Référence (VDOT {referenceVdot != null ? Number(referenceVdot).toFixed(0) : "—"})
+        </span>
+      </div>
     </section>
   );
 }

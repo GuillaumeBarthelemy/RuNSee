@@ -274,7 +274,10 @@ export default function PerformancePage() {
         {activeTabId === "overview" ? (
           <PerformanceOverviewTab model={overviewModel} />
         ) : activeTabId === "vdot" ? (
-          <PerformanceVdotProfileTab model={vdotProfileTabModel} />
+          <PerformanceVdotProfileTab
+            model={vdotProfileTabModel}
+            coachAdvice="Intègre une séance de fractions courtes (30''-1' à intensité élevée) cette semaine pour stimuler ta VO₂max sans impacter ta fatigue globale."
+          />
         ) : (
           <div className="card section performance-tab-placeholder">
             <h2>Onglet en cours de construction</h2>

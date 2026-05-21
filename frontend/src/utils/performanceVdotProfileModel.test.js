@@ -118,14 +118,13 @@ describe("buildVdotProfileTabModel", () => {
     expect(titles).toContain("Variabilité physiologique");
   });
 
-  it("takeaway : au moins 1 paragraphe avec VDOT consolide", () => {
+  it("takeaway : style coach mockup 'Ton X est ton meilleur atout'", () => {
     const today = new Date("2026-05-21T10:00:00Z");
     const activities = [
       mkActivity({ id: "a1", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
     ];
     const model = buildVdotProfileTabModel({ scopeActivities: activities, referenceDate: today });
     expect(model.takeaway.paragraphs.length).toBeGreaterThanOrEqual(1);
-    expect(model.takeaway.paragraphs[0]).toMatch(/VDOT/);
-    expect(model.takeaway.paragraphs[0]).toMatch(/Daniels/);
+    expect(model.takeaway.paragraphs[0]).toMatch(/Ton .+ est ton meilleur atout/);
   });
 });

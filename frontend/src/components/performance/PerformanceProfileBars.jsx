@@ -1,15 +1,25 @@
 import { memo } from "react";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
 
-const AXIS_COLOR = {
-  vo2max: "#1268f3",
-  vitesse: "#7c3aed",
-  seuil: "#fb923c",
-  endurance: "#22c55e",
-  muscular: "#f59e0b",
+// Wording labels enrichis mockup p.13 + icones colorees.
+const AXIS_META = {
+  endurance: { label: "Endurance", sub: "Longue durée", color: "#22c55e" },
+  seuil: { label: "Seuil", sub: "Tempo soutenu", color: "#1268f3" },
+  vitesse: { label: "Vitesse", sub: "Courtes distances", color: "#7c3aed" },
+  vo2max: { label: "VO₂max", sub: "Puissance aérobie", color: "#ef4444" },
+  muscular: { label: "Endurance musculaire", sub: "Côtes", color: "#fb923c" },
 };
 
-function PerformanceProfileBars({ axes = [] }) {
+// Ordre mockup p.13 : Endurance / Seuil / Vitesse / VO2max / Endurance musculaire.
+const ORDER = ["endurance", "seuil", "vitesse", "vo2max", "muscular"];
+
+function qualificatif(score) {
+  if (score >= 65) return { label: "Solide", tone: "positive" };
+  if (score >= 50) return { label: "Correct", tone: "neutral" };
+  return { label: "À développer", tone: "warning" };
+}
+
+function PerformanceProfileBars({ axes = [], referenceVdot = null }) {
   if (!Array.isArray(axes) || axes.length === 0) {
     return (
       <section className="performance-panel performance-profile-bars-card">
@@ -21,31 +31,44 @@ function PerformanceProfileBars({ axes = [] }) {
     );
   }
 
+  const sortedAxes = ORDER
+    .map((key) => axes.find((a) => a.key === key))
+    .filter(Boolean);
+
   return (
     <section className="performance-panel performance-profile-bars-card">
       <div className="performance-panel-head">
         <h3>Décomposition indicatrice du profil</h3>
-        <span className="performance-panel-sub">(scores 0–100, indicatifs)</span>
       </div>
       <ul className="performance-profile-bars-list">
-        {axes.map((axis) => {
+        {sortedAxes.map((axis) => {
           const score = Math.max(0, Math.min(100, Math.round(Number(axis.score) || 0)));
-          const color = AXIS_COLOR[axis.key] || "#94a3b8";
+          const meta = AXIS_META[axis.key] || { label: axis.label, sub: "", color: "#94a3b8" };
+          const qual = qualificatif(score);
           return (
             <li key={axis.key} className="performance-profile-bar-row">
-              <span className="performance-profile-bar-label">{axis.label}</span>
+              <span className="performance-profile-bar-icon" style={{ background: meta.color }} aria-hidden="true" />
+              <span className="performance-profile-bar-label">
+                {meta.label}
+                {meta.sub ? <small> ({meta.sub})</small> : null}
+              </span>
               <div className="performance-profile-bar-track">
                 <span
                   className="performance-profile-bar-fill"
-                  style={{ width: `${Math.max(2, score)}%`, background: color }}
+                  style={{ width: `${Math.max(2, score)}%`, background: meta.color }}
                 />
               </div>
-              <b className="performance-profile-bar-score">{score}</b>
-              <small className="performance-profile-bar-detail">{axis.detail || ""}</small>
+              <b className="performance-profile-bar-score">
+                {score}<small> /100</small>
+              </b>
+              <span className={`performance-profile-bar-qual tone-${qual.tone}`}>{qual.label}</span>
             </li>
           );
         })}
       </ul>
+      <p className="performance-profile-bars-footer">
+        Scores relatifs à la référence{referenceVdot != null ? ` (VDOT ${Number(referenceVdot).toFixed(0)})` : ""}. 50 = niveau attendu.
+      </p>
     </section>
   );
 }

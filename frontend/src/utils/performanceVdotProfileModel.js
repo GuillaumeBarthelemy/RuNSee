@@ -323,7 +323,21 @@ export function buildVdotProfileTabModel({
     },
   ];
 
-  // 4. Indicateurs cles estimes (paces et race predictions).
+  // 4. Indicateurs cles estimes pour le card mockup p.13.
+  // - threshold pace : T-pace Daniels (key 'T') = ~88 % VO2max
+  // - 5k / 10k : race predictions Daniels
+  // - VO2max estimee : VDOT (proxy ml/kg/min, cf Daniels 1979)
+  const tPace = (vdotProfile.paces || []).find((p) => p.key === "T");
+  const pred5k = (vdotProfile.racePredictions || []).find((p) => p.key === "5k");
+  const pred10k = (vdotProfile.racePredictions || []).find((p) => p.key === "10k");
+  const indicators = {
+    thresholdPaceSecondsPerKm: tPace?.paceSecondsPerKm || 0,
+    tenKPaceSecondsPerKm: pred10k?.paceSecondsPerKm || 0,
+    fiveKPaceSecondsPerKm: pred5k?.paceSecondsPerKm || 0,
+    vo2maxValue: vdotMaster,
+    economyValue: null,
+    economyHint: null,
+  };
   const keyIndicators = (vdotProfile.racePredictions || []).slice(0, 4);
 
   // 5. Limites de lecture (top 3).
@@ -342,18 +356,52 @@ export function buildVdotProfileTabModel({
     },
   ];
 
-  // 6. À retenir scientifique.
+  // 6. À retenir style coach mockup p.13 (court, chaleureux).
   const masterScore = normalizeVdotToScore(vdotMaster);
   const masterLevel = describeVdotLevel(vdotMaster);
   const dominantAxis = axes.reduce((best, ax) => (!best || ax.score > best.score ? ax : best), null);
-  const weakestAxis = axes.reduce((worst, ax) => (!worst || ax.score < worst.score ? ax : worst), null);
-  const paragraphs = [
-    `VDOT ${vdotMaster.toFixed(1)} (Daniels 1979), niveau « ${masterLevel.label || "consolidé"} ». Score profil global ${Math.round(masterScore)}/100.`,
-  ];
-  if (dominantAxis && weakestAxis && dominantAxis.key !== weakestAxis.key) {
+  const weakestAxis = axes.reduce(
+    (worst, ax) => (!worst || (ax.score < worst.score && ax.score > 0) ? ax : worst),
+    null,
+  );
+  // Wording coach : "Ton X est ton meilleur atout. Pour progresser, travaille Y et Z..."
+  const COACH_AXIS_NAME = {
+    endurance: "endurance",
+    seuil: "seuil",
+    vitesse: "vitesse",
+    vo2max: "VO₂max",
+    muscular: "endurance musculaire",
+  };
+  const paragraphs = [];
+  if (dominantAxis) {
+    paragraphs.push(`Ton ${COACH_AXIS_NAME[dominantAxis.key] || dominantAxis.label.toLowerCase()} est ton meilleur atout.`);
+  }
+  if (weakestAxis && dominantAxis && weakestAxis.key !== dominantAxis.key) {
+    const weakName = COACH_AXIS_NAME[weakestAxis.key] || weakestAxis.label.toLowerCase();
     paragraphs.push(
-      `Profil dominant : ${dominantAxis.label} (${Math.round(dominantAxis.score)}/100). Axe le plus en retrait : ${weakestAxis.label} (${Math.round(weakestAxis.score)}/100) — cible privilégiée pour ton prochain bloc.`,
+      `Pour progresser, travaille régulièrement ta ${weakName} avec des séances courtes et intenses, tout en maintenant ta base aérobie.`,
     );
+  }
+
+  // 7. Delta 90j vs 90j precedents (sur vdotHistory).
+  let delta90Days = null;
+  if (Array.isArray(vdotHistory?.snapshots) && vdotHistory.snapshots.length > 2) {
+    const sorted = [...vdotHistory.snapshots]
+      .filter((s) => Number.isFinite(Number(s.vdotValue)))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (sorted.length >= 4) {
+      const mid = Math.floor(sorted.length / 2);
+      const prevAvg = sorted.slice(0, mid).reduce((sum, s) => sum + Number(s.vdotValue), 0) / mid;
+      const curAvg = sorted.slice(mid).reduce((sum, s) => sum + Number(s.vdotValue), 0) / (sorted.length - mid);
+      const diff = curAvg - prevAvg;
+      if (Math.abs(diff) >= 0.05) {
+        delta90Days = {
+          value: diff,
+          label: `${diff > 0 ? "+" : ""}${diff.toFixed(1)} vs 90 jours précédents`,
+          tone: diff > 0 ? "positive" : "warning",
+        };
+      }
+    }
   }
 
   return {
@@ -373,6 +421,9 @@ export function buildVdotProfileTabModel({
       : [],
     profile5D: axes,
     keyIndicators,
+    indicators,
+    delta90Days,
+    referenceVdot: vdotMaster,
     confidence,
     limits,
     takeaway: { paragraphs, tone: masterLevel?.tone || "neutral" },
