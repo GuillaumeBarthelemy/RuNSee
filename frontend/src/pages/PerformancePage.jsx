@@ -8,7 +8,7 @@ import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import AppShell from "../layouts/AppShell.jsx";
 import { enrichActivity } from "../services/activity.service.js";
-import { getVdotHistory } from "../services/externalProvider.service.js";
+import { getVdotHistory, getGarminFitnessSnapshots } from "../services/externalProvider.service.js";
 import { filterActivities } from "../utils/activityAggregations.js";
 import {
   buildBestEfforts,
@@ -66,11 +66,25 @@ export default function PerformancePage() {
   // Daniels interne). Source unique de verite pour le KPI VDOT estime.
   // Fetch async au montage de la page.
   const [vdotHistory, setVdotHistory] = useState(null);
+  const [garminLatestFitnessSnapshot, setGarminLatestFitnessSnapshot] = useState(null);
   useEffect(() => {
     let cancelled = false;
     getVdotHistory({ days: 90 })
       .then((data) => { if (!cancelled) setVdotHistory(data); })
       .catch(() => { /* fallback silencieux sur l'estimation interne */ });
+    // Recupere le dernier snapshot fitness Garmin (Endurance Score / Hill Score)
+    // pour alimenter l'axe 'Endurance musculaire' du profil 5D.
+    getGarminFitnessSnapshots({ days: 90 })
+      .then((data) => {
+        if (cancelled) return;
+        const list = Array.isArray(data?.snapshots) ? data.snapshots : [];
+        // Cherche le snapshot le plus recent avec au moins une des 2 metriques.
+        const latestWithScores = [...list].reverse().find((s) =>
+          s.enduranceScore != null || s.hillScore != null,
+        );
+        if (latestWithScores) setGarminLatestFitnessSnapshot(latestWithScores);
+      })
+      .catch(() => { /* fallback : pas de Garmin endurance/hill, cascade Riegel/composite */ });
     return () => { cancelled = true; };
   }, []);
 
@@ -169,11 +183,11 @@ export default function PerformancePage() {
         vdotHistory,
         confidence: performanceConfidence,
         referenceDate: sharedRange.end,
-        garminLatestFitnessSnapshot: vdotHistory?.latestFitnessSnapshot || null,
+        garminLatestFitnessSnapshot,
         economySignal,
       });
     },
-    [canonicalPerformanceScopeActivities, vdotHistory, performanceConfidence, sharedRange.end, overviewModel],
+    [canonicalPerformanceScopeActivities, vdotHistory, performanceConfidence, sharedRange.end, overviewModel, garminLatestFitnessSnapshot],
   );
 
   const recordEnrichmentCandidates = useMemo(

@@ -79,6 +79,17 @@ export async function backfillVdotHistory({ days = 90 } = {}) {
   return response.data;
 }
 
+/**
+ * Recupere les snapshots Garmin fitness (VO2max, Endurance Score, Hill Score)
+ * pour exposer la derniere valeur exploitable dans l'onglet VDOT & profil.
+ */
+export async function getGarminFitnessSnapshots({ days = 90 } = {}) {
+  const response = await api.get("/providers/garmin/fitness/snapshots", {
+    params: { days },
+  });
+  return response.data;
+}
+
 export async function enrichGarminActivities(payload = {}) {
   const response = await api.post("/providers/garmin/activities/enrich", payload);
   return response.data;
