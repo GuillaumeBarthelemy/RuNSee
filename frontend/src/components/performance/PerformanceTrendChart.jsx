@@ -13,12 +13,17 @@ const TREND_COLOR = "#7c3aed"; // violet mockup p.12
 
 // Formatte les ticks de l'axe Y selon le signal actif.
 // - adjustedPace : valeur en secondes/km -> "MM:SS"
-// - autres : 1 decimale max
+// - vdot : 1 decimale (le spread est typiquement < 5 unites donc l'entier produit
+//   des ticks dupliques type "57, 57, 57, 56, 56")
+// - autres : entier si >= 10, decimale sinon
 function formatYTick(value, signalKey) {
   if (!Number.isFinite(value)) return "";
   if (signalKey === "adjustedPace") {
     const s = Math.round(value);
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  }
+  if (signalKey === "vdot") {
+    return value.toFixed(1);
   }
   return Math.abs(value) >= 10 ? Math.round(value).toString() : value.toFixed(1);
 }

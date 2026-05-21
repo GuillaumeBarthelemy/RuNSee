@@ -14239,9 +14239,9 @@ button.alert-banner-positive-item {
 }
 
 /* Cards Performance KPI : style aligne sur Analyse > Tendances (KpiChartCard).
-   Spacing tight + typo punchy + sparkline visible. */
+   Layout 2 colonnes (texte gauche, sparkline droite) pour optimiser l'espace vertical. */
 .performance-metric-card {
-  min-height: 144px;
+  min-height: 132px;
   padding: 14px 16px;
   border-color: rgba(53, 88, 134, 0.12);
   border-radius: 16px;
@@ -14249,7 +14249,35 @@ button.alert-banner-positive-item {
   box-shadow: 0 1px 2px rgba(15, 34, 67, 0.04), 0 8px 24px rgba(15, 34, 67, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+}
+
+.performance-metric-card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 12px;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+}
+
+.performance-metric-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.performance-metric-card-chart {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: stretch;
+}
+.performance-metric-card-chart .performance-mini-trend {
+  width: 100%;
+  height: auto;
+  max-height: 80px;
 }
 
 .performance-metric-card.performance-tone-warning,
@@ -14308,9 +14336,9 @@ button.alert-banner-positive-item {
 }
 
 .performance-mini-trend {
-  height: 40px;
-  margin-top: 2px;
   width: 100%;
+  height: auto;
+  display: block;
 }
 
 .performance-mini-trend-area {

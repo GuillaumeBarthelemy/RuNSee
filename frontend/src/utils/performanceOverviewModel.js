@@ -508,7 +508,9 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
       key: "vdot",
       label: "VDOT estimé",
       value: currentValue,
-      formattedValue: Math.round(currentValue).toString(),
+      // Affichage 1 decimale pour voir les micro-variations (mockup p.12 entier mais
+      // user demande la finesse decimale ; cohérent avec l'axe Y du trend chart).
+      formattedValue: currentValue.toFixed(1),
       unit: "",
       hint: simpleLevel.label,
       tone: deltaTone,
@@ -557,7 +559,7 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
     key: "vdot",
     label: "VDOT estimé",
     value: vdotValueFallback,
-    formattedValue: Math.round(vdotValueFallback).toString(),
+    formattedValue: vdotValueFallback.toFixed(1),
     unit: "",
     hint: simpleLevelFallback,
     tone: delta.direction === "positive" ? "positive" : delta.direction === "negative" ? "warning" : "neutral",
