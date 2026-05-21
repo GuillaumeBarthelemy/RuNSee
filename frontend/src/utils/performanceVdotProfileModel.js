@@ -256,7 +256,22 @@ export function buildVdotProfileTabModel({
     .map((r) => ({ ...r, distanceMeters: RECORD_KEY_TO_METERS[r.recordKey] || 0 }))
     .filter((r) => r.distanceMeters > 0);
 
-  const vdotMaster = vdotProfile.vdot;
+  // Master VDOT : on prend PRIORITAIREMENT la VO2max Garmin (Firstbeat) si
+  // disponible — l'utilisateur indique qu'elle reflete mieux son niveau actuel
+  // que l'estimation Daniels basee sur des records eventuellement anciens.
+  // Cascade : vdotHistory.latestSnapshot (source Garmin si dispo) -> Daniels.
+  const latestVdotSnapshot = vdotHistory?.latestSnapshot
+    || (Array.isArray(vdotHistory?.snapshots) && vdotHistory.snapshots.length
+      ? vdotHistory.snapshots[vdotHistory.snapshots.length - 1]
+      : null);
+  const garminMasterVdot = latestVdotSnapshot && latestVdotSnapshot.source === "garmin"
+    && Number.isFinite(Number(latestVdotSnapshot.vdotValue))
+    && Number(latestVdotSnapshot.vdotValue) > 0
+    ? Number(latestVdotSnapshot.vdotValue)
+    : null;
+  const vdotMaster = garminMasterVdot != null ? garminMasterVdot : vdotProfile.vdot;
+  const vdotMasterSource = garminMasterVdot != null ? "garmin" : "daniels_internal";
+
   // VDOT specifiques par distance (avec decay age pour valoriser efforts < 90j
   // sans exclure les anciens records jusqu'a 365j).
   const vdot5k = vdotForDistance(recordsWithDistance, 5000, reference);
@@ -440,6 +455,8 @@ export function buildVdotProfileTabModel({
       vdot: vdotMaster,
       formattedVdot: vdotMaster.toFixed(1),
       level: masterLevel,
+      source: vdotMasterSource,
+      sourceLabel: vdotMasterSource === "garmin" ? "Garmin" : "Estimation interne",
     },
     history: Array.isArray(vdotHistory?.snapshots)
       ? vdotHistory.snapshots

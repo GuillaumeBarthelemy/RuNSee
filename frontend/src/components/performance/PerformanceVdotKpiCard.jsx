@@ -35,7 +35,9 @@ function PerformanceVdotKpiCard({ kpi = {}, history = [], deltaLabel = "", delta
           <InfoTooltip
             title="VDOT estimé"
             content={[
-              { label: "Calcul", text: "Score Daniels 1979 calculé à partir de tes meilleures performances route récentes." },
+              { label: "Source", text: kpi.source === "garmin"
+                ? "Valeur Garmin (wellness quotidien Firstbeat). Validation labo Knaier 2019 r=0.93 vs VO₂max mesurée."
+                : "Estimation Daniels 1979 calculée à partir de tes meilleures performances route récentes." },
               { label: "Lecture", text: "Indicateur de niveau aérobie, pas une mesure laboratoire." },
             ]}
             compact
@@ -43,7 +45,12 @@ function PerformanceVdotKpiCard({ kpi = {}, history = [], deltaLabel = "", delta
           />
         </span>
       </header>
-      <strong className="performance-vdot-kpi-value">{kpi.formattedVdot || "—"}</strong>
+      <div className="performance-vdot-kpi-value-row">
+        <strong className="performance-vdot-kpi-value">{kpi.formattedVdot || "—"}</strong>
+        {kpi.sourceLabel ? (
+          <em className="performance-vdot-kpi-source">via {kpi.sourceLabel}</em>
+        ) : null}
+      </div>
       <span className={`performance-vdot-kpi-hint tone-${kpi.level?.tone || "neutral"}`}>
         {kpi.level?.label || "Profil estimé"}
       </span>

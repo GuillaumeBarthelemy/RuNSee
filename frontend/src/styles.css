@@ -13993,9 +13993,14 @@ button.alert-banner-positive-item {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 12px; font-weight: 600; color: #64748b;
 }
+.performance-vdot-kpi-value-row {
+  display: flex; align-items: baseline; gap: 8px; margin-top: 2px;
+}
 .performance-vdot-kpi-value {
   font-size: 42px; font-weight: 700; line-height: 1; color: #0f2147;
-  margin-top: 2px;
+}
+.performance-vdot-kpi-source {
+  font-style: italic; font-size: 12px; font-weight: 400; color: #64748b;
 }
 .performance-vdot-kpi-hint {
   font-size: 13px; font-weight: 600;
