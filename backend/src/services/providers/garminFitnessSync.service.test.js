@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { extractFitnessSnapshotFromPayload } from "./garminFitnessSync.service.js";
+import {
+  extractFitnessSnapshotFromPayload,
+  extractEnduranceSnapshotFromPayload,
+} from "./garminFitnessSync.service.js";
 
 test("extracts VO2max running from generic.vo2MaxPreciseValue", () => {
   const payload = {
@@ -86,4 +89,45 @@ test("returns partial when array payload is empty (Garmin pas de data pour ce jo
   const result = extractFitnessSnapshotFromPayload([], "2026-05-19");
   assert.equal(result.vo2MaxRunning, null);
   assert.equal(result.dataQuality, "partial");
+});
+
+// --- Lot Performance V5 VDOT&profil — Endurance Score + Hill Score ---
+
+test("extractEndurance: parse Endurance Score + Hill Score (objets)", () => {
+  const endurance = { overallScore: 6800, classification: "Excellent" };
+  const hill = { overallScore: 72, classification: "Strong" };
+  const result = extractEnduranceSnapshotFromPayload(endurance, hill, "2026-05-21");
+  assert.equal(result.enduranceScore, 6800);
+  assert.equal(result.enduranceScoreLevel, "Excellent");
+  assert.equal(result.hillScore, 72);
+  assert.equal(result.hillScoreLevel, "Strong");
+  assert.equal(result.snapshotDate.toISOString().slice(0, 10), "2026-05-21");
+});
+
+test("extractEndurance: unwrap array payload", () => {
+  const result = extractEnduranceSnapshotFromPayload(
+    [{ overallScore: 5200, classification: "Trained" }],
+    [{ overallScore: 45, classification: "Established" }],
+    "2026-05-21",
+  );
+  assert.equal(result.enduranceScore, 5200);
+  assert.equal(result.hillScore, 45);
+});
+
+test("extractEndurance: nulls quand payload manquant", () => {
+  const result = extractEnduranceSnapshotFromPayload(null, null, "2026-05-21");
+  assert.equal(result.enduranceScore, null);
+  assert.equal(result.enduranceScoreLevel, null);
+  assert.equal(result.hillScore, null);
+  assert.equal(result.hillScoreLevel, null);
+});
+
+test("extractEndurance: shape alternative (score/level)", () => {
+  const endurance = { score: 7100, level: "Superior" };
+  const hill = { hill_score: 88, feedback: "Athlete" };
+  const result = extractEnduranceSnapshotFromPayload(endurance, hill, "2026-05-21");
+  assert.equal(result.enduranceScore, 7100);
+  assert.equal(result.enduranceScoreLevel, "Superior");
+  assert.equal(result.hillScore, 88);
+  assert.equal(result.hillScoreLevel, "Athlete");
 });

@@ -381,6 +381,12 @@ model ExternalDailyFitnessSnapshot {
   fitnessAge                 Int?
   heatAcclimationPercent     Int?
   altitudeAcclimationPercent Int?
+  // Garmin Endurance Score (Firstbeat) : capacite a soutenir un effort long.
+  enduranceScore             Int?
+  enduranceScoreLevel        String?
+  // Garmin Hill Score : fitness specifique aux montees/descentes.
+  hillScore                  Int?
+  hillScoreLevel             String?
   dataQuality                String   @default("partial")
   syncedAt                   DateTime @default(now())
   createdAt                  DateTime @default(now())

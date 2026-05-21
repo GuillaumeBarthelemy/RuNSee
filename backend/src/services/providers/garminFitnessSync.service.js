@@ -27,7 +27,7 @@ import {
   EXTERNAL_PROVIDER_STATUSES,
 } from "./externalProvider.constants.js";
 import { findExternalProviderConnectionForUser } from "./externalProviderConnection.service.js";
-import { fetchGarminFitnessDays } from "./garminconnectBridge.service.js";
+import { fetchGarminFitnessDays, fetchGarminEnduranceDays } from "./garminconnectBridge.service.js";
 import { decryptProviderSessionPayload } from "./providerSessionCrypto.service.js";
 
 const GARMIN_PROVIDER_CODE = EXTERNAL_PROVIDER_CODES.GARMINCONNECT_UNOFFICIAL;
@@ -215,6 +215,143 @@ export async function syncGarminFitnessForUser(appUserId, options = {}) {
 }
 
 /**
+ * Extrait Endurance Score + Hill Score du payload bridge fetch_endurance_days.
+ * Tolere shapes array/object et fields manquants (cascade ENDURANCE+HILL -> partial).
+ */
+export function extractEnduranceSnapshotFromPayload(rawEndurance, rawHill, date) {
+  // Endurance Score : api.get_endurance_score() renvoie typiquement
+  //   { overallScore, classification, ... } ou un wrapper { ... overallScore: 6500 }
+  let endurancePayload = rawEndurance;
+  if (Array.isArray(endurancePayload)) {
+    endurancePayload = endurancePayload.length > 0 ? endurancePayload[0] : null;
+  }
+  const overallEnd = endurancePayload && typeof endurancePayload === "object"
+    ? endurancePayload.overallScore
+      ?? endurancePayload.score
+      ?? endurancePayload.endurance_score
+      ?? endurancePayload.value
+    : null;
+  const enduranceLevel = endurancePayload && typeof endurancePayload === "object"
+    ? endurancePayload.classification
+      ?? endurancePayload.level
+      ?? endurancePayload.feedback
+      ?? null
+    : null;
+
+  // Hill Score : api.get_hill_score() renvoie typiquement un objet
+  //   { overallScore, classification, strengthScore, enduranceScore, ... }
+  // ou un array si date range.
+  let hillPayload = rawHill;
+  if (Array.isArray(hillPayload)) {
+    hillPayload = hillPayload.length > 0 ? hillPayload[0] : null;
+  }
+  const overallHill = hillPayload && typeof hillPayload === "object"
+    ? hillPayload.overallScore
+      ?? hillPayload.score
+      ?? hillPayload.hill_score
+      ?? hillPayload.value
+    : null;
+  const hillLevel = hillPayload && typeof hillPayload === "object"
+    ? hillPayload.classification
+      ?? hillPayload.level
+      ?? hillPayload.feedback
+      ?? null
+    : null;
+
+  return {
+    snapshotDate: buildUtcDate(date),
+    enduranceScore: overallEnd == null ? null : toIntOrNull(overallEnd),
+    enduranceScoreLevel: typeof enduranceLevel === "string" ? enduranceLevel : null,
+    hillScore: overallHill == null ? null : toIntOrNull(overallHill),
+    hillScoreLevel: typeof hillLevel === "string" ? hillLevel : null,
+  };
+}
+
+/**
+ * Sync N jours d'endurance/hill scores Garmin pour un utilisateur.
+ * Upsert dans la meme table ExternalDailyFitnessSnapshot (les champs vo2max
+ * existants ne sont pas ecrases — on ne touche qu'aux 4 colonnes endurance/hill).
+ */
+export async function syncGarminEnduranceForUser(appUserId, options = {}) {
+  const connection = await findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE);
+  if (!connection || connection.status !== EXTERNAL_PROVIDER_STATUSES.CONNECTED || !connection.encryptedSession) {
+    return { status: "no_connection", syncedCount: 0 };
+  }
+
+  const session = decryptProviderSessionPayload(connection.encryptedSession, { parseJson: true });
+  const dates = Array.isArray(options.dates) && options.dates.length
+    ? options.dates.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+    : buildRecentDates(options.days ?? 30);
+
+  if (!dates.length) {
+    return { status: "no_dates", syncedCount: 0 };
+  }
+
+  const bridgeResult = await fetchGarminEnduranceDays({ session, dates });
+
+  if (bridgeResult?.status === "expired") {
+    return { status: "expired", syncedCount: 0, message: bridgeResult.message };
+  }
+  if (bridgeResult?.status === "rate_limited" || bridgeResult?.code === "GARMINCONNECT_RATE_LIMITED") {
+    return { status: "rate_limited", syncedCount: 0, message: bridgeResult.message };
+  }
+  if (bridgeResult?.status !== "success") {
+    return {
+      status: "error",
+      syncedCount: 0,
+      code: bridgeResult?.code || "GARMINCONNECT_ENDURANCE_ERROR",
+      message: bridgeResult?.message || "Erreur de recuperation Endurance/Hill scores Garmin.",
+    };
+  }
+
+  const days = Array.isArray(bridgeResult.days) ? bridgeResult.days : [];
+  let syncedCount = 0;
+  const errors = [];
+
+  for (const day of days) {
+    const date = day?.date;
+    if (!date) continue;
+    if (Array.isArray(day.errors) && day.errors.length) {
+      errors.push({ date, errors: day.errors });
+    }
+    const extracted = extractEnduranceSnapshotFromPayload(day.endurance, day.hill, date);
+    if (extracted.enduranceScore == null && extracted.hillScore == null) {
+      continue;
+    }
+
+    await prisma.externalDailyFitnessSnapshot.upsert({
+      where: {
+        appUserId_sourceProvider_snapshotDate: {
+          appUserId,
+          sourceProvider: GARMIN_PROVIDER_CODE,
+          snapshotDate: extracted.snapshotDate,
+        },
+      },
+      create: {
+        appUserId,
+        sourceProvider: GARMIN_PROVIDER_CODE,
+        ...extracted,
+      },
+      update: {
+        enduranceScore: extracted.enduranceScore,
+        enduranceScoreLevel: extracted.enduranceScoreLevel,
+        hillScore: extracted.hillScore,
+        hillScoreLevel: extracted.hillScoreLevel,
+        syncedAt: new Date(),
+      },
+    });
+    syncedCount += 1;
+  }
+
+  return {
+    status: "success",
+    syncedCount,
+    requestedCount: dates.length,
+    errors,
+  };
+}
+
+/**
  * Liste les snapshots fitness d'un utilisateur sur N jours, ordonnés
  * du plus ancien au plus récent.
  */
@@ -248,6 +385,10 @@ export async function listGarminFitnessSnapshotsForUser(appUserId, { days = 56 }
       fitnessAge: s.fitnessAge,
       heatAcclimationPercent: s.heatAcclimationPercent,
       altitudeAcclimationPercent: s.altitudeAcclimationPercent,
+      enduranceScore: s.enduranceScore,
+      enduranceScoreLevel: s.enduranceScoreLevel,
+      hillScore: s.hillScore,
+      hillScoreLevel: s.hillScoreLevel,
       dataQuality: s.dataQuality,
       syncedAt: s.syncedAt,
     })),

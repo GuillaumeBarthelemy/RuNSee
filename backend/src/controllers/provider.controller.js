@@ -24,6 +24,7 @@ import {
 import {
   listGarminFitnessSnapshotsForUser,
   syncGarminFitnessForUser,
+  syncGarminEnduranceForUser,
 } from "../services/providers/garminFitnessSync.service.js";
 import {
   backfillVdotHistoryForUser,
@@ -234,6 +235,19 @@ export async function syncRecentGarminFitnessController(req, res, next) {
     const user = getRequiredAuthUser(req);
     const days = req.body?.days ? Number(req.body.days) : 30;
     const result = await syncGarminFitnessForUser(user.id, { days });
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+// --- Lot Performance V5 VDOT&profil — Endurance Score + Hill Score ---
+
+export async function syncRecentGarminEnduranceController(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const days = req.body?.days ? Number(req.body.days) : 30;
+    const result = await syncGarminEnduranceForUser(user.id, { days });
     return res.json(result);
   } catch (error) {
     return next(error);

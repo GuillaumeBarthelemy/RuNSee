@@ -802,6 +802,142 @@ def fetch_fitness_days(request: dict) -> dict:
         }
 
 
+def fetch_endurance_days(request: dict) -> dict:
+    """Recupere Garmin Endurance Score + Hill Score quotidiens (Firstbeat).
+
+    - Endurance Score : capacite a soutenir un effort long. Base sur TRIMP cumule,
+      EPOC accumulation et reponse d'entrainement sur 4-6 semaines (Firstbeat).
+      Echelle Untrained (<3500) -> Superior (>=8500). Disponible Forerunner 955+,
+      Fenix 7+, Epix 2+.
+    - Hill Score : fitness specifique aux montees/descentes. Base sur puissance
+      en montee et tolerance impacts excentrique en descente. Cible coureurs trail
+      et coureurs route avec D+ significatif.
+
+    Pacing 1s entre dates pour eviter rate-limit Garmin. Stop propre 429.
+    """
+    try:
+        from garminconnect import (  # pylint: disable=import-outside-toplevel
+            Garmin,
+            GarminConnectAuthenticationError,
+            GarminConnectConnectionError,
+            GarminConnectTooManyRequestsError,
+        )
+        from garth.exc import GarthException, GarthHTTPError  # pylint: disable=import-outside-toplevel
+    except Exception as exc:  # pragma: no cover - depends on runtime image
+        return build_error(
+            "GARMINCONNECT_DEPENDENCY_MISSING",
+            f"La librairie garminconnect n'est pas disponible: {exc}",
+        )
+
+    dates = normalize_date_list(request.get("dates"))
+    if not dates:
+        return build_error(
+            "GARMINCONNECT_DATES_REQUIRED",
+            "Aucune date Garmin valide n'a ete demandee.",
+        )
+
+    with tempfile.TemporaryDirectory(prefix="runsee-garmin-session-") as tokenstore:
+        tokenstore_path = Path(tokenstore)
+        try:
+            restore_tokenstore_files(request.get("session"), tokenstore_path)
+            api = Garmin()
+            api.login(tokenstore=str(tokenstore_path))
+        except (ValueError, GarminConnectAuthenticationError):
+            return build_error(
+                "GARMINCONNECT_SESSION_EXPIRED",
+                "La session Garmin n'est plus valide. Reconnecte Garmin.",
+            )
+        except (GarminConnectConnectionError, GarthHTTPError, GarthException) as exc:
+            if is_rate_limit_exception(exc):
+                return build_error(
+                    "GARMINCONNECT_RATE_LIMITED",
+                    "Garmin limite temporairement la recuperation. RunNSee reprendra plus tard.",
+                    retryable=True,
+                )
+            return build_garth_error(exc)
+        except Exception:
+            return build_error(
+                "GARMINCONNECT_SESSION_RESTORE_FAILED",
+                "La session Garmin stockee ne peut pas etre rechargee.",
+                retryable=True,
+            )
+
+        days = []
+        for cdate in dates:
+            day_payload = {
+                "date": cdate,
+                "endurance": None,
+                "hill": None,
+                "errors": [],
+            }
+            # Endurance Score
+            try:
+                if hasattr(api, "get_endurance_score"):
+                    day_payload["endurance"] = api.get_endurance_score(cdate)
+            except GarminConnectTooManyRequestsError:
+                return {
+                    "status": "rate_limited",
+                    "code": "GARMINCONNECT_RATE_LIMITED",
+                    "message": "Garmin limite temporairement la recuperation. RunNSee reprendra plus tard.",
+                    "retryable": True,
+                    "days": days,
+                }
+            except (GarminConnectAuthenticationError, GarthHTTPError) as exc:
+                status_code = get_http_status_from_exception(exc)
+                if status_code == 429:
+                    return {
+                        "status": "rate_limited",
+                        "code": "GARMINCONNECT_RATE_LIMITED",
+                        "message": "Garmin limite temporairement la recuperation. RunNSee reprendra plus tard.",
+                        "retryable": True,
+                        "days": days,
+                    }
+                if status_code in (401, 403) or isinstance(exc, GarminConnectAuthenticationError):
+                    return {
+                        "status": "expired",
+                        "code": "GARMINCONNECT_SESSION_EXPIRED",
+                        "message": "La session Garmin n'est plus valide. Reconnecte Garmin.",
+                        "days": days,
+                    }
+                day_payload["errors"].append(build_source_error("enduranceScore", exc))
+            except Exception as exc:  # pylint: disable=broad-except
+                day_payload["errors"].append(build_source_error("enduranceScore", exc))
+
+            # Hill Score
+            try:
+                if hasattr(api, "get_hill_score"):
+                    day_payload["hill"] = api.get_hill_score(cdate, cdate)
+            except GarminConnectTooManyRequestsError:
+                return {
+                    "status": "rate_limited",
+                    "code": "GARMINCONNECT_RATE_LIMITED",
+                    "message": "Garmin limite temporairement la recuperation. RunNSee reprendra plus tard.",
+                    "retryable": True,
+                    "days": days,
+                }
+            except (GarminConnectAuthenticationError, GarthHTTPError) as exc:
+                status_code = get_http_status_from_exception(exc)
+                if status_code == 429:
+                    return {
+                        "status": "rate_limited",
+                        "code": "GARMINCONNECT_RATE_LIMITED",
+                        "message": "Garmin limite temporairement la recuperation. RunNSee reprendra plus tard.",
+                        "retryable": True,
+                        "days": days,
+                    }
+                day_payload["errors"].append(build_source_error("hillScore", exc))
+            except Exception as exc:  # pylint: disable=broad-except
+                day_payload["errors"].append(build_source_error("hillScore", exc))
+
+            days.append(day_payload)
+            time.sleep(1.0)
+
+        return {
+            "status": "success",
+            "days": days,
+        }
+
+
 def login_with_tokens(request: dict) -> dict:
     try:
         from garminconnect import (  # pylint: disable=import-outside-toplevel
@@ -980,6 +1116,10 @@ def main() -> None:
 
     if operation == "fetch_fitness_days":
         write_response(fetch_fitness_days(request))
+        return
+
+    if operation == "fetch_endurance_days":
+        write_response(fetch_endurance_days(request))
         return
 
     write_response(build_error("GARMINCONNECT_UNSUPPORTED_OPERATION", "Operation non supportee."))

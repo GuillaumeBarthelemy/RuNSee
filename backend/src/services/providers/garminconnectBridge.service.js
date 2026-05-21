@@ -166,3 +166,16 @@ export async function fetchGarminFitnessDays({ session, dates = [] }) {
     dates,
   });
 }
+
+/**
+ * Recupere les Garmin Endurance Score + Hill Score quotidiens (Firstbeat).
+ * Endurance Score : capacite a soutenir un effort long (TRIMP+EPOC 4-6 sem).
+ * Hill Score : fitness specifique aux montees/descentes.
+ */
+export async function fetchGarminEnduranceDays({ session, dates = [] }) {
+  return runGarminconnectBridge({
+    operation: "fetch_endurance_days",
+    session,
+    dates,
+  });
+}

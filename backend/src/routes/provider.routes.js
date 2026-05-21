@@ -17,6 +17,7 @@ import {
   resumeGarminActivityBackfillController,
   runGarminActivityBackfillWindowController,
   syncRecentGarminFitnessController,
+  syncRecentGarminEnduranceController,
   syncRecentGarminRecoveryController,
   startGarminActivityBackfillController,
   startGarminRecoveryBackfillController,
@@ -43,6 +44,7 @@ router.post("/garmin/recovery/renormalize", requireAuth, renormalizeGarminRecove
 router.get("/garmin/recovery/snapshots", requireAuth, listGarminRecoverySnapshotsController);
 router.get("/garmin/fitness/snapshots", requireAuth, listGarminFitnessSnapshotsController);
 router.post("/garmin/fitness/sync-recent", requireAuth, syncRecentGarminFitnessController);
+router.post("/garmin/endurance/sync-recent", requireAuth, syncRecentGarminEnduranceController);
 router.get("/vdot/history", requireAuth, listVdotHistoryController);
 router.post("/vdot/backfill", requireAuth, backfillVdotHistoryController);
 

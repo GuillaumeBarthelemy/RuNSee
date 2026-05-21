@@ -22,7 +22,7 @@ import {
   EXTERNAL_PROVIDER_STATUSES,
 } from "../providers/externalProvider.constants.js";
 import { syncRecentGarminRecoveryForUser } from "../providers/garminRecoveryBackfill.service.js";
-import { syncGarminFitnessForUser } from "../providers/garminFitnessSync.service.js";
+import { syncGarminFitnessForUser, syncGarminEnduranceForUser } from "../providers/garminFitnessSync.service.js";
 import { backfillVdotHistoryForUser } from "../vdotHistory.service.js";
 import { enrichGarminActivitiesForUser } from "../providers/garminActivityEnrichment.service.js";
 
@@ -375,6 +375,20 @@ async function executeGlobalIncrementalSyncJob(jobId) {
       };
     } catch (error) {
       providers.garminFitness = buildProviderResultFromError(error);
+    }
+
+    // Endurance Score + Hill Score Garmin (Firstbeat) — Lot Performance V5 VDOT&profil.
+    try {
+      const enduranceResult = await syncGarminEnduranceForUser(job.appUserId, { days: 30 });
+      providers.garminEndurance = {
+        requested: true,
+        status: enduranceResult.status,
+        syncedCount: enduranceResult.syncedCount,
+        requestedCount: enduranceResult.requestedCount,
+        message: enduranceResult.message || null,
+      };
+    } catch (error) {
+      providers.garminEndurance = buildProviderResultFromError(error);
     }
   }
 
