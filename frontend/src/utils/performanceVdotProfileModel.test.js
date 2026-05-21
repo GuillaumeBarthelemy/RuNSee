@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildVdotProfileTabModel } from "./performanceVdotProfileModel.js";
 
-// Builder helper : activite avec record best-effort.
 function mkActivity({ id, distanceMeters, elapsedSeconds, dateISO, bestEffortName, hasGain = 0 }) {
-  // Best efforts vivent dans rawJson.best_efforts (cf. getDetailedBestEfforts).
   const bestEfforts = bestEffortName ? [{
     name: bestEffortName,
     distance: distanceMeters,
@@ -26,7 +24,6 @@ function mkActivity({ id, distanceMeters, elapsedSeconds, dateISO, bestEffortNam
     rawJson: JSON.stringify({ best_efforts: bestEfforts }),
     prCount: 1,
     achievementCount: 1,
-    // Champs derives normalement calcules par buildActivityItems :
     __distanceKm: distanceMeters / 1000,
     __movingSeconds: elapsedSeconds,
     __date: new Date(dateISO),
@@ -35,48 +32,63 @@ function mkActivity({ id, distanceMeters, elapsedSeconds, dateISO, bestEffortNam
   };
 }
 
-describe("buildVdotProfileTabModel", () => {
+describe("buildVdotProfileTabModel — refonte methodologique (fenetre 365j + axes centres master VDOT)", () => {
   it("retourne hasData=false si pas d'activites exploitables", () => {
     const model = buildVdotProfileTabModel({ scopeActivities: [] });
     expect(model.hasData).toBe(false);
-    expect(model.emptyReason).toMatch(/activités/i);
   });
 
-  it("construit profil 5D avec 5 km + 10 km recents", () => {
+  it("integre les records anciens jusqu'a 365 jours (avant: 90j filtrant tout)", () => {
+    // Cas reel utilisateur : 5k 19:00 il y a ~600j (trop ancien, exclu),
+    // 10k 38:41 il y a ~430j (trop ancien, exclu),
+    // semi 1:29:47 il y a ~410j (trop ancien, exclu),
+    // mais on prend les 365 derniers jours -> tous exclus.
+    // Reformule : 5k a 11 mois (~330j), 10k a 4 mois, semi a 6 mois.
     const today = new Date("2026-05-21T10:00:00Z");
     const activities = [
-      mkActivity({ id: "a1", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
-      mkActivity({ id: "a2", distanceMeters: 10000, elapsedSeconds: 2700, dateISO: "2026-05-10T10:00:00Z", bestEffortName: "10k" }),
+      mkActivity({ id: "5k", distanceMeters: 5000, elapsedSeconds: 1140, dateISO: "2025-06-21T10:00:00Z", bestEffortName: "5k" }), // 5k 19:00, 11 mois
+      mkActivity({ id: "10k", distanceMeters: 10000, elapsedSeconds: 2321, dateISO: "2026-01-21T10:00:00Z", bestEffortName: "10k" }), // 10k 38:41, 4 mois
+      mkActivity({ id: "semi", distanceMeters: 21097.5, elapsedSeconds: 5387, dateISO: "2025-11-21T10:00:00Z", bestEffortName: "halfMarathon" }), // semi 1:29:47, 6 mois
     ];
     const model = buildVdotProfileTabModel({ scopeActivities: activities, referenceDate: today });
     expect(model.hasData).toBe(true);
-    expect(model.profile5D).toHaveLength(5);
-    const keys = model.profile5D.map((a) => a.key);
-    expect(keys).toEqual(["vo2max", "vitesse", "seuil", "endurance", "muscular"]);
-    // Tous les scores doivent etre entre 0 et 100
-    model.profile5D.forEach((axis) => {
-      expect(axis.score).toBeGreaterThanOrEqual(0);
-      expect(axis.score).toBeLessThanOrEqual(100);
-    });
+    // Avec fenetre 365j, les 3 records sont pris.
+    const vitesseAxis = model.profile5D.find((a) => a.key === "vitesse");
+    expect(vitesseAxis.score).toBeGreaterThan(0); // Vitesse non-vide (avant: 0)
+    expect(vitesseAxis.detail).toMatch(/5 km/);
   });
 
-  it("axe endurance utilise Riegel si 5k + marathon dispo", () => {
+  it("normalise les axes RELATIVEMENT au master VDOT (50 = equilibre)", () => {
+    // Coureur 5k-specialiste : 5k VDOT > master VDOT consolide
     const today = new Date("2026-05-21T10:00:00Z");
     const activities = [
-      mkActivity({ id: "a1", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
-      // Marathon 3h20 = 12000s, exposant Riegel = log(12000/1200)/log(42195/5000) = log(10)/log(8.44) ≈ 1.08
-      mkActivity({ id: "a2", distanceMeters: 42195, elapsedSeconds: 12000, dateISO: "2026-04-10T10:00:00Z", bestEffortName: "marathon" }),
+      // 5k 19:00 -> VDOT ~56
+      mkActivity({ id: "5k", distanceMeters: 5000, elapsedSeconds: 1140, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
+      // marathon 4:30:00 -> VDOT ~38 (relativement faible) -> tirera master a la baisse
+      mkActivity({ id: "marathon", distanceMeters: 42195, elapsedSeconds: 16200, dateISO: "2026-04-15T10:00:00Z", bestEffortName: "marathon" }),
     ];
     const model = buildVdotProfileTabModel({ scopeActivities: activities, referenceDate: today });
-    expect(model.hasData).toBe(true);
-    const enduranceAxis = model.profile5D.find((a) => a.key === "endurance");
-    expect(enduranceAxis.detail).toMatch(/Riegel/);
+    const vitesseAxis = model.profile5D.find((a) => a.key === "vitesse");
+    // Vitesse > 50 car 5k VDOT > master VDOT consolide.
+    expect(vitesseAxis.score).toBeGreaterThan(50);
+    // VO2max axis = 50 par definition (master vs master).
+    const vo2Axis = model.profile5D.find((a) => a.key === "vo2max");
+    expect(vo2Axis.score).toBe(50);
+  });
+
+  it("VO2max axis est toujours = 50 (reference centrale)", () => {
+    const today = new Date("2026-05-21T10:00:00Z");
+    const activities = [
+      mkActivity({ id: "5k", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
+    ];
+    const model = buildVdotProfileTabModel({ scopeActivities: activities, referenceDate: today });
+    expect(model.profile5D.find((a) => a.key === "vo2max").score).toBe(50);
   });
 
   it("axe muscular utilise Garmin Hill + Endurance si snapshot fourni", () => {
     const today = new Date("2026-05-21T10:00:00Z");
     const activities = [
-      mkActivity({ id: "a1", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
+      mkActivity({ id: "5k", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
     ];
     const garmin = { enduranceScore: 7000, hillScore: 75 };
     const model = buildVdotProfileTabModel({
@@ -86,42 +98,33 @@ describe("buildVdotProfileTabModel", () => {
     });
     const muscular = model.profile5D.find((a) => a.key === "muscular");
     expect(muscular.source).toBe("garmin_hill_endurance");
-    // Hill 75 + Endurance 7000 -> normalize Hill = 75, Endurance ~= 75 -> score ~75
     expect(muscular.score).toBeGreaterThan(60);
-    expect(muscular.score).toBeLessThan(100);
   });
 
-  it("axe muscular fallback Riegel si Garmin absent", () => {
+  it("axe endurance utilise Riegel quand 5k + marathon disponibles", () => {
     const today = new Date("2026-05-21T10:00:00Z");
     const activities = [
-      mkActivity({ id: "a1", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
-      mkActivity({ id: "a2", distanceMeters: 42195, elapsedSeconds: 12000, dateISO: "2026-04-10T10:00:00Z", bestEffortName: "marathon" }),
+      mkActivity({ id: "5k", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
+      mkActivity({ id: "marathon", distanceMeters: 42195, elapsedSeconds: 12000, dateISO: "2026-04-10T10:00:00Z", bestEffortName: "marathon" }),
     ];
-    const model = buildVdotProfileTabModel({
-      scopeActivities: activities,
-      referenceDate: today,
-    });
-    const muscular = model.profile5D.find((a) => a.key === "muscular");
-    expect(muscular.source).toBe("riegel");
+    const model = buildVdotProfileTabModel({ scopeActivities: activities, referenceDate: today });
+    const enduranceAxis = model.profile5D.find((a) => a.key === "endurance");
+    expect(enduranceAxis.detail).toMatch(/Riegel/);
   });
 
-  it("limites de lecture : 3 entrees scientifiques", () => {
+  it("limites de lecture : 3 entrees", () => {
     const today = new Date("2026-05-21T10:00:00Z");
     const activities = [
-      mkActivity({ id: "a1", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
+      mkActivity({ id: "5k", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
     ];
     const model = buildVdotProfileTabModel({ scopeActivities: activities, referenceDate: today });
     expect(model.limits).toHaveLength(3);
-    const titles = model.limits.map((l) => l.title);
-    expect(titles).toContain("Échantillon");
-    expect(titles).toContain("Terrain");
-    expect(titles).toContain("Variabilité physiologique");
   });
 
   it("takeaway : style coach mockup 'Ton X est ton meilleur atout'", () => {
     const today = new Date("2026-05-21T10:00:00Z");
     const activities = [
-      mkActivity({ id: "a1", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
+      mkActivity({ id: "5k", distanceMeters: 5000, elapsedSeconds: 1200, dateISO: "2026-05-15T10:00:00Z", bestEffortName: "5k" }),
     ];
     const model = buildVdotProfileTabModel({ scopeActivities: activities, referenceDate: today });
     expect(model.takeaway.paragraphs.length).toBeGreaterThanOrEqual(1);

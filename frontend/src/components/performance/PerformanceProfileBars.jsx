@@ -67,7 +67,8 @@ function PerformanceProfileBars({ axes = [], referenceVdot = null }) {
         })}
       </ul>
       <p className="performance-profile-bars-footer">
-        Scores relatifs à la référence{referenceVdot != null ? ` (VDOT ${Number(referenceVdot).toFixed(0)})` : ""}. 50 = niveau attendu.
+        Scores centrés sur ton VDOT consolidé{referenceVdot != null ? ` (${Number(referenceVdot).toFixed(0)})` : ""}.
+        50 = équilibre attendu, &gt; 50 = axe en avance, &lt; 50 = à développer.
       </p>
     </section>
   );

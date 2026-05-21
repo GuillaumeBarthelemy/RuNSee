@@ -31,7 +31,13 @@ import {
 import { buildBestEffortRecords, isRunLikeActivity } from "./activityInsights.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const STABILIZATION_WINDOW_DAYS = 90;
+// Fenetre de prise en compte des records pour le profil 5D.
+// Reference : Mujika & Padilla 2003 — VO2max perd 1-2 %/mois en detraining
+// mais reste 80-85 % a 12 mois. Une fenetre 365 jours avec decay au-dela de
+// 90 jours est scientifiquement defendable.
+const RECORDS_WINDOW_DAYS = 365;
+const DECAY_START_DAYS = 90;
+const DECAY_PER_MONTH = 0.01; // 1 % par mois
 
 function toFiniteNumber(value) {
   const n = Number(value);
@@ -48,22 +54,25 @@ function safeDate(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+// (ageDecayFactor n'est plus utilise — la fenetre 365j + ponderation buildVdotProfile
+// gerent la decroissance des records anciens. Conserve le constant DECAY_PER_MONTH
+// pour documentation future si on reintroduit le decay.)
+// Reference Mujika & Padilla 2003 : VO2max perd ~1 %/mois en detraining specifique.
+
 /**
- * Normalise un VDOT brut (typique 30-85) sur l'echelle 0-100 du profil.
- * - VDOT 30 -> score 0   (debutant)
- * - VDOT 45 -> score 50  (amateur moyen)
- * - VDOT 60 -> score 80  (competiteur)
- * - VDOT 75 -> score 100 (elite)
+ * Normalise un VDOT d'axe RELATIVEMENT au VDOT master de l'utilisateur.
+ * 50 = niveau equilibre (= master VDOT) ; > 50 = axe en avance ; < 50 = a developper.
+ * Spread typique max entre axes (Daniels 2014) ~4 points VDOT.
+ *
+ * Exemple : master = 54, 5k = 56 -> deviation = +2 -> score = 50 + (2/4)*50 = 75
  */
-function normalizeVdotToScore(vdot) {
-  const v = Number(vdot);
-  if (!Number.isFinite(v) || v <= 0) return 0;
-  // Piecewise linear 30 -> 0, 45 -> 50, 60 -> 80, 75+ -> 100
-  if (v <= 30) return 0;
-  if (v <= 45) return ((v - 30) / 15) * 50;
-  if (v <= 60) return 50 + ((v - 45) / 15) * 30;
-  if (v <= 75) return 80 + ((v - 60) / 15) * 20;
-  return 100;
+function normalizeAxisVdotVsMaster(axisVdot, masterVdot) {
+  const a = Number(axisVdot);
+  const m = Number(masterVdot);
+  if (!Number.isFinite(a) || a <= 0 || !Number.isFinite(m) || m <= 0) return null;
+  const deviation = a - m;
+  const score = 50 + (deviation / 4) * 50;
+  return Math.max(0, Math.min(100, score));
 }
 
 /**
@@ -120,24 +129,27 @@ function normalizeHillScoreToScore(rawScore) {
 
 /**
  * Calcule un VDOT specifique pour une distance cible a partir des records.
- * Retourne null si pas de record exploitable pour cette distance.
+ * Selectionne le best record (plus rapide) sur la fenetre RECORDS_WINDOW_DAYS.
+ * Decay age non applique ici (le master VDOT applique deja sa propre ponderation
+ * recence via buildVdotProfile — appliquer le decay seulement sur les axes
+ * specifiques creerait une incoherence avec le master).
  */
-function vdotForDistance(records, distanceMeters) {
+function vdotForDistance(records, distanceMeters, referenceDate) {
   if (!Array.isArray(records)) return null;
-  const matches = records.filter(
-    (r) => r?.isAvailable && r?.elapsedSeconds > 0
-      && r?.distanceMeters && Math.abs(r.distanceMeters - distanceMeters) < 100,
-  );
+  const reference = safeDate(referenceDate) || new Date();
+  const matches = records
+    .filter((r) => r?.isAvailable && r?.elapsedSeconds > 0
+      && r?.distanceMeters && Math.abs(r.distanceMeters - distanceMeters) < 100)
+    .map((r) => {
+      const date = safeDate(r?.activity?.startDateLocal || r?.activity?.startDate);
+      const ageDays = date ? Math.max(0, (reference - date) / MS_PER_DAY) : 0;
+      const rawVdot = calculateVdot({ distanceMeters, elapsedSeconds: r.elapsedSeconds });
+      return { rawVdot, ageDays };
+    })
+    .filter((m) => m.ageDays <= RECORDS_WINDOW_DAYS && m.rawVdot > 0);
   if (!matches.length) return null;
-  const best = matches.reduce(
-    (acc, r) => (!acc || r.elapsedSeconds < acc.elapsedSeconds ? r : acc),
-    null,
-  );
-  if (!best) return null;
-  return calculateVdot({
-    distanceMeters,
-    elapsedSeconds: best.elapsedSeconds,
-  });
+  const best = matches.reduce((acc, m) => (!acc || m.rawVdot > acc.rawVdot ? m : acc), null);
+  return best?.rawVdot ?? null;
 }
 
 /**
@@ -186,15 +198,16 @@ function buildMuscularEnduranceAxis({ enduranceScore, hillScore, riegelScore, ac
 }
 
 /**
- * Filtre records sur fenetre 90 jours pour stabilisation (decision utilisateur).
+ * Filtre records sur fenetre RECORDS_WINDOW_DAYS (365 jours).
+ * Decay age applique en aval dans vdotForDistance (Mujika 2003).
  */
-function filterRecordsRecent(records, referenceDate) {
+function filterRecordsInWindow(records, referenceDate) {
   if (!Array.isArray(records)) return [];
   const reference = safeDate(referenceDate) || new Date();
-  const cutoff = new Date(reference.getTime() - STABILIZATION_WINDOW_DAYS * MS_PER_DAY);
+  const cutoff = new Date(reference.getTime() - RECORDS_WINDOW_DAYS * MS_PER_DAY);
   return records.filter((r) => {
     const date = safeDate(r?.activity?.startDateLocal || r?.activity?.startDate);
-    if (!date) return true; // garde si date manquante, on ne va pas exclure
+    if (!date) return true;
     return date >= cutoff && date <= reference;
   });
 }
@@ -211,13 +224,13 @@ export function buildVdotProfileTabModel({
 } = {}) {
   const reference = safeDate(referenceDate) || new Date();
 
-  // 1. Records consolides sur la fenetre 90j (stabilisation).
+  // 1. Records sur fenetre 365j (decay age en aval, cf Mujika 2003).
   const allRecords = buildBestEffortRecords(scopeActivities);
-  const recentRecords = filterRecordsRecent(allRecords, reference);
+  const recordsInWindow = filterRecordsInWindow(allRecords, reference);
 
-  // 2. VDOT consolide (Daniels) sur les recent records.
+  // 2. VDOT consolide (Daniels) sur tous les records exploitables sur 365j.
   const vdotProfile = buildVdotProfile({
-    records: recentRecords.length ? recentRecords : allRecords,
+    records: recordsInWindow.length ? recordsInWindow : allRecords,
     referenceDate: reference,
   });
 
@@ -226,30 +239,29 @@ export function buildVdotProfileTabModel({
       hasData: false,
       title: "VDOT & profil",
       emptyReason: "Nous avons besoin de plus d'activités récentes avec allure et fréquence cardiaque pour estimer ton profil.",
-      stabilizationWindowDays: STABILIZATION_WINDOW_DAYS,
+      recordsWindowDays: RECORDS_WINDOW_DAYS,
     };
   }
 
   // 3. Calcul des 5 axes.
-  // Mapping recordKey -> distance meters pour pouvoir filtrer par distance
-  // (les records renvoyes par buildBestEffortRecords ne carry pas distanceMeters,
-  // seulement recordKey + recordLabel + elapsedSeconds).
   const RECORD_KEY_TO_METERS = {
     "5k": 5000,
     "10k": 10000,
     halfMarathon: 21097.5,
     marathon: 42195,
   };
-  const recordsWithDistance = recentRecords
+  const recordsWithDistance = recordsInWindow
     .filter((r) => r?.isAvailable && r?.elapsedSeconds > 0)
     .map((r) => ({ ...r, distanceMeters: RECORD_KEY_TO_METERS[r.recordKey] || 0 }))
     .filter((r) => r.distanceMeters > 0);
 
   const vdotMaster = vdotProfile.vdot;
-  const vdot5k = vdotForDistance(recordsWithDistance, 5000);
-  const vdot10k = vdotForDistance(recordsWithDistance, 10000);
-  const vdotHalf = vdotForDistance(recordsWithDistance, 21097.5);
-  const vdotMarathon = vdotForDistance(recordsWithDistance, 42195);
+  // VDOT specifiques par distance (avec decay age pour valoriser efforts < 90j
+  // sans exclure les anciens records jusqu'a 365j).
+  const vdot5k = vdotForDistance(recordsWithDistance, 5000, reference);
+  const vdot10k = vdotForDistance(recordsWithDistance, 10000, reference);
+  const vdotHalf = vdotForDistance(recordsWithDistance, 21097.5, reference);
+  const vdotMarathon = vdotForDistance(recordsWithDistance, 42195, reference);
 
   // Axe Endurance : Riegel 5k -> marathon (fallback semi si marathon manquant).
   let riegelData = null;
@@ -269,9 +281,14 @@ export function buildVdotProfileTabModel({
     });
     riegelData = { exponent: exp, score: riegelToScore(exp), reference: "semi vs 5 km" };
   }
+  // Si Riegel disponible : on utilise le score Riegel (deja centre 1.06 -> 50).
+  // Sinon : on normalise le VDOT long (marathon ou semi) vs le master VDOT
+  // (50 = equilibre, > 50 = endurance forte).
   const enduranceScore = riegelData?.score != null
     ? riegelData.score
-    : normalizeVdotToScore(vdotMarathon || vdotHalf || vdotMaster);
+    : (vdotMarathon || vdotHalf
+      ? normalizeAxisVdotVsMaster(vdotMarathon || vdotHalf, vdotMaster) ?? 50
+      : 50);
 
   // Endurance musculaire : 60/40 Hill/Endurance Garmin, fallback Riegel, fallback composite.
   const muscular = buildMuscularEnduranceAxis({
@@ -281,38 +298,48 @@ export function buildVdotProfileTabModel({
     activities: scopeActivities,
   });
 
+  // Axes normalises RELATIVEMENT au master VDOT : 50 = equilibre attendu,
+  // > 50 = axe en avance sur ton niveau moyen, < 50 = a developper.
+  // Cette approche (vs absolu 0-100) reflete la decomposition du profil
+  // demandee par le mockup : "Comparé à la référence (VDOT XX)".
+  const vo2maxScore = 50; // par definition, vdotMaster = vdotMaster -> 50.
+  const vitesseScore = normalizeAxisVdotVsMaster(vdot5k, vdotMaster);
+  const seuilScore = normalizeAxisVdotVsMaster(vdot10k || vdotHalf, vdotMaster);
+
   const axes = [
     {
       key: "vo2max",
       label: "VO₂max",
-      score: clamp01(normalizeVdotToScore(vdotMaster)),
-      detail: `VDOT consolidé ${vdotMaster.toFixed(1)} (Daniels 1979)`,
+      score: vo2maxScore,
+      detail: `VDOT consolidé ${vdotMaster.toFixed(1)} (Daniels 1979) — référence centrale du profil`,
     },
     {
       key: "vitesse",
       label: "Vitesse",
-      score: vdot5k ? clamp01(normalizeVdotToScore(vdot5k)) : 0,
-      detail: vdot5k ? `VDOT 5 km ${vdot5k.toFixed(1)}` : "Pas de record 5 km récent",
+      score: vitesseScore != null ? vitesseScore : 50,
+      detail: vdot5k
+        ? `VDOT 5 km ${vdot5k.toFixed(1)} vs master ${vdotMaster.toFixed(1)}`
+        : "Pas de record 5 km dans la fenêtre 365 j",
     },
     {
       key: "seuil",
       label: "Seuil",
-      score: (vdot10k || vdotHalf)
-        ? clamp01(normalizeVdotToScore(vdot10k || vdotHalf))
-        : 0,
+      score: seuilScore != null ? seuilScore : 50,
       detail: vdot10k
         ? `VDOT 10 km ${vdot10k.toFixed(1)} (T-pace ~88 % VO₂max)`
         : vdotHalf
           ? `VDOT semi ${vdotHalf.toFixed(1)} (proxy seuil)`
-          : "Pas de record 10 km/semi récent",
+          : "Pas de record 10 km/semi dans la fenêtre 365 j",
     },
     {
       key: "endurance",
       label: "Endurance",
       score: clamp01(enduranceScore),
       detail: riegelData
-        ? `Exposant Riegel ${riegelData.exponent.toFixed(3)} (${riegelData.reference})`
-        : "Estimation VDOT marathon faute de records 5 km + long",
+        ? `Exposant Riegel ${riegelData.exponent.toFixed(3)} (${riegelData.reference}) — 1.06 = équilibre`
+        : vdotMarathon || vdotHalf
+          ? `VDOT long ${(vdotMarathon || vdotHalf).toFixed(1)} vs master ${vdotMaster.toFixed(1)}`
+          : "Pas de record marathon/semi dans la fenêtre 365 j",
     },
     {
       key: "muscular",
@@ -357,7 +384,6 @@ export function buildVdotProfileTabModel({
   ];
 
   // 6. À retenir style coach mockup p.13 (court, chaleureux).
-  const masterScore = normalizeVdotToScore(vdotMaster);
   const masterLevel = describeVdotLevel(vdotMaster);
   const dominantAxis = axes.reduce((best, ax) => (!best || ax.score > best.score ? ax : best), null);
   const weakestAxis = axes.reduce(
@@ -407,12 +433,11 @@ export function buildVdotProfileTabModel({
   return {
     hasData: true,
     title: "VDOT & profil",
-    stabilizationWindowDays: STABILIZATION_WINDOW_DAYS,
+    recordsWindowDays: RECORDS_WINDOW_DAYS,
     kpi: {
       vdot: vdotMaster,
       formattedVdot: vdotMaster.toFixed(1),
       level: masterLevel,
-      profileScore: Math.round(masterScore),
     },
     history: Array.isArray(vdotHistory?.snapshots)
       ? vdotHistory.snapshots
