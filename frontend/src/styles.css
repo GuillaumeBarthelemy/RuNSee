@@ -13965,7 +13965,9 @@ button.alert-banner-positive-item {
 
 .performance-vdot-row-top {
   display: grid;
-  grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.8fr) minmax(220px, 0.9fr);
+  /* VDOT card elargie (320px min) pour accueillir confortablement le mini-chart
+     interactif type 'Tendances de performance'. Radar reste dominant. */
+  grid-template-columns: minmax(320px, 1.2fr) minmax(0, 1.6fr) minmax(240px, 1fr);
   gap: 12px;
   align-items: stretch;
 }
@@ -14090,20 +14092,24 @@ button.alert-banner-positive-item {
   display: flex; flex-direction: column; gap: 12px;
 }
 .performance-profile-bar-row {
+  /* Label sur 2 lignes (titre + sous-titre) pour eviter la troncature
+     'Endur...' / 'Vitess...' sur les cards etroites (mockup p.13). */
   display: grid;
-  grid-template-columns: 14px minmax(0, 1fr) minmax(0, 1.4fr) auto auto;
-  gap: 8px;
+  grid-template-columns: 14px minmax(96px, 1.1fr) minmax(0, 1.6fr) auto auto;
+  gap: 10px;
   align-items: center;
 }
 .performance-profile-bar-icon {
   width: 10px; height: 10px; border-radius: 999px;
 }
-.performance-profile-bar-label {
-  color: #0f2147; font-size: 12px; font-weight: 600; white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis;
+.performance-profile-bar-label-block {
+  display: flex; flex-direction: column; min-width: 0;
 }
-.performance-profile-bar-label small {
-  color: #64748b; font-weight: 400; margin-left: 2px;
+.performance-profile-bar-label {
+  color: #0f2147; font-size: 12px; font-weight: 700; line-height: 1.2;
+}
+.performance-profile-bar-sublabel {
+  color: #64748b; font-weight: 400; font-size: 10px; line-height: 1.2; margin-top: 1px;
 }
 .performance-profile-bar-track {
   height: 6px; border-radius: 999px;

@@ -46,12 +46,12 @@ function PerformanceProfileBars({ axes = [], referenceVdot = null }) {
           const meta = AXIS_META[axis.key] || { label: axis.label, sub: "", color: "#94a3b8" };
           const qual = qualificatif(score);
           return (
-            <li key={axis.key} className="performance-profile-bar-row">
+            <li key={axis.key} className="performance-profile-bar-row" title={meta.sub ? `${meta.label} (${meta.sub})` : meta.label}>
               <span className="performance-profile-bar-icon" style={{ background: meta.color }} aria-hidden="true" />
-              <span className="performance-profile-bar-label">
-                {meta.label}
-                {meta.sub ? <small> ({meta.sub})</small> : null}
-              </span>
+              <div className="performance-profile-bar-label-block">
+                <strong className="performance-profile-bar-label">{meta.label}</strong>
+                {meta.sub ? <small className="performance-profile-bar-sublabel">{meta.sub}</small> : null}
+              </div>
               <div className="performance-profile-bar-track">
                 <span
                   className="performance-profile-bar-fill"

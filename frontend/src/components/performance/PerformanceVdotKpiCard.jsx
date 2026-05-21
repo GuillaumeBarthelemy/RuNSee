@@ -59,8 +59,8 @@ function PerformanceVdotKpiCard({ kpi = {}, history = [], deltaLabel = "", delta
 
       {data.length >= 2 ? (
         <div className="performance-vdot-kpi-chart">
-          <ResponsiveContainer width="100%" height={120}>
-            <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={140}>
+            <AreaChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="perf-vdot-kpi-area" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={toneColor} stopOpacity={0.22} />
@@ -70,18 +70,18 @@ function PerformanceVdotKpiCard({ kpi = {}, history = [], deltaLabel = "", delta
               <CartesianGrid stroke="#e5edf7" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 10, fill: "#64748b" }}
+                tick={{ fontSize: 11, fill: "#64748b" }}
                 tickLine={false}
                 axisLine={{ stroke: "#e5edf7" }}
-                minTickGap={28}
+                minTickGap={20}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: "#64748b" }}
-                tickFormatter={(v) => Number(v).toFixed(0)}
+                tick={{ fontSize: 11, fill: "#64748b" }}
+                tickFormatter={(v) => Number(v).toFixed(1)}
                 tickLine={false}
                 axisLine={false}
-                width={28}
-                domain={["dataMin - 1", "dataMax + 1"]}
+                width={36}
+                domain={["dataMin", "dataMax"]}
               />
               <Tooltip
                 contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5edf7" }}
@@ -91,10 +91,10 @@ function PerformanceVdotKpiCard({ kpi = {}, history = [], deltaLabel = "", delta
                 type="monotone"
                 dataKey="value"
                 stroke={toneColor}
-                strokeWidth={2.2}
+                strokeWidth={3}
                 fill="url(#perf-vdot-kpi-area)"
-                dot={false}
-                activeDot={{ r: 4 }}
+                dot={{ r: 2.5, stroke: toneColor, strokeWidth: 2, fill: "#fff" }}
+                activeDot={{ r: 5 }}
               />
             </AreaChart>
           </ResponsiveContainer>
