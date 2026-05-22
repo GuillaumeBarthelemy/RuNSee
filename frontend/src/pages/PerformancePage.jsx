@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PerformanceOverviewTab from "../components/performance/PerformanceOverviewTab.jsx";
 import PerformanceVdotProfileTab from "../components/performance/PerformanceVdotProfileTab.jsx";
+import PerformanceAlluresReferenceTab from "../components/performance/PerformanceAlluresReferenceTab.jsx";
 import { buildVdotProfileTabModel } from "../utils/performanceVdotProfileModel.js";
+import { buildAlluresReferenceModel } from "../utils/performanceAlluresReferenceModel.js";
 import AnalyticsCompactFilters from "../components/analytics/AnalyticsCompactFilters.jsx";
 import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
@@ -190,6 +192,18 @@ export default function PerformancePage() {
     [canonicalPerformanceScopeActivities, vdotHistory, performanceConfidence, sharedRange.end, overviewModel, garminLatestFitnessSnapshot],
   );
 
+  // Modele onglet Allures de reference (mockup p.14).
+  // Utilise vdotProfile (Daniels paces + race predictions) + vdotHistory pour
+  // l'evolution allure seuil 30j.
+  const alluresReferenceModel = useMemo(
+    () => buildAlluresReferenceModel({
+      vdotProfile,
+      vdotHistory,
+      referenceDate: sharedRange.end,
+    }),
+    [vdotProfile, vdotHistory, sharedRange.end],
+  );
+
   const recordEnrichmentCandidates = useMemo(
     () => findRecordEnrichmentCandidates(canonicalPerformanceScopeActivities, { limitPerRecord: 1 }),
     [canonicalPerformanceScopeActivities],
@@ -296,6 +310,8 @@ export default function PerformancePage() {
             model={vdotProfileTabModel}
             coachAdvice="Intègre une séance de fractions courtes (30''-1' à intensité élevée) cette semaine pour stimuler ta VO₂max sans impacter ta fatigue globale."
           />
+        ) : activeTabId === "allures" ? (
+          <PerformanceAlluresReferenceTab model={alluresReferenceModel} />
         ) : (
           <div className="card section performance-tab-placeholder">
             <h2>Onglet en cours de construction</h2>

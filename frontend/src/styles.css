@@ -13963,6 +13963,209 @@ button.alert-banner-positive-item {
   gap: 12px;
 }
 
+/* ===========================================================================
+   ONGLET 'Allures de référence' (page 14) — Lot Performance V5
+   =========================================================================== */
+.performance-allures-reference-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Section 1 : header card + 7 paceCards en grid */
+.performance-allures-header { padding: 16px; }
+.performance-allures-header .performance-panel-head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+  margin-bottom: 14px;
+}
+.performance-allures-header-title h3 { margin: 0; font-size: 16px; }
+.performance-allures-header-title small { color: #64748b; font-size: 12px; display: block; margin-top: 2px; }
+.performance-allures-header-vdot {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+}
+.performance-allures-header-vdot small { color: #64748b; font-size: 11px; }
+.performance-allures-header-vdot strong { color: #0f2147; font-size: 24px; line-height: 1; font-weight: 700; }
+
+.performance-allures-pace-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1280px) {
+  .performance-allures-pace-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .performance-allures-pace-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.performance-pace-card {
+  background: #fff;
+  border: 1px solid rgba(53, 88, 134, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 0;
+}
+.performance-pace-card-head {
+  display: flex; align-items: center; gap: 6px;
+}
+.performance-pace-card-dot {
+  width: 8px; height: 8px; border-radius: 999px; flex: 0 0 8px;
+}
+.performance-pace-card-label {
+  color: #355886; font-size: 12px; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.performance-pace-card-value-row {
+  display: flex; align-items: baseline; gap: 4px; margin-top: 2px;
+}
+.performance-pace-card-value {
+  color: #0f2147; font-size: 22px; font-weight: 700; line-height: 1;
+}
+.performance-pace-card-unit { color: #64748b; font-size: 11px; }
+.performance-pace-card-zone { color: #1268f3; font-size: 11px; font-weight: 600; }
+.performance-pace-card-vma { color: #64748b; font-size: 10px; font-style: italic; }
+
+/* Section 2 : Comparaison + Évolution seuil */
+.performance-allures-row-comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+@media (max-width: 980px) {
+  .performance-allures-row-comparison { grid-template-columns: 1fr; }
+}
+
+.performance-pace-comparison-table {
+  width: 100%; border-collapse: collapse; margin-top: 10px;
+}
+.performance-pace-comparison-table th {
+  text-align: left; color: #64748b; font-size: 11px; font-weight: 600;
+  padding: 6px 8px; border-bottom: 1px solid rgba(53, 88, 134, 0.08);
+}
+.performance-pace-comparison-table td {
+  padding: 8px; font-size: 12px; color: #0f2147;
+  border-bottom: 1px solid rgba(53, 88, 134, 0.05);
+}
+.performance-pace-comparison-row-label {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.performance-pace-comparison-row-dot {
+  width: 8px; height: 8px; border-radius: 999px;
+}
+.performance-pace-comparison-delta {
+  font-style: normal; font-weight: 600; color: #64748b;
+}
+.performance-pace-comparison-delta.is-faster { color: #15803d; }
+.performance-pace-comparison-track {
+  height: 10px; border-radius: 999px;
+  background: rgba(53, 88, 134, 0.07);
+  overflow: hidden;
+  min-width: 80px;
+}
+.performance-pace-comparison-fill { display: block; height: 100%; border-radius: inherit; }
+.performance-pace-comparison-axis {
+  margin: 8px 0 0; font-size: 11px; color: #94a3b8; text-align: right;
+}
+
+/* Évolution seuil */
+.performance-threshold-evolution-card {
+  display: flex; flex-direction: column;
+}
+.performance-threshold-evolution-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(140px, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+.performance-threshold-evolution-chart {
+  display: flex; flex: 1; min-height: 180px;
+}
+.performance-threshold-evolution-side {
+  display: flex; flex-direction: column; gap: 10px;
+  border-left: 1px solid rgba(53, 88, 134, 0.06);
+  padding-left: 12px;
+}
+.performance-threshold-evolution-side div {
+  display: flex; flex-direction: column;
+}
+.performance-threshold-evolution-side small { color: #64748b; font-size: 11px; }
+.performance-threshold-evolution-side strong { color: #0f2147; font-size: 18px; font-weight: 700; line-height: 1; margin-top: 2px; }
+.performance-threshold-evolution-side strong.tone-positive { color: #15803d; }
+.performance-threshold-evolution-side strong.tone-warning { color: #ea580c; }
+.performance-threshold-evolution-side em { color: #15803d; font-style: italic; font-size: 11px; margin-top: 2px; }
+.performance-threshold-evolution-side strong small { font-weight: 400; color: inherit; opacity: 0.7; }
+
+.performance-threshold-evolution-pill {
+  align-self: flex-start; margin-top: 8px;
+  padding: 3px 9px; font-size: 11px; font-weight: 600;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, 0.12); color: #b45309;
+}
+.performance-threshold-evolution-pill.tone-positive { background: rgba(21, 128, 61, 0.12); color: #15803d; }
+.performance-threshold-evolution-pill.tone-warning  { background: rgba(180, 83, 9, 0.12); color: #b45309; }
+
+/* Section 3 : 3 tables/cards */
+.performance-allures-row-tables {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+@media (max-width: 1100px) {
+  .performance-allures-row-tables { grid-template-columns: 1fr; }
+}
+
+.performance-pace-equivalences-table,
+.performance-pace-zones-table {
+  width: 100%; border-collapse: collapse; margin-top: 10px;
+}
+.performance-pace-equivalences-table th,
+.performance-pace-zones-table th {
+  text-align: left; color: #64748b; font-size: 11px; font-weight: 600;
+  padding: 6px 6px; border-bottom: 1px solid rgba(53, 88, 134, 0.08);
+}
+.performance-pace-equivalences-table td,
+.performance-pace-zones-table td {
+  padding: 7px 6px; font-size: 12px; color: #0f2147;
+  border-bottom: 1px solid rgba(53, 88, 134, 0.05);
+}
+
+.performance-pace-zone-label {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.performance-pace-zone-dot {
+  width: 9px; height: 9px; border-radius: 999px;
+}
+
+.performance-pace-equivalences-warning,
+.performance-pace-zones-footer {
+  margin: 10px 0 0; font-size: 11px; color: #64748b; line-height: 1.4;
+}
+
+.performance-pace-usage-list {
+  list-style: none; padding: 0; margin: 10px 0 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.performance-pace-usage-list li {
+  display: grid; grid-template-columns: 28px 1fr; gap: 10px;
+  align-items: start;
+}
+.performance-pace-usage-icon {
+  display: grid; place-items: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  background: rgba(18, 104, 243, 0.08); color: #1268f3;
+}
+.performance-pace-usage-list li strong {
+  display: block; color: #0f2147; font-size: 12px; font-weight: 700;
+}
+.performance-pace-usage-list li p {
+  margin: 2px 0 0; color: #355886; font-size: 11px; line-height: 1.4;
+}
+
 /* Layout VDOT & profil : 2 colonnes (centre 2x2 grid + rail droit vertical).
    Voir PerformanceVdotProfileTab.jsx pour le rationale UX. */
 .performance-vdot-layout {
