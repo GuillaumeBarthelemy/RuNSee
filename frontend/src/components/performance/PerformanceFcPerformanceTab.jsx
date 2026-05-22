@@ -2,7 +2,6 @@ import { memo } from "react";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
 import PerformanceFcKpiCard from "./PerformanceFcKpiCard.jsx";
 import PerformanceFcKeyEffortsTable from "./PerformanceFcKeyEffortsTable.jsx";
-import PerformanceFcSeuilEvolutionChart from "./PerformanceFcSeuilEvolutionChart.jsx";
 import PerformanceFcDecouplingSampleCard from "./PerformanceFcDecouplingSampleCard.jsx";
 import PerformanceFcReadingCard from "./PerformanceFcReadingCard.jsx";
 import OverviewIntensityDonut from "../analytics/OverviewIntensityDonut.jsx";
@@ -48,11 +47,11 @@ function PerformanceFcPerformanceTab({ model = {}, intensityModel = null, confid
     );
   }
 
-  const { kpi, effortsByType, fcSeuilEvolution, stableSample, reading, warning } = model;
+  const { kpi, effortsByType, stableSample, reading, warning } = model;
 
   return (
     <div className="performance-fc-performance-tab">
-      {/* Row 1 : 4 KPI cards */}
+      {/* Row 1 : 4 KPI cards (FC seuil mini-trend = evolution -> pas de chart separe) */}
       <div className="performance-fc-kpi-row">
         <PerformanceFcKpiCard label="FC seuil estimée" icon={ICONS.seuil} kpi={kpi?.fcSeuil || {}} />
         <PerformanceFcKpiCard label="FC max estimée" icon={ICONS.max} kpi={kpi?.fcMax || {}} />
@@ -60,15 +59,14 @@ function PerformanceFcPerformanceTab({ model = {}, intensityModel = null, confid
         <PerformanceFcKpiCard label="FC repos" icon={ICONS.repos} kpi={kpi?.fcRepos || {}} />
       </div>
 
-      {/* Row 2 : FC dans efforts cles | Evolution FC seuil */}
+      {/* Row 2 : FC dans efforts cles (large) | Exemple derive stable */}
       <div className="performance-fc-row-mid">
         <PerformanceFcKeyEffortsTable rows={effortsByType} />
-        <PerformanceFcSeuilEvolutionChart points={fcSeuilEvolution} />
+        <PerformanceFcDecouplingSampleCard sample={stableSample} />
       </div>
 
-      {/* Row 3 : Derive stable | Lecture coach | Repartition intensite */}
-      <div className="performance-fc-row-bottom">
-        <PerformanceFcDecouplingSampleCard sample={stableSample} />
+      {/* Row 3 : Lecture coach | Repartition intensite (donut) */}
+      <div className="performance-fc-row-bottom-two">
         <PerformanceFcReadingCard reading={reading} confidence={confidence} warning={warning} />
         {intensityModel?.hasData ? (
           <section className="performance-panel performance-fc-intensity-card">

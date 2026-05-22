@@ -118,8 +118,7 @@ function categorizeEffortType(activity, { tPaceSeconds, iPaceSeconds }) {
 
   if (durMin <= 0 || distKm <= 0) return null;
 
-  // Ordre : du plus specifique au plus general.
-  // Sans analyse de laps, on classifie par DURATION + PACE moyenne (proxy).
+  // Ordre du plus specifique au plus general (4 categories).
 
   // 1. Competition (record perso ou achievements multiples)
   if ((prCount > 0 || achievementCount >= 3) && durMin >= 15) {
@@ -131,32 +130,19 @@ function categorizeEffortType(activity, { tPaceSeconds, iPaceSeconds }) {
     return "montee_longue";
   }
 
-  // 3. Seuil (tempo) : pace MOYENNE proche de T (±15 %) + duree 20-60 min
-  //    Daniels : tempo run sur 20-40 min a T pace, +/- WU/CD -> pace moy ~ T pace.
-  //    Range : T pace * [0.92, 1.10].
+  // 3. Seuil : pace MOYENNE proche de T (±10 %) + duree 20-60 min
+  //    Tempo run pur, pace stable autour de T.
   if (tPaceSeconds > 0 && durMin >= 20 && durMin <= 60
     && pace >= tPaceSeconds * 0.92 && pace <= tPaceSeconds * 1.10) {
-    return "seuil_tempo";
+    return "seuil";
   }
 
-  // 4. Intervalles longs : pace I pace ±15 % + duree 30-90 min
-  //    VMA longue / 5x1000m : warm-up + intervals + cool-down -> pace moy entre I et T.
-  if (iPaceSeconds > 0 && durMin >= 30 && durMin <= 90
-    && pace >= iPaceSeconds * 0.95 && pace <= iPaceSeconds * 1.20) {
-    return "intervalles_longs";
-  }
-
-  // 5. Intervalles courts : pace moyenne legerement plus lente que T (warm-up
-  //    + 8x200 + cool-down) mais avec un VOLET vitesse marque.
-  //    Critere supplementaire : FC moyenne ≥ 90 % FC max OU mention dans le
-  //    nom (fractionne, 200m, 400m, sprint...). Sans ces signaux, on classe
-  //    pas (evite de capturer des sorties faciles a allure moderee).
-  const name = String(activity?.name || "").toLowerCase();
-  const isIntervalKeyword = /fractionn|200\s*m|300\s*m|400\s*m|sprint|vma\s*courte/.test(name);
-  if (tPaceSeconds > 0 && durMin >= 20 && durMin <= 50
-    && pace > tPaceSeconds * 1.05 && pace <= tPaceSeconds * 1.25
-    && isIntervalKeyword) {
-    return "intervalles_courts";
+  // 4. Intervalles : pace plus rapide que T (sortie globalement intense),
+  //    typique d'un fractionne avec WU+intervals+CD ou VMA.
+  //    Range pace : I*0.92 a T*0.92 + duree 15-60 min.
+  if (iPaceSeconds > 0 && tPaceSeconds > 0 && durMin >= 15 && durMin <= 60
+    && pace >= iPaceSeconds * 0.92 && pace < tPaceSeconds * 0.92) {
+    return "intervalles";
   }
 
   return null;
@@ -165,31 +151,25 @@ function categorizeEffortType(activity, { tPaceSeconds, iPaceSeconds }) {
 const EFFORT_TYPE_META = {
   montee_longue: {
     label: "Montée longue",
-    durationRange: "45-90 min",
+    durationRange: "30-90 min",
     color: "#22c55e",
     iconKey: "mountain",
   },
-  seuil_tempo: {
-    label: "Seuil (tempo)",
-    durationRange: "20-40 min",
+  seuil: {
+    label: "Seuil",
+    durationRange: "20-60 min",
     color: "#1268f3",
     iconKey: "tempo",
   },
-  intervalles_longs: {
-    label: "Intervalles longs",
-    durationRange: "3-8 min",
+  intervalles: {
+    label: "Intervalles",
+    durationRange: "15-60 min",
     color: "#fb923c",
     iconKey: "bolt",
   },
-  intervalles_courts: {
-    label: "Intervalles courts",
-    durationRange: "30 s - 90 s",
-    color: "#7c3aed",
-    iconKey: "flash",
-  },
   competition: {
     label: "Compétition",
-    durationRange: "> 40 min",
+    durationRange: "> 15 min",
     color: "#ef4444",
     iconKey: "trophy",
   },
@@ -221,8 +201,8 @@ function buildEffortsByType({ runs, paces, fcSeuil }) {
     grouped[cat].count += 1;
   });
 
-  // Construit les rows dans l'ordre du mockup
-  const ORDER = ["montee_longue", "seuil_tempo", "intervalles_longs", "intervalles_courts", "competition"];
+  // Construit les rows dans l'ordre logique (du long endurance au court intense)
+  const ORDER = ["montee_longue", "seuil", "intervalles", "competition"];
   return ORDER.map((cat) => {
     const meta = EFFORT_TYPE_META[cat];
     const stats = grouped[cat];

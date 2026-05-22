@@ -148,11 +148,11 @@ describe("buildFcPerformanceModel", () => {
     expect(m.kpi.fcRepos.hint).toBe("Excellente"); // < 50 bpm
   });
 
-  it("effortsByType : 5 categories d'effort dans l'ordre mockup", () => {
+  it("effortsByType : 4 categories d'effort", () => {
     const today = new Date("2026-05-21");
     const runs = [
-      mkRun({ id: "1", dateISO: "2026-05-15", distM: 10000, secs: 2400, hrAvg: 165, paceSec: 240 }), // seuil ~T pace 240s
-      mkRun({ id: "2", dateISO: "2026-05-10", distM: 8000, secs: 1920, hrAvg: 168, paceSec: 240 }), // seuil
+      mkRun({ id: "1", dateISO: "2026-05-15", distM: 10000, secs: 2400, hrAvg: 165, paceSec: 240 }),
+      mkRun({ id: "2", dateISO: "2026-05-10", distM: 8000, secs: 1920, hrAvg: 168, paceSec: 240 }),
     ];
     const m = buildFcPerformanceModel({
       scopeActivities: runs,
@@ -160,14 +160,13 @@ describe("buildFcPerformanceModel", () => {
       referenceDate: today,
       settings: { heartRateMax: 192 },
     });
-    expect(m.effortsByType).toHaveLength(5);
+    expect(m.effortsByType).toHaveLength(4);
     const keys = m.effortsByType.map((e) => e.key);
-    expect(keys).toEqual(["montee_longue", "seuil_tempo", "intervalles_longs", "intervalles_courts", "competition"]);
+    expect(keys).toEqual(["montee_longue", "seuil", "intervalles", "competition"]);
   });
 
   it("% FC seuil correctement calcule", () => {
     const today = new Date("2026-05-21");
-    // Session seuil 20-40min avec FC 168 et T pace
     const runs = [
       mkRun({ id: "1", dateISO: "2026-05-15", distM: 7500, secs: 1800, hrAvg: 168, paceSec: 240 }),
       mkRun({ id: "2", dateISO: "2026-05-12", distM: 7500, secs: 1800, hrAvg: 168, paceSec: 240 }),
@@ -178,8 +177,7 @@ describe("buildFcPerformanceModel", () => {
       referenceDate: today,
       settings: { heartRateMax: 192 },
     });
-    const seuilEffort = m.effortsByType.find((e) => e.key === "seuil_tempo");
-    // FC seuil mesure = 168 (sessions T), donc 168/168 = 100%
+    const seuilEffort = m.effortsByType.find((e) => e.key === "seuil");
     expect(seuilEffort.averageHr).toBe(168);
     expect(seuilEffort.pctFcSeuil).toBe(100);
   });

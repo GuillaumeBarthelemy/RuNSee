@@ -14002,15 +14002,16 @@ button.alert-banner-positive-item {
   .performance-fc-row-mid { grid-template-columns: 1fr; }
 }
 
-/* Row 3 : Derive stable + Lecture + Donut intensite */
-.performance-fc-row-bottom {
+/* Row 3 (refactor 2026-05-22 : retire Evolution FC seuil = doublon KPI) :
+   Lecture coach + Donut intensite cardiaque. */
+.performance-fc-row-bottom-two {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
 }
 @media (max-width: 1100px) {
-  .performance-fc-row-bottom { grid-template-columns: 1fr; }
+  .performance-fc-row-bottom-two { grid-template-columns: 1fr; }
 }
 
 /* FC efforts par type : table + icones colorees */
