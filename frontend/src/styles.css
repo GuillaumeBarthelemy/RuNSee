@@ -13969,7 +13969,10 @@ button.alert-banner-positive-item {
      interactif type 'Tendances de performance'. Radar reste dominant. */
   grid-template-columns: minmax(320px, 1.2fr) minmax(0, 1.6fr) minmax(240px, 1fr);
   gap: 12px;
-  align-items: stretch;
+  /* align-items: start -> chaque card prend sa hauteur naturelle, plus
+     d'espace blanc force. Le radar est augmente independamment pour bien
+     remplir sa colonne. */
+  align-items: start;
 }
 .performance-vdot-row-top-rail {
   display: flex; flex-direction: column; gap: 12px;
@@ -13979,7 +13982,9 @@ button.alert-banner-positive-item {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  align-items: stretch;
+  /* align-items: start -> cards a hauteur naturelle (pas d'espace blanc
+     sous Bars/Indicateurs quand le rail Limites+Takeaway est plus long). */
+  align-items: start;
 }
 .performance-vdot-row-middle-rail {
   display: flex; flex-direction: column; gap: 12px;
