@@ -146,11 +146,16 @@ function categorizeEffortType(activity, { tPaceSeconds, iPaceSeconds }) {
     return "intervalles_longs";
   }
 
-  // 5. Intervalles courts : pace plus rapide que T mais session courte avec
-  //    beaucoup de recuperation (8x200, 10x400).
-  //    Pace moy entre I et T*1.20 + duree 20-50 min.
+  // 5. Intervalles courts : pace moyenne legerement plus lente que T (warm-up
+  //    + 8x200 + cool-down) mais avec un VOLET vitesse marque.
+  //    Critere supplementaire : FC moyenne ≥ 90 % FC max OU mention dans le
+  //    nom (fractionne, 200m, 400m, sprint...). Sans ces signaux, on classe
+  //    pas (evite de capturer des sorties faciles a allure moderee).
+  const name = String(activity?.name || "").toLowerCase();
+  const isIntervalKeyword = /fractionn|200\s*m|300\s*m|400\s*m|sprint|vma\s*courte/.test(name);
   if (tPaceSeconds > 0 && durMin >= 20 && durMin <= 50
-    && pace > tPaceSeconds * 1.10 && pace <= tPaceSeconds * 1.30) {
+    && pace > tPaceSeconds * 1.05 && pace <= tPaceSeconds * 1.25
+    && isIntervalKeyword) {
     return "intervalles_courts";
   }
 
@@ -427,30 +432,6 @@ export function buildFcPerformanceModel({
   const cutoffPrevious = new Date(cutoffCurrent.getTime() - RECENT_WINDOW_DAYS * MS_PER_DAY);
 
   const currentRuns = filterByDateRange(scopeActivities, cutoffCurrent, reference);
-  // DEBUG TEMP : expose window state pour diagnostic Chrome MCP
-  if (typeof window !== "undefined") {
-    const sample = currentRuns.slice(0, 3).map((a) => ({
-      name: (a.name || "").slice(0, 30),
-      movingTime: a.movingTime,
-      __movingSeconds: a.__movingSeconds,
-      decoupling: a.cardiacDecouplingPercent,
-      isMerged: a.isMerged,
-    }));
-    const passDecMean = currentRuns.filter((a) => {
-      const dur = getMovingSeconds(a);
-      const dec = a?.cardiacDecouplingPercent;
-      return dur >= STABLE_SESSION_MIN_DURATION_SEC && dec != null
-        && Number.isFinite(Number(dec)) && Math.abs(Number(dec)) <= 30;
-    }).length;
-    window.__fcDebug = {
-      scopeActivitiesCount: Array.isArray(scopeActivities) ? scopeActivities.length : 0,
-      currentRunsCount: currentRuns.length,
-      passDecMean,
-      sample,
-      reference: reference.toISOString(),
-      cutoffCurrent: cutoffCurrent.toISOString(),
-    };
-  }
   const previousRuns = filterByDateRange(scopeActivities, cutoffPrevious, cutoffCurrent);
 
   if (currentRuns.length === 0) {
