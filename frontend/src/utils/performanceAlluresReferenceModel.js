@@ -16,6 +16,12 @@
  *   - VMA = vVO2max ≈ Daniels I pace (intensity 98 %)
  */
 
+import {
+  buildDanielsTrainingPaces,
+  buildRoadRacePredictions,
+  describeVdotLevel,
+} from "./runningPerformance.js";
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function toFiniteNumber(value) {
@@ -365,7 +371,25 @@ const WARNING_TEXT = "Ces allures sont des repères. Elles peuvent varier selon 
  * @param {Date}   options.referenceDate
  */
 export function buildAlluresReferenceModel({ vdotProfile = null, vdotHistory = null, referenceDate = null } = {}) {
-  if (!vdotProfile?.hasData || !(toFiniteNumber(vdotProfile.vdot) > 0)) {
+  // Master VDOT : cascade Garmin (VO2max Firstbeat consolide) puis fallback
+  // Daniels records-based. Coherent avec l'onglet VDOT & profil.
+  // Note scientifique : pour les allures d'entrainement, utiliser le VDOT le
+  // plus representatif du niveau actuel produit des cibles realistes. Si l'eco-
+  // nomie de course du coureur est bonne, le Garmin est plus fiable.
+  const latestVdotSnapshot = vdotHistory?.latestSnapshot
+    || (Array.isArray(vdotHistory?.snapshots) && vdotHistory.snapshots.length
+      ? vdotHistory.snapshots[vdotHistory.snapshots.length - 1]
+      : null);
+  const garminMasterVdot = latestVdotSnapshot && latestVdotSnapshot.source === "garmin"
+    && Number.isFinite(Number(latestVdotSnapshot.vdotValue))
+    && Number(latestVdotSnapshot.vdotValue) > 0
+    ? Number(latestVdotSnapshot.vdotValue)
+    : null;
+  const danielsVdot = toFiniteNumber(vdotProfile?.vdot);
+  const masterVdot = garminMasterVdot != null ? garminMasterVdot : danielsVdot;
+  const masterVdotSource = garminMasterVdot != null ? "garmin" : "daniels_internal";
+
+  if (!(masterVdot > 0)) {
     return {
       hasData: false,
       title: "Allures de référence",
@@ -374,8 +398,10 @@ export function buildAlluresReferenceModel({ vdotProfile = null, vdotHistory = n
     };
   }
 
-  const paces = vdotProfile.paces || [];
-  const racePredictions = vdotProfile.racePredictions || [];
+  // Recalcul des paces sur le master VDOT (Garmin ou Daniels fallback) pour
+  // assurer la coherence inter-onglets (VDOT&profil utilise la meme cascade).
+  const paces = buildDanielsTrainingPaces(masterVdot);
+  const racePredictions = buildRoadRacePredictions(masterVdot);
   const vmaSeconds = vmaPaceSecondsPerKmFromPaces(paces);
 
   const paceCards = buildPaceCards({ paces, racePredictions, vmaSeconds });
@@ -391,9 +417,14 @@ export function buildAlluresReferenceModel({ vdotProfile = null, vdotHistory = n
   return {
     hasData: true,
     title: "Tes allures de référence",
-    subtitle: `Calculées à partir du VDOT estimé (${Math.round(vdotProfile.vdot)}) et de ton historique récent.`,
-    vdotValue: vdotProfile.vdot,
-    formattedVdot: Math.round(vdotProfile.vdot).toString(),
+    subtitle: masterVdotSource === "garmin"
+      ? `Calculées à partir du VDOT estimé (${Math.round(masterVdot)} via Garmin) et de ton historique récent.`
+      : `Calculées à partir du VDOT estimé (${Math.round(masterVdot)}) et de ton historique récent.`,
+    vdotValue: masterVdot,
+    formattedVdot: Math.round(masterVdot).toString(),
+    vdotSource: masterVdotSource,
+    vdotSourceLabel: masterVdotSource === "garmin" ? "Garmin" : "Estimation interne",
+    vdotLevel: describeVdotLevel(masterVdot),
     vmaSecondsPerKm: vmaSeconds,
     paceCards,
     comparisonRows,

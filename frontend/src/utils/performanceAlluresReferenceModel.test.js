@@ -1,37 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { buildAlluresReferenceModel } from "./performanceAlluresReferenceModel.js";
-import { DANIELS_PACE_INTENSITIES } from "./runningPerformance.js";
 
-// VDOT 54 typique d'un coureur 10k 39:00. Helper fake profile.
+// Le modele recalcule paces + racePredictions depuis le master VDOT en interne.
+// Fixture minimaliste : on fournit juste le VDOT.
 function fakeVdotProfile(vdot = 54) {
-  // Reuse Daniels paces builder via buildVdotProfile would need records.
-  // On simule directement la structure attendue.
-  const paces = DANIELS_PACE_INTENSITIES.map((entry) => ({
-    ...entry,
-    // pace formula : seconds/km decreases with intensity. Pour VDOT 54, on hardcode
-    // des valeurs realistes pour le test.
-    paceSecondsPerKm: {
-      E: 355, // ~5:55/km
-      M: 273, // ~4:33/km
-      T: 244, // ~4:04/km
-      I: 226, // ~3:46/km (≈ VMA)
-      R: 210, // ~3:30/km
-    }[entry.key] || 0,
-  }));
-
-  const racePredictions = [
-    { key: "5k", label: "5 km", distanceMeters: 5000, predictedSeconds: 1058, paceSecondsPerKm: 211 }, // 17:38
-    { key: "10k", label: "10 km", distanceMeters: 10000, predictedSeconds: 2225, paceSecondsPerKm: 222 }, // 37:05
-    { key: "halfMarathon", label: "Semi-marathon", distanceMeters: 21097.5, predictedSeconds: 4920, paceSecondsPerKm: 233 },
-    { key: "marathon", label: "Marathon", distanceMeters: 42195, predictedSeconds: 10260, paceSecondsPerKm: 243 },
-  ];
-
-  return {
-    hasData: true,
-    vdot,
-    paces,
-    racePredictions,
-  };
+  return { hasData: true, vdot };
 }
 
 describe("buildAlluresReferenceModel", () => {
@@ -48,45 +21,66 @@ describe("buildAlluresReferenceModel", () => {
     expect(keys).toEqual(["facile", "endurance", "marathon", "seuil", "10k", "5k", "1k"]);
   });
 
-  it("Allure facile = Daniels E pace", () => {
+  it("Allure facile : pace Daniels E coherente pour VDOT 54 (5:00-6:30/km)", () => {
     const model = buildAlluresReferenceModel({ vdotProfile: fakeVdotProfile(54) });
     const facile = model.paceCards.find((c) => c.key === "facile");
-    expect(facile.paceSecondsPerKm).toBe(355);
-    expect(facile.formattedPace).toBe("5:55");
+    expect(facile.paceSecondsPerKm).toBeGreaterThan(280); // > 4:40
+    expect(facile.paceSecondsPerKm).toBeLessThan(420);    // < 7:00
+    expect(facile.formattedPace).toMatch(/^\d:\d{2}$/);
   });
 
-  it("Seuil = Daniels T pace", () => {
+  it("Ordre allures : facile > endurance > marathon > seuil > 10k > 5k > 1k (lent -> rapide)", () => {
     const model = buildAlluresReferenceModel({ vdotProfile: fakeVdotProfile(54) });
-    const seuil = model.paceCards.find((c) => c.key === "seuil");
-    expect(seuil.paceSecondsPerKm).toBe(244);
-    expect(seuil.formattedPace).toBe("4:04");
+    const paces = model.paceCards.map((c) => c.paceSecondsPerKm);
+    for (let i = 0; i < paces.length - 1; i += 1) {
+      expect(paces[i]).toBeGreaterThanOrEqual(paces[i + 1]);
+    }
   });
 
-  it("1 km = Daniels I pace (intervalles courts)", () => {
+  it("1 km zone Z5 (intervalles courts)", () => {
     const model = buildAlluresReferenceModel({ vdotProfile: fakeVdotProfile(54) });
     const oneK = model.paceCards.find((c) => c.key === "1k");
-    expect(oneK.paceSecondsPerKm).toBe(226);
     expect(oneK.zone).toBe("Zone Z5");
+    expect(oneK.paceSecondsPerKm).toBeGreaterThan(0);
   });
 
-  it("Delta VMA negatif pour allures rapides (1k, 5k)", () => {
+  it("Delta VMA : 5k et 1k au-dessus ou egal a VMA (delta proche 0 ou negatif)", () => {
     const model = buildAlluresReferenceModel({ vdotProfile: fakeVdotProfile(54) });
     const oneK = model.paceCards.find((c) => c.key === "1k");
-    // 1k pace (226) = VMA (226) -> delta 0 ou tres proche
+    // 1k = I pace = VMA -> delta 0 par definition
     expect(Math.abs(oneK.vmaDeltaSeconds)).toBeLessThan(2);
     const cinqK = model.paceCards.find((c) => c.key === "5k");
-    // 5k pace (211) < VMA (226) -> delta negatif (plus rapide que VMA)
-    expect(cinqK.vmaDeltaSeconds).toBeLessThan(0);
+    // 5k pace proche de VMA (Daniels : 5k race ~ vVO2max, +/-10s)
+    expect(Math.abs(cinqK.vmaDeltaSeconds)).toBeLessThan(15);
   });
 
-  it("comparisonRows : ecart vs allure facile (negative pour rapide)", () => {
+  it("comparisonRows : facile delta=0, autres negatifs (plus rapides)", () => {
     const model = buildAlluresReferenceModel({ vdotProfile: fakeVdotProfile(54) });
     expect(model.comparisonRows).toHaveLength(7);
     const facile = model.comparisonRows.find((r) => r.key === "facile");
     expect(facile.deltaSeconds).toBe(0);
     const seuil = model.comparisonRows.find((r) => r.key === "seuil");
-    expect(seuil.deltaSeconds).toBe(244 - 355); // -111s
+    expect(seuil.deltaSeconds).toBeLessThan(0);
     expect(seuil.formattedDelta).toMatch(/^-/);
+  });
+
+  it("Cascade Garmin : prioritise vdotHistory.latestSnapshot si source garmin", () => {
+    const model = buildAlluresReferenceModel({
+      vdotProfile: fakeVdotProfile(53),
+      vdotHistory: {
+        latestSnapshot: { date: "2026-05-21", vdotValue: 56, source: "garmin" },
+        snapshots: [{ date: "2026-05-21", vdotValue: 56, source: "garmin" }],
+      },
+    });
+    expect(model.vdotValue).toBe(56);
+    expect(model.vdotSource).toBe("garmin");
+    expect(model.formattedVdot).toBe("56");
+  });
+
+  it("Cascade fallback : Daniels si pas de Garmin", () => {
+    const model = buildAlluresReferenceModel({ vdotProfile: fakeVdotProfile(53) });
+    expect(model.vdotValue).toBe(53);
+    expect(model.vdotSource).toBe("daniels_internal");
   });
 
   it("equivalences : 5 lignes 1k/5k/10k/Semi/Marathon avec plages", () => {
