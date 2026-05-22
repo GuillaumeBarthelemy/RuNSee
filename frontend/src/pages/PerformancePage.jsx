@@ -3,8 +3,10 @@ import { useLocation } from "react-router-dom";
 import PerformanceOverviewTab from "../components/performance/PerformanceOverviewTab.jsx";
 import PerformanceVdotProfileTab from "../components/performance/PerformanceVdotProfileTab.jsx";
 import PerformanceAlluresReferenceTab from "../components/performance/PerformanceAlluresReferenceTab.jsx";
+import PerformanceFcPerformanceTab from "../components/performance/PerformanceFcPerformanceTab.jsx";
 import { buildVdotProfileTabModel } from "../utils/performanceVdotProfileModel.js";
 import { buildAlluresReferenceModel } from "../utils/performanceAlluresReferenceModel.js";
+import { buildFcPerformanceModel } from "../utils/performanceFcPerformanceModel.js";
 import AnalyticsCompactFilters from "../components/analytics/AnalyticsCompactFilters.jsx";
 import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
@@ -204,6 +206,19 @@ export default function PerformancePage() {
     [vdotProfile, vdotHistory, sharedRange.end],
   );
 
+  // Modele onglet FC de performance (mockup p.15).
+  const fcPerformanceModel = useMemo(
+    () => buildFcPerformanceModel({
+      scopeActivities: canonicalPerformanceScopeActivities,
+      vdotProfile,
+      vdotHistory,
+      intensityModel: overviewModel?.zonePreview?.intensityModel || overviewModel?.zonePreview || null,
+      settings: trainingAnalyticsSettings,
+      referenceDate: sharedRange.end,
+    }),
+    [canonicalPerformanceScopeActivities, vdotProfile, vdotHistory, overviewModel, trainingAnalyticsSettings, sharedRange.end],
+  );
+
   const recordEnrichmentCandidates = useMemo(
     () => findRecordEnrichmentCandidates(canonicalPerformanceScopeActivities, { limitPerRecord: 1 }),
     [canonicalPerformanceScopeActivities],
@@ -312,6 +327,11 @@ export default function PerformancePage() {
           />
         ) : activeTabId === "allures" ? (
           <PerformanceAlluresReferenceTab model={alluresReferenceModel} />
+        ) : activeTabId === "fc-performance" ? (
+          <PerformanceFcPerformanceTab
+            model={fcPerformanceModel}
+            intensityModel={overviewModel?.zonePreview || null}
+          />
         ) : (
           <div className="card section performance-tab-placeholder">
             <h2>Onglet en cours de construction</h2>
