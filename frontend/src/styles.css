@@ -13965,6 +13965,8 @@ button.alert-banner-positive-item {
 
 /* ===========================================================================
    ONGLET 'FC de performance' (page 15) — Lot Performance V5
+   Refactor 2026-05-22 : aligne mockup p.15 (4 KPIs + types d'effort + lecture
+   coach enrichie).
    =========================================================================== */
 .performance-fc-performance-tab {
   display: flex;
@@ -13972,31 +13974,16 @@ button.alert-banner-positive-item {
   gap: 12px;
 }
 
-.performance-fc-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 2.4fr) minmax(280px, 1fr);
-  gap: 12px;
-  align-items: start;
-}
-.performance-fc-central {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 0;
-}
-.performance-fc-right-rail {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Row 1 : 3 KPI cards FC */
+/* Row 1 : 4 KPI cards (FC Seuil / Max / Derive / FC repos) */
 .performance-fc-kpi-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
-@media (max-width: 980px) {
+@media (max-width: 1280px) {
+  .performance-fc-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
   .performance-fc-kpi-row { grid-template-columns: 1fr; }
 }
 .performance-fc-kpi-icon {
@@ -14004,18 +13991,84 @@ button.alert-banner-positive-item {
   width: 14px; height: 14px; color: #dc2626; margin-right: 4px;
 }
 
-/* Row 2/3 : 2 cols centre */
-.performance-fc-row-mid,
-.performance-fc-row-bottom {
+/* Row 2 : FC efforts cles (large) + Evolution FC seuil */
+.performance-fc-row-mid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
 }
 @media (max-width: 980px) {
-  .performance-fc-row-mid,
+  .performance-fc-row-mid { grid-template-columns: 1fr; }
+}
+
+/* Row 3 : Derive stable + Lecture + Donut intensite */
+.performance-fc-row-bottom {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+@media (max-width: 1100px) {
   .performance-fc-row-bottom { grid-template-columns: 1fr; }
 }
+
+/* FC efforts par type : table + icones colorees */
+.performance-fc-effort-label {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.performance-fc-effort-icon {
+  display: inline-grid; place-items: center;
+  width: 14px; height: 14px;
+}
+.performance-fc-effort-track {
+  height: 8px; border-radius: 999px;
+  background: rgba(53, 88, 134, 0.07);
+  overflow: hidden; min-width: 80px;
+}
+.performance-fc-effort-fill {
+  display: block; height: 100%; border-radius: inherit;
+}
+.performance-fc-empty-cell { color: #94a3b8; font-style: normal; }
+.performance-fc-key-efforts-table tr.is-empty td { opacity: 0.5; }
+
+/* Lecture coach v2 (shield + checks) */
+.performance-fc-reading-body {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px; margin-top: 10px;
+}
+.performance-fc-reading-shield {
+  display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 10px;
+  background: rgba(18, 104, 243, 0.1); color: #1268f3;
+}
+.performance-fc-reading-summary {
+  margin: 0 0 10px; color: #355886; font-size: 12px; line-height: 1.45;
+}
+.performance-fc-reading-checks-title {
+  display: block; color: #0f2147; font-size: 12px; font-weight: 700; margin-bottom: 6px;
+}
+.performance-fc-reading-checks {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.performance-fc-reading-checks li {
+  display: grid; grid-template-columns: 16px minmax(0, 1fr);
+  gap: 8px; align-items: start;
+  color: #355886; font-size: 12px; line-height: 1.4;
+}
+.performance-fc-reading-check-icon {
+  display: inline-grid; place-items: center; color: #15803d;
+  width: 16px; height: 16px;
+}
+.performance-fc-reading-confidence {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid rgba(53, 88, 134, 0.08);
+  font-size: 11px; color: #355886;
+}
+.performance-fc-reading-confidence svg { color: #1268f3; }
 
 /* FC dans efforts cles */
 .performance-fc-key-efforts-table {

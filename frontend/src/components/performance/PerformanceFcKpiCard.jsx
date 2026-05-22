@@ -2,8 +2,8 @@ import { memo } from "react";
 import PerformanceMiniTrend from "./PerformanceMiniTrend.jsx";
 
 /**
- * PerformanceFcKpiCard — Mockup p.15 : KPI compact FC (seuil/max/decoupling).
- * Layout 2 cols : valeur + hint + tone | sparkline.
+ * PerformanceFcKpiCard — Mockup p.15 : KPI compact FC.
+ * Structure : icone label / valeur / hint tonal / sparkline / delta pill.
  */
 function PerformanceFcKpiCard({ label = "", icon = null, kpi = {} }) {
   const tone = kpi.tone || "neutral";
@@ -15,20 +15,19 @@ function PerformanceFcKpiCard({ label = "", icon = null, kpi = {} }) {
           {label}
         </span>
       </header>
-      <div className="performance-metric-card-body">
-        <div className="performance-metric-card-info">
-          <div className="performance-metric-value-row">
-            <strong>{kpi.formattedValue || "—"}</strong>
-            {kpi.unit ? <span>{kpi.unit}</span> : null}
-          </div>
-          {kpi.hint ? <p className="performance-metric-hint">{kpi.hint}</p> : null}
-        </div>
-        {Array.isArray(kpi.series) && kpi.series.length >= 2 ? (
-          <div className="performance-metric-card-chart">
-            <PerformanceMiniTrend points={kpi.series} tone={tone} label={`Tendance ${label}`} />
-          </div>
-        ) : null}
+      <div className="performance-metric-value-row">
+        <strong>{kpi.formattedValue || "—"}</strong>
+        {kpi.unit ? <span>{kpi.unit}</span> : null}
       </div>
+      {kpi.hint ? <p className={`performance-metric-hint tone-${tone}`}>{kpi.hint}</p> : null}
+      {Array.isArray(kpi.series) && kpi.series.length >= 2 ? (
+        <PerformanceMiniTrend points={kpi.series} tone={tone} label={`Tendance ${label}`} />
+      ) : null}
+      {kpi.deltaLabel ? (
+        <span className={`performance-metric-delta performance-delta-${tone}`}>
+          {kpi.deltaLabel}
+        </span>
+      ) : null}
     </article>
   );
 }

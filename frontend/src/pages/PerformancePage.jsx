@@ -331,6 +331,7 @@ export default function PerformancePage() {
           <PerformanceFcPerformanceTab
             model={fcPerformanceModel}
             intensityModel={overviewModel?.zonePreview || null}
+            confidence={performanceConfidence}
           />
         ) : (
           <div className="card section performance-tab-placeholder">

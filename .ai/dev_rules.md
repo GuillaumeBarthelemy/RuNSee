@@ -325,6 +325,32 @@ Tones standardises : 1 = positif fort (vert), 2 = positif (lime), 3 = neutre (gr
 ## 11. Revue pixel-perfect obligatoire avant commit/push UI
 
 Regle actee le 2026-05-18 apres le chantier `Performance > Vue d'ensemble`.
+**Renforcee le 2026-05-22 (Lot Performance V5, onglet FC) : DOUBLE phase
+comparaison obligatoire.**
+
+### 11.0 DOUBLE PHASE OBLIGATOIRE (2026-05-22)
+
+Pour TOUT nouvel onglet ou refonte UI ayant un mockup, deux comparaisons
+sont obligatoires et NE PEUVENT PAS etre sautees :
+
+1. **PHASE INITIALE (avant le code)** : analyser le mockup en detail pour
+   - identifier la liste exhaustive des blocs/widgets a livrer
+   - mesurer les proportions / layout / grilles
+   - identifier les wordings exacts (titres, labels, footers, warnings)
+   - extraire les couleurs / palettes / pictogrammes
+   - clarifier les sources de donnees pour chaque bloc
+   - lister les graphiques avec leur type (line/bar/donut/radar...)
+   - identifier les sources scientifiques referencees (Daniels, Riegel, etc.)
+
+   Si pas de capture mockup disponible, DEMANDER la capture a l'utilisateur
+   AVANT de commencer le code. Ne pas proceder en speculant.
+
+2. **PHASE FINALE (apres deploiement prod)** : capture prod + diff explicite
+   - capture authentifiee de la page deployee
+   - tableau d'ecarts bloc par bloc vs mockup (structurels / importants /
+     mineurs / assumes)
+   - mesurer dimensions DOM si necessaire (via javascript_tool Chrome MCP)
+   - corriger les ecarts bloquants AVANT recette utilisateur
 
 Pour tout chantier UI disposant d'un mockup, le commit/push ne doit plus etre fait avant une revue visuelle explicite :
 

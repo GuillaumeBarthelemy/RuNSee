@@ -1,35 +1,30 @@
 /**
  * performanceFcPerformanceModel.js — Modele metier pour l'onglet
- * `Performance > FC de performance` (page 15 du plan Lot Performance V5).
+ * `Performance > FC de performance` (page 15 du plan, mockup p.15).
  *
- * Objectif (spec section 10) : analyser la capacite a gerer l'effort cardiaque
- * sur les efforts cles. PAS de doublon avec :
- *   - Analyse > Sommeil & recuperation (VFC, sommeil, energie, stress)
- *   - Analyse > Intensites (distribution complete zones sur periode)
+ * REFACTOR 2026-05-22 : alignement strict avec le mockup apres comparaison
+ * initiale manquee. Changements majeurs :
+ *   - 4 KPIs au lieu de 3 (FC repos devient KPI principal, plus discret)
+ *   - Delta pills (vs periode precedente) sur chaque KPI
+ *   - FC dans efforts cles categorise PAR TYPE D'EFFORT (et plus par
+ *     distance race) : Montee longue / Seuil tempo / Intervalles longs /
+ *     Intervalles courts / Competition
+ *   - Indicateur affiche : % FC seuil (et non % FC max)
  *
  * Sources scientifiques :
  *   - FC seuil (Karvonen, Daniels T) : 88-92 % FC max ou FC moyenne sur efforts T pace
  *   - FC max (Tanaka 2001 : 208 - 0.7*age) ou setting utilisateur ou max observe
- *   - Derive cardiaque (Pa:Hr decoupling, Allen & Coggan 2010) : ratio FC/allure 1ere vs 2eme moitie
- *   - FC dans efforts cles : FC moyenne sur best efforts 5k/10k/semi/marathon
+ *   - Derive cardiaque (Pa:Hr decoupling, Allen & Coggan 2010)
+ *   - Categorisation effort : Daniels 2014 zones d'entrainement + duree
  */
 
-import {
-  buildBestEffortRecords,
-  isRunLikeActivity,
-} from "./activityInsights.js";
+import { isRunLikeActivity } from "./activityInsights.js";
 import { buildDanielsTrainingPaces } from "./runningPerformance.js";
 import { resolveMasterVdot } from "./vdotConsolidation.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const RECENT_WINDOW_DAYS = 90;
 const STABLE_SESSION_MIN_DURATION_SEC = 60 * 60; // 60 min mini pour la derive stable
-const KEY_EFFORT_LABELS = {
-  "5k": "5 km",
-  "10k": "10 km",
-  halfMarathon: "Semi-marathon",
-  marathon: "Marathon",
-};
 
 function toFiniteNumber(value) {
   const n = Number(value);
@@ -52,56 +47,187 @@ function formatPercent(value, decimals = 1) {
   return `${n.toFixed(decimals).replace(".", ",")} %`;
 }
 
-function filterRecentRuns(activities, referenceDate) {
-  const ref = safeDate(referenceDate) || new Date();
-  const cutoff = new Date(ref.getTime() - RECENT_WINDOW_DAYS * MS_PER_DAY);
-  return (Array.isArray(activities) ? activities : [])
-    .filter((a) => isRunLikeActivity(a))
-    .filter((a) => {
-      const d = safeDate(a?.startDateLocal || a?.startDate || a?.__date);
-      return d && d >= cutoff && d <= ref;
-    });
+function formatSignedBpm(value) {
+  const n = Math.round(toFiniteNumber(value));
+  if (n === 0) return "0 bpm";
+  const sign = n > 0 ? "+" : "-";
+  return `${sign}${Math.abs(n)} bpm`;
+}
+
+function formatSignedPercent(value) {
+  const n = toFiniteNumber(value);
+  if (Math.abs(n) < 0.05) return "0 %";
+  const sign = n > 0 ? "+" : "-";
+  return `${sign}${Math.abs(n).toFixed(1).replace(".", ",")} %`;
+}
+
+function filterByDateRange(activities, startDate, endDate) {
+  return (Array.isArray(activities) ? activities : []).filter((a) => {
+    if (!isRunLikeActivity(a)) return false;
+    const d = safeDate(a?.startDateLocal || a?.startDate || a?.__date);
+    return d && (!startDate || d >= startDate) && (!endDate || d <= endDate);
+  });
 }
 
 /**
- * FC seuil estimee : FC moyenne sur les sessions au T pace Daniels.
- * Si pas assez de sessions T, fallback sur 88 % de la FC max.
+ * Categorise une activite dans UN type d'effort principal.
+ * Critères (Daniels 2014 + duree + denivele) :
+ *   - Montee longue : durée >= 45 min + dénivelé/km >= 30 m
+ *   - Seuil (tempo) : 20-40 min + pace ≈ T pace ±10 %
+ *   - Intervalles longs : 30-60 min + pace ≈ I pace ±15 % (proxy sans laps)
+ *   - Intervalles courts : 20-45 min + pace ≈ R pace ±15 %
+ *   - Competition : activite avec prCount > 0 ou achievementCount >= 3
+ *   - Sinon : ignoree pour cette analyse
  */
-function estimateFcSeuil({ runs, tPaceSeconds, fcMax }) {
+function categorizeEffortType(activity, { tPaceSeconds, iPaceSeconds, rPaceSeconds }) {
+  const durMin = toFiniteNumber(activity?.__movingSeconds) / 60;
+  const distKm = toFiniteNumber(activity?.__distanceKm);
+  const elev = toFiniteNumber(activity?.__elevationGain);
+  const pace = toFiniteNumber(activity?.__paceSecondsPerKm);
+  const prCount = toFiniteNumber(activity?.prCount);
+  const achievementCount = toFiniteNumber(activity?.achievementCount);
+
+  if (durMin <= 0 || distKm <= 0) return null;
+
+  // 1. Competition prioritaire
+  if (prCount > 0 || achievementCount >= 3) {
+    if (durMin >= 15) return "competition";
+  }
+
+  // 2. Montee longue
+  if (durMin >= 45 && durMin <= 120 && elev / distKm >= 30) {
+    return "montee_longue";
+  }
+
+  // 3. Seuil (tempo)
+  if (durMin >= 20 && durMin <= 40 && tPaceSeconds > 0
+    && pace >= tPaceSeconds * 0.92 && pace <= tPaceSeconds * 1.10) {
+    return "seuil_tempo";
+  }
+
+  // 4. Intervalles longs (proxy : sortie moyenne avec pace ≈ I)
+  if (iPaceSeconds > 0 && durMin >= 25 && durMin <= 60
+    && pace >= iPaceSeconds * 0.88 && pace <= iPaceSeconds * 1.05) {
+    return "intervalles_longs";
+  }
+
+  // 5. Intervalles courts (proxy : pace tres rapide ≈ R)
+  if (rPaceSeconds > 0 && durMin >= 15 && durMin <= 45
+    && pace <= rPaceSeconds * 1.05) {
+    return "intervalles_courts";
+  }
+
+  return null;
+}
+
+const EFFORT_TYPE_META = {
+  montee_longue: {
+    label: "Montée longue",
+    durationRange: "45-90 min",
+    color: "#22c55e",
+    iconKey: "mountain",
+  },
+  seuil_tempo: {
+    label: "Seuil (tempo)",
+    durationRange: "20-40 min",
+    color: "#1268f3",
+    iconKey: "tempo",
+  },
+  intervalles_longs: {
+    label: "Intervalles longs",
+    durationRange: "3-8 min",
+    color: "#fb923c",
+    iconKey: "bolt",
+  },
+  intervalles_courts: {
+    label: "Intervalles courts",
+    durationRange: "30 s - 90 s",
+    color: "#7c3aed",
+    iconKey: "flash",
+  },
+  competition: {
+    label: "Compétition",
+    durationRange: "> 40 min",
+    color: "#ef4444",
+    iconKey: "trophy",
+  },
+};
+
+/**
+ * Calcule FC moyenne par type d'effort + % FC seuil.
+ */
+function buildEffortsByType({ runs, paces, fcSeuil }) {
+  const tPace = (paces || []).find((p) => p.key === "T");
+  const iPace = (paces || []).find((p) => p.key === "I");
+  const rPace = (paces || []).find((p) => p.key === "R");
+  const params = {
+    tPaceSeconds: toFiniteNumber(tPace?.paceSecondsPerKm),
+    iPaceSeconds: toFiniteNumber(iPace?.paceSecondsPerKm),
+    rPaceSeconds: toFiniteNumber(rPace?.paceSecondsPerKm),
+  };
+
+  // Regroupe les activites par categorie
+  const grouped = {};
+  (Array.isArray(runs) ? runs : []).forEach((a) => {
+    if (toFiniteNumber(a?.averageHeartrate) <= 0) return;
+    const cat = categorizeEffortType(a, params);
+    if (!cat) return;
+    if (!grouped[cat]) grouped[cat] = { sumHr: 0, weight: 0, count: 0 };
+    const dur = toFiniteNumber(a.__movingSeconds);
+    grouped[cat].sumHr += toFiniteNumber(a.averageHeartrate) * dur;
+    grouped[cat].weight += dur;
+    grouped[cat].count += 1;
+  });
+
+  // Construit les rows dans l'ordre du mockup
+  const ORDER = ["montee_longue", "seuil_tempo", "intervalles_longs", "intervalles_courts", "competition"];
+  return ORDER.map((cat) => {
+    const meta = EFFORT_TYPE_META[cat];
+    const stats = grouped[cat];
+    const avgHr = stats && stats.weight > 0 ? Math.round(stats.sumHr / stats.weight) : null;
+    const pctFcSeuil = avgHr != null && fcSeuil > 0 ? Math.round((avgHr / fcSeuil) * 100) : null;
+    return {
+      key: cat,
+      label: meta.label,
+      durationRange: meta.durationRange,
+      color: meta.color,
+      iconKey: meta.iconKey,
+      averageHr: avgHr,
+      pctFcSeuil,
+      sampleSize: stats?.count || 0,
+    };
+  });
+}
+
+/**
+ * Estimation FC seuil (mesuree sur T sessions, sinon fallback 88 % FC max).
+ */
+function estimateFcSeuilFromRuns({ runs, tPaceSeconds, fcMax }) {
   if (!Array.isArray(runs) || runs.length === 0) return { value: 0, source: "unavailable" };
-  // Tolerance 10 % autour du T pace pour capter les sessions "tempo".
   const tToleranceMin = tPaceSeconds * 0.9;
   const tToleranceMax = tPaceSeconds * 1.10;
   const tSessions = runs.filter((a) => {
     const pace = toFiniteNumber(a?.__paceSecondsPerKm);
     const hr = toFiniteNumber(a?.averageHeartrate);
-    return pace >= tToleranceMin && pace <= tToleranceMax && hr > 0;
+    const dur = toFiniteNumber(a?.__movingSeconds);
+    return tPaceSeconds > 0 && pace >= tToleranceMin && pace <= tToleranceMax
+      && hr > 0 && dur >= 600; // au moins 10 min de session
   });
   if (tSessions.length >= 2) {
-    const totalWeight = tSessions.reduce((s, a) => s + toFiniteNumber(a?.__movingSeconds), 0);
+    const totalWeight = tSessions.reduce((s, a) => s + toFiniteNumber(a.__movingSeconds), 0);
     if (totalWeight > 0) {
       const weightedHr = tSessions.reduce(
         (s, a) => s + toFiniteNumber(a.averageHeartrate) * toFiniteNumber(a.__movingSeconds),
         0,
       );
-      return {
-        value: Math.round(weightedHr / totalWeight),
-        source: "measured",
-        sampleSize: tSessions.length,
-      };
+      return { value: Math.round(weightedHr / totalWeight), source: "measured", sampleSize: tSessions.length };
     }
   }
-  // Fallback : 88 % FC max (proxy seuil Daniels T)
-  if (fcMax > 0) {
-    return { value: Math.round(fcMax * 0.88), source: "estimated_fc_max" };
-  }
+  if (fcMax > 0) return { value: Math.round(fcMax * 0.88), source: "estimated_fc_max" };
   return { value: 0, source: "unavailable" };
 }
 
-/**
- * FC max : settings.heartRateMax si renseignee, sinon max observee sur 90j.
- */
-function estimateFcMax({ runs, settingsHeartRateMax }) {
+function estimateFcMaxFromRuns({ runs, settingsHeartRateMax }) {
   if (toFiniteNumber(settingsHeartRateMax) > 0) {
     return { value: Math.round(settingsHeartRateMax), source: "settings" };
   }
@@ -112,10 +238,7 @@ function estimateFcMax({ runs, settingsHeartRateMax }) {
   return { value: Math.max(...observed), source: "observed" };
 }
 
-/**
- * Derive cardiaque moyenne sur sorties longues > 60 min.
- */
-function buildDecouplingStats(runs) {
+function decouplingMean(runs) {
   const longRuns = (Array.isArray(runs) ? runs : []).filter((a) => {
     const dur = toFiniteNumber(a?.__movingSeconds);
     const dec = a?.cardiacDecouplingPercent;
@@ -126,11 +249,7 @@ function buildDecouplingStats(runs) {
   return { value: sum / longRuns.length, sampleSize: longRuns.length };
 }
 
-/**
- * Mini trend de la FC seuil sur la fenetre 90j.
- * Regroupe par buckets (semaines) puis calcule la FC moyenne ponderee.
- */
-function buildFcSeuilTrend({ runs, tPaceSeconds, referenceDate }) {
+function buildFcSeuilTrendWeekly({ runs, tPaceSeconds, referenceDate }) {
   const ref = safeDate(referenceDate) || new Date();
   const cutoff = new Date(ref.getTime() - RECENT_WINDOW_DAYS * MS_PER_DAY);
   const tToleranceMin = tPaceSeconds * 0.9;
@@ -139,9 +258,9 @@ function buildFcSeuilTrend({ runs, tPaceSeconds, referenceDate }) {
     const d = safeDate(a?.startDateLocal || a?.startDate || a?.__date);
     const pace = toFiniteNumber(a?.__paceSecondsPerKm);
     const hr = toFiniteNumber(a?.averageHeartrate);
-    return d && d >= cutoff && d <= ref && pace >= tToleranceMin && pace <= tToleranceMax && hr > 0;
+    return d && d >= cutoff && d <= ref && tPaceSeconds > 0
+      && pace >= tToleranceMin && pace <= tToleranceMax && hr > 0;
   });
-  // Bucketise par semaine (label = date debut semaine).
   const buckets = new Map();
   tSessions.forEach((a) => {
     const d = safeDate(a?.startDateLocal || a?.startDate || a?.__date);
@@ -155,41 +274,12 @@ function buildFcSeuilTrend({ runs, tPaceSeconds, referenceDate }) {
       date: d > prev.date ? d : prev.date,
     });
   });
-  const points = Array.from(buckets.values())
+  return Array.from(buckets.values())
     .filter((b) => b.weight > 0)
-    .map((b) => ({
-      label: b.date.toISOString().slice(0, 10),
-      value: Math.round(b.sumHr / b.weight),
-    }))
+    .map((b) => ({ label: b.date.toISOString().slice(0, 10), value: Math.round(b.sumHr / b.weight) }))
     .sort((l, r) => new Date(l.label) - new Date(r.label));
-  return points;
 }
 
-/**
- * FC moyenne sur les best efforts (5k/10k/semi/marathon).
- */
-function buildKeyEffortsHr(records) {
-  return (Array.isArray(records) ? records : [])
-    .filter((r) => r?.isAvailable && r?.activity)
-    .map((r) => {
-      const hr = toFiniteNumber(r.activity?.averageHeartrate);
-      const max = toFiniteNumber(r.activity?.maxHeartrate);
-      const label = KEY_EFFORT_LABELS[r.recordKey] || r.recordLabel || r.recordKey;
-      return {
-        key: r.recordKey,
-        label,
-        averageHr: hr > 0 ? hr : null,
-        maxHr: max > 0 ? max : null,
-        elapsedSeconds: r.elapsedSeconds,
-      };
-    });
-}
-
-/**
- * Selectionne une sortie longue stable pour exemple de derive cardiaque.
- * Critere : sortie >= 60 min avec cardiacDecouplingPercent disponible,
- * la plus recente.
- */
 function pickStableSampleSession(runs) {
   const candidates = (Array.isArray(runs) ? runs : []).filter((a) => {
     const dur = toFiniteNumber(a?.__movingSeconds);
@@ -197,7 +287,6 @@ function pickStableSampleSession(runs) {
     return dur >= STABLE_SESSION_MIN_DURATION_SEC && dec != null && Number.isFinite(Number(dec));
   });
   if (candidates.length === 0) return null;
-  // Trie par date desc, prend le plus recent.
   candidates.sort((l, r) => {
     const ld = safeDate(l?.startDateLocal || l?.startDate || l?.__date) || new Date(0);
     const rd = safeDate(r?.startDateLocal || r?.startDate || r?.__date) || new Date(0);
@@ -215,62 +304,71 @@ function pickStableSampleSession(runs) {
 }
 
 /**
- * Synthese intensite cardiaque legere : reuse l'intensityModel passe en input
- * (deja calcule pour la vue d'ensemble).
+ * Hint tonal pour les KPIs (mockup p.15 : Stabilisée/Bonne/Excellente/À surveiller).
  */
-function buildIntensitySynthesis(intensityModel) {
-  const zones = Array.isArray(intensityModel?.zones) ? intensityModel.zones : [];
-  if (!zones.length) return { hasData: false, zones: [], easyShare: 0, harderShare: 0 };
-  const easyShare = zones
-    .filter((z) => ["z1", "z2"].includes(String(z.key).toLowerCase()))
-    .reduce((s, z) => s + toFiniteNumber(z.share), 0);
-  const harderShare = zones
-    .filter((z) => ["z3", "z4", "z5"].includes(String(z.key).toLowerCase()))
-    .reduce((s, z) => s + toFiniteNumber(z.share), 0);
-  return {
-    hasData: true,
-    zones,
-    easyShare,
-    harderShare,
-    totalDurationSeconds: toFiniteNumber(intensityModel?.totalDurationSeconds),
-    totalDurationLabel: intensityModel?.totalDurationLabel || "",
-  };
+function buildHint({ key, value, deltaValue }) {
+  if (value == null || value === 0) return { label: "—", tone: "neutral" };
+  switch (key) {
+    case "fcSeuil":
+    case "fcMax":
+      // Stabilité = delta abs < 2 bpm
+      if (Math.abs(toFiniteNumber(deltaValue)) <= 2) return { label: "Stabilisée", tone: "positive" };
+      return { label: "Variable", tone: "warning" };
+    case "decoupling":
+      if (value < 5) return { label: "Bonne", tone: "positive" };
+      if (value < 8) return { label: "Correcte", tone: "neutral" };
+      return { label: "À surveiller", tone: "warning" };
+    case "fcRepos":
+      if (value < 50) return { label: "Excellente", tone: "positive" };
+      if (value < 60) return { label: "Bonne", tone: "positive" };
+      if (value < 70) return { label: "Correcte", tone: "neutral" };
+      return { label: "À surveiller", tone: "warning" };
+    default:
+      return { label: "—", tone: "neutral" };
+  }
 }
 
 /**
- * Lecture coach de l'effort cardiaque.
+ * Lecture coach avec checks "Pour progresser" (mockup p.15).
  */
-function buildReadingEffort({ fcSeuil, fcMax, decouplingValue }) {
-  const paragraphs = [];
-  if (fcSeuil.value > 0 && fcMax.value > 0) {
-    const ratio = Math.round((fcSeuil.value / fcMax.value) * 100);
-    paragraphs.push(
-      `FC seuil ≈ ${ratio} % de ta FC max (${fcSeuil.value} / ${fcMax.value} bpm). Une cible solide se situe entre 88 et 92 % (Daniels T-pace).`,
-    );
-  }
-  if (decouplingValue != null) {
-    if (decouplingValue < 5) {
-      paragraphs.push(
-        `Dérive cardiaque moyenne ${formatPercent(decouplingValue)} sur tes sorties longues : excellent contrôle aérobie (Allen & Coggan : < 5 % = base bien posée).`,
-      );
+function buildReadingEffortV2({ fcSeuil, fcMax, decouplingValue, effortsByType }) {
+  // Resume tone-aware
+  let summary = "Données insuffisantes pour qualifier ta réponse cardiaque.";
+  if (fcSeuil > 0 && fcMax > 0 && decouplingValue != null) {
+    const ratio = Math.round((fcSeuil / fcMax) * 100);
+    const stable = decouplingValue < 5;
+    if (stable) {
+      summary = `Ta fréquence cardiaque au seuil est stable (${ratio} % FC max) et ta dérive reste faible, signe d'une très bonne endurance et d'un bon contrôle maîtrisé de la durée.`;
     } else if (decouplingValue < 8) {
-      paragraphs.push(
-        `Dérive cardiaque moyenne ${formatPercent(decouplingValue)} : zone correcte mais perfectible (Allen & Coggan : 5-8 % = base à consolider).`,
-      );
+      summary = `Ta fréquence cardiaque au seuil est lisible (${ratio} % FC max) avec une dérive modérée. Il reste de la marge sur l'endurance fondamentale.`;
     } else {
-      paragraphs.push(
-        `Dérive cardiaque moyenne ${formatPercent(decouplingValue)} : signal que l'effort excède la capacité aérobie pour la durée. Augmente progressivement le volume facile.`,
-      );
+      summary = `Ta dérive cardiaque (${formatPercent(decouplingValue)}) suggère que l'effort excède la capacité aérobie pour la durée. Allonge progressivement le volume facile.`;
     }
+  } else if (fcSeuil > 0 && fcMax > 0) {
+    const ratio = Math.round((fcSeuil / fcMax) * 100);
+    summary = `FC seuil ≈ ${ratio} % de ta FC max (${fcSeuil} / ${fcMax} bpm). Pas encore assez de sorties longues pour mesurer la dérive cardiaque.`;
   }
-  if (!paragraphs.length) {
-    paragraphs.push("Pas encore assez de sorties exploitables avec FC pour qualifier ta réponse cardiaque.");
+
+  // Checks "Pour progresser" contextualises
+  const checks = [];
+  if (decouplingValue != null && decouplingValue >= 5) {
+    checks.push("Allonge la durée de tes tempo runs.");
+  } else {
+    checks.push("Allonge la durée de tes tempo runs pour ancrer le seuil.");
   }
-  return paragraphs;
+  const hasMontee = effortsByType?.find((e) => e.key === "montee_longue" && e.averageHr != null);
+  if (!hasMontee) {
+    checks.push("Intègre des blocs au seuil en terrain vallonné.");
+  } else {
+    checks.push("Continue tes blocs au seuil en terrain vallonné.");
+  }
+  checks.push("Surveille la dérive lors des sorties longues en chaleur.");
+
+  return { summary, checks };
 }
 
 /**
- * Modele principal pour l'onglet FC de performance.
+ * Modele principal (refactor mockup p.15).
  */
 export function buildFcPerformanceModel({
   scopeActivities = [],
@@ -281,9 +379,13 @@ export function buildFcPerformanceModel({
   referenceDate = null,
 } = {}) {
   const reference = safeDate(referenceDate) || new Date();
-  const runs = filterRecentRuns(scopeActivities, reference);
+  const cutoffCurrent = new Date(reference.getTime() - RECENT_WINDOW_DAYS * MS_PER_DAY);
+  const cutoffPrevious = new Date(cutoffCurrent.getTime() - RECENT_WINDOW_DAYS * MS_PER_DAY);
 
-  if (runs.length === 0) {
+  const currentRuns = filterByDateRange(scopeActivities, cutoffCurrent, reference);
+  const previousRuns = filterByDateRange(scopeActivities, cutoffPrevious, cutoffCurrent);
+
+  if (currentRuns.length === 0) {
     return {
       hasData: false,
       title: "FC de performance",
@@ -291,51 +393,73 @@ export function buildFcPerformanceModel({
     };
   }
 
-  // VDOT consolide (regle 70/30) pour deduire le T pace seuil.
+  // VDOT consolide (regle 70/30) + Daniels paces pour T pace seuil
   const resolved = resolveMasterVdot({ vdotProfile, vdotHistory });
   const masterVdot = resolved.value > 0 ? resolved.value : toFiniteNumber(vdotProfile?.vdot);
   const paces = masterVdot > 0 ? buildDanielsTrainingPaces(masterVdot) : [];
   const tPaceSeconds = toFiniteNumber((paces.find((p) => p.key === "T") || {}).paceSecondsPerKm);
 
-  // FC max + FC seuil + Derive
-  const fcMax = estimateFcMax({ runs, settingsHeartRateMax: settings.heartRateMax });
-  const fcSeuil = estimateFcSeuil({ runs, tPaceSeconds, fcMax: fcMax.value });
-  const decoupling = buildDecouplingStats(runs);
+  // === Calculs periode COURANTE ===
+  const fcMaxCurrent = estimateFcMaxFromRuns({ runs: currentRuns, settingsHeartRateMax: settings.heartRateMax });
+  const fcSeuilCurrent = estimateFcSeuilFromRuns({ runs: currentRuns, tPaceSeconds, fcMax: fcMaxCurrent.value });
+  const decouplingCurrent = decouplingMean(currentRuns);
+  const fcReposCurrent = toFiniteNumber(settings.restingHeartrate) > 0
+    ? { value: Math.round(settings.restingHeartrate), source: "settings" }
+    : { value: 0, source: "unavailable" };
 
-  // Mini trends
-  const fcSeuilTrend = buildFcSeuilTrend({ runs, tPaceSeconds, referenceDate: reference });
-  const decouplingTrend = runs
+  // === Calculs periode PRECEDENTE (pour deltas) ===
+  const fcMaxPrev = estimateFcMaxFromRuns({ runs: previousRuns, settingsHeartRateMax: settings.heartRateMax });
+  const fcSeuilPrev = estimateFcSeuilFromRuns({ runs: previousRuns, tPaceSeconds, fcMax: fcMaxPrev.value });
+  const decouplingPrev = decouplingMean(previousRuns);
+
+  // === Deltas ===
+  const deltaFcSeuil = fcSeuilCurrent.value > 0 && fcSeuilPrev.value > 0
+    ? fcSeuilCurrent.value - fcSeuilPrev.value
+    : 0;
+  const deltaFcMax = fcMaxCurrent.value > 0 && fcMaxPrev.value > 0
+    ? fcMaxCurrent.value - fcMaxPrev.value
+    : 0;
+  const deltaDecoupling = decouplingCurrent.value != null && decouplingPrev.value != null
+    ? decouplingCurrent.value - decouplingPrev.value
+    : null;
+
+  // === Hints tonaux ===
+  const hintSeuil = buildHint({ key: "fcSeuil", value: fcSeuilCurrent.value, deltaValue: deltaFcSeuil, fcMax: fcMaxCurrent.value });
+  const hintMax = buildHint({ key: "fcMax", value: fcMaxCurrent.value, deltaValue: deltaFcMax, fcMax: fcMaxCurrent.value });
+  const hintDec = buildHint({ key: "decoupling", value: decouplingCurrent.value });
+  const hintRepos = buildHint({ key: "fcRepos", value: fcReposCurrent.value });
+
+  // === Mini trends 90j ===
+  const fcSeuilTrend = buildFcSeuilTrendWeekly({ runs: currentRuns, tPaceSeconds, referenceDate: reference });
+  const decouplingTrend = currentRuns
     .filter((a) => a?.cardiacDecouplingPercent != null)
     .map((a) => {
       const d = safeDate(a?.startDateLocal || a?.startDate || a?.__date);
-      return d
-        ? { label: d.toISOString().slice(0, 10), value: toFiniteNumber(a.cardiacDecouplingPercent) }
-        : null;
+      return d ? { label: d.toISOString().slice(0, 10), value: toFiniteNumber(a.cardiacDecouplingPercent) } : null;
     })
     .filter(Boolean)
     .sort((l, r) => new Date(l.label) - new Date(r.label));
 
-  // Efforts cles
-  const records = buildBestEffortRecords(scopeActivities);
-  const keyEffortsHr = buildKeyEffortsHr(records);
+  // === FC dans efforts cles par TYPE D'EFFORT (mockup p.15) ===
+  const effortsByType = buildEffortsByType({ runs: currentRuns, paces, fcSeuil: fcSeuilCurrent.value });
 
-  // Derive cardiaque stable (sortie exemple)
-  const stableSample = pickStableSampleSession(runs);
+  // === Sortie longue stable exemple ===
+  const stableSample = pickStableSampleSession(currentRuns);
 
-  // Synthese intensite
-  const intensitySynthesis = buildIntensitySynthesis(intensityModel);
-
-  // Lecture coach
-  const readingParagraphs = buildReadingEffort({
-    fcSeuil,
-    fcMax,
-    decouplingValue: decoupling.value,
+  // === Lecture coach enrichie ===
+  const reading = buildReadingEffortV2({
+    fcSeuil: fcSeuilCurrent.value,
+    fcMax: fcMaxCurrent.value,
+    decouplingValue: decouplingCurrent.value,
+    effortsByType,
   });
 
-  // FC repos discret
-  const fcRepos = toFiniteNumber(settings.restingHeartrate) > 0
-    ? { value: Math.round(settings.restingHeartrate), source: "settings" }
-    : null;
+  // Synthese intensite legere
+  const intensitySynthesis = (() => {
+    const zones = Array.isArray(intensityModel?.zones) ? intensityModel.zones : [];
+    if (!zones.length) return { hasData: false };
+    return { hasData: true, zones, totalDurationLabel: intensityModel?.totalDurationLabel || "" };
+  })();
 
   return {
     hasData: true,
@@ -343,44 +467,59 @@ export function buildFcPerformanceModel({
     subtitle: "Comment ton cœur réagit dans les efforts clés.",
     kpi: {
       fcSeuil: {
-        value: fcSeuil.value,
-        formattedValue: formatBpm(fcSeuil.value),
+        value: fcSeuilCurrent.value,
+        formattedValue: formatBpm(fcSeuilCurrent.value),
         unit: "bpm",
-        hint: fcSeuil.source === "measured"
-          ? `Mesurée sur ${fcSeuil.sampleSize} sorties au seuil`
-          : fcSeuil.source === "estimated_fc_max"
+        hint: hintSeuil.label,
+        tone: hintSeuil.tone,
+        delta: deltaFcSeuil,
+        deltaLabel: deltaFcSeuil !== 0 ? `${formatSignedBpm(deltaFcSeuil)} vs 90 j préc.` : "",
+        series: fcSeuilTrend,
+        sourceHint: fcSeuilCurrent.source === "measured"
+          ? `Mesurée sur ${fcSeuilCurrent.sampleSize} sorties au seuil`
+          : fcSeuilCurrent.source === "estimated_fc_max"
             ? "Estimée 88 % FC max"
             : "Indisponible",
-        tone: "neutral",
-        series: fcSeuilTrend,
       },
       fcMax: {
-        value: fcMax.value,
-        formattedValue: formatBpm(fcMax.value),
+        value: fcMaxCurrent.value,
+        formattedValue: formatBpm(fcMaxCurrent.value),
         unit: "bpm",
-        hint: fcMax.source === "settings" ? "Saisie réglages" : fcMax.source === "observed" ? "Max observée 90 j" : "Indisponible",
-        tone: "neutral",
-        // FC max stable -> on n'affiche pas de trend (constante)
+        hint: hintMax.label,
+        tone: hintMax.tone,
+        delta: deltaFcMax,
+        deltaLabel: deltaFcMax !== 0 ? `${formatSignedBpm(deltaFcMax)} vs 90 j préc.` : "",
         series: [],
+        sourceHint: fcMaxCurrent.source === "settings" ? "Saisie réglages" : "Max observé 90 j",
       },
       decoupling: {
-        value: decoupling.value,
-        formattedValue: decoupling.value != null ? formatPercent(decoupling.value) : "—",
+        value: decouplingCurrent.value,
+        formattedValue: decouplingCurrent.value != null ? formatPercent(decouplingCurrent.value) : "—",
         unit: "",
-        hint: decoupling.value == null
-          ? "Pas assez de sorties longues"
-          : decoupling.value < 5 ? "Très bon" : decoupling.value < 8 ? "Correct" : "À surveiller",
-        tone: decoupling.value == null ? "neutral" : decoupling.value < 5 ? "positive" : decoupling.value < 8 ? "neutral" : "warning",
+        hint: hintDec.label,
+        tone: hintDec.tone,
+        delta: deltaDecoupling,
+        deltaLabel: deltaDecoupling != null ? `${formatSignedPercent(deltaDecoupling)} vs 90 j préc.` : "",
         series: decouplingTrend,
-        sampleSize: decoupling.sampleSize,
+        sampleSize: decouplingCurrent.sampleSize,
+      },
+      fcRepos: {
+        value: fcReposCurrent.value,
+        formattedValue: formatBpm(fcReposCurrent.value),
+        unit: "bpm",
+        hint: hintRepos.label,
+        tone: hintRepos.tone,
+        delta: 0,
+        deltaLabel: "",
+        series: [],
+        sourceHint: fcReposCurrent.source === "settings" ? "Saisie réglages" : "Indisponible",
       },
     },
-    fcRepos,
-    keyEffortsHr,
+    effortsByType,
     fcSeuilEvolution: fcSeuilTrend,
     stableSample,
     intensitySynthesis,
-    readingParagraphs,
+    reading,
     warning: "Ces valeurs sont des estimations basées sur tes sorties récentes. Une mesure laboratoire reste la référence.",
   };
 }

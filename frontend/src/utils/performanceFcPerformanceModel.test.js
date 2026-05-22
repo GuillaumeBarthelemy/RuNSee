@@ -64,7 +64,8 @@ describe("buildFcPerformanceModel", () => {
     });
     // 192 * 0.88 = 168.96 -> 169
     expect(m.kpi.fcSeuil.value).toBe(169);
-    expect(m.kpi.fcSeuil.hint).toMatch(/88/);
+    // hint tonal (Stabilisée/Variable) — la source detaillee est dans sourceHint
+    expect(m.kpi.fcSeuil.sourceHint).toMatch(/88/);
   });
 
   it("FC max depuis settings utilisateur prioritaire", () => {
@@ -79,7 +80,7 @@ describe("buildFcPerformanceModel", () => {
       settings: { heartRateMax: 195 },
     });
     expect(m.kpi.fcMax.value).toBe(195);
-    expect(m.kpi.fcMax.hint).toMatch(/réglages/i);
+    expect(m.kpi.fcMax.sourceHint).toMatch(/réglages/i);
   });
 
   it("Derive cardiaque moyenne sur sorties longues", () => {
@@ -114,7 +115,7 @@ describe("buildFcPerformanceModel", () => {
     expect(m.stableSample.activityId).toMatch(/recent/);
   });
 
-  it("Lecture effort coach commente decoupling < 5 % positivement", () => {
+  it("Lecture coach (v2) avec checks 'Pour progresser'", () => {
     const today = new Date("2026-05-21");
     const runs = [
       mkRun({ id: "1", dateISO: "2026-05-15", distM: 15000, secs: 4500, hrAvg: 150, decoupling: 3.5 }),
@@ -125,10 +126,13 @@ describe("buildFcPerformanceModel", () => {
       referenceDate: today,
       settings: { heartRateMax: 192 },
     });
-    expect(m.readingParagraphs.some((p) => /excellent/i.test(p) || /3,5/i.test(p))).toBe(true);
+    expect(m.reading).toBeDefined();
+    expect(m.reading.summary).toBeDefined();
+    expect(Array.isArray(m.reading.checks)).toBe(true);
+    expect(m.reading.checks.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("FC repos affichee si dans settings", () => {
+  it("FC repos comme 4eme KPI (et pas en discret)", () => {
     const today = new Date("2026-05-21");
     const runs = [
       mkRun({ id: "1", dateISO: "2026-05-15", distM: 5000, secs: 1200, hrAvg: 170 }),
@@ -139,7 +143,65 @@ describe("buildFcPerformanceModel", () => {
       referenceDate: today,
       settings: { heartRateMax: 192, restingHeartrate: 48 },
     });
-    expect(m.fcRepos).not.toBeNull();
-    expect(m.fcRepos.value).toBe(48);
+    expect(m.kpi.fcRepos).toBeDefined();
+    expect(m.kpi.fcRepos.value).toBe(48);
+    expect(m.kpi.fcRepos.hint).toBe("Excellente"); // < 50 bpm
+  });
+
+  it("effortsByType : 5 categories d'effort dans l'ordre mockup", () => {
+    const today = new Date("2026-05-21");
+    const runs = [
+      mkRun({ id: "1", dateISO: "2026-05-15", distM: 10000, secs: 2400, hrAvg: 165, paceSec: 240 }), // seuil ~T pace 240s
+      mkRun({ id: "2", dateISO: "2026-05-10", distM: 8000, secs: 1920, hrAvg: 168, paceSec: 240 }), // seuil
+    ];
+    const m = buildFcPerformanceModel({
+      scopeActivities: runs,
+      vdotProfile: { hasData: true, vdot: 54 },
+      referenceDate: today,
+      settings: { heartRateMax: 192 },
+    });
+    expect(m.effortsByType).toHaveLength(5);
+    const keys = m.effortsByType.map((e) => e.key);
+    expect(keys).toEqual(["montee_longue", "seuil_tempo", "intervalles_longs", "intervalles_courts", "competition"]);
+  });
+
+  it("% FC seuil correctement calcule", () => {
+    const today = new Date("2026-05-21");
+    // Session seuil 20-40min avec FC 168 et T pace
+    const runs = [
+      mkRun({ id: "1", dateISO: "2026-05-15", distM: 7500, secs: 1800, hrAvg: 168, paceSec: 240 }),
+      mkRun({ id: "2", dateISO: "2026-05-12", distM: 7500, secs: 1800, hrAvg: 168, paceSec: 240 }),
+    ];
+    const m = buildFcPerformanceModel({
+      scopeActivities: runs,
+      vdotProfile: { hasData: true, vdot: 54 },
+      referenceDate: today,
+      settings: { heartRateMax: 192 },
+    });
+    const seuilEffort = m.effortsByType.find((e) => e.key === "seuil_tempo");
+    // FC seuil mesure = 168 (sessions T), donc 168/168 = 100%
+    expect(seuilEffort.averageHr).toBe(168);
+    expect(seuilEffort.pctFcSeuil).toBe(100);
+  });
+
+  it("Delta pills calcules vs periode precedente", () => {
+    const today = new Date("2026-05-21");
+    const runs = [
+      // Periode courante (90j)
+      mkRun({ id: "1", dateISO: "2026-05-15", distM: 7500, secs: 1800, hrAvg: 168, paceSec: 240 }),
+      // Periode precedente (90j avant)
+      mkRun({ id: "2", dateISO: "2026-01-15", distM: 7500, secs: 1800, hrAvg: 170, paceSec: 240 }),
+      mkRun({ id: "3", dateISO: "2026-01-20", distM: 7500, secs: 1800, hrAvg: 170, paceSec: 240 }),
+    ];
+    const m = buildFcPerformanceModel({
+      scopeActivities: runs,
+      vdotProfile: { hasData: true, vdot: 54 },
+      referenceDate: today,
+      settings: { heartRateMax: 192 },
+    });
+    // FC seuil 168 - 170 = -2
+    expect(m.kpi.fcSeuil.delta).toBeLessThanOrEqual(0);
+    // Hint Stabilisée car delta abs <= 2
+    expect(m.kpi.fcSeuil.hint).toBe("Stabilisée");
   });
 });
