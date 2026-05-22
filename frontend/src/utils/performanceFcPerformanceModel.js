@@ -427,6 +427,30 @@ export function buildFcPerformanceModel({
   const cutoffPrevious = new Date(cutoffCurrent.getTime() - RECENT_WINDOW_DAYS * MS_PER_DAY);
 
   const currentRuns = filterByDateRange(scopeActivities, cutoffCurrent, reference);
+  // DEBUG TEMP : expose window state pour diagnostic Chrome MCP
+  if (typeof window !== "undefined") {
+    const sample = currentRuns.slice(0, 3).map((a) => ({
+      name: (a.name || "").slice(0, 30),
+      movingTime: a.movingTime,
+      __movingSeconds: a.__movingSeconds,
+      decoupling: a.cardiacDecouplingPercent,
+      isMerged: a.isMerged,
+    }));
+    const passDecMean = currentRuns.filter((a) => {
+      const dur = getMovingSeconds(a);
+      const dec = a?.cardiacDecouplingPercent;
+      return dur >= STABLE_SESSION_MIN_DURATION_SEC && dec != null
+        && Number.isFinite(Number(dec)) && Math.abs(Number(dec)) <= 30;
+    }).length;
+    window.__fcDebug = {
+      scopeActivitiesCount: Array.isArray(scopeActivities) ? scopeActivities.length : 0,
+      currentRunsCount: currentRuns.length,
+      passDecMean,
+      sample,
+      reference: reference.toISOString(),
+      cutoffCurrent: cutoffCurrent.toISOString(),
+    };
+  }
   const previousRuns = filterByDateRange(scopeActivities, cutoffPrevious, cutoffCurrent);
 
   if (currentRuns.length === 0) {
