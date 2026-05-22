@@ -233,10 +233,27 @@ function buildThresholdEvolution(vdotHistory, referenceDate, currentTPaceSeconds
 /**
  * Construit la table d'equivalences prudentes (plage +/- 5s/km).
  * Distances : 1k / 5k / 10k / Semi / Marathon.
+ *
+ * Fallback 1k : les racePredictions Daniels ne couvrent que 5k/10k/semi/marathon.
+ * On utilise le I pace (Daniels, 98 % VO2max) comme equivalent 1km, le plus
+ * pertinent scientifiquement pour cette distance courte intense.
  */
-function buildEquivalencesTable(racePredictions) {
+function buildEquivalencesTable(racePredictions, paces) {
   const PRED_BY_KEY = {};
   (racePredictions || []).forEach((p) => { PRED_BY_KEY[p.key] = p; });
+
+  // Fallback 1k : I pace Daniels (~ VMA, courses courtes 3-5 min).
+  if (!PRED_BY_KEY["1k"]) {
+    const iPace = (paces || []).find((p) => p.key === "I");
+    if (iPace && toFiniteNumber(iPace.paceSecondsPerKm) > 0) {
+      const ip = toFiniteNumber(iPace.paceSecondsPerKm);
+      PRED_BY_KEY["1k"] = {
+        key: "1k",
+        paceSecondsPerKm: ip,
+        predictedSeconds: ip * 1, // 1 km = pace * 1
+      };
+    }
+  }
 
   const rows = [
     { key: "1k", label: "1 km", distanceKm: 1.00, distanceMeters: 1000 },
@@ -411,7 +428,7 @@ export function buildAlluresReferenceModel({ vdotProfile = null, vdotHistory = n
     referenceDate,
     paceCards.find((c) => c.key === "seuil")?.paceSecondsPerKm || 0,
   );
-  const equivalences = buildEquivalencesTable(racePredictions);
+  const equivalences = buildEquivalencesTable(racePredictions, paces);
   const zones = buildZonesTable(paceCards);
 
   return {

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import {
   Area,
   AreaChart,
@@ -27,6 +27,22 @@ function formatPaceTick(seconds) {
  *   - Tendance (En amélioration / Stable / En retrait)
  */
 function PerformanceThresholdEvolutionChart({ evolution = {} }) {
+  // Hook calcule TOUJOURS (regle React) — utilise meme en early-return path.
+  const { yTicks, yDomain } = useMemo(() => {
+    const values = (evolution?.points || [])
+      .map((p) => Number(p?.value))
+      .filter((v) => Number.isFinite(v) && v > 0);
+    if (values.length < 2) return { yTicks: undefined, yDomain: ["dataMin", "dataMax"] };
+    const minV = Math.floor(Math.min(...values));
+    const maxV = Math.ceil(Math.max(...values));
+    const span = Math.max(1, maxV - minV);
+    const step = Math.max(1, Math.ceil(span / 4));
+    const ticks = [];
+    for (let v = minV; v <= maxV; v += step) ticks.push(v);
+    if (ticks[ticks.length - 1] !== maxV) ticks.push(maxV);
+    return { yTicks: ticks, yDomain: [minV - 1, maxV + 1] };
+  }, [evolution?.points]);
+
   if (!evolution?.hasData) {
     return (
       <section className="performance-panel performance-threshold-evolution-card">
@@ -70,7 +86,10 @@ function PerformanceThresholdEvolutionChart({ evolution = {} }) {
                 tickLine={false}
                 axisLine={false}
                 width={48}
-                domain={["dataMin", "dataMax"]}
+                domain={yDomain}
+                ticks={yTicks}
+                interval={0}
+                allowDecimals={false}
                 // Pour pace : valeur basse = plus rapide -> haut du chart
                 reversed
               />
