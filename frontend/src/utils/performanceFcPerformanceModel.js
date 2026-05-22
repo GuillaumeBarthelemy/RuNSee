@@ -108,7 +108,7 @@ function filterByDateRange(activities, startDate, endDate) {
  *   - Competition : activite avec prCount > 0 ou achievementCount >= 3
  *   - Sinon : ignoree pour cette analyse
  */
-function categorizeEffortType(activity, { tPaceSeconds, iPaceSeconds, rPaceSeconds }) {
+function categorizeEffortType(activity, { tPaceSeconds, iPaceSeconds }) {
   const durMin = getMovingSeconds(activity) / 60;
   const distKm = getDistanceKm(activity);
   const elev = getElevation(activity);
