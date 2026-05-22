@@ -59,7 +59,7 @@ function PerformanceVdotKpiCard({ kpi = {}, history = [], deltaLabel = "", delta
 
       {data.length >= 2 ? (
         <div className="performance-vdot-kpi-chart">
-          <ResponsiveContainer width="100%" height={140}>
+          <ResponsiveContainer width="100%" height="100%" minHeight={140}>
             <AreaChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="perf-vdot-kpi-area" x1="0" y1="0" x2="0" y2="1">

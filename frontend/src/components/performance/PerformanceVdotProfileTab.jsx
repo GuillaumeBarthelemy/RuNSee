@@ -13,10 +13,15 @@ import PerformanceTakeawayCard from "./PerformanceTakeawayCard.jsx";
 /**
  * PerformanceVdotProfileTab — Onglet `Performance > VDOT & profil` (mockup p.13).
  *
- * Layout :
- *   Row 1 (3 cols) : VDOT KPI+histo | Radar | Profil indicatif + Confiance empilés
- *   Row 2 (3 cols) : Décomposition bars | Indicateurs clés | Limites + À retenir empilés
- *   Row 3         : Conseil du jour (full width)
+ * Layout 2 colonnes :
+ *   - Colonne centrale (2x2 grid) :
+ *       Row 1 : VDOT KPI    | Radar (memes hauteurs via stretch)
+ *       Row 2 : Decomposition | Indicateurs cles (memes hauteurs via stretch)
+ *   - Colonne droite (rail vertical) : Profil indicatif / Confiance / Limites / À retenir
+ *   - Footer : Conseil du jour (full width)
+ *
+ * Optimisation : align-items:stretch dans la grille centrale -> meme hauteur
+ * par ligne. Cards rail = hauteur naturelle. Pas d'espace blanc force.
  */
 function PerformanceVdotProfileTab({ model = {}, coachAdvice = null }) {
   if (!model?.hasData) {
@@ -29,27 +34,25 @@ function PerformanceVdotProfileTab({ model = {}, coachAdvice = null }) {
 
   return (
     <div className="performance-vdot-profile-tab">
-      <div className="performance-vdot-row-top">
-        <PerformanceVdotKpiCard
-          kpi={model.kpi}
-          history={model.history}
-          deltaLabel={model.delta90Days?.label || ""}
-          deltaTone={model.delta90Days?.tone || "neutral"}
-        />
-        <PerformanceProfileRadar axes={model.profile5D} referenceVdot={model.referenceVdot} />
-        <div className="performance-vdot-row-top-rail">
+      <div className="performance-vdot-layout">
+        <div className="performance-vdot-central">
+          <PerformanceVdotKpiCard
+            kpi={model.kpi}
+            history={model.history}
+            deltaLabel={model.delta90Days?.label || ""}
+            deltaTone={model.delta90Days?.tone || "neutral"}
+          />
+          <PerformanceProfileRadar axes={model.profile5D} referenceVdot={model.referenceVdot} />
+          <PerformanceProfileBars axes={model.profile5D} referenceVdot={model.referenceVdot} />
+          <PerformanceVdotKeyIndicators indicators={model.indicators} />
+        </div>
+
+        <aside className="performance-vdot-right-rail">
           <PerformanceProfileIndicatifCard />
           <PerformanceConfidenceGauge confidence={model.confidence} />
-        </div>
-      </div>
-
-      <div className="performance-vdot-row-middle">
-        <PerformanceProfileBars axes={model.profile5D} referenceVdot={model.referenceVdot} />
-        <PerformanceVdotKeyIndicators indicators={model.indicators} />
-        <div className="performance-vdot-row-middle-rail">
           <PerformanceLimitsCard limits={model.limits} />
           <PerformanceTakeawayCard takeaway={model.takeaway} confidence={null} />
-        </div>
+        </aside>
       </div>
 
       {coachAdvice ? (

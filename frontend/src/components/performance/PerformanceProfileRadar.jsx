@@ -50,7 +50,7 @@ function PerformanceProfileRadar({ axes = [], referenceVdot = null }) {
           </small>
         ) : null}
       </div>
-      <ResponsiveContainer width="100%" height={340}>
+      <ResponsiveContainer width="100%" height="100%" minHeight={300}>
         <RadarChart data={data} margin={{ top: 16, right: 48, bottom: 16, left: 48 }}>
           <PolarGrid stroke="#e5edf7" />
           <PolarAngleAxis dataKey="axis" tick={{ fontSize: 10, fill: "#355886" }} />

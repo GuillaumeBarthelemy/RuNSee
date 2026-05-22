@@ -13963,31 +13963,53 @@ button.alert-banner-positive-item {
   gap: 12px;
 }
 
-.performance-vdot-row-top {
+/* Layout VDOT & profil : 2 colonnes (centre 2x2 grid + rail droit vertical).
+   Voir PerformanceVdotProfileTab.jsx pour le rationale UX. */
+.performance-vdot-layout {
   display: grid;
-  /* VDOT card elargie (320px min) pour accueillir confortablement le mini-chart
-     interactif type 'Tendances de performance'. Radar reste dominant. */
-  grid-template-columns: minmax(320px, 1.2fr) minmax(0, 1.6fr) minmax(240px, 1fr);
+  grid-template-columns: minmax(0, 2.4fr) minmax(280px, 1fr);
   gap: 12px;
-  /* align-items: start -> chaque card prend sa hauteur naturelle, plus
-     d'espace blanc force. Le radar est augmente independamment pour bien
-     remplir sa colonne. */
   align-items: start;
-}
-.performance-vdot-row-top-rail {
-  display: flex; flex-direction: column; gap: 12px;
 }
 
-.performance-vdot-row-middle {
+.performance-vdot-central {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* 2x2 grid : 1ere col VDOT KPI (compact), 2eme col Radar/Indicateurs (large) */
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 1.4fr);
+  grid-template-rows: auto auto;
   gap: 12px;
-  /* align-items: start -> cards a hauteur naturelle (pas d'espace blanc
-     sous Bars/Indicateurs quand le rail Limites+Takeaway est plus long). */
-  align-items: start;
+  /* stretch -> meme hauteur par ligne (VDOT KPI = Radar, Decompo = Indicateurs).
+     Les charts internes (Recharts) ont ResponsiveContainer qui remplit. */
+  align-items: stretch;
 }
-.performance-vdot-row-middle-rail {
-  display: flex; flex-direction: column; gap: 12px;
+
+.performance-vdot-right-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Cards du central grid : flex column pour que le chart prenne l'espace
+   restant via flex:1, peu importe la hauteur impose par grid stretch. */
+.performance-vdot-central > .performance-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* permet aux enfants flex de retrecir si necessaire */
+}
+.performance-vdot-central .performance-vdot-kpi-chart,
+.performance-vdot-central .recharts-responsive-container {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+/* Radar wrap : meme principe */
+.performance-vdot-central .performance-profile-radar-card .recharts-responsive-container {
+  flex: 1 1 auto;
+  min-height: 280px;
+}
+/* Bars + Indicateurs : list grow pour pousser footer/CTA en bas si stretch */
+.performance-vdot-central .performance-profile-bars-list,
+.performance-vdot-central .performance-vdot-key-indicators-list {
+  flex: 1 1 auto;
 }
 
 /* --- KPI card (combine VDOT + mini histo + delta) --- */
