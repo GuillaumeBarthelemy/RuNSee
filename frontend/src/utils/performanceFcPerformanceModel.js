@@ -37,6 +37,35 @@ function safeDate(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/**
+ * Helpers d'acces robustes : prefere les champs derives (__movingSeconds...)
+ * s'ils existent (cas tests/buildActivityItems), sinon fallback sur les champs
+ * bruts API (movingTime, totalElevationGain...). Resout le bug ou le modele
+ * recevait des activites brutes sans champs derives -> empty states partout.
+ */
+function getMovingSeconds(a) {
+  return toFiniteNumber(a?.__movingSeconds ?? a?.movingTime);
+}
+function getDistanceKm(a) {
+  if (Number.isFinite(Number(a?.__distanceKm))) return Number(a.__distanceKm);
+  const meters = toFiniteNumber(a?.distance);
+  return meters > 0 ? meters / 1000 : 0;
+}
+function getElevation(a) {
+  return toFiniteNumber(a?.__elevationGain ?? a?.totalElevationGain ?? a?.elevationGain);
+}
+function getPaceSeconds(a) {
+  if (Number.isFinite(Number(a?.__paceSecondsPerKm)) && Number(a.__paceSecondsPerKm) > 0) {
+    return Number(a.__paceSecondsPerKm);
+  }
+  const dur = getMovingSeconds(a);
+  const km = getDistanceKm(a);
+  return dur > 0 && km > 0 ? dur / km : 0;
+}
+function getActivityDate(a) {
+  return safeDate(a?.__date) || safeDate(a?.startDateLocal) || safeDate(a?.startDate);
+}
+
 function formatBpm(value) {
   const n = Math.round(toFiniteNumber(value));
   return n > 0 ? `${n}` : "—";
@@ -64,7 +93,7 @@ function formatSignedPercent(value) {
 function filterByDateRange(activities, startDate, endDate) {
   return (Array.isArray(activities) ? activities : []).filter((a) => {
     if (!isRunLikeActivity(a)) return false;
-    const d = safeDate(a?.startDateLocal || a?.startDate || a?.__date);
+    const d = getActivityDate(a);
     return d && (!startDate || d >= startDate) && (!endDate || d <= endDate);
   });
 }
@@ -80,40 +109,48 @@ function filterByDateRange(activities, startDate, endDate) {
  *   - Sinon : ignoree pour cette analyse
  */
 function categorizeEffortType(activity, { tPaceSeconds, iPaceSeconds, rPaceSeconds }) {
-  const durMin = toFiniteNumber(activity?.__movingSeconds) / 60;
-  const distKm = toFiniteNumber(activity?.__distanceKm);
-  const elev = toFiniteNumber(activity?.__elevationGain);
-  const pace = toFiniteNumber(activity?.__paceSecondsPerKm);
+  const durMin = getMovingSeconds(activity) / 60;
+  const distKm = getDistanceKm(activity);
+  const elev = getElevation(activity);
+  const pace = getPaceSeconds(activity);
   const prCount = toFiniteNumber(activity?.prCount);
   const achievementCount = toFiniteNumber(activity?.achievementCount);
 
   if (durMin <= 0 || distKm <= 0) return null;
 
-  // 1. Competition prioritaire
-  if (prCount > 0 || achievementCount >= 3) {
-    if (durMin >= 15) return "competition";
+  // Ordre : du plus specifique au plus general.
+  // Sans analyse de laps, on classifie par DURATION + PACE moyenne (proxy).
+
+  // 1. Competition (record perso ou achievements multiples)
+  if ((prCount > 0 || achievementCount >= 3) && durMin >= 15) {
+    return "competition";
   }
 
-  // 2. Montee longue
-  if (durMin >= 45 && durMin <= 120 && elev / distKm >= 30) {
+  // 2. Montee longue : duree >= 30 min + denivele >= 25 m/km
+  if (durMin >= 30 && distKm > 0 && elev / distKm >= 25) {
     return "montee_longue";
   }
 
-  // 3. Seuil (tempo)
-  if (durMin >= 20 && durMin <= 40 && tPaceSeconds > 0
+  // 3. Seuil (tempo) : pace MOYENNE proche de T (±15 %) + duree 20-60 min
+  //    Daniels : tempo run sur 20-40 min a T pace, +/- WU/CD -> pace moy ~ T pace.
+  //    Range : T pace * [0.92, 1.10].
+  if (tPaceSeconds > 0 && durMin >= 20 && durMin <= 60
     && pace >= tPaceSeconds * 0.92 && pace <= tPaceSeconds * 1.10) {
     return "seuil_tempo";
   }
 
-  // 4. Intervalles longs (proxy : sortie moyenne avec pace ≈ I)
-  if (iPaceSeconds > 0 && durMin >= 25 && durMin <= 60
-    && pace >= iPaceSeconds * 0.88 && pace <= iPaceSeconds * 1.05) {
+  // 4. Intervalles longs : pace I pace ±15 % + duree 30-90 min
+  //    VMA longue / 5x1000m : warm-up + intervals + cool-down -> pace moy entre I et T.
+  if (iPaceSeconds > 0 && durMin >= 30 && durMin <= 90
+    && pace >= iPaceSeconds * 0.95 && pace <= iPaceSeconds * 1.20) {
     return "intervalles_longs";
   }
 
-  // 5. Intervalles courts (proxy : pace tres rapide ≈ R)
-  if (rPaceSeconds > 0 && durMin >= 15 && durMin <= 45
-    && pace <= rPaceSeconds * 1.05) {
+  // 5. Intervalles courts : pace plus rapide que T mais session courte avec
+  //    beaucoup de recuperation (8x200, 10x400).
+  //    Pace moy entre I et T*1.20 + duree 20-50 min.
+  if (tPaceSeconds > 0 && durMin >= 20 && durMin <= 50
+    && pace > tPaceSeconds * 1.10 && pace <= tPaceSeconds * 1.30) {
     return "intervalles_courts";
   }
 
@@ -173,7 +210,7 @@ function buildEffortsByType({ runs, paces, fcSeuil }) {
     const cat = categorizeEffortType(a, params);
     if (!cat) return;
     if (!grouped[cat]) grouped[cat] = { sumHr: 0, weight: 0, count: 0 };
-    const dur = toFiniteNumber(a.__movingSeconds);
+    const dur = getMovingSeconds(a);
     grouped[cat].sumHr += toFiniteNumber(a.averageHeartrate) * dur;
     grouped[cat].weight += dur;
     grouped[cat].count += 1;
@@ -207,17 +244,17 @@ function estimateFcSeuilFromRuns({ runs, tPaceSeconds, fcMax }) {
   const tToleranceMin = tPaceSeconds * 0.9;
   const tToleranceMax = tPaceSeconds * 1.10;
   const tSessions = runs.filter((a) => {
-    const pace = toFiniteNumber(a?.__paceSecondsPerKm);
+    const pace = getPaceSeconds(a);
     const hr = toFiniteNumber(a?.averageHeartrate);
-    const dur = toFiniteNumber(a?.__movingSeconds);
+    const dur = getMovingSeconds(a);
     return tPaceSeconds > 0 && pace >= tToleranceMin && pace <= tToleranceMax
-      && hr > 0 && dur >= 600; // au moins 10 min de session
+      && hr > 0 && dur >= 600;
   });
   if (tSessions.length >= 2) {
-    const totalWeight = tSessions.reduce((s, a) => s + toFiniteNumber(a.__movingSeconds), 0);
+    const totalWeight = tSessions.reduce((s, a) => s + getMovingSeconds(a), 0);
     if (totalWeight > 0) {
       const weightedHr = tSessions.reduce(
-        (s, a) => s + toFiniteNumber(a.averageHeartrate) * toFiniteNumber(a.__movingSeconds),
+        (s, a) => s + toFiniteNumber(a.averageHeartrate) * getMovingSeconds(a),
         0,
       );
       return { value: Math.round(weightedHr / totalWeight), source: "measured", sampleSize: tSessions.length };
@@ -240,9 +277,13 @@ function estimateFcMaxFromRuns({ runs, settingsHeartRateMax }) {
 
 function decouplingMean(runs) {
   const longRuns = (Array.isArray(runs) ? runs : []).filter((a) => {
-    const dur = toFiniteNumber(a?.__movingSeconds);
+    const dur = getMovingSeconds(a);
     const dec = a?.cardiacDecouplingPercent;
-    return dur >= STABLE_SESSION_MIN_DURATION_SEC && dec != null && Number.isFinite(Number(dec));
+    // Filtre les valeurs extremes (> 30 % en abs) qui sont probablement
+    // des bugs de calcul (sortie tres irreguliere, montagne, etc.).
+    return dur >= STABLE_SESSION_MIN_DURATION_SEC
+      && dec != null && Number.isFinite(Number(dec))
+      && Math.abs(Number(dec)) <= 30;
   });
   if (longRuns.length === 0) return { value: null, sampleSize: 0 };
   const sum = longRuns.reduce((s, a) => s + toFiniteNumber(a.cardiacDecouplingPercent), 0);
@@ -255,17 +296,17 @@ function buildFcSeuilTrendWeekly({ runs, tPaceSeconds, referenceDate }) {
   const tToleranceMin = tPaceSeconds * 0.9;
   const tToleranceMax = tPaceSeconds * 1.10;
   const tSessions = (Array.isArray(runs) ? runs : []).filter((a) => {
-    const d = safeDate(a?.startDateLocal || a?.startDate || a?.__date);
-    const pace = toFiniteNumber(a?.__paceSecondsPerKm);
+    const d = getActivityDate(a);
+    const pace = getPaceSeconds(a);
     const hr = toFiniteNumber(a?.averageHeartrate);
     return d && d >= cutoff && d <= ref && tPaceSeconds > 0
       && pace >= tToleranceMin && pace <= tToleranceMax && hr > 0;
   });
   const buckets = new Map();
   tSessions.forEach((a) => {
-    const d = safeDate(a?.startDateLocal || a?.startDate || a?.__date);
+    const d = getActivityDate(a);
     const weekKey = `${d.getFullYear()}-W${Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 1).getTime()) / (7 * MS_PER_DAY))}`;
-    const dur = toFiniteNumber(a.__movingSeconds);
+    const dur = getMovingSeconds(a);
     const hr = toFiniteNumber(a.averageHeartrate);
     const prev = buckets.get(weekKey) || { weight: 0, sumHr: 0, date: d };
     buckets.set(weekKey, {
@@ -282,23 +323,26 @@ function buildFcSeuilTrendWeekly({ runs, tPaceSeconds, referenceDate }) {
 
 function pickStableSampleSession(runs) {
   const candidates = (Array.isArray(runs) ? runs : []).filter((a) => {
-    const dur = toFiniteNumber(a?.__movingSeconds);
+    const dur = getMovingSeconds(a);
     const dec = a?.cardiacDecouplingPercent;
-    return dur >= STABLE_SESSION_MIN_DURATION_SEC && dec != null && Number.isFinite(Number(dec));
+    return dur >= STABLE_SESSION_MIN_DURATION_SEC
+      && dec != null && Number.isFinite(Number(dec))
+      && Math.abs(Number(dec)) <= 30; // filtre extremes
   });
   if (candidates.length === 0) return null;
   candidates.sort((l, r) => {
-    const ld = safeDate(l?.startDateLocal || l?.startDate || l?.__date) || new Date(0);
-    const rd = safeDate(r?.startDateLocal || r?.startDate || r?.__date) || new Date(0);
+    const ld = getActivityDate(l) || new Date(0);
+    const rd = getActivityDate(r) || new Date(0);
     return rd - ld;
   });
   const a = candidates[0];
+  const d = getActivityDate(a);
   return {
     activityId: a.stravaActivityId || a.id,
     name: a.name || "Sortie longue",
-    date: safeDate(a?.startDateLocal || a?.startDate)?.toISOString().slice(0, 10) || null,
+    date: d ? d.toISOString().slice(0, 10) : null,
     decouplingPercent: toFiniteNumber(a.cardiacDecouplingPercent),
-    durationSeconds: toFiniteNumber(a.__movingSeconds),
+    durationSeconds: getMovingSeconds(a),
     averageHr: toFiniteNumber(a.averageHeartrate) || null,
   };
 }
@@ -432,9 +476,10 @@ export function buildFcPerformanceModel({
   // === Mini trends 90j ===
   const fcSeuilTrend = buildFcSeuilTrendWeekly({ runs: currentRuns, tPaceSeconds, referenceDate: reference });
   const decouplingTrend = currentRuns
-    .filter((a) => a?.cardiacDecouplingPercent != null)
+    .filter((a) => a?.cardiacDecouplingPercent != null
+      && Math.abs(Number(a.cardiacDecouplingPercent)) <= 30)
     .map((a) => {
-      const d = safeDate(a?.startDateLocal || a?.startDate || a?.__date);
+      const d = getActivityDate(a);
       return d ? { label: d.toISOString().slice(0, 10), value: toFiniteNumber(a.cardiacDecouplingPercent) } : null;
     })
     .filter(Boolean)
