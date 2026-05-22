@@ -21,6 +21,7 @@ import {
   buildRoadRacePredictions,
   describeVdotLevel,
 } from "./runningPerformance.js";
+import { resolveMasterVdot } from "./vdotConsolidation.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -388,23 +389,12 @@ const WARNING_TEXT = "Ces allures sont des repères. Elles peuvent varier selon 
  * @param {Date}   options.referenceDate
  */
 export function buildAlluresReferenceModel({ vdotProfile = null, vdotHistory = null, referenceDate = null } = {}) {
-  // Master VDOT : cascade Garmin (VO2max Firstbeat consolide) puis fallback
-  // Daniels records-based. Coherent avec l'onglet VDOT & profil.
-  // Note scientifique : pour les allures d'entrainement, utiliser le VDOT le
-  // plus representatif du niveau actuel produit des cibles realistes. Si l'eco-
-  // nomie de course du coureur est bonne, le Garmin est plus fiable.
-  const latestVdotSnapshot = vdotHistory?.latestSnapshot
-    || (Array.isArray(vdotHistory?.snapshots) && vdotHistory.snapshots.length
-      ? vdotHistory.snapshots[vdotHistory.snapshots.length - 1]
-      : null);
-  const garminMasterVdot = latestVdotSnapshot && latestVdotSnapshot.source === "garmin"
-    && Number.isFinite(Number(latestVdotSnapshot.vdotValue))
-    && Number(latestVdotSnapshot.vdotValue) > 0
-    ? Number(latestVdotSnapshot.vdotValue)
-    : null;
-  const danielsVdot = toFiniteNumber(vdotProfile?.vdot);
-  const masterVdot = garminMasterVdot != null ? garminMasterVdot : danielsVdot;
-  const masterVdotSource = garminMasterVdot != null ? "garmin" : "daniels_internal";
+  // Master VDOT : regle 70/30 partagee (cf utils/vdotConsolidation.js).
+  // 70 % Daniels (records) + 30 % Garmin (capacite courante) pour une cible
+  // d'entrainement realiste vs les records concrets.
+  const resolved = resolveMasterVdot({ vdotProfile, vdotHistory });
+  const masterVdot = resolved.value;
+  const masterVdotSource = resolved.source;
 
   if (!(masterVdot > 0)) {
     return {
@@ -434,13 +424,11 @@ export function buildAlluresReferenceModel({ vdotProfile = null, vdotHistory = n
   return {
     hasData: true,
     title: "Tes allures de référence",
-    subtitle: masterVdotSource === "garmin"
-      ? `Calculées à partir du VDOT estimé (${Math.round(masterVdot)} via Garmin) et de ton historique récent.`
-      : `Calculées à partir du VDOT estimé (${Math.round(masterVdot)}) et de ton historique récent.`,
+    subtitle: `Calculées à partir du VDOT estimé (${Math.round(masterVdot)}, ${resolved.sourceLabel.toLowerCase()}) et de ton historique récent.`,
     vdotValue: masterVdot,
     formattedVdot: Math.round(masterVdot).toString(),
     vdotSource: masterVdotSource,
-    vdotSourceLabel: masterVdotSource === "garmin" ? "Garmin" : "Estimation interne",
+    vdotSourceLabel: resolved.sourceLabel,
     vdotLevel: describeVdotLevel(masterVdot),
     vmaSecondsPerKm: vmaSeconds,
     paceCards,

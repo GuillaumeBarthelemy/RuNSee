@@ -29,6 +29,7 @@ import {
   describeVdotLevel,
 } from "./runningPerformance.js";
 import { buildBestEffortRecords, isRunLikeActivity } from "./activityInsights.js";
+import { resolveMasterVdot } from "./vdotConsolidation.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // Fenetre de prise en compte des records pour le profil 5D.
@@ -257,32 +258,14 @@ export function buildVdotProfileTabModel({
     .filter((r) => r.distanceMeters > 0);
 
   // CALIBRATION SCIENTIFIQUE — Headline vs reference axes :
-  //
-  // VO2max Garmin Firstbeat et VDOT Daniels ne sont PAS sur la meme echelle.
-  // Garmin (Firstbeat) estime la VO2max avec l'economie de course individuelle
-  // (HR + allure + cinetique). Daniels assume une economie de course MOYENNE.
-  // Un coureur entraine -> economie > moyenne -> Garmin > Daniels (parfois 3-6 pts).
-  //
-  // Le headline KPI utilise Garmin (mieux calibre pour le niveau actuel).
-  // Mais les axes du profil 5D sont CALCULES en Daniels (axisVdotDaniels) et
-  // doivent etre compares au master Daniels (= vdotProfile.vdot consolide sur
-  // les memes records). Comparer un axe Daniels vs un master Garmin produit
-  // un biais systematique qui sous-evalue tous les axes.
-  const latestVdotSnapshot = vdotHistory?.latestSnapshot
-    || (Array.isArray(vdotHistory?.snapshots) && vdotHistory.snapshots.length
-      ? vdotHistory.snapshots[vdotHistory.snapshots.length - 1]
-      : null);
-  const garminMasterVdot = latestVdotSnapshot && latestVdotSnapshot.source === "garmin"
-    && Number.isFinite(Number(latestVdotSnapshot.vdotValue))
-    && Number(latestVdotSnapshot.vdotValue) > 0
-    ? Number(latestVdotSnapshot.vdotValue)
-    : null;
-
-  // Master utilise pour les calculs d'axes (toujours Daniels, scale-coherente).
+  // VO2max Garmin Firstbeat sur-estime la performance race vs Daniels (qui se
+  // base sur les records). On utilise la regle 70/30 partagee (cf. utils/
+  // vdotConsolidation.js) pour le headline. Les axes restent en echelle Daniels
+  // pour la coherence scale (axisVdot Daniels vs vdotMasterDaniels).
+  const resolved = resolveMasterVdot({ vdotProfile, vdotHistory });
   const vdotMasterDaniels = vdotProfile.vdot;
-  // Master utilise pour le headline KPI (priorite Garmin, fallback Daniels).
-  const vdotMaster = garminMasterVdot != null ? garminMasterVdot : vdotMasterDaniels;
-  const vdotMasterSource = garminMasterVdot != null ? "garmin" : "daniels_internal";
+  const vdotMaster = resolved.value > 0 ? resolved.value : vdotMasterDaniels;
+  const vdotMasterSource = resolved.source;
 
   // VDOT specifiques par distance (avec decay age pour valoriser efforts < 90j
   // sans exclure les anciens records jusqu'a 365j).
@@ -468,7 +451,7 @@ export function buildVdotProfileTabModel({
       formattedVdot: vdotMaster.toFixed(1),
       level: masterLevel,
       source: vdotMasterSource,
-      sourceLabel: vdotMasterSource === "garmin" ? "Garmin" : "Estimation interne",
+      sourceLabel: resolved.sourceLabel,
     },
     history: Array.isArray(vdotHistory?.snapshots)
       ? vdotHistory.snapshots

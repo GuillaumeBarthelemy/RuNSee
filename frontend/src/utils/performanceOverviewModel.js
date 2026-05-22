@@ -17,6 +17,7 @@ import {
 } from "./analyticsIntensities.js";
 import { buildVdotProfile } from "./runningPerformance.js";
 import { formatShortDateFr, formatDateRangeFr } from "./frenchFormatters.js";
+import { resolveMasterVdot } from "./vdotConsolidation.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_TREND_POINTS = 6;
@@ -482,14 +483,18 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
     const series = usableSnapshots
       .filter((s) => Number.isFinite(Number(s.vdotValue)) && Number(s.vdotValue) > 0)
       .map((s) => ({ label: s.date, value: Number(s.vdotValue) }));
-    const currentValue = Number(latest.vdotValue);
+    // Regle 70/30 partagee (cf. utils/vdotConsolidation.js) : si Daniels +
+    // Garmin dispos, on ponderent 70% Daniels (records race) + 30% Garmin
+    // (capacite courante). Sinon on prend la source dispo.
+    const resolved = resolveMasterVdot({ vdotProfile, vdotHistory });
+    const currentValue = resolved.value > 0 ? resolved.value : Number(latest.vdotValue);
     const previousValue = series.length >= 2 ? series.at(-2).value : null;
     const delta = buildMetricDelta({
       current: currentValue,
       previous: previousValue,
       lowerIsBetter: false,
     });
-    const sourceLabel = latest.source === "garmin" ? "Garmin" : "Estimation interne";
+    const sourceLabel = resolved.sourceLabel || (latest.source === "garmin" ? "Garmin" : "Estimation interne");
     // Classification simple (Excellent/Bonne/Correcte/Faible) harmonisee avec les
     // autres KPI cards, au lieu du libelle technique Daniels (Competiteur amateur, etc.).
     // Thresholds calques sur la table Daniels.
@@ -521,9 +526,11 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
       series,
       sourceLabel,
       info: [
-        { label: "Source", text: latest.source === "garmin"
-          ? "Valeur Garmin (wellness quotidien Firstbeat ou activité récente). Cohérent avec ta montre."
-          : "Estimation Daniels interne basée sur tes meilleures performances récentes." },
+        { label: "Source", text: resolved.source === "weighted"
+          ? "Consolidé pondéré : 70 % Daniels (records race) + 30 % Garmin (capacité aérobie courante)."
+          : resolved.source === "garmin"
+            ? "Valeur Garmin (wellness quotidien Firstbeat ou activité récente)."
+            : "Estimation Daniels interne basée sur tes meilleures performances récentes." },
         { label: "Lecture", text: "C'est un repère de niveau, pas une mesure de laboratoire ni une prédiction certaine." },
       ],
     };

@@ -64,7 +64,7 @@ describe("buildAlluresReferenceModel", () => {
     expect(seuil.formattedDelta).toMatch(/^-/);
   });
 
-  it("Cascade Garmin : prioritise vdotHistory.latestSnapshot si source garmin", () => {
+  it("Regle 70/30 : pondere Daniels + Garmin si les 2 dispos", () => {
     const model = buildAlluresReferenceModel({
       vdotProfile: fakeVdotProfile(53),
       vdotHistory: {
@@ -72,15 +72,26 @@ describe("buildAlluresReferenceModel", () => {
         snapshots: [{ date: "2026-05-21", vdotValue: 56, source: "garmin" }],
       },
     });
-    expect(model.vdotValue).toBe(56);
-    expect(model.vdotSource).toBe("garmin");
-    expect(model.formattedVdot).toBe("56");
+    // 53 * 0.7 + 56 * 0.3 = 53.9
+    expect(model.vdotValue).toBeCloseTo(53.9, 1);
+    expect(model.vdotSource).toBe("weighted");
   });
 
-  it("Cascade fallback : Daniels si pas de Garmin", () => {
+  it("Fallback Daniels seul si pas de Garmin", () => {
     const model = buildAlluresReferenceModel({ vdotProfile: fakeVdotProfile(53) });
     expect(model.vdotValue).toBe(53);
     expect(model.vdotSource).toBe("daniels_internal");
+  });
+
+  it("Fallback Garmin seul si pas de Daniels", () => {
+    const model = buildAlluresReferenceModel({
+      vdotProfile: null,
+      vdotHistory: {
+        latestSnapshot: { date: "2026-05-21", vdotValue: 56, source: "garmin" },
+      },
+    });
+    expect(model.vdotValue).toBe(56);
+    expect(model.vdotSource).toBe("garmin");
   });
 
   it("equivalences : 5 lignes 1k/5k/10k/Semi/Marathon avec plages", () => {
