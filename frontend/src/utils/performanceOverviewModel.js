@@ -483,18 +483,19 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
     const series = usableSnapshots
       .filter((s) => Number.isFinite(Number(s.vdotValue)) && Number(s.vdotValue) > 0)
       .map((s) => ({ label: s.date, value: Number(s.vdotValue) }));
-    // Regle 70/30 partagee (cf. utils/vdotConsolidation.js) : si Daniels +
-    // Garmin dispos, on ponderent 70% Daniels (records race) + 30% Garmin
-    // (capacite courante). Sinon on prend la source dispo.
+    // Affichage : VO2max Garmin prioritaire (displayValue). Calculs derives
+    // utiliseraient calculationValue (70/30), mais pour le KPI Vue d'ensemble
+    // on affiche la valeur courante telle quelle (Garmin = ce que voit le
+    // coureur sur sa montre).
     const resolved = resolveMasterVdot({ vdotProfile, vdotHistory });
-    const currentValue = resolved.value > 0 ? resolved.value : Number(latest.vdotValue);
+    const currentValue = resolved.displayValue > 0 ? resolved.displayValue : Number(latest.vdotValue);
     const previousValue = series.length >= 2 ? series.at(-2).value : null;
     const delta = buildMetricDelta({
       current: currentValue,
       previous: previousValue,
       lowerIsBetter: false,
     });
-    const sourceLabel = resolved.sourceLabel || (latest.source === "garmin" ? "Garmin" : "Estimation interne");
+    const sourceLabel = resolved.displaySourceLabel || (latest.source === "garmin" ? "Garmin" : "Estimation interne");
     // Classification simple (Excellent/Bonne/Correcte/Faible) harmonisee avec les
     // autres KPI cards, au lieu du libelle technique Daniels (Competiteur amateur, etc.).
     // Thresholds calques sur la table Daniels.
@@ -526,11 +527,12 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
       series,
       sourceLabel,
       info: [
-        { label: "Source", text: resolved.source === "weighted"
-          ? "Consolidé pondéré : 70 % Daniels (records race) + 30 % Garmin (capacité aérobie courante)."
-          : resolved.source === "garmin"
-            ? "Valeur Garmin (wellness quotidien Firstbeat ou activité récente)."
-            : "Estimation Daniels interne basée sur tes meilleures performances récentes." },
+        { label: "Affichage", text: resolved.displaySource === "garmin"
+          ? "VO₂max Garmin Firstbeat (capacité aérobie courante)."
+          : "Estimation Daniels interne basée sur tes records récents." },
+        { label: "Calculs (allures, axes profil)", text: resolved.calculationSource === "weighted"
+          ? `Pondéré 70 % Daniels (records) + 30 % Garmin pour une cible réaliste — valeur : ${resolved.calculationValue.toFixed(1)}.`
+          : resolved.calculationSourceLabel },
         { label: "Lecture", text: "C'est un repère de niveau, pas une mesure de laboratoire ni une prédiction certaine." },
       ],
     };

@@ -389,12 +389,13 @@ const WARNING_TEXT = "Ces allures sont des repères. Elles peuvent varier selon 
  * @param {Date}   options.referenceDate
  */
 export function buildAlluresReferenceModel({ vdotProfile = null, vdotHistory = null, referenceDate = null } = {}) {
-  // Master VDOT : regle 70/30 partagee (cf utils/vdotConsolidation.js).
-  // 70 % Daniels (records) + 30 % Garmin (capacite courante) pour une cible
-  // d'entrainement realiste vs les records concrets.
+  // Headline (subtitle) : VO2max Garmin prioritaire (displayValue).
+  // Calculs des paces : mix 70/30 (calculationValue) pour rester aligne sur
+  // la performance race tout en creditant la capacite courante.
   const resolved = resolveMasterVdot({ vdotProfile, vdotHistory });
-  const masterVdot = resolved.value;
-  const masterVdotSource = resolved.source;
+  const masterVdot = resolved.calculationValue; // utilise pour buildDanielsTrainingPaces
+  const masterVdotSource = resolved.displaySource;
+  const displayVdot = resolved.displayValue;
 
   if (!(masterVdot > 0)) {
     return {
@@ -424,12 +425,13 @@ export function buildAlluresReferenceModel({ vdotProfile = null, vdotHistory = n
   return {
     hasData: true,
     title: "Tes allures de référence",
-    subtitle: `Calculées à partir du VDOT estimé (${Math.round(masterVdot)}, ${resolved.sourceLabel.toLowerCase()}) et de ton historique récent.`,
-    vdotValue: masterVdot,
-    formattedVdot: Math.round(masterVdot).toString(),
+    // Affichage : VO2max Garmin (displayValue). Calculs paces sur mix 70/30.
+    subtitle: `VO₂max ${Math.round(displayVdot)} ${resolved.displaySourceLabel ? `(${resolved.displaySourceLabel})` : ""} — allures calibrées sur tes records.`,
+    vdotValue: displayVdot,
+    formattedVdot: Math.round(displayVdot).toString(),
     vdotSource: masterVdotSource,
-    vdotSourceLabel: resolved.sourceLabel,
-    vdotLevel: describeVdotLevel(masterVdot),
+    vdotSourceLabel: resolved.displaySourceLabel,
+    vdotLevel: describeVdotLevel(displayVdot),
     vmaSecondsPerKm: vmaSeconds,
     paceCards,
     comparisonRows,

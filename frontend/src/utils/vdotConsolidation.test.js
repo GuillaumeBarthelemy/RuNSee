@@ -1,68 +1,64 @@
 import { describe, it, expect } from "vitest";
 import { resolveMasterVdot } from "./vdotConsolidation.js";
 
-describe("resolveMasterVdot — regle 70/30 partagee", () => {
-  it("applique 70% Daniels + 30% Garmin si les 2 dispos", () => {
+describe("resolveMasterVdot — affichage Garmin + calculs ponderes (revise 2026-05-22)", () => {
+  it("Display = Garmin si dispo, Calculs = 70/30", () => {
     const result = resolveMasterVdot({
       vdotProfile: { hasData: true, vdot: 53 },
-      vdotHistory: {
-        latestSnapshot: { source: "garmin", vdotValue: 56 },
-      },
+      vdotHistory: { latestSnapshot: { source: "garmin", vdotValue: 56 } },
     });
-    // 53 * 0.7 + 56 * 0.3 = 37.1 + 16.8 = 53.9
-    expect(result.value).toBeCloseTo(53.9, 1);
-    expect(result.source).toBe("weighted");
-    expect(result.danielsVdot).toBe(53);
-    expect(result.garminVdot).toBe(56);
+    // Affichage : VO2max Garmin
+    expect(result.displayValue).toBe(56);
+    expect(result.displaySource).toBe("garmin");
+    // Calculs : ponderes 53*0.7 + 56*0.3 = 53.9
+    expect(result.calculationValue).toBeCloseTo(53.9, 1);
+    expect(result.calculationSource).toBe("weighted");
   });
 
-  it("fallback Garmin si Daniels indispo", () => {
+  it("Garmin seul : affichage = calculs = Garmin", () => {
     const result = resolveMasterVdot({
       vdotProfile: null,
       vdotHistory: { latestSnapshot: { source: "garmin", vdotValue: 56 } },
     });
-    expect(result.value).toBe(56);
-    expect(result.source).toBe("garmin");
+    expect(result.displayValue).toBe(56);
+    expect(result.calculationValue).toBe(56);
+    expect(result.displaySource).toBe("garmin");
+    expect(result.calculationSource).toBe("garmin");
   });
 
-  it("fallback Daniels si Garmin indispo", () => {
+  it("Daniels seul : affichage = calculs = Daniels", () => {
     const result = resolveMasterVdot({
       vdotProfile: { hasData: true, vdot: 53 },
       vdotHistory: null,
     });
-    expect(result.value).toBe(53);
-    expect(result.source).toBe("daniels_internal");
+    expect(result.displayValue).toBe(53);
+    expect(result.calculationValue).toBe(53);
+    expect(result.displaySource).toBe("daniels_internal");
+    expect(result.calculationSource).toBe("daniels_internal");
   });
 
-  it("ignore vdotHistory si source != garmin", () => {
+  it("Rien dispo : displayValue=0, calculationValue=0", () => {
+    const result = resolveMasterVdot({});
+    expect(result.displayValue).toBe(0);
+    expect(result.calculationValue).toBe(0);
+    expect(result.displaySource).toBe("unavailable");
+  });
+
+  it("Alias retro-compat : value = calculationValue", () => {
     const result = resolveMasterVdot({
       vdotProfile: { hasData: true, vdot: 53 },
-      vdotHistory: { latestSnapshot: { source: "internal", vdotValue: 55 } },
+      vdotHistory: { latestSnapshot: { source: "garmin", vdotValue: 56 } },
     });
-    expect(result.value).toBe(53);
-    expect(result.source).toBe("daniels_internal");
+    expect(result.value).toBe(result.calculationValue);
+    expect(result.source).toBe(result.calculationSource);
   });
 
-  it("source='unavailable' si rien", () => {
-    const result = resolveMasterVdot({});
-    expect(result.value).toBe(0);
-    expect(result.source).toBe("unavailable");
-  });
-
-  it("ponderation : si Daniels = Garmin -> meme valeur", () => {
-    const result = resolveMasterVdot({
-      vdotProfile: { hasData: true, vdot: 55 },
-      vdotHistory: { latestSnapshot: { source: "garmin", vdotValue: 55 } },
-    });
-    expect(result.value).toBeCloseTo(55, 1);
-  });
-
-  it("ponderation : gap important Daniels << Garmin -> proche Daniels", () => {
+  it("Garmin > Daniels : affichage Garmin haut, calculs proches Daniels", () => {
     const result = resolveMasterVdot({
       vdotProfile: { hasData: true, vdot: 50 },
       vdotHistory: { latestSnapshot: { source: "garmin", vdotValue: 60 } },
     });
-    // 50 * 0.7 + 60 * 0.3 = 35 + 18 = 53
-    expect(result.value).toBeCloseTo(53, 1);
+    expect(result.displayValue).toBe(60); // Headline ambitieux
+    expect(result.calculationValue).toBeCloseTo(53, 1); // Calculs realistes
   });
 });

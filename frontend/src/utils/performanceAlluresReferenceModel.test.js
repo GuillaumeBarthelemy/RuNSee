@@ -64,7 +64,7 @@ describe("buildAlluresReferenceModel", () => {
     expect(seuil.formattedDelta).toMatch(/^-/);
   });
 
-  it("Regle 70/30 : pondere Daniels + Garmin si les 2 dispos", () => {
+  it("Affichage Garmin prioritaire + Calculs ponderes (mix 70/30)", () => {
     const model = buildAlluresReferenceModel({
       vdotProfile: fakeVdotProfile(53),
       vdotHistory: {
@@ -72,9 +72,11 @@ describe("buildAlluresReferenceModel", () => {
         snapshots: [{ date: "2026-05-21", vdotValue: 56, source: "garmin" }],
       },
     });
-    // 53 * 0.7 + 56 * 0.3 = 53.9
-    expect(model.vdotValue).toBeCloseTo(53.9, 1);
-    expect(model.vdotSource).toBe("weighted");
+    // Display : Garmin (56) — ce que voit l'utilisateur
+    expect(model.vdotValue).toBe(56);
+    expect(model.vdotSource).toBe("garmin");
+    // Subtitle mentionne VO2max + Garmin
+    expect(model.subtitle).toMatch(/Garmin/);
   });
 
   it("Fallback Daniels seul si pas de Garmin", () => {

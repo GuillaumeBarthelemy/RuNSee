@@ -424,7 +424,9 @@ export function buildFcPerformanceModel({
 
   // VDOT consolide (regle 70/30) + Daniels paces pour T pace seuil
   const resolved = resolveMasterVdot({ vdotProfile, vdotHistory });
-  const masterVdot = resolved.value > 0 ? resolved.value : toFiniteNumber(vdotProfile?.vdot);
+  // Calculs T pace (categorisation efforts) : utilise calculationValue (70/30)
+  // pour avoir une cible realiste, alignee avec les records.
+  const masterVdot = resolved.calculationValue > 0 ? resolved.calculationValue : toFiniteNumber(vdotProfile?.vdot);
   const paces = masterVdot > 0 ? buildDanielsTrainingPaces(masterVdot) : [];
   const tPaceSeconds = toFiniteNumber((paces.find((p) => p.key === "T") || {}).paceSecondsPerKm);
 

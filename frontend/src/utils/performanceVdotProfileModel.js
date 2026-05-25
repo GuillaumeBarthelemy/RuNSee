@@ -257,15 +257,16 @@ export function buildVdotProfileTabModel({
     .map((r) => ({ ...r, distanceMeters: RECORD_KEY_TO_METERS[r.recordKey] || 0 }))
     .filter((r) => r.distanceMeters > 0);
 
-  // CALIBRATION SCIENTIFIQUE — Headline vs reference axes :
-  // VO2max Garmin Firstbeat sur-estime la performance race vs Daniels (qui se
-  // base sur les records). On utilise la regle 70/30 partagee (cf. utils/
-  // vdotConsolidation.js) pour le headline. Les axes restent en echelle Daniels
-  // pour la coherence scale (axisVdot Daniels vs vdotMasterDaniels).
+  // CALIBRATION SCIENTIFIQUE (revise 2026-05-22) :
+  // - HEADLINE KPI : VO2max Garmin prioritaire (displayValue) ce que voit
+  //   l'utilisateur sur sa montre, plus motivant.
+  // - AXES 5D : compares vs vdotMasterDaniels (records) pour coherence
+  //   scale (axisVdot Daniels vs vdotMasterDaniels Daniels).
   const resolved = resolveMasterVdot({ vdotProfile, vdotHistory });
   const vdotMasterDaniels = vdotProfile.vdot;
-  const vdotMaster = resolved.value > 0 ? resolved.value : vdotMasterDaniels;
-  const vdotMasterSource = resolved.source;
+  // Headline KPI = displayValue (Garmin prioritaire)
+  const vdotMaster = resolved.displayValue > 0 ? resolved.displayValue : vdotMasterDaniels;
+  const vdotMasterSource = resolved.displaySource;
 
   // VDOT specifiques par distance (avec decay age pour valoriser efforts < 90j
   // sans exclure les anciens records jusqu'a 365j).
@@ -451,7 +452,7 @@ export function buildVdotProfileTabModel({
       formattedVdot: vdotMaster.toFixed(1),
       level: masterLevel,
       source: vdotMasterSource,
-      sourceLabel: resolved.sourceLabel,
+      sourceLabel: resolved.displaySourceLabel,
     },
     history: Array.isArray(vdotHistory?.snapshots)
       ? vdotHistory.snapshots
