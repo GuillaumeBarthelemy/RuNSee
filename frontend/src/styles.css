@@ -13964,6 +13964,208 @@ button.alert-banner-positive-item {
 }
 
 /* ===========================================================================
+   ONGLET 'Records' (page 16) — Lot Performance V5
+   =========================================================================== */
+.performance-records-tab {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.performance-records-row-top {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+@media (max-width: 1100px) {
+  .performance-records-row-top { grid-template-columns: 1fr; }
+}
+
+/* Filter pills (used by 3 cards) */
+.performance-records-filter-pills {
+  display: flex; gap: 6px; margin: 10px 0 8px;
+  padding: 4px;
+  background: rgba(53, 88, 134, 0.06);
+  border-radius: 999px;
+  width: fit-content;
+}
+.performance-records-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 12px;
+  border: 0; background: transparent;
+  border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: #355886;
+  cursor: pointer;
+}
+.performance-records-pill.is-active {
+  background: #1268f3; color: #fff;
+}
+.performance-records-pill:hover:not(.is-active) {
+  background: rgba(18, 104, 243, 0.08);
+}
+.performance-records-link {
+  font-size: 12px; color: #1268f3; text-decoration: none;
+}
+.performance-records-link:hover { text-decoration: underline; }
+
+/* Best times card */
+.performance-best-times-list {
+  list-style: none; padding: 0; margin: 8px 0 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.performance-best-times-row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1.4fr) auto auto auto;
+  gap: 8px; align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(53, 88, 134, 0.05);
+}
+.performance-best-times-row:last-of-type { border-bottom: 0; }
+.performance-best-times-icon { color: #1268f3; }
+.performance-best-times-label {
+  display: flex; flex-direction: column; min-width: 0;
+}
+.performance-best-times-label strong {
+  color: #0f2147; font-size: 12px; font-weight: 700;
+}
+.performance-best-times-label small {
+  color: #64748b; font-size: 10px;
+}
+.performance-best-times-value {
+  color: #0f2147; font-size: 14px;
+}
+.performance-best-times-date {
+  color: #64748b; font-size: 11px;
+}
+.performance-best-times-pill {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px; font-weight: 700;
+}
+.performance-best-times-pill.tone-positive {
+  background: rgba(21, 128, 61, 0.15); color: #15803d;
+}
+.performance-best-times-pill.tone-neutral {
+  background: rgba(53, 88, 134, 0.1); color: #355886;
+}
+.performance-best-times-legend {
+  margin: 10px 0 0; font-size: 10px; color: #64748b;
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.performance-best-times-empty {
+  color: #64748b; font-style: italic; padding: 8px 0;
+}
+
+/* Best segments card */
+.performance-best-segments-list {
+  list-style: none; padding: 0; margin: 8px 0 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.performance-best-segments-list li {
+  display: grid;
+  grid-template-columns: 20px 14px minmax(0, 1fr) auto auto;
+  gap: 8px; align-items: center;
+}
+.performance-best-segments-rank {
+  display: grid; place-items: center;
+  width: 18px; height: 18px;
+  background: rgba(18, 104, 243, 0.1); color: #1268f3;
+  border-radius: 999px; font-size: 10px; font-weight: 700;
+}
+.performance-best-segments-icon { color: #355886; }
+.performance-best-segments-info { min-width: 0; display: flex; flex-direction: column; }
+.performance-best-segments-info strong { font-size: 12px; color: #0f2147; }
+.performance-best-segments-info small { font-size: 10px; color: #64748b; }
+.performance-best-segments-time { font-size: 13px; color: #0f2147; }
+.performance-best-segments-legend {
+  margin: 10px 0 0; font-size: 10px; color: #64748b;
+  display: flex; gap: 8px; align-items: center;
+}
+
+/* Progression card */
+.performance-records-progression-table {
+  width: 100%; border-collapse: collapse; margin-top: 10px;
+}
+.performance-records-progression-table th {
+  text-align: left; color: #64748b; font-size: 11px; font-weight: 600;
+  padding: 6px 6px; border-bottom: 1px solid rgba(53, 88, 134, 0.08);
+}
+.performance-records-progression-table td {
+  padding: 7px 6px; font-size: 12px; color: #0f2147;
+  border-bottom: 1px solid rgba(53, 88, 134, 0.05);
+}
+.performance-records-progression-table td.tone-positive { color: #15803d; }
+.performance-records-progression-table td.tone-warning { color: #ea580c; }
+.performance-records-progression-trend {
+  display: inline-flex; align-items: center; gap: 4px; font-weight: 700;
+}
+.performance-records-progression-footer {
+  margin: 10px 0 0; font-size: 10px; color: #64748b;
+  display: flex; align-items: center; gap: 6px;
+}
+.performance-records-progression-footer svg { color: #15803d; }
+
+/* History table */
+.performance-records-history-table {
+  width: 100%; border-collapse: collapse; margin-top: 8px;
+}
+.performance-records-history-table th {
+  text-align: left; color: #64748b; font-size: 11px; font-weight: 600;
+  padding: 6px 8px; border-bottom: 1px solid rgba(53, 88, 134, 0.08);
+}
+.performance-records-history-table td {
+  padding: 8px; font-size: 12px; color: #0f2147;
+  border-bottom: 1px solid rgba(53, 88, 134, 0.05);
+}
+.performance-records-history-table td.tone-positive { color: #15803d; }
+.performance-records-history-table td.tone-warning { color: #ea580c; }
+.performance-records-history-table small { color: #64748b; font-size: 10px; }
+.performance-records-history-table em { font-style: normal; color: #1268f3; font-weight: 600; }
+.performance-records-type {
+  display: inline-grid; place-items: center;
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: rgba(53, 88, 134, 0.06);
+  color: #355886;
+}
+.performance-records-type.tone-trail { background: rgba(34, 197, 94, 0.12); color: #15803d; }
+.performance-records-type.tone-route { background: rgba(18, 104, 243, 0.12); color: #1268f3; }
+.performance-records-confidence {
+  display: inline-block; padding: 1px 8px;
+  border-radius: 999px; font-size: 10px; font-weight: 700;
+}
+.performance-records-confidence.tone-positive {
+  background: rgba(21, 128, 61, 0.12); color: #15803d;
+}
+.performance-records-history-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; font-size: 11px; color: #64748b;
+}
+.performance-records-pagination { display: flex; gap: 4px; }
+.performance-records-pagination button {
+  padding: 4px 8px;
+  border: 1px solid rgba(53, 88, 134, 0.12);
+  background: #fff;
+  border-radius: 6px;
+  font-size: 11px; color: #355886;
+  cursor: pointer;
+}
+.performance-records-pagination button.is-active {
+  background: #1268f3; color: #fff; border-color: #1268f3;
+}
+.performance-records-pagination button:disabled {
+  opacity: 0.4; cursor: not-allowed;
+}
+
+.performance-records-coach-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+.performance-records-coach-link {
+  font-size: 12px; color: #1268f3; text-decoration: none; white-space: nowrap;
+}
+.performance-records-coach-link:hover { text-decoration: underline; }
+
+/* ===========================================================================
    ONGLET 'FC de performance' (page 15) — Lot Performance V5
    Refactor 2026-05-22 : aligne mockup p.15 (4 KPIs + types d'effort + lecture
    coach enrichie).

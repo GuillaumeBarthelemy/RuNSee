@@ -4,9 +4,11 @@ import PerformanceOverviewTab from "../components/performance/PerformanceOvervie
 import PerformanceVdotProfileTab from "../components/performance/PerformanceVdotProfileTab.jsx";
 import PerformanceAlluresReferenceTab from "../components/performance/PerformanceAlluresReferenceTab.jsx";
 import PerformanceFcPerformanceTab from "../components/performance/PerformanceFcPerformanceTab.jsx";
+import PerformanceRecordsTab from "../components/performance/PerformanceRecordsTab.jsx";
 import { buildVdotProfileTabModel } from "../utils/performanceVdotProfileModel.js";
 import { buildAlluresReferenceModel } from "../utils/performanceAlluresReferenceModel.js";
 import { buildFcPerformanceModel } from "../utils/performanceFcPerformanceModel.js";
+import { buildRecordsModel } from "../utils/performanceRecordsModel.js";
 import AnalyticsCompactFilters from "../components/analytics/AnalyticsCompactFilters.jsx";
 import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
@@ -206,6 +208,12 @@ export default function PerformancePage() {
     [vdotProfile, vdotHistory, sharedRange.end],
   );
 
+  // Modele onglet Records (mockup p.16).
+  const recordsModel = useMemo(
+    () => buildRecordsModel({ scopeActivities: canonicalPerformanceScopeActivities }),
+    [canonicalPerformanceScopeActivities],
+  );
+
   // Modele onglet FC de performance (mockup p.15).
   const fcPerformanceModel = useMemo(
     () => buildFcPerformanceModel({
@@ -333,6 +341,8 @@ export default function PerformancePage() {
             intensityModel={overviewModel?.zonePreview || null}
             confidence={performanceConfidence}
           />
+        ) : activeTabId === "records" ? (
+          <PerformanceRecordsTab model={recordsModel} />
         ) : (
           <div className="card section performance-tab-placeholder">
             <h2>Onglet en cours de construction</h2>
