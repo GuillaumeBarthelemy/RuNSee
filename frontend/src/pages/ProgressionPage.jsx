@@ -6,15 +6,16 @@ import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import EmptyState from "../components/visuals/alpine/EmptyState.jsx";
 import ProgressionVolumeTab from "../components/progression/ProgressionVolumeTab.jsx";
 import ProgressionOverviewTab from "../components/progression/ProgressionOverviewTab.jsx";
+import ProgressionRegularityTab from "../components/progression/ProgressionRegularityTab.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import { filterActivities } from "../utils/activityAggregations.js";
 import { buildProgressionVolumeModel } from "../utils/progressionVolumeModel.js";
 import { buildProgressionOverviewModel } from "../utils/progressionOverviewModel.js";
+import { buildProgressionRegularityModel } from "../utils/progressionRegularityModel.js";
 
 const PROGRESSION_TABS = [
   { id: "overview", label: "Vue d'ensemble" },
   { id: "volume", label: "Volume" },
-  { id: "cumul", label: "Cumul annuel" },
   { id: "regularite", label: "Régularité" },
   { id: "comparaisons", label: "Comparaisons" },
 ];
@@ -88,6 +89,14 @@ export default function ProgressionPage() {
     [scopeActivities, sharedRange.end],
   );
 
+  const regularityModel = useMemo(
+    () => buildProgressionRegularityModel({
+      activities: scopeActivities,
+      referenceDate: sharedRange.end,
+    }),
+    [scopeActivities, sharedRange.end],
+  );
+
   const periodActivitiesCount = useMemo(
     () => filterActivities(safeActivities, periodFilters, { groupSports: options.groupSports }).length,
     [periodFilters, options.groupSports, safeActivities],
@@ -143,6 +152,8 @@ export default function ProgressionPage() {
           <ProgressionOverviewTab model={overviewModel} />
         ) : activeTabId === "volume" ? (
           <ProgressionVolumeTab model={volumeModel} />
+        ) : activeTabId === "regularite" ? (
+          <ProgressionRegularityTab model={regularityModel} />
         ) : (
           <div className="card section progression-tab-placeholder">
             <EmptyState
