@@ -3,6 +3,8 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import PageLoadingState from "./components/PageLoadingState.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { RunSeeDataProvider } from "./context/RunSeeDataContext.jsx";
+import { ToastProvider } from "./context/ToastProvider.jsx";
+import { UserPreferencesProvider } from "./context/UserPreferencesProvider.jsx";
 import useAuth from "./hooks/useAuth.js";
 import AppLayout from "./layouts/AppLayout.jsx";
 
@@ -81,6 +83,18 @@ function AuthenticatedAppLayout() {
 export default function App() {
   return (
     <AuthProvider>
+      <UserPreferencesProvider>
+        <ToastProvider>
+          <AppRoutes />
+        </ToastProvider>
+      </UserPreferencesProvider>
+    </AuthProvider>
+  );
+}
+
+function AppRoutes() {
+  return (
+    <>
       <Routes>
         <Route
           path="/login"
@@ -176,6 +190,6 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </AuthProvider>
+    </>
   );
 }

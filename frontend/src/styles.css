@@ -16442,3 +16442,149 @@ button.alert-banner-positive-item {
 .reglages-about-mini strong, .reglages-about-glossary strong { display: block; font-size: 13px; color: #0f172a; margin-bottom: 4px; }
 .reglages-about-mini small, .reglages-about-glossary small { display: block; font-size: 12px; color: #475569; margin-bottom: 6px; line-height: 1.4; }
 .reglages-about-meta { display: block; font-size: 11px; color: #64748b; }
+
+/* ===========================================================================
+   PHASE 2 — Modales / Toasts / Préférences appliquées
+   =========================================================================== */
+
+/* Modal overlay */
+.reglages-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9000; padding: 16px;
+  animation: reglages-fade-in 0.15s ease-out;
+}
+@keyframes reglages-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.reglages-modal {
+  background: #fff; border-radius: 16px; padding: 24px;
+  width: 100%; max-width: 460px;
+  display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 24px 48px -16px rgba(15, 23, 42, 0.25);
+  animation: reglages-pop-in 0.18s ease-out;
+}
+.reglages-modal-wide { max-width: 640px; }
+@keyframes reglages-pop-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.reglages-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.reglages-modal-title { margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; }
+.reglages-modal-description { margin: 0; font-size: 13px; color: #475569; line-height: 1.5; }
+.reglages-modal-close {
+  background: none; border: none; cursor: pointer; font-size: 22px; line-height: 1;
+  color: #64748b; padding: 4px 10px; border-radius: 6px;
+}
+.reglages-modal-close:hover { background: #f1f5f9; color: #0f172a; }
+.reglages-modal-actions {
+  display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;
+  flex-wrap: wrap;
+}
+.reglages-modal-error {
+  background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+  padding: 10px 12px; border-radius: 8px; font-size: 12px;
+}
+
+/* Button danger */
+.reglages-btn-danger {
+  background: #ef4444; border-color: #ef4444; color: #fff;
+}
+.reglages-btn-danger:hover { background: #dc2626; border-color: #dc2626; }
+
+/* Field error */
+.reglages-field-error { color: #b91c1c; font-size: 11px; margin-top: 2px; }
+
+/* Password strength */
+.reglages-pwd-strength { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.reglages-pwd-strength-bar { display: block; width: 100%; height: 4px; background: #e5edf7; border-radius: 2px; overflow: hidden; }
+.reglages-pwd-strength-bar > span { display: block; height: 100%; border-radius: 2px; transition: width 0.2s, background 0.2s; background: #ef4444; }
+.reglages-pwd-strength-0 .reglages-pwd-strength-bar > span { background: #ef4444; }
+.reglages-pwd-strength-1 .reglages-pwd-strength-bar > span { background: #f97316; }
+.reglages-pwd-strength-2 .reglages-pwd-strength-bar > span { background: #eab308; }
+.reglages-pwd-strength-3 .reglages-pwd-strength-bar > span { background: #22c55e; }
+.reglages-pwd-strength-4 .reglages-pwd-strength-bar > span { background: #15803d; }
+.reglages-pwd-strength-5 .reglages-pwd-strength-bar > span { background: #15803d; }
+.reglages-pwd-strength-label { font-size: 11px; color: #64748b; min-width: 90px; text-align: right; }
+.reglages-pwd-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; cursor: pointer; }
+
+/* Sessions list */
+.reglages-sessions-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.reglages-sessions-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px;
+  padding: 12px 14px; border: 1px solid #e5edf7; border-radius: 8px; background: #fff;
+}
+.reglages-sessions-row.is-current { background: #f0fdf4; border-color: #bbf7d0; }
+.reglages-sessions-info strong { display: block; font-size: 13px; color: #0f172a; }
+.reglages-sessions-info small { display: block; font-size: 11px; color: #64748b; margin-top: 2px; }
+.reglages-sessions-current-badge {
+  padding: 2px 10px; border-radius: 999px; background: #dcfce7; color: #15803d;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Toast stack */
+.alpine-toast-stack {
+  position: fixed; bottom: 20px; right: 20px;
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 9500; pointer-events: none;
+}
+.alpine-toast {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-radius: 10px; min-width: 240px; max-width: 420px;
+  font-size: 13px; cursor: pointer; pointer-events: auto;
+  background: #fff; color: #0f172a;
+  box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.25);
+  border-left: 4px solid #94a3b8;
+  animation: reglages-slide-in 0.2s ease-out;
+}
+@keyframes reglages-slide-in {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.alpine-toast-success { border-left-color: #15803d; }
+.alpine-toast-error   { border-left-color: #ef4444; }
+.alpine-toast-warning { border-left-color: #f97316; }
+.alpine-toast-info    { border-left-color: #1268f3; }
+.alpine-toast-message { flex: 1; }
+.alpine-toast-close {
+  background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1;
+  color: #64748b; padding: 0 4px;
+}
+
+/* ============================================================
+   Theme : palette CSS variables — dark mode
+   ============================================================ */
+:root {
+  --al-bg: #f4f8ff;
+  --al-bg-panel: #fff;
+  --al-fg: #0f172a;
+  --al-fg-muted: #475569;
+  --al-fg-soft: #64748b;
+  --al-border: #e5edf7;
+  --al-primary: #1268f3;
+}
+:root[data-theme="dark"] {
+  --al-bg: #0f172a;
+  --al-bg-panel: #1e293b;
+  --al-fg: #e2e8f0;
+  --al-fg-muted: #cbd5e1;
+  --al-fg-soft: #94a3b8;
+  --al-border: #334155;
+  --al-primary: #60a5fa;
+  color-scheme: dark;
+}
+
+/* Apply theme to background + body (other components garderont leur palette
+   actuelle pour cette V1 ; dark mode complet est un chantier multi-onglets). */
+:root[data-theme="dark"] body { background: var(--al-bg); color: var(--al-fg); }
+
+/* ============================================================
+   Density compact — reduit paddings principaux des cartes
+   ============================================================ */
+:root[data-density="compact"] .reglages-card,
+:root[data-density="compact"] .progression-panel,
+:root[data-density="compact"] .alpine-kpi-card { padding: 10px 12px; }
+:root[data-density="compact"] .reglages-tab,
+:root[data-density="compact"] .progression-overview-tab,
+:root[data-density="compact"] .progression-volume-tab,
+:root[data-density="compact"] .progression-regularity-tab,
+:root[data-density="compact"] .progression-comparisons-tab { gap: 10px; }

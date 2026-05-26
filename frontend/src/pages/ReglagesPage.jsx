@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import AppShell from "../layouts/AppShell.jsx";
 import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
@@ -50,7 +50,9 @@ export default function ReglagesPage() {
   const garminAccount = garminStatus?.username || garminStatus?.account || "—";
   const garminLastSync = garminStatus?.lastSyncAt || "—";
 
-  const accountUser = useMemo(() => user || {}, [user]);
+  // AccountTab utilise useAuth() directement (refreshUser + logout)
+  // user reste utilisé pour le statut Strava ci-dessous.
+  void user;
 
   return (
     <AppShell
@@ -62,7 +64,7 @@ export default function ReglagesPage() {
         <SubTabs tabs={REGLAGES_TABS} defaultTabId="compte" />
 
         {activeTabId === "compte" ? (
-          <ReglagesAccountTab user={accountUser} />
+          <ReglagesAccountTab />
         ) : activeTabId === "connexions" ? (
           <ReglagesConnexionsTab
             stravaConnected={stravaConnected}
