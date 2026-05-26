@@ -15660,3 +15660,123 @@ button.alert-banner-positive-item {
     display: none;
   }
 }
+
+/* ===========================================================================
+   PAGE PROGRESSION — Onglet Volume (mockup p.18) — Lot Progression V1
+   =========================================================================== */
+.progression-page {
+  display: flex; flex-direction: column; gap: 16px;
+}
+.progression-volume-tab {
+  display: flex; flex-direction: column; gap: 16px;
+}
+.progression-tab-placeholder {
+  padding: 32px;
+}
+
+/* KPI Row (4 cartes) */
+.progression-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1024px) {
+  .progression-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .progression-kpi-row { grid-template-columns: 1fr; }
+}
+
+.progression-kpi-card {
+  background: #fff;
+  border: 1px solid #e5edf7;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 6px;
+  border-left: 3px solid #cbd5e1;
+}
+.progression-kpi-card-positive { border-left-color: #15803d; }
+.progression-kpi-card-warning  { border-left-color: #f97316; }
+.progression-kpi-card-neutral  { border-left-color: #94a3b8; }
+.progression-kpi-card-head {
+  display: flex; align-items: center; gap: 8px;
+}
+.progression-kpi-card-icon {
+  color: #1268f3; display: inline-flex;
+}
+.progression-kpi-card-label {
+  font-size: 12px; color: #64748b; font-weight: 500;
+}
+.progression-kpi-card-value {
+  font-size: 24px; font-weight: 700; color: #0f172a; line-height: 1.1;
+}
+.progression-kpi-card-delta {
+  font-size: 11px; font-weight: 500;
+}
+.progression-kpi-card-delta.tone-positive { color: #15803d; }
+.progression-kpi-card-delta.tone-warning  { color: #f97316; }
+.progression-kpi-card-delta.tone-neutral  { color: #64748b; }
+
+/* Charts Row : 3 charts en colonne (gauche) + rail droit "À retenir" */
+.progression-charts-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) minmax(260px, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.progression-charts-stack {
+  display: flex; flex-direction: column; gap: 12px; min-width: 0;
+}
+@media (max-width: 1024px) {
+  .progression-charts-row { grid-template-columns: 1fr; }
+}
+
+.progression-panel {
+  background: #fff;
+  border: 1px solid #e5edf7;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.progression-panel-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
+.progression-panel-head h3 {
+  margin: 0; font-size: 14px; font-weight: 600; color: #0f172a;
+}
+.progression-panel-sub {
+  font-size: 11px; color: #64748b;
+}
+.progression-weekly-chart-body,
+.progression-composition-chart-body {
+  width: 100%;
+}
+
+/* Takeaway right rail */
+.progression-takeaway-card {
+  position: sticky; top: 12px;
+}
+.progression-takeaway-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.progression-takeaway-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #94a3b8;
+}
+.progression-takeaway-item.tone-positive { border-left-color: #15803d; background: #f0fdf4; }
+.progression-takeaway-item.tone-warning  { border-left-color: #f97316; background: #fff7ed; }
+.progression-takeaway-icon {
+  color: #1268f3; flex-shrink: 0; display: inline-flex;
+}
+.progression-takeaway-item.tone-positive .progression-takeaway-icon { color: #15803d; }
+.progression-takeaway-item.tone-warning .progression-takeaway-icon  { color: #f97316; }
+.progression-takeaway-body strong {
+  display: block; font-size: 13px; color: #0f172a; margin-bottom: 2px;
+}
+.progression-takeaway-body p {
+  margin: 0; font-size: 12px; color: #475569; line-height: 1.4;
+}
