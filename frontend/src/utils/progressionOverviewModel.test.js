@@ -72,12 +72,12 @@ describe("buildProgressionOverviewModel", () => {
     expect(longest.mainText).toMatch(/30/);
   });
 
-  it("monthlyProgression : 12 points (Jan-Dec)", () => {
+  it("monthlyProgression : tronque aux mois ecoules (mai -> 5 mois)", () => {
     const m = buildProgressionOverviewModel({
       activities: [makeRun({ date: "2026-03-15", km: 10 })],
       referenceDate: new Date("2026-05-21"),
     });
-    expect(m.monthlyProgression.points).toHaveLength(12);
+    expect(m.monthlyProgression.points).toHaveLength(5);
     expect(m.monthlyProgression.points[2].distanceKm).toBeGreaterThan(0);
   });
 

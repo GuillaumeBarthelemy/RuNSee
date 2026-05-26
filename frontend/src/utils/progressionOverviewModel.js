@@ -418,9 +418,11 @@ function buildMonthlyProgression(activities, refDate) {
     }
   });
   const labels = ["Jan.", "Fév.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
+  // Tronque aux mois ecoules (inclus le mois en cours)
+  const lastMonthIdx = refDate.getMonth();
   return {
     year,
-    points: labels.map((label, i) => ({
+    points: labels.slice(0, lastMonthIdx + 1).map((label, i) => ({
       label,
       distanceKm: Number(monthsKm[i].toFixed(1)),
       elevationM: Math.round(monthsElev[i]),
@@ -585,21 +587,30 @@ function buildYearOverYearCharts(activities, refDate, goals) {
     return samples;
   }
 
+  // Semaine ISO en cours (0-based depuis le 1er janvier).
+  const currentYearStart = new Date(currentYear, 0, 1);
+  const currentWeekIdx = Math.min(
+    51,
+    Math.floor((refDate - currentYearStart) / (7 * MS_PER_DAY)),
+  );
+
   function buildChart(key, label, fieldFn, goal, formatter, color) {
     const current = cumulativeSeries(currentYear, fieldFn);
     const previous = cumulativeSeries(prevYear, fieldFn);
     // Goal line : interpolation lineaire 0 -> goal sur 52 semaines
+    // Pour annee courante : ligne "current" tronquee aux semaines passees
+    // (les semaines futures → null pour ne pas tracer de plateau plat).
     const points = current.map((c, i) => ({
       week: c.week,
       label: `S${i + 1}`,
-      current: c.value,
+      current: i <= currentWeekIdx ? c.value : null,
       previous: previous[i]?.value ?? null,
       objective: goal > 0 ? Number(((goal * (i + 1)) / 52).toFixed(1)) : null,
     }));
     return {
       key,
       label,
-      formattedCurrent: formatter(current[current.length - 1]?.value || 0),
+      formattedCurrent: formatter(current[currentWeekIdx]?.value || 0),
       points,
       color,
       colorPrevious: "#94a3b8",
