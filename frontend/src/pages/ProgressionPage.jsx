@@ -5,9 +5,11 @@ import AnalyticsCompactFilters from "../components/analytics/AnalyticsCompactFil
 import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import EmptyState from "../components/visuals/alpine/EmptyState.jsx";
 import ProgressionVolumeTab from "../components/progression/ProgressionVolumeTab.jsx";
+import ProgressionOverviewTab from "../components/progression/ProgressionOverviewTab.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import { filterActivities } from "../utils/activityAggregations.js";
 import { buildProgressionVolumeModel } from "../utils/progressionVolumeModel.js";
+import { buildProgressionOverviewModel } from "../utils/progressionOverviewModel.js";
 
 const PROGRESSION_TABS = [
   { id: "overview", label: "Vue d'ensemble" },
@@ -44,7 +46,7 @@ export default function ProgressionPage() {
 
   const location = useLocation();
   const hash = location.hash.replace(/^#/, "");
-  const activeTabId = PROGRESSION_TABS.some((t) => t.id === hash) ? hash : "volume";
+  const activeTabId = PROGRESSION_TABS.some((t) => t.id === hash) ? hash : "overview";
 
   // Filtres period appliques pour les KPIs (12 derniers mois override sharedRange
   // pour Volume — on prend la fenetre choisie par l'utilisateur).
@@ -72,6 +74,14 @@ export default function ProgressionPage() {
 
   const volumeModel = useMemo(
     () => buildProgressionVolumeModel({
+      activities: scopeActivities,
+      referenceDate: sharedRange.end,
+    }),
+    [scopeActivities, sharedRange.end],
+  );
+
+  const overviewModel = useMemo(
+    () => buildProgressionOverviewModel({
       activities: scopeActivities,
       referenceDate: sharedRange.end,
     }),
@@ -127,9 +137,11 @@ export default function ProgressionPage() {
           onReset={handleResetSharedFilters}
         />
 
-        <SubTabs tabs={PROGRESSION_TABS} defaultTabId="volume" />
+        <SubTabs tabs={PROGRESSION_TABS} defaultTabId="overview" />
 
-        {activeTabId === "volume" ? (
+        {activeTabId === "overview" ? (
+          <ProgressionOverviewTab model={overviewModel} />
+        ) : activeTabId === "volume" ? (
           <ProgressionVolumeTab model={volumeModel} />
         ) : (
           <div className="card section progression-tab-placeholder">
