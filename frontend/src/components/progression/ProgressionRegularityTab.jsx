@@ -43,7 +43,7 @@ function ProgressionRegularityTab({ model = {} }) {
           <ProgressionRegularityHeatmap data={model.heatmap || {}} />
           <div className="progression-regularity-row-3">
             <ProgressionWeeklyFrequencyChart data={model.weeklyFrequency || []} />
-            <ProgressionWeekdayBreakdown items={model.weekdayBreakdown || []} />
+            <ProgressionWeekdayBreakdown data={model.weekdayBreakdown || {}} />
           </div>
           <ProgressionStreakTimeline data={model.streakTimeline || {}} />
         </div>

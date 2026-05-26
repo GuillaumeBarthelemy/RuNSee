@@ -257,20 +257,58 @@ function buildWeeklyFrequency(weeklyBuckets) {
 
 /**
  * 4. Repartition par jour de la semaine — % sorties.
+ *
+ * Calcul :
+ *   - On compte les activites par jour de la semaine (Lun=0, ..., Dim=6) sur
+ *     la periode d'analyse (toutes les activites passees en parametre).
+ *   - On calcule un % brut a 2 decimales.
+ *   - Ajustement final pour que la somme des % arrondis = 100 (correction
+ *     sur le plus gros residu).
  */
 function buildWeekdayBreakdown(activities) {
   const buckets = [0, 0, 0, 0, 0, 0, 0];
-  (Array.isArray(activities) ? activities : []).forEach((a) => {
+  const acts = Array.isArray(activities) ? activities : [];
+  acts.forEach((a) => {
     const d = safeDate(a?.startDateLocal || a?.startDate);
     if (d) buckets[weekdayIndex(d)] += 1;
   });
   const total = buckets.reduce((s, v) => s + v, 0);
   const labels = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-  return labels.map((label, i) => ({
-    label,
-    count: buckets[i],
-    percent: total > 0 ? Math.round((buckets[i] / total) * 100) : 0,
-  }));
+  const shortLabels = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  if (total === 0) {
+    return {
+      items: labels.map((label, i) => ({ label, shortLabel: shortLabels[i], count: 0, percent: 0 })),
+      total: 0,
+    };
+  }
+  // % brut
+  const raw = buckets.map((c) => (c / total) * 100);
+  // Arrondi
+  const rounded = raw.map((v) => Math.round(v));
+  // Correction : ajuste l'arrondi le plus gros residu pour que la somme = 100
+  const sum = rounded.reduce((s, v) => s + v, 0);
+  if (sum !== 100) {
+    const diff = 100 - sum;
+    // Trouve l'index du plus gros (count > 0) pour absorber la difference
+    let bestIdx = -1;
+    let bestVal = -1;
+    for (let i = 0; i < rounded.length; i += 1) {
+      if (buckets[i] > 0 && rounded[i] > bestVal) {
+        bestVal = rounded[i];
+        bestIdx = i;
+      }
+    }
+    if (bestIdx >= 0) rounded[bestIdx] += diff;
+  }
+  return {
+    items: labels.map((label, i) => ({
+      label,
+      shortLabel: shortLabels[i],
+      count: buckets[i],
+      percent: rounded[i],
+    })),
+    total,
+  };
 }
 
 /**
@@ -450,12 +488,14 @@ export function buildProgressionRegularityModel({
   // Frequence hebdo (26 dernieres semaines)
   const weeklyFrequency = buildWeeklyFrequency(weeklyBuckets);
 
-  // Repartition par jour
-  const acts26w = runs.filter((a) => {
+  // Repartition par jour : toutes les sorties de la periode d'analyse
+  // (alignement avec les KPIs / streak / weekly buckets)
+  const actsInPeriod = runs.filter((a) => {
     const d = safeDate(a?.startDateLocal || a?.startDate);
-    return d && d >= new Date(ref.getTime() - WEEKLY_FREQUENCY_WEEKS * 7 * MS_PER_DAY);
+    return d && d >= periodStart && d <= periodEnd;
   });
-  const weekdayBreakdown = buildWeekdayBreakdown(acts26w);
+  const weekdayBreakdown = buildWeekdayBreakdown(actsInPeriod);
+  weekdayBreakdown.periodWeeks = weeklyBuckets.length;
 
   // Timeline des series
   const streakTimeline = buildStreakTimeline(weeklyBuckets, ref);

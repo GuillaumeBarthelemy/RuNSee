@@ -56,7 +56,7 @@ describe("buildProgressionRegularityModel", () => {
     expect(m.weeklyFrequency[0]).toHaveProperty("rolling");
   });
 
-  it("weekdayBreakdown : 7 jours avec %", () => {
+  it("weekdayBreakdown : 7 jours avec %, somme = 100", () => {
     const m = buildProgressionRegularityModel({
       activities: [
         makeRun({ date: "2026-05-04" }), // lundi
@@ -65,9 +65,14 @@ describe("buildProgressionRegularityModel", () => {
       ],
       referenceDate: new Date("2026-05-21"),
     });
-    expect(m.weekdayBreakdown).toHaveLength(7);
-    const lundi = m.weekdayBreakdown.find((d) => d.label === "Lundi");
+    expect(m.weekdayBreakdown.items).toHaveLength(7);
+    const lundi = m.weekdayBreakdown.items.find((d) => d.label === "Lundi");
     expect(lundi.percent).toBeGreaterThan(0);
+    expect(lundi.shortLabel).toBe("Lun");
+    // Somme des % = 100 (sauf si total=0)
+    const sum = m.weekdayBreakdown.items.reduce((s, d) => s + d.percent, 0);
+    expect(sum).toBe(100);
+    expect(m.weekdayBreakdown.total).toBe(3);
   });
 
   it("streakTimeline : streaks + cells", () => {
