@@ -15,7 +15,7 @@ function ProgressionMonthlyChart({ data = {} }) {
         <h3>Progression mensuelle</h3>
         <span className="progression-panel-sub">{year}</span>
       </div>
-      <ResponsiveContainer width="100%" height={220}>
+      <ResponsiveContainer width="100%" height="100%" minHeight={260}>
         <BarChart data={points} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="#e5edf7" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#64748b" }} tickLine={false} axisLine={{ stroke: "#e5edf7" }} />

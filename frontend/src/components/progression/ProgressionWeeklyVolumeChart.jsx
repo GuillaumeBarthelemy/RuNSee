@@ -18,7 +18,7 @@ function ProgressionWeeklyVolumeChart({ data = {} }) {
       </div>
       <div className="progression-weekly-volume-body">
         <div className="progression-weekly-volume-chart">
-          <ResponsiveContainer width="100%" height={240}>
+          <ResponsiveContainer width="100%" height="100%" minHeight={240}>
             <LineChart data={points} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
               <CartesianGrid stroke="#e5edf7" strokeDasharray="3 3" vertical={false} />
               <XAxis
