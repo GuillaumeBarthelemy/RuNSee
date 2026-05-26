@@ -17003,3 +17003,211 @@ button.alert-banner-positive-item {
 }
 :root[data-theme="dark"] [class*="-conseil-du-jour"] strong,
 :root[data-theme="dark"] [class*="-coach-advice"] strong { color: var(--al-text); }
+
+/* ============================================================
+   DARK MODE — FINAL POLISH : ecarts mineurs identifies
+   ============================================================ */
+
+/* --- Performance specifics : pace card, metric card, zone donut, etc. */
+:root[data-theme="dark"] .performance-pace-card,
+:root[data-theme="dark"] .performance-metric-card,
+:root[data-theme="dark"] .performance-metric-card.performance-tone-danger,
+:root[data-theme="dark"] .performance-metric-card.performance-tone-warning,
+:root[data-theme="dark"] .performance-takeaway-card,
+:root[data-theme="dark"] .performance-trend-signal-select,
+:root[data-theme="dark"] .performance-records-confidence,
+:root[data-theme="dark"] .performance-records-history-footer,
+:root[data-theme="dark"] .performance-empty-state,
+:root[data-theme="dark"] .performance-best-times-empty,
+:root[data-theme="dark"] .performance-allures-pace-grid > * {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+  color: var(--al-text);
+}
+
+:root[data-theme="dark"] .performance-zone-donut > div { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+:root[data-theme="dark"] .performance-records-confidence.tone-positive {
+  background: rgba(74, 222, 128, 0.14); color: #6ee7b7;
+}
+:root[data-theme="dark"] .performance-records-history-footer { color: var(--al-muted); }
+
+/* --- Today / sidebar ATL/CTL block ---------------------------- */
+:root[data-theme="dark"] .today-scope-select,
+:root[data-theme="dark"] .today-useful-metrics span,
+:root[data-theme="dark"] .today-useful-metrics > *,
+:root[data-theme="dark"] [class*="today-"] {
+  background: var(--al-surface-soft);
+  color: var(--al-text-soft);
+  border-color: var(--al-border);
+}
+:root[data-theme="dark"] [class*="today-"] strong { color: var(--al-text); }
+
+/* --- Analytics : panels et états ATL/CTL ---------------------- */
+:root[data-theme="dark"] .analytics-state-panel,
+:root[data-theme="dark"] .analytics-fatigue-state,
+:root[data-theme="dark"] .analytics-current-state,
+:root[data-theme="dark"] [class*="analytics-state"],
+:root[data-theme="dark"] [class*="analytics-fatigue-relative"] {
+  background: var(--al-surface);
+  color: var(--al-text);
+}
+:root[data-theme="dark"] [class*="analytics-fatigue-relative"] strong { color: var(--al-text); }
+
+/* --- Filtres topbar (AnalyticsCompactFilters) ----------------- */
+:root[data-theme="dark"] .alpine-activities-filter,
+:root[data-theme="dark"] .alpine-activities-filterbar,
+:root[data-theme="dark"] .alpine-activities-filterbar > * {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+  color: var(--al-text);
+}
+:root[data-theme="dark"] .alpine-activities-filter input,
+:root[data-theme="dark"] .alpine-activities-filter select,
+:root[data-theme="dark"] [class*="compact-filter"] input,
+:root[data-theme="dark"] [class*="compact-filter"] select,
+:root[data-theme="dark"] [class*="compact-filter"] button { background: var(--al-surface-soft); border-color: var(--al-border); color: var(--al-text); }
+:root[data-theme="dark"] [class*="compact-filter-period"] button.is-active,
+:root[data-theme="dark"] [class*="period-pill"].is-active { background: var(--al-primary); color: #07101f; border-color: var(--al-primary); }
+
+/* --- Reset / Period / dropdown buttons in topbar -------------- */
+:root[data-theme="dark"] button[class*="reset"],
+:root[data-theme="dark"] button[class*="period"],
+:root[data-theme="dark"] [class*="dropdown-menu"],
+:root[data-theme="dark"] [class*="popover"],
+:root[data-theme="dark"] [class*="datepicker"] {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+  color: var(--al-text);
+}
+
+/* --- Progression KPI / panel : on cible explicitement ------- */
+:root[data-theme="dark"] .progression-kpi-card,
+:root[data-theme="dark"] .progression-panel,
+:root[data-theme="dark"] .progression-annual-kpi-card,
+:root[data-theme="dark"] .progression-comparisons-kpi-card,
+:root[data-theme="dark"] .progression-regularity-kpi-card {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+}
+
+/* --- Cards "Today useful metrics" sidebar / topbar ----------- */
+:root[data-theme="dark"] .alpine-sidebar-cards .today-useful-metrics > *,
+:root[data-theme="dark"] .alpine-coach-bar.alpine-coach-bar-neutral { background: var(--al-surface-soft); color: var(--al-text-soft); }
+:root[data-theme="dark"] .alpine-coach-bar.alpine-coach-bar-success { background: rgba(74, 222, 128, 0.12); }
+:root[data-theme="dark"] .alpine-coach-bar.alpine-coach-bar-warning { background: rgba(251, 146, 60, 0.12); }
+:root[data-theme="dark"] .alpine-coach-bar-title { color: var(--al-text); }
+:root[data-theme="dark"] .alpine-coach-bar-message { color: var(--al-text-soft); }
+
+/* --- Coach bars & advice : icones / actions ------------------ */
+:root[data-theme="dark"] .alpine-coach-bar-icon { background: var(--al-primary-soft); color: var(--al-primary); }
+:root[data-theme="dark"] .alpine-coach-bar-action {
+  background: var(--al-primary); color: #07101f; border-color: var(--al-primary);
+}
+:root[data-theme="dark"] .alpine-coach-bar-action:hover { background: var(--al-primary-stronger); }
+
+/* --- Sidebar bottom : conseil card et objective card -------- */
+:root[data-theme="dark"] .alpine-sidebar-advice-card {
+  background: var(--al-primary-soft);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+:root[data-theme="dark"] .alpine-sidebar-advice-title { color: var(--al-primary-stronger); }
+:root[data-theme="dark"] .alpine-sidebar-advice-text { color: var(--al-text-soft); }
+:root[data-theme="dark"] .alpine-sidebar-advice-link { color: var(--al-primary); }
+:root[data-theme="dark"] .alpine-sidebar-objective-card { background: var(--al-surface-soft); border-color: var(--al-border); }
+:root[data-theme="dark"] .alpine-sidebar-objective-icon { background: var(--al-primary-soft); color: var(--al-primary); }
+:root[data-theme="dark"] .alpine-sidebar-objective-kicker { color: var(--al-muted); }
+:root[data-theme="dark"] .alpine-sidebar-objective-text strong { color: var(--al-text); }
+:root[data-theme="dark"] .alpine-sidebar-objective-text span { color: var(--al-text-soft); }
+
+/* --- UserMenu sidebar bottom --------------------------------- */
+:root[data-theme="dark"] .alpine-user-menu,
+:root[data-theme="dark"] [class*="user-menu"] {
+  background: transparent; color: var(--al-text-soft);
+}
+:root[data-theme="dark"] [class*="user-menu"] strong { color: var(--al-text); }
+:root[data-theme="dark"] [class*="user-menu"][class*="-popover"] {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+  box-shadow: var(--al-shadow-strong);
+}
+
+/* --- Empty states divers ------------------------------------ */
+:root[data-theme="dark"] [class*="-empty"]:not([class*="-empty-icon"]):not([class*="-empty-content"]) {
+  background: var(--al-surface-soft);
+  color: var(--al-muted);
+  border-color: var(--al-border);
+}
+
+/* --- Inline tooltips Recharts custom (PerformanceTrendChart) - */
+:root[data-theme="dark"] .performance-trend-tooltip,
+:root[data-theme="dark"] [class*="trend-tooltip"],
+:root[data-theme="dark"] [class*="-tooltip-card"],
+:root[data-theme="dark"] [class*="custom-tooltip"] {
+  background: var(--al-surface);
+  border: 1px solid var(--al-border);
+  color: var(--al-text);
+  box-shadow: var(--al-shadow-strong);
+}
+
+/* --- AppLayout / shell container ---------------------------- */
+:root[data-theme="dark"] .alpine-app-layout,
+:root[data-theme="dark"] [class*="app-layout"],
+:root[data-theme="dark"] [class*="shell-grid"] {
+  background: var(--al-bg);
+}
+
+/* --- Performance trend signal select ------------------------ */
+:root[data-theme="dark"] .performance-trend-signal-select {
+  background: var(--al-surface-soft);
+  color: var(--al-text);
+  border-color: var(--al-border);
+}
+
+/* --- Donuts dans Analyse : strokes + center text ------------ */
+:root[data-theme="dark"] [class*="-donut"] .recharts-pie-sector path { stroke: var(--al-surface) !important; }
+:root[data-theme="dark"] [class*="-donut"] text { fill: var(--al-text) !important; }
+:root[data-theme="dark"] [class*="-donut-center"],
+:root[data-theme="dark"] [class*="-donut-center"] strong,
+:root[data-theme="dark"] [class*="-donut-label"] { color: var(--al-text); }
+
+/* --- Indicators / status / records icons -------------------- */
+:root[data-theme="dark"] [class*="-confidence-text"] { color: var(--al-text-soft); }
+:root[data-theme="dark"] .performance-records-history-footer { color: var(--al-muted); }
+:root[data-theme="dark"] [class*="-records-confidence"].tone-warning { background: rgba(251, 146, 60, 0.14); color: #fdba74; }
+
+/* --- Bars de progression (slider charge/fatigue/volume) ----- */
+:root[data-theme="dark"] [class*="slider-track"],
+:root[data-theme="dark"] [class*="-bar-bg"],
+:root[data-theme="dark"] [class*="-track-bg"] {
+  background: var(--al-surface-soft);
+}
+
+/* --- Borders generiques sur layout -------------------------- */
+:root[data-theme="dark"] header,
+:root[data-theme="dark"] footer,
+:root[data-theme="dark"] aside { border-color: var(--al-border); }
+
+/* --- Forcage final : tout fond #fff via attribute --------- */
+:root[data-theme="dark"] [class*="-card"]:not([class*="-card-icon"]):not([class*="-card-meta"]),
+:root[data-theme="dark"] [class*="-panel"]:not([class*="-panel-head"]):not([class*="-panel-sub"]),
+:root[data-theme="dark"] [class*="-row-card"],
+:root[data-theme="dark"] [class*="-row-panel"] {
+  background-color: var(--al-surface);
+}
+:root[data-theme="dark"] [class*="-card-row"]:not([class*="-card-row-foot"]),
+:root[data-theme="dark"] [class*="-table-row"] {
+  background-color: transparent;
+}
+
+/* --- Liste activites cards / activity-card / detail --------- */
+:root[data-theme="dark"] .alpine-activity-card,
+:root[data-theme="dark"] .alpine-activity-card--clickable,
+:root[data-theme="dark"] [class*="activity-card"] {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] [class*="activity-card-title"],
+:root[data-theme="dark"] [class*="activity-card-stats"] strong { color: var(--al-text); }
+:root[data-theme="dark"] [class*="activity-card-icon"] { background: var(--al-primary-soft); color: var(--al-primary); }
+:root[data-theme="dark"] .alpine-activity-group-label { color: var(--al-muted); }
