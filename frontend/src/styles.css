@@ -15878,16 +15878,15 @@ button.alert-banner-positive-item {
 .progression-highlights-link { font-size: 12px; color: #1268f3; text-decoration: none; display: inline-block; margin-top: 6px; }
 .progression-highlights-link:hover { text-decoration: underline; }
 
-/* Row 3 */
+/* Row 3 — Progression mensuelle (large) | Régularité */
 .progression-overview-row-3 {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
 }
-@media (max-width: 1280px) {
-  .progression-overview-row-3 { grid-template-columns: 1fr 1fr; }
-  .progression-monthly-card { grid-column: 1 / -1; }
+.progression-overview-row-3 > .progression-panel {
+  height: 100%;
 }
 @media (max-width: 768px) {
   .progression-overview-row-3 { grid-template-columns: 1fr; }

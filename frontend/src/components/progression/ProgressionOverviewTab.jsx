@@ -6,7 +6,6 @@ import ProgressionCumulativeProgressCard from "./ProgressionCumulativeProgressCa
 import ProgressionHighlightsCard from "./ProgressionHighlightsCard.jsx";
 import ProgressionMonthlyChart from "./ProgressionMonthlyChart.jsx";
 import ProgressionRegularityCard from "./ProgressionRegularityCard.jsx";
-import ProgressionLongTermTrendsCard from "./ProgressionLongTermTrendsCard.jsx";
 import ProgressionYoyChartsRow from "./ProgressionYoyChartsRow.jsx";
 
 /**
@@ -51,11 +50,10 @@ function ProgressionOverviewTab({ model = {} }) {
         <ProgressionHighlightsCard items={model.highlights || []} />
       </div>
 
-      {/* Row 3 — Progression mensuelle | Régularité | Tendances */}
+      {/* Row 3 — Progression mensuelle | Régularité */}
       <div className="progression-overview-row-3">
         <ProgressionMonthlyChart data={model.monthlyProgression || {}} />
         <ProgressionRegularityCard data={model.regularity || {}} />
-        <ProgressionLongTermTrendsCard items={model.longTermTrends || []} />
       </div>
 
       {/* Row 4 — Évolution YoY */}

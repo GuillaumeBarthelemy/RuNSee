@@ -98,11 +98,17 @@ function activitiesInRange(activities, start, end) {
  */
 function buildCumulAnnuel(activities, refDate) {
   const yearStart = startOfYear(refDate);
-  const yearEnd = endOfYear(refDate);
-  const prevYearStart = startOfYear(new Date(refDate.getFullYear() - 1, 0, 1));
-  const prevYearEnd = endOfYear(new Date(refDate.getFullYear() - 1, 0, 1));
+  // Compare a meme date l'an dernier (year-to-date) pour une comparaison juste :
+  // pas 2026 partiel (5 mois) vs 2025 complet (12 mois).
+  const prevYearStart = new Date(refDate.getFullYear() - 1, 0, 1);
+  const prevYearEnd = new Date(
+    refDate.getFullYear() - 1,
+    refDate.getMonth(),
+    refDate.getDate(),
+    23, 59, 59,
+  );
 
-  const currentActs = activitiesInRange(activities, yearStart, yearEnd);
+  const currentActs = activitiesInRange(activities, yearStart, refDate);
   const prevActs = activitiesInRange(activities, prevYearStart, prevYearEnd);
 
   const totalKm = (acts) => acts.reduce((s, a) => s + toFiniteNumber(a.distance) / 1000, 0);
@@ -158,7 +164,7 @@ function buildCumulAnnuel(activities, refDate) {
       label: "Distance",
       iconKey: "location",
       formattedValue: formatKm(curr.distance),
-      formattedDelta: `${formatSignedPercent(deltaPct(curr.distance, prev.distance))} vs ${prevYear}`,
+      formattedDelta: `${formatSignedPercent(deltaPct(curr.distance, prev.distance))} vs ${prevYear} (YTD)`,
       tone: curr.distance >= prev.distance ? "positive" : "warning",
       sparkline: monthlySpark((a) => toFiniteNumber(a.distance) / 1000),
       color: "#1268f3",
@@ -168,7 +174,7 @@ function buildCumulAnnuel(activities, refDate) {
       label: "Temps",
       iconKey: "clock",
       formattedValue: formatHM(curr.hours),
-      formattedDelta: `${formatSignedPercent(deltaPct(curr.hours, prev.hours))} vs ${prevYear}`,
+      formattedDelta: `${formatSignedPercent(deltaPct(curr.hours, prev.hours))} vs ${prevYear} (YTD)`,
       tone: curr.hours >= prev.hours ? "positive" : "warning",
       sparkline: monthlySpark((a) => toFiniteNumber(a.movingTime) / 3600),
       color: "#7c3aed",
@@ -178,7 +184,7 @@ function buildCumulAnnuel(activities, refDate) {
       label: "Dénivelé+",
       iconKey: "mountain",
       formattedValue: formatMeters(curr.elev),
-      formattedDelta: `${formatSignedPercent(deltaPct(curr.elev, prev.elev))} vs ${prevYear}`,
+      formattedDelta: `${formatSignedPercent(deltaPct(curr.elev, prev.elev))} vs ${prevYear} (YTD)`,
       tone: curr.elev >= prev.elev ? "positive" : "warning",
       sparkline: monthlySpark((a) => toFiniteNumber(a.totalElevationGain ?? a.elevationGain)),
       color: "#a855f7",
@@ -188,7 +194,7 @@ function buildCumulAnnuel(activities, refDate) {
       label: "Activités",
       iconKey: "runner",
       formattedValue: formatInt(curr.count),
-      formattedDelta: `${formatSignedPercent(deltaPct(curr.count, prev.count))} vs ${prevYear}`,
+      formattedDelta: `${formatSignedPercent(deltaPct(curr.count, prev.count))} vs ${prevYear} (YTD)`,
       tone: curr.count >= prev.count ? "positive" : "warning",
       sparkline: monthlySpark(() => 1),
       color: "#f97316",
@@ -198,7 +204,7 @@ function buildCumulAnnuel(activities, refDate) {
       label: "Jours actifs",
       iconKey: "calendar",
       formattedValue: formatInt(curr.activeDays),
-      formattedDelta: `${formatSignedPercent(deltaPct(curr.activeDays, prev.activeDays))} vs ${prevYear}`,
+      formattedDelta: `${formatSignedPercent(deltaPct(curr.activeDays, prev.activeDays))} vs ${prevYear} (YTD)`,
       tone: curr.activeDays >= prev.activeDays ? "positive" : "warning",
       // Sparkline jours actifs par mois
       sparkline: (() => {
@@ -219,7 +225,7 @@ function buildCumulAnnuel(activities, refDate) {
       iconKey: "heart",
       formattedValue: curr.avgHr > 0 ? `${Math.round(curr.avgHr)} bpm` : "—",
       formattedDelta: prev.avgHr > 0 && curr.avgHr > 0
-        ? `${formatSignedBpm(curr.avgHr - prev.avgHr)} vs ${prevYear}`
+        ? `${formatSignedBpm(curr.avgHr - prev.avgHr)} vs ${prevYear} (YTD)`
         : "—",
       // FC en baisse = signe d'amelioration cardiaque -> positive
       tone: curr.avgHr > 0 && prev.avgHr > 0
