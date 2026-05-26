@@ -11,6 +11,14 @@ import {
   saveStravaApp,
   signup,
 } from "../controllers/auth.controller.js";
+import {
+  deleteSession,
+  getSessions,
+  patchMe,
+  patchPreferences,
+  postPassword,
+  postRevokeOtherSessions,
+} from "../controllers/account.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -19,6 +27,12 @@ router.post("/signup", signup);
 router.post("/login", loginWithPassword);
 router.post("/logout", requireAuth, logout);
 router.get("/me", requireAuth, me);
+router.patch("/me", requireAuth, patchMe);
+router.patch("/preferences", requireAuth, patchPreferences);
+router.post("/password", requireAuth, postPassword);
+router.get("/sessions", requireAuth, getSessions);
+router.delete("/sessions/:id", requireAuth, deleteSession);
+router.post("/sessions/revoke-others", requireAuth, postRevokeOtherSessions);
 router.get("/strava/app", requireAuth, getStravaApp);
 router.put("/strava/app", requireAuth, saveStravaApp);
 router.delete("/strava/app", requireAuth, deleteStravaApp);

@@ -26,7 +26,14 @@ export function serializeAuthUser(
   return {
     id: appUser.id,
     displayName: appUser.displayName,
+    firstName: appUser.firstName || "",
+    lastName: appUser.lastName || "",
     email: appUser.email || "",
+    language: appUser.language || "fr",
+    timezone: appUser.timezone || "Europe/Paris",
+    themePreference: appUser.themePreference || "light",
+    unitsPreference: appUser.unitsPreference || "metric",
+    densityPreference: appUser.densityPreference || "comfort",
     role: appUser.role || "user",
     status: appUser.status || "active",
     lastLoginAt: appUser.lastLoginAt,
@@ -74,7 +81,7 @@ function validateEmail(email) {
   };
 }
 
-function validatePassword(password) {
+export function validatePassword(password) {
   const value = String(password || "");
 
   if (value.length < 8) {

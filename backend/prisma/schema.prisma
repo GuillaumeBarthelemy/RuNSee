@@ -12,6 +12,13 @@ model AppUser {
   emailNormalized String?            @unique
   passwordHash    String?
   displayName     String
+  firstName       String?
+  lastName        String?
+  language        String             @default("fr")
+  timezone        String             @default("Europe/Paris")
+  themePreference String             @default("light")
+  unitsPreference String             @default("metric")
+  densityPreference String           @default("comfort")
   role            String             @default("user")
   status          String             @default("active")
   lastLoginAt     DateTime?
