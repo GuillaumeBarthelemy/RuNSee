@@ -35,9 +35,8 @@ function MetricBlock({ block }) {
  * Dénivelé positif + Dénivelé / km, annee courante vs N-1.
  */
 function ProgressionTerrainElevationCard({ data = {} }) {
-  const year = new Date().getFullYear();
-  const elev = data?.elevation ? { ...data.elevation, yearCurr: year, yearPrev: year - 1 } : null;
-  const elevPerKm = data?.elevationPerKm ? { ...data.elevationPerKm, yearCurr: year, yearPrev: year - 1 } : null;
+  const elev = data?.elevation || null;
+  const elevPerKm = data?.elevationPerKm || null;
   return (
     <section className="progression-panel progression-terrain-card">
       <div className="progression-panel-head">

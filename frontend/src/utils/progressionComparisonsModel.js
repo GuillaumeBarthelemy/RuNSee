@@ -3,11 +3,11 @@
  * `Progression > Comparaisons` (page 20 du mockup).
  *
  * Sections livrees :
- *   1. kpi : 4 cartes (vs N-1 / vs 12 dernieres sem / Trail specifique / Équilibre route-trail)
- *   2. monthlyComparison : line chart 12 mois annee courante vs N-1 + footer (cumul + projection)
+ *   1. kpi : 4 cartes (vs ${prevYear} / vs 12 dernieres sem / Trail specifique / Équilibre route-trail)
+ *   2. monthlyComparison : line chart 12 mois annee courante vs ${prevYear} + footer (cumul + projection)
  *   3. twelveWeeksComparison : bar chart 12 sem courantes vs precedentes + footer (ecart)
- *   4. sportBreakdown : 2 donuts (annee courante vs N-1) + evolution par sport
- *   5. terrainElevation : progress bars D+ et D+/km annee courante vs N-1
+ *   4. sportBreakdown : 2 donuts (annee courante vs ${prevYear}) + evolution par sport
+ *   5. terrainElevation : progress bars D+ et D+/km annee courante vs ${prevYear}
  *   6. progressItems : "Ce qui progresse" (verts)
  *   7. watchItems : "À surveiller" (orange)
  *   8. coachAdvice : conseil du coach
@@ -108,8 +108,8 @@ const SPORT_META = {
 /**
  * 1. KPI : 4 cartes.
  */
-function buildKpi(currentYearActs, prevYearActs, last12wActs, prev12wActs, refDate) {
-  const prevYear = refDate.getFullYear() - 1;
+function buildKpi(currentYearActs, prevYearActs, last12wActs, prev12wActs, refDate, comparisonYearOffset = 1) {
+  const prevYear = refDate.getFullYear() - comparisonYearOffset;
   const prevMonthName = new Date(prevYear, refDate.getMonth(), 1).toLocaleDateString("fr-FR", { month: "long" });
 
   // Volume YTD vs YTD N-1
@@ -137,7 +137,7 @@ function buildKpi(currentYearActs, prevYearActs, last12wActs, prev12wActs, refDa
   const trailRouteTotal = routeKm + trailKm;
   const routePct = trailRouteTotal > 0 ? Math.round((routeKm / trailRouteTotal) * 100) : 0;
   const trailPct = trailRouteTotal > 0 ? 100 - routePct : 0;
-  // Delta : evolution du % trail vs N-1
+  // Delta : evolution du % trail vs ${prevYear}
   const prevRouteKm = totalKm(prevYearActs.filter((a) => {
     const c = categorizeSport(a);
     return c === "course" || c === "autre";
@@ -150,7 +150,7 @@ function buildKpi(currentYearActs, prevYearActs, last12wActs, prev12wActs, refDa
     {
       key: "vs_n1",
       iconKey: "trend",
-      label: `vs N-1 (${prevMonthName} ${prevYear})`,
+      label: `vs ${prevYear} (${prevMonthName})`,
       formattedValue: formatSignedPercent(ytdDelta),
       sublabel: "Volume",
       formattedHint: formatSignedKm(currKm - prevKm),
@@ -171,7 +171,7 @@ function buildKpi(currentYearActs, prevYearActs, last12wActs, prev12wActs, refDa
       label: "Trail spécifique",
       formattedValue: `${Math.round(trailPctNow)} %`,
       sublabel: "du volume",
-      formattedHint: `${formatSignedPts(trailDeltaPts)} vs N-1`,
+      formattedHint: `${formatSignedPts(trailDeltaPts)} vs ${prevYear}`,
       tone: trailDeltaPts >= 0 ? "positive" : "warning",
     },
     {
@@ -180,18 +180,18 @@ function buildKpi(currentYearActs, prevYearActs, last12wActs, prev12wActs, refDa
       label: "Équilibre route / trail",
       formattedValue: `${routePct} % / ${trailPct} %`,
       sublabel: "Route / Trail",
-      formattedHint: `${formatSignedPts(balanceDeltaPts)} trail vs N-1`,
+      formattedHint: `${formatSignedPts(balanceDeltaPts)} trail vs ${prevYear}`,
       tone: balanceDeltaPts >= 0 ? "positive" : "warning",
     },
   ];
 }
 
 /**
- * 2. Comparaison mensuelle : 12 mois annee courante vs N-1.
+ * 2. Comparaison mensuelle : 12 mois annee courante vs ${prevYear}.
  */
-function buildMonthlyComparison(activities, refDate) {
+function buildMonthlyComparison(activities, refDate, comparisonYearOffset = 1, availableOffsets = [1]) {
   const year = refDate.getFullYear();
-  const prevYear = year - 1;
+  const prevYear = year - comparisonYearOffset;
   function monthsKm(y) {
     const arr = new Array(12).fill(0);
     activities.forEach((a) => {
@@ -205,11 +205,24 @@ function buildMonthlyComparison(activities, refDate) {
   const prevMonths = monthsKm(prevYear);
   // current line tronquee aux mois ecoules pour eviter chute a zero
   const lastMonthIdx = refDate.getMonth();
-  const points = labels.map((label, i) => ({
-    label,
-    current: i <= lastMonthIdx ? currMonths[i] : null,
-    previous: prevMonths[i],
-  }));
+
+  // Bonus : overlay multi-annees pour les *autres* annees disponibles
+  // (toutes celles dans availableOffsets sauf l'annee comparee active)
+  const overlayYears = availableOffsets
+    .filter((o) => o !== comparisonYearOffset)
+    .map((o) => ({ offset: o, year: year - o, months: monthsKm(year - o) }));
+
+  const points = labels.map((label, i) => {
+    const point = {
+      label,
+      current: i <= lastMonthIdx ? currMonths[i] : null,
+      previous: prevMonths[i],
+    };
+    overlayYears.forEach((ov) => {
+      point[`overlay_${ov.year}`] = ov.months[i];
+    });
+    return point;
+  });
 
   // YTD cumul courant + N-1 ; projection annuelle
   const ytdCurrent = currMonths.slice(0, lastMonthIdx + 1).reduce((s, v) => s + v, 0);
@@ -222,6 +235,7 @@ function buildMonthlyComparison(activities, refDate) {
   return {
     year,
     prevYear,
+    overlayYears: overlayYears.map((ov) => ov.year),
     points,
     ytdCurrent,
     ytdPrev,
@@ -301,7 +315,7 @@ function buildTwelveWeeksComparison(activities, refDate) {
 /**
  * 4. Repartition par sport — 2 donuts (annee courante / N-1) + evolutions.
  */
-function buildSportBreakdown(currentYearActs, prevYearActs, refDate) {
+function buildSportBreakdown(currentYearActs, prevYearActs, refDate, comparisonYearOffset = 1) {
   function breakdown(acts) {
     const totals = { trail: 0, course: 0, randonnee: 0, autre: 0 };
     acts.forEach((a) => {
@@ -336,15 +350,17 @@ function buildSportBreakdown(currentYearActs, prevYearActs, refDate) {
 
   return {
     current: { ...current, label: `${year}`, subLabel: `1 janv. – ${refDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}` },
-    previous: { ...previous, label: `${year - 1}`, subLabel: `1 janv. – 31 déc.` },
+    previous: { ...previous, label: `${year - comparisonYearOffset}`, subLabel: `1 janv. – 31 déc.` },
     evolutions,
   };
 }
 
 /**
- * 5. Terrain & denivelé : D+ et D+/km, annee courante vs N-1.
+ * 5. Terrain & denivelé : D+ et D+/km, annee courante vs ${prevYear}.
  */
-function buildTerrainElevation(currentYearActs, prevYearActs) {
+function buildTerrainElevation(currentYearActs, prevYearActs, refDate, comparisonYearOffset = 1) {
+  const currYear = (refDate || new Date()).getFullYear();
+  const prevYear = currYear - comparisonYearOffset;
   const currKm = totalKm(currentYearActs);
   const prevKm = totalKm(prevYearActs);
   const currElev = totalElev(currentYearActs);
@@ -352,9 +368,13 @@ function buildTerrainElevation(currentYearActs, prevYearActs) {
   const currElevPerKm = currKm > 0 ? currElev / currKm : 0;
   const prevElevPerKm = prevKm > 0 ? prevElev / prevKm : 0;
   return {
+    yearCurr: currYear,
+    yearPrev: prevYear,
     elevation: {
       title: "Dénivelé positif",
       unit: "m",
+      yearCurr: currYear,
+      yearPrev: prevYear,
       curr: currElev,
       prev: prevElev,
       formattedCurr: formatMeters(currElev),
@@ -366,6 +386,8 @@ function buildTerrainElevation(currentYearActs, prevYearActs) {
     elevationPerKm: {
       title: "Dénivelé / km",
       unit: "m/km",
+      yearCurr: currYear,
+      yearPrev: prevYear,
       curr: currElevPerKm,
       prev: prevElevPerKm,
       formattedCurr: `${Math.round(currElevPerKm)} m/km`,
@@ -380,17 +402,18 @@ function buildTerrainElevation(currentYearActs, prevYearActs) {
 /**
  * 6. + 7. Insights contextualises.
  */
-function buildInsights({ kpi, terrainElevation }) {
+function buildInsights({ kpi, terrainElevation, comparisonYearLabel = "" }) {
   const progress = [];
   const watch = [];
+  const vsLabel = comparisonYearLabel || "N-1";
 
   // Volume YTD
   const ytd = kpi.find((k) => k.key === "vs_n1");
   if (ytd) {
     if (ytd.tone === "positive") {
-      progress.push(`Volume en hausse de ${ytd.formattedValue} vs N-1, avec une belle dynamique depuis janvier.`);
+      progress.push(`Volume en hausse de ${ytd.formattedValue} vs ${vsLabel}, avec une belle dynamique depuis janvier.`);
     } else {
-      watch.push(`Volume en baisse de ${ytd.formattedValue} vs N-1, surveille l'evolution sur les prochaines semaines.`);
+      watch.push(`Volume en baisse de ${ytd.formattedValue} vs ${vsLabel}, surveille l'evolution sur les prochaines semaines.`);
     }
   }
 
@@ -428,9 +451,31 @@ function buildInsights({ kpi, terrainElevation }) {
 /**
  * Modele principal.
  */
+/**
+ * Détecte les années disponibles dans les activités (au moins 1 sortie).
+ * Retourne un tableau d'offsets (1 = N-1, 2 = N-2, ...) limité aux 4 dernières
+ * années disponibles avant l'année courante.
+ */
+function detectAvailableYears(runs, ref) {
+  const currentYear = ref.getFullYear();
+  const yearsWithData = new Set();
+  runs.forEach((a) => {
+    const d = safeDate(a?.startDateLocal || a?.startDate);
+    if (d) yearsWithData.add(d.getFullYear());
+  });
+  const offsets = [];
+  for (let offset = 1; offset <= 4; offset += 1) {
+    if (yearsWithData.has(currentYear - offset)) offsets.push(offset);
+  }
+  // Au moins l'offset 1 meme sans data pour que le UI reste fonctionnel
+  if (offsets.length === 0) offsets.push(1);
+  return offsets;
+}
+
 export function buildProgressionComparisonsModel({
   activities = [],
   referenceDate = null,
+  comparisonYearOffset = 1,
 } = {}) {
   const ref = safeDate(referenceDate) || new Date();
   const runs = (Array.isArray(activities) ? activities : []).filter(isRunLikeActivity);
@@ -439,38 +484,49 @@ export function buildProgressionComparisonsModel({
       hasData: false,
       title: "Progression — Comparaisons",
       emptyReason: "Pas encore assez de sorties pour comparer tes périodes.",
+      availableComparisonOffsets: [1],
+      selectedComparisonOffset: 1,
     };
   }
 
-  // Fenetres temporelles
+  const availableOffsets = detectAvailableYears(runs, ref);
+  // Clamp l'offset demande aux annees disponibles
+  const offset = availableOffsets.includes(comparisonYearOffset)
+    ? comparisonYearOffset
+    : availableOffsets[0];
+
+  // Fenetres temporelles (annee de comparaison configurable)
   const yearStart = startOfYear(ref);
-  const prevYearStart = new Date(ref.getFullYear() - 1, 0, 1);
-  const prevYearSameDate = new Date(ref.getFullYear() - 1, ref.getMonth(), ref.getDate(), 23, 59, 59);
-  const prevYearEnd = endOfYear(new Date(ref.getFullYear() - 1, 0, 1));
+  const compYearStart = new Date(ref.getFullYear() - offset, 0, 1);
+  const compYearSameDate = new Date(ref.getFullYear() - offset, ref.getMonth(), ref.getDate(), 23, 59, 59);
+  const compYearEnd = endOfYear(new Date(ref.getFullYear() - offset, 0, 1));
 
   const currentYearActs = activitiesInRange(runs, yearStart, ref);
-  // Pour YoY equitable on prend N-1 jusqu'a meme date
-  const prevYearActsYtd = activitiesInRange(runs, prevYearStart, prevYearSameDate);
-  // Pour le total N-1 (donuts) on prend annee complete
-  const prevYearActsFull = activitiesInRange(runs, prevYearStart, prevYearEnd);
+  // Pour YoY equitable on prend l'annee comparee jusqu'a meme date
+  const compYearActsYtd = activitiesInRange(runs, compYearStart, compYearSameDate);
+  // Pour le total annee complete (donuts) on prend annee complete
+  const compYearActsFull = activitiesInRange(runs, compYearStart, compYearEnd);
 
-  // 12 weeks windows
+  // 12 weeks windows (independant de l'annee de comparaison)
   const last12wStart = new Date(ref.getTime() - WEEKS_WINDOW * 7 * MS_PER_DAY);
   const prev12wStart = new Date(last12wStart.getTime() - WEEKS_WINDOW * 7 * MS_PER_DAY);
   const last12wActs = activitiesInRange(runs, last12wStart, ref);
   const prev12wActs = activitiesInRange(runs, prev12wStart, last12wStart);
 
-  const kpi = buildKpi(currentYearActs, prevYearActsYtd, last12wActs, prev12wActs, ref);
-  const monthlyComparison = buildMonthlyComparison(runs, ref);
+  const kpi = buildKpi(currentYearActs, compYearActsYtd, last12wActs, prev12wActs, ref, offset);
+  const monthlyComparison = buildMonthlyComparison(runs, ref, offset, availableOffsets);
   const twelveWeeksComparison = buildTwelveWeeksComparison(runs, ref);
-  const sportBreakdown = buildSportBreakdown(currentYearActs, prevYearActsFull, ref);
-  const terrainElevation = buildTerrainElevation(currentYearActs, prevYearActsYtd);
+  const sportBreakdown = buildSportBreakdown(currentYearActs, compYearActsFull, ref, offset);
+  const terrainElevation = buildTerrainElevation(currentYearActs, compYearActsYtd, ref, offset);
 
-  const insights = buildInsights({ kpi, terrainElevation });
+  const insights = buildInsights({ kpi, terrainElevation, comparisonYearLabel: `${ref.getFullYear() - offset}` });
 
   return {
     hasData: true,
     title: "Progression — Comparaisons",
+    availableComparisonOffsets: availableOffsets,
+    selectedComparisonOffset: offset,
+    comparisonYearLabel: `${ref.getFullYear() - offset}`,
     kpi,
     monthlyComparison,
     twelveWeeksComparison,

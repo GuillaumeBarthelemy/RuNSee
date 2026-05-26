@@ -6,11 +6,17 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
  *
  * Line chart 12 mois : annee courante vs N-1 + footer YTD/projection.
  */
+// Palette de gris dégradé pour les années overlay (de + récente à + ancienne)
+const OVERLAY_PALETTE = ["#cbd5e1", "#dde6f0", "#e5edf7"];
+
 function ProgressionMonthlyComparisonChart({ data = {} }) {
+  const overlayYears = Array.isArray(data?.overlayYears) ? data.overlayYears : [];
+  // Tri pour qu'on affiche les + recentes en premier (couleur + foncee)
+  const sortedOverlays = [...overlayYears].sort((a, b) => b - a);
   return (
     <section className="progression-panel progression-monthly-comparison-card">
       <div className="progression-panel-head">
-        <h3>Volume mensuel — Année en cours vs N-1 <small>(km)</small></h3>
+        <h3>Volume mensuel — {data?.year} vs {data?.prevYear} <small>(km)</small></h3>
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data?.points || []} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
@@ -19,8 +25,21 @@ function ProgressionMonthlyComparisonChart({ data = {} }) {
           <YAxis tick={{ fontSize: 10, fill: "#64748b" }} tickLine={false} axisLine={false} width={36} />
           <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5edf7" }} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
-          <Line type="monotone" dataKey="current" stroke="#1268f3" strokeWidth={2.2} dot={{ r: 3, fill: "#1268f3" }} name={String(data?.year || "")} />
+          {/* Overlay annees historiques (gris clairs, en dessous) */}
+          {sortedOverlays.map((y, idx) => (
+            <Line
+              key={y}
+              type="monotone"
+              dataKey={`overlay_${y}`}
+              stroke={OVERLAY_PALETTE[Math.min(idx, OVERLAY_PALETTE.length - 1)]}
+              strokeWidth={1.2}
+              dot={false}
+              strokeDasharray="2 4"
+              name={String(y)}
+            />
+          ))}
           <Line type="monotone" dataKey="previous" stroke="#94a3b8" strokeWidth={1.6} dot={false} strokeDasharray="4 3" name={String(data?.prevYear || "")} />
+          <Line type="monotone" dataKey="current" stroke="#1268f3" strokeWidth={2.2} dot={{ r: 3, fill: "#1268f3" }} name={String(data?.year || "")} />
         </LineChart>
       </ResponsiveContainer>
       <div className="progression-monthly-comparison-footer">

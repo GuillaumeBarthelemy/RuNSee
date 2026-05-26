@@ -16222,3 +16222,27 @@ button.alert-banner-positive-item {
 .progression-insights-card li { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: flex-start; line-height: 1.4; }
 .progression-insights-progress .progression-insights-bullet { color: #15803d; font-weight: 700; }
 .progression-insights-watch .progression-insights-bullet { color: #f97316; font-size: 16px; line-height: 1; }
+
+/* Comparison year chips */
+.progression-comparison-year-chips {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: #fff; border: 1px solid #e5edf7; border-radius: 12px;
+  padding: 10px 14px;
+}
+.progression-comparison-year-chips-label {
+  font-size: 12px; color: #64748b; font-weight: 500;
+}
+.progression-comparison-year-chips-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.progression-comparison-year-chip {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  background: #f1f5f9; border: 1px solid transparent;
+  border-radius: 999px; padding: 6px 14px;
+  font-size: 12px; color: #475569; cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.progression-comparison-year-chip:hover { background: #e2e8f0; }
+.progression-comparison-year-chip.is-active {
+  background: #1268f3; color: #fff; border-color: #1268f3;
+}
+.progression-comparison-year-chip-offset { font-weight: 600; }
+.progression-comparison-year-chip-year { opacity: 0.85; font-size: 11px; }

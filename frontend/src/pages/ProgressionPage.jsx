@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import AppShell from "../layouts/AppShell.jsx";
 import AnalyticsCompactFilters from "../components/analytics/AnalyticsCompactFilters.jsx";
@@ -99,12 +99,14 @@ export default function ProgressionPage() {
     [scopeActivities, sharedRange.end],
   );
 
+  const [comparisonYearOffset, setComparisonYearOffset] = useState(1);
   const comparisonsModel = useMemo(
     () => buildProgressionComparisonsModel({
       activities: scopeActivities,
       referenceDate: sharedRange.end,
+      comparisonYearOffset,
     }),
-    [scopeActivities, sharedRange.end],
+    [scopeActivities, sharedRange.end, comparisonYearOffset],
   );
 
   const periodActivitiesCount = useMemo(
@@ -165,7 +167,11 @@ export default function ProgressionPage() {
         ) : activeTabId === "regularite" ? (
           <ProgressionRegularityTab model={regularityModel} />
         ) : activeTabId === "comparaisons" ? (
-          <ProgressionComparisonsTab model={comparisonsModel} />
+          <ProgressionComparisonsTab
+            model={comparisonsModel}
+            onSelectComparisonOffset={setComparisonYearOffset}
+            referenceYear={sharedRange.end?.getFullYear?.() || new Date().getFullYear()}
+          />
         ) : (
           <div className="card section progression-tab-placeholder">
             <EmptyState

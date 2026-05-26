@@ -1,5 +1,6 @@
 import { memo } from "react";
 import EmptyState from "../visuals/alpine/EmptyState.jsx";
+import ProgressionComparisonYearChips from "./ProgressionComparisonYearChips.jsx";
 import ProgressionComparisonsKpiCard from "./ProgressionComparisonsKpiCard.jsx";
 import ProgressionMonthlyComparisonChart from "./ProgressionMonthlyComparisonChart.jsx";
 import ProgressionTwelveWeeksChart from "./ProgressionTwelveWeeksChart.jsx";
@@ -17,7 +18,7 @@ import ProgressionInsightsCards from "./ProgressionInsightsCards.jsx";
  *   Row 4 : Ce qui progresse | À surveiller
  *   Footer: Conseil du coach
  */
-function ProgressionComparisonsTab({ model = {} }) {
+function ProgressionComparisonsTab({ model = {}, onSelectComparisonOffset = null, referenceYear = null }) {
   if (!model?.hasData) {
     return (
       <div className="progression-comparisons-tab">
@@ -32,6 +33,14 @@ function ProgressionComparisonsTab({ model = {} }) {
 
   return (
     <div className="progression-comparisons-tab">
+      {onSelectComparisonOffset && Array.isArray(model.availableComparisonOffsets) && model.availableComparisonOffsets.length > 1 ? (
+        <ProgressionComparisonYearChips
+          referenceYear={referenceYear || new Date().getFullYear()}
+          offsets={model.availableComparisonOffsets}
+          selectedOffset={model.selectedComparisonOffset || 1}
+          onSelect={onSelectComparisonOffset}
+        />
+      ) : null}
       <div className="progression-comparisons-kpi-row">
         {(model.kpi || []).map((k) => (
           <ProgressionComparisonsKpiCard key={k.key} kpi={k} />
