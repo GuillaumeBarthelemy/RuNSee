@@ -598,12 +598,12 @@ function buildYearOverYearCharts(activities, refDate, goals) {
     const current = cumulativeSeries(currentYear, fieldFn);
     const previous = cumulativeSeries(prevYear, fieldFn);
     // Goal line : interpolation lineaire 0 -> goal sur 52 semaines
-    // Pour annee courante : ligne "current" tronquee aux semaines passees
-    // (les semaines futures → null pour ne pas tracer de plateau plat).
-    const points = current.map((c, i) => ({
+    // Tronque toutes les series aux semaines ecoulees pour ne pas afficher
+    // l'axe S22-S52 vide (la comparaison N-1 reste visible sur la meme fenetre).
+    const points = current.slice(0, currentWeekIdx + 1).map((c, i) => ({
       week: c.week,
       label: `S${i + 1}`,
-      current: i <= currentWeekIdx ? c.value : null,
+      current: c.value,
       previous: previous[i]?.value ?? null,
       objective: goal > 0 ? Number(((goal * (i + 1)) / 52).toFixed(1)) : null,
     }));

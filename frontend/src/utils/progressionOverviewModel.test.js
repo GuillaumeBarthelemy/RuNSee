@@ -111,7 +111,9 @@ describe("buildProgressionOverviewModel", () => {
     });
     expect(m.yearOverYearCharts).toHaveLength(3);
     const dist = m.yearOverYearCharts.find((c) => c.key === "distance");
-    expect(dist.points.length).toBe(52);
+    // Tronque aux semaines ecoulees (refDate = 21 mai -> ~semaine 20)
+    expect(dist.points.length).toBeGreaterThan(15);
+    expect(dist.points.length).toBeLessThanOrEqual(22);
     expect(dist.points[0]).toHaveProperty("current");
     expect(dist.points[0]).toHaveProperty("previous");
     expect(dist.points[0]).toHaveProperty("objective");
