@@ -38,8 +38,6 @@ function safeDate(v) {
 }
 function startOfYear(d) { return new Date(d.getFullYear(), 0, 1); }
 function endOfYear(d) { return new Date(d.getFullYear(), 11, 31, 23, 59, 59); }
-function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
-
 function formatKm(n) {
   const v = toFiniteNumber(n);
   if (v <= 0) return "—";
