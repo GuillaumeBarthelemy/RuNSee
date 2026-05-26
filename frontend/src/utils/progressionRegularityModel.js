@@ -52,9 +52,13 @@ function formatDateLong(d) {
   if (!d) return "";
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
-function formatDateShort(d) {
+function formatDateShort(d, withYear = false) {
   if (!d) return "";
-  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  return d.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    ...(withYear ? { year: "2-digit" } : {}),
+  });
 }
 
 function rollingAverage(values, window = ROLLING_WINDOW) {
@@ -292,12 +296,14 @@ function buildStreakTimeline(weeklyBuckets, refDate) {
   if (current) streaks.push(current);
 
   // Annote la serie courante (celle contenant refDate ou la derniere)
+  // Affiche l'annee si streak s'etend sur plusieurs annees.
   const annotated = streaks.map((s) => {
     const isCurrent = refDate >= s.start && refDate <= s.end;
+    const spansYears = s.start.getFullYear() !== s.end.getFullYear();
     return {
       ...s,
       isCurrent,
-      label: `${formatDateShort(s.start)} – ${formatDateShort(s.end)}`,
+      label: `${formatDateShort(s.start, spansYears)} – ${formatDateShort(s.end, spansYears)}`,
       formattedDuration: isCurrent
         ? `${s.weeks} semaine${s.weeks > 1 ? "s" : ""} (en cours)`
         : `${s.weeks} semaine${s.weeks > 1 ? "s" : ""}`,
@@ -329,10 +335,14 @@ function detectCurrentStreak(weeklyBuckets, refDate) {
     }
   }
   if (lastActiveIdx === -1) return { weeks: 0, startDate: null };
-  if (!weeklyBuckets[lastActiveIdx].count) return { weeks: 0, startDate: null };
+  // Si la semaine courante (partielle) est vide, on demarre la recherche
+  // sur la semaine precedente — sinon on tronquerait artificiellement la serie.
+  let startIdx = lastActiveIdx;
+  if (!weeklyBuckets[startIdx].count && startIdx > 0) startIdx -= 1;
+  if (!weeklyBuckets[startIdx].count) return { weeks: 0, startDate: null };
   let weeks = 0;
   let startDate = null;
-  for (let i = lastActiveIdx; i >= 0; i -= 1) {
+  for (let i = startIdx; i >= 0; i -= 1) {
     if (weeklyBuckets[i].count > 0) {
       weeks += 1;
       startDate = weeklyBuckets[i].start;

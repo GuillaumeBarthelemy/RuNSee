@@ -16006,11 +16006,12 @@ button.alert-banner-positive-item {
 
 /* Heatmap */
 .progression-regularity-heatmap-grid {
-  display: grid; grid-template-columns: 36px 1fr; gap: 4px;
+  display: flex; flex-direction: column; gap: 4px;
 }
-.progression-regularity-heatmap-empty { width: 36px; }
+.progression-regularity-heatmap-empty { display: none; }
 .progression-regularity-heatmap-months {
   display: grid; grid-template-columns: repeat(53, 1fr); font-size: 10px; color: #64748b;
+  margin-left: 40px;
 }
 .progression-regularity-heatmap-month { white-space: nowrap; }
 .progression-regularity-heatmap-row {
