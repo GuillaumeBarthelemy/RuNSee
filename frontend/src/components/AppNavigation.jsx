@@ -55,7 +55,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    to: "/admin",
+    to: "/reglages",
     label: "Réglages",
     shortLabel: "Réglages",
     icon: (

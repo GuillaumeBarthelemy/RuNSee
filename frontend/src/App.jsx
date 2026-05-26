@@ -13,6 +13,7 @@ const ProgressionPage = lazy(() => import("./pages/ProgressionPage.jsx"));
 const ActivitiesPage = lazy(() => import("./pages/ActivitiesPage.jsx"));
 const ActivityDetailPage = lazy(() => import("./pages/ActivityDetailPage.jsx"));
 const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
+const ReglagesPage = lazy(() => import("./pages/ReglagesPage.jsx"));
 const GlossairePage = lazy(() => import("./pages/GlossairePage.jsx"));
 const VisualsPreviewPage = lazy(() => import("./pages/VisualsPreviewPage.jsx"));
 const LoginPage = lazy(() => import("./pages/LoginPage.jsx"));
@@ -145,6 +146,14 @@ export default function App() {
             element={(
               <PageRoute>
                 <AdminPage />
+              </PageRoute>
+            )}
+          />
+          <Route
+            path="reglages"
+            element={(
+              <PageRoute>
+                <ReglagesPage />
               </PageRoute>
             )}
           />

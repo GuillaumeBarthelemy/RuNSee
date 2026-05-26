@@ -16246,3 +16246,199 @@ button.alert-banner-positive-item {
 }
 .progression-comparison-year-chip-offset { font-weight: 600; }
 .progression-comparison-year-chip-year { opacity: 0.85; font-size: 11px; }
+
+/* ===========================================================================
+   PAGE RÉGLAGES (mockup p.21-25) — Lot Réglages V1
+   =========================================================================== */
+.reglages-page { display: flex; flex-direction: column; gap: 16px; }
+.reglages-tab { display: flex; flex-direction: column; gap: 16px; }
+
+.reglages-card {
+  background: #fff; border: 1px solid #e5edf7; border-radius: 12px;
+  padding: 16px 18px; display: flex; flex-direction: column; gap: 12px;
+}
+.reglages-card h3 {
+  margin: 0; font-size: 14px; font-weight: 600; color: #0f172a;
+}
+.reglages-card h3 small { font-weight: 400; color: #64748b; font-size: 12px; }
+.reglages-card-full { width: 100%; }
+.reglages-section-title { margin: 8px 0 4px 0; font-size: 14px; font-weight: 600; color: #475569; }
+
+/* Fields */
+.reglages-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.reglages-field-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+.reglages-field label { color: #475569; font-weight: 500; }
+.reglages-field input,
+.reglages-field select {
+  background: #fff; border: 1px solid #e5edf7; border-radius: 8px;
+  padding: 8px 12px; font-size: 13px; color: #0f172a; font-family: inherit;
+  outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.reglages-field input:focus,
+.reglages-field select:focus { border-color: #1268f3; box-shadow: 0 0 0 3px rgba(18, 104, 243, 0.12); }
+
+/* Buttons */
+.reglages-btn {
+  background: #fff; border: 1px solid #e5edf7; border-radius: 8px;
+  padding: 8px 14px; font-size: 12px; font-weight: 500; color: #1268f3;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.reglages-btn:hover { background: #eff6ff; border-color: #bfdbfe; }
+.reglages-btn-primary { background: #1268f3; border-color: #1268f3; color: #fff; }
+.reglages-btn-primary:hover { background: #0a4fbb; border-color: #0a4fbb; }
+.reglages-btn-soft { background: #eff6ff; border-color: #bfdbfe; color: #1268f3; }
+.reglages-btn-block { width: 100%; }
+.reglages-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.reglages-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px;
+  padding: 8px 0;
+}
+.reglages-row + .reglages-row { border-top: 1px solid #f1f5f9; }
+.reglages-row small { display: block; font-size: 13px; color: #0f172a; font-weight: 600; }
+.reglages-row-hint { display: block; font-size: 11px; color: #64748b; margin-top: 2px; }
+.reglages-row-stack { grid-template-columns: 1fr; }
+
+/* Onglet COMPTE */
+.reglages-account-grid {
+  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1024px) { .reglages-account-grid { grid-template-columns: 1fr; } }
+.reglages-account-side { display: flex; flex-direction: column; gap: 16px; }
+
+/* Onglet CONNEXIONS */
+.reglages-platform-card { gap: 14px; }
+.reglages-platform-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.reglages-platform-header { display: flex; align-items: center; gap: 10px; }
+.reglages-platform-name { font-size: 18px; font-weight: 800; letter-spacing: 0.5px; }
+.reglages-platform-status {
+  padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+}
+.reglages-platform-status.is-connected { background: #dcfce7; color: #15803d; }
+.reglages-platform-status.is-disconnected { background: #fee2e2; color: #b91c1c; }
+.reglages-platform-actions { display: flex; gap: 8px; align-items: center; }
+.reglages-platform-more {
+  background: none; border: none; cursor: pointer; font-size: 18px; color: #64748b;
+  padding: 4px 8px; border-radius: 6px;
+}
+.reglages-platform-more:hover { background: #f1f5f9; }
+.reglages-platform-info {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;
+}
+.reglages-platform-info small { display: block; color: #64748b; font-size: 11px; margin-bottom: 2px; }
+.reglages-platform-info strong { font-size: 13px; color: #0f172a; }
+.reglages-status-positive { color: #15803d !important; }
+.reglages-status-warning  { color: #f97316 !important; }
+.reglages-platform-data {
+  border-top: 1px solid #f1f5f9; padding-top: 10px;
+}
+.reglages-platform-data small { display: block; color: #64748b; font-size: 11px; margin-bottom: 6px; }
+.reglages-platform-data ul {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #475569;
+}
+.reglages-platform-data li { display: inline-flex; align-items: center; gap: 6px; }
+.reglages-platform-data-icon { font-size: 14px; }
+
+.reglages-integrations-list { list-style: none; padding: 4px 0; margin: 0; }
+.reglages-integration-row {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
+  padding: 10px 4px;
+}
+.reglages-integration-row + .reglages-integration-row { border-top: 1px solid #f1f5f9; }
+.reglages-integration-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 8px; background: #eff6ff; font-size: 18px;
+}
+.reglages-integration-row strong { display: block; font-size: 13px; color: #0f172a; }
+.reglages-integration-row small { display: block; font-size: 11px; color: #64748b; }
+
+/* Onglet ENTRAÎNEMENT */
+.reglages-entrainement-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+@media (max-width: 900px) { .reglages-entrainement-grid { grid-template-columns: 1fr; } }
+.reglages-metric-row { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 12px; }
+.reglages-metric-row small { display: block; color: #64748b; font-size: 11px; }
+.reglages-metric-value { display: block; font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1.1; margin: 2px 0; }
+.reglages-metric-hint { font-size: 11px; color: #64748b; }
+
+.reglages-zones-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.reglages-zone-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; font-size: 12px; }
+.reglages-zone-dot { width: 10px; height: 10px; border-radius: 50%; }
+.reglages-zone-label { color: #0f172a; font-weight: 500; }
+.reglages-zone-range { color: #64748b; }
+.reglages-zone-pct { color: #94a3b8; font-size: 11px; min-width: 70px; text-align: right; }
+
+.reglages-calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+
+/* Onglet DONNEES */
+.reglages-donnees-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+@media (max-width: 1024px) { .reglages-donnees-grid { grid-template-columns: 1fr; } }
+
+.reglages-history-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.reglages-history-row {
+  display: grid; grid-template-columns: 1.4fr 0.8fr 1fr auto; gap: 10px;
+  align-items: center; padding: 8px 4px; font-size: 12px;
+}
+.reglages-history-row + .reglages-history-row { border-top: 1px solid #f1f5f9; }
+.reglages-history-date { color: #0f172a; font-weight: 500; }
+.reglages-history-source { color: #1268f3; }
+.reglages-history-count { color: #64748b; }
+.reglages-history-status-ok { color: #15803d; font-weight: 700; }
+.reglages-history-status-error { color: #b91c1c; font-weight: 700; }
+.reglages-link { font-size: 12px; color: #1268f3; text-decoration: none; }
+.reglages-link:hover { text-decoration: underline; }
+
+.reglages-quality-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.reglages-quality-row {
+  display: grid; grid-template-columns: 140px 1fr 50px 80px; align-items: center; gap: 10px;
+  font-size: 12px;
+}
+.reglages-quality-label { color: #475569; }
+.reglages-quality-bar { display: block; height: 10px; background: #e5edf7; border-radius: 5px; overflow: hidden; }
+.reglages-quality-bar-fill { display: block; height: 100%; border-radius: 5px; }
+.reglages-quality-value { font-weight: 600; color: #0f172a; text-align: right; }
+.reglages-quality-detail { color: #94a3b8; font-size: 11px; text-align: right; }
+
+.reglages-actions-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.reglages-actions-list li {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+  padding: 10px 4px;
+}
+.reglages-actions-list li + li { border-top: 1px solid #f1f5f9; }
+.reglages-actions-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px; background: #f1f5f9; font-size: 16px;
+}
+.reglages-actions-list strong { display: block; font-size: 13px; color: #0f172a; }
+.reglages-actions-list small { display: block; font-size: 11px; color: #64748b; }
+
+.reglages-tip {
+  display: flex; align-items: center; gap: 10px;
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px;
+  padding: 10px 14px; font-size: 12px; color: #475569;
+}
+.reglages-tip strong { color: #0f172a; margin-right: 4px; }
+
+/* Onglet À PROPOS */
+.reglages-about-tab .reglages-card p { margin: 0; font-size: 13px; color: #475569; line-height: 1.5; }
+.reglages-about-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+@media (max-width: 900px) { .reglages-about-grid { grid-template-columns: 1fr; } }
+.reglages-about-mini, .reglages-about-glossary {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+}
+.reglages-about-mini { grid-template-columns: auto 1fr; }
+.reglages-about-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 10px; background: #eff6ff; font-size: 20px;
+  align-self: flex-start;
+}
+.reglages-about-mini strong, .reglages-about-glossary strong { display: block; font-size: 13px; color: #0f172a; margin-bottom: 4px; }
+.reglages-about-mini small, .reglages-about-glossary small { display: block; font-size: 12px; color: #475569; margin-bottom: 6px; line-height: 1.4; }
+.reglages-about-meta { display: block; font-size: 11px; color: #64748b; }
