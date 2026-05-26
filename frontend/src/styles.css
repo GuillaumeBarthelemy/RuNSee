@@ -16776,3 +16776,230 @@ button.alert-banner-positive-item {
 :root[data-density="compact"] .progression-volume-tab,
 :root[data-density="compact"] .progression-regularity-tab,
 :root[data-density="compact"] .progression-comparisons-tab { gap: 10px; }
+
+/* ============================================================
+   DARK MODE — SWEEP MASSIF (couvre les composants hardcodes)
+   ============================================================
+   Strategie : attribute selectors broad sur les patterns de classes
+   les plus courants (*-card, *-panel, *-section, *-tab, *-row,
+   *-list, *-shell, *-body, *-header, *-modal). Combine avec un
+   override de toutes les couleurs hardcodees (#fff, #f8fafc, etc.)
+   sur des selecteurs de specificite raisonnable. */
+
+/* --- Backgrounds blancs/clairs -> surface ---------------------- */
+:root[data-theme="dark"] [class*="-card"]:not([class*="-card-icon"]):not([class*="card-meta"]):not([class*="card-link"]):not([class*="card-row"]):not([class*="card-head"]):not([class*="card-action"]),
+:root[data-theme="dark"] [class*="-panel"]:not([class*="-panel-head"]):not([class*="-panel-sub"]):not([class*="-panel-action"]):not([class*="-panel-empty"]),
+:root[data-theme="dark"] [class*="-table-card"],
+:root[data-theme="dark"] [class*="-section-card"],
+:root[data-theme="dark"] [class*="-modal"]:not([class*="-modal-overlay"]):not([class*="-modal-actions"]):not([class*="-modal-close"]):not([class*="-modal-error"]):not([class*="-modal-title"]),
+:root[data-theme="dark"] [class*="-shell-content"],
+:root[data-theme="dark"] [class*="-cta"]:not([class*="-cta-link"]),
+:root[data-theme="dark"] [class*="-empty-state"],
+:root[data-theme="dark"] .alpine-card,
+:root[data-theme="dark"] .admin-card,
+:root[data-theme="dark"] .alert-card {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+  color: var(--al-text);
+}
+
+/* --- Backgrounds gris clairs (rows, items, sub-panels) -------- */
+:root[data-theme="dark"] [class*="-row"]:not([class*="-row-foot"]):not([class*="-row-hint"]):not([class*="-row-stack"]):not([class*="-grid-row"]),
+:root[data-theme="dark"] [class*="-item"]:not([class*="-item-text"]):not([class*="-item-label"]):not([class*="-item-value"]):not([class*="-item-meta"]):not([class*="-item-active"]):not([class*="-item-link"]),
+:root[data-theme="dark"] [class*="-pill"],
+:root[data-theme="dark"] [class*="-chip"]:not([class*="-chip-offset"]):not([class*="-chip-year"]) {
+  /* On ne touche pas tout, sauf si fond clair detectable */
+}
+
+/* --- Titres / Headings : color text --------------------------- */
+:root[data-theme="dark"] h1,
+:root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3,
+:root[data-theme="dark"] h4,
+:root[data-theme="dark"] h5,
+:root[data-theme="dark"] h6,
+:root[data-theme="dark"] [class*="-title"]:not([class*="-title-soft"]):not([class*="-title-muted"]):not([class*="-eyebrow"]),
+:root[data-theme="dark"] [class*="-headline"],
+:root[data-theme="dark"] [class*="-value"]:not([class*="-value-soft"]):not([class*="-value-muted"]),
+:root[data-theme="dark"] [class*="-metric-value"],
+:root[data-theme="dark"] [class*="-kpi-value"],
+:root[data-theme="dark"] [class*="-strong"],
+:root[data-theme="dark"] strong,
+:root[data-theme="dark"] dt,
+:root[data-theme="dark"] th {
+  color: var(--al-text);
+}
+
+/* --- Textes soft / muted (labels, hints, eyebrows, captions) -- */
+:root[data-theme="dark"] [class*="-label"]:not([class*="-label-strong"]):not([class*="-label-active"]),
+:root[data-theme="dark"] [class*="-hint"],
+:root[data-theme="dark"] [class*="-meta"],
+:root[data-theme="dark"] [class*="-caption"],
+:root[data-theme="dark"] [class*="-eyebrow"],
+:root[data-theme="dark"] [class*="-subtitle"],
+:root[data-theme="dark"] [class*="-sublabel"],
+:root[data-theme="dark"] [class*="-muted"],
+:root[data-theme="dark"] [class*="-secondary"],
+:root[data-theme="dark"] [class*="-info"]:not([class*="-info-soft"]):not([class*="-info-icon"]):not([class*="-info-icon-row"]):not([class*="-info-card"]),
+:root[data-theme="dark"] [class*="-empty-message"],
+:root[data-theme="dark"] [class*="-empty-hint"],
+:root[data-theme="dark"] small,
+:root[data-theme="dark"] figcaption {
+  color: var(--al-muted);
+}
+
+/* --- Body / paragraphes / valeurs courantes ------------------ */
+:root[data-theme="dark"] p,
+:root[data-theme="dark"] li,
+:root[data-theme="dark"] td,
+:root[data-theme="dark"] dd,
+:root[data-theme="dark"] span:not([class*="-icon"]):not([class*="-dot"]):not([class*="-badge"]):not([class*="-pill"]):not([class*="-bar-fill"]) {
+  color: var(--al-text-soft);
+}
+
+/* --- Headers de panels (head row d'une carte) ----------------- */
+:root[data-theme="dark"] [class*="-panel-head"],
+:root[data-theme="dark"] [class*="-card-head"],
+:root[data-theme="dark"] [class*="-section-header"],
+:root[data-theme="dark"] [class*="-table-head"] {
+  border-color: var(--al-border-soft);
+}
+
+/* --- Bordures generiques ------------------------------------- */
+:root[data-theme="dark"] [class*="-divider"],
+:root[data-theme="dark"] [class*="-separator"],
+:root[data-theme="dark"] hr {
+  border-color: var(--al-border);
+  background: var(--al-border);
+}
+
+/* --- Inputs / selects / textarea globaux --------------------- */
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea {
+  background: var(--al-surface-soft);
+  border-color: var(--al-border);
+  color: var(--al-text);
+}
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder { color: var(--al-muted); }
+
+/* --- Liens ---------------------------------------------------- */
+:root[data-theme="dark"] a:not([class*="-btn"]) { color: var(--al-primary); }
+:root[data-theme="dark"] a:hover:not([class*="-btn"]) { color: var(--al-primary-stronger); }
+
+/* --- Tableaux ------------------------------------------------- */
+:root[data-theme="dark"] table { color: var(--al-text-soft); }
+:root[data-theme="dark"] thead th { background: var(--al-surface-soft); color: var(--al-text); border-color: var(--al-border); }
+:root[data-theme="dark"] tbody tr { border-color: var(--al-border-soft); }
+:root[data-theme="dark"] tbody tr:hover { background: var(--al-surface-soft); }
+
+/* --- Backgrounds clairs hardcodes connus ---------------------- */
+/* On force tous les backgrounds inline-style probables vers surface-soft. */
+:root[data-theme="dark"] [style*="background: #f8fafc"],
+:root[data-theme="dark"] [style*="background: #f1f5f9"],
+:root[data-theme="dark"] [style*="background: #fff"],
+:root[data-theme="dark"] [style*="background:#fff"] {
+  background: var(--al-surface-soft) !important;
+}
+
+/* --- Performance page specifiques ----------------------------- */
+:root[data-theme="dark"] .performance-physio-card .physio-rows li,
+:root[data-theme="dark"] [class*="performance-best-row"],
+:root[data-theme="dark"] [class*="performance-best-table-row"],
+:root[data-theme="dark"] [class*="performance-trend-chart"],
+:root[data-theme="dark"] [class*="performance-physio"],
+:root[data-theme="dark"] [class*="performance-overview"] {
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] [class*="performance-best-row"] strong,
+:root[data-theme="dark"] [class*="performance-best-table-row"] strong { color: var(--al-text); }
+:root[data-theme="dark"] [class*="performance-empty"],
+:root[data-theme="dark"] [class*="performance-best-times-empty"] { background: var(--al-surface-soft); color: var(--al-muted); }
+
+/* --- Reglages : insights & textes specifiques --------------- */
+:root[data-theme="dark"] .progression-weekday-breakdown-insight {
+  background: var(--al-surface-soft);
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] .progression-weekday-breakdown-insight strong { color: var(--al-text); }
+:root[data-theme="dark"] .progression-regularity-takeaway-body p { color: var(--al-text-soft); }
+:root[data-theme="dark"] .progression-takeaway-body p,
+:root[data-theme="dark"] .progression-regularity-tip-card p,
+:root[data-theme="dark"] .progression-overview-tip span { color: var(--al-text-soft); }
+:root[data-theme="dark"] .progression-regularity-heatmap-legend,
+:root[data-theme="dark"] .progression-regularity-heatmap-weekday,
+:root[data-theme="dark"] .progression-regularity-heatmap-month { color: var(--al-muted); }
+:root[data-theme="dark"] .progression-streak-dot:not(.is-active) { background: var(--al-border); }
+:root[data-theme="dark"] .progression-streak-legend { color: var(--al-muted); }
+:root[data-theme="dark"] .progression-sport-donut-legend li { color: var(--al-text-soft); }
+
+/* --- Recharts : couleurs axes / labels forces ---------------- */
+:root[data-theme="dark"] .recharts-cartesian-axis-tick text,
+:root[data-theme="dark"] .recharts-polar-angle-axis-tick text,
+:root[data-theme="dark"] .recharts-polar-radius-axis-tick text,
+:root[data-theme="dark"] .recharts-label,
+:root[data-theme="dark"] .recharts-text { fill: var(--al-muted) !important; }
+:root[data-theme="dark"] .recharts-cartesian-axis-line,
+:root[data-theme="dark"] .recharts-polar-radius-axis line { stroke: var(--al-border) !important; }
+:root[data-theme="dark"] .recharts-default-tooltip {
+  background: var(--al-surface) !important;
+  border-color: var(--al-border) !important;
+  box-shadow: var(--al-shadow-strong) !important;
+}
+:root[data-theme="dark"] .recharts-tooltip-item-name,
+:root[data-theme="dark"] .recharts-tooltip-item-value { color: var(--al-text) !important; }
+:root[data-theme="dark"] .recharts-reference-line line { stroke: var(--al-border) !important; }
+
+/* --- Sidebar nav links (alpine-shell-sidebar) ---------------- */
+:root[data-theme="dark"] [class*="-shell-sidebar"] a,
+:root[data-theme="dark"] [class*="-shell-sidebar"] button { color: var(--al-text-soft); }
+:root[data-theme="dark"] [class*="-shell-sidebar"] a:hover,
+:root[data-theme="dark"] [class*="-shell-sidebar"] button:hover { background: var(--al-surface); color: var(--al-text); }
+:root[data-theme="dark"] [class*="-shell-sidebar"] a.active,
+:root[data-theme="dark"] [class*="-shell-sidebar"] a[aria-current="page"] { background: var(--al-primary-soft); color: var(--al-primary-stronger); }
+
+/* --- Topbar / page header ----------------------------------- */
+:root[data-theme="dark"] [class*="-page-header"],
+:root[data-theme="dark"] [class*="-page-header-eyebrow"],
+:root[data-theme="dark"] [class*="-page-header-subtitle"] { color: var(--al-text-soft); }
+:root[data-theme="dark"] [class*="-page-header-title"] { color: var(--al-text); }
+
+/* --- Tones / badges / chips ---------------------------------- */
+:root[data-theme="dark"] [class*="-tone-positive"],
+:root[data-theme="dark"] [class*="-status-positive"],
+:root[data-theme="dark"] .tone-positive { color: var(--al-success); }
+:root[data-theme="dark"] [class*="-tone-warning"],
+:root[data-theme="dark"] [class*="-status-warning"],
+:root[data-theme="dark"] .tone-warning { color: var(--al-warning); }
+:root[data-theme="dark"] [class*="-tone-alert"],
+:root[data-theme="dark"] [class*="-tone-error"],
+:root[data-theme="dark"] [class*="-tone-danger"],
+:root[data-theme="dark"] .tone-alert,
+:root[data-theme="dark"] .tone-error { color: var(--al-alert); }
+
+/* --- Badge backgrounds (vert / orange / rouge) -------------- */
+:root[data-theme="dark"] [class*="-badge-positive"],
+:root[data-theme="dark"] [class*="-pill-positive"] { background: rgba(74, 222, 128, 0.18); color: #6ee7b7; }
+:root[data-theme="dark"] [class*="-badge-warning"],
+:root[data-theme="dark"] [class*="-pill-warning"] { background: rgba(251, 146, 60, 0.18); color: #fdba74; }
+:root[data-theme="dark"] [class*="-badge-alert"],
+:root[data-theme="dark"] [class*="-pill-alert"],
+:root[data-theme="dark"] [class*="-badge-error"] { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
+
+/* --- Performance specifics : zones / right rail / coach ------ */
+:root[data-theme="dark"] [class*="performance-right-rail"],
+:root[data-theme="dark"] [class*="performance-coach"],
+:root[data-theme="dark"] [class*="performance-overview-card"] { color: var(--al-text-soft); }
+:root[data-theme="dark"] [class*="performance-confidence-text"] { color: var(--al-muted); }
+
+/* --- Conseil du jour footer / right rail rappel -------------- */
+:root[data-theme="dark"] [class*="-conseil-du-jour"],
+:root[data-theme="dark"] [class*="-coach-advice"],
+:root[data-theme="dark"] [class*="-sidebar-advice"] {
+  background: var(--al-primary-soft);
+  border-color: var(--al-primary);
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] [class*="-conseil-du-jour"] strong,
+:root[data-theme="dark"] [class*="-coach-advice"] strong { color: var(--al-text); }
