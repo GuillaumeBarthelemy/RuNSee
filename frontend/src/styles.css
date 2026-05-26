@@ -16551,31 +16551,219 @@ button.alert-banner-positive-item {
 }
 
 /* ============================================================
-   Theme : palette CSS variables — dark mode
-   ============================================================ */
-:root {
-  --al-bg: #f4f8ff;
-  --al-bg-panel: #fff;
-  --al-fg: #0f172a;
-  --al-fg-muted: #475569;
-  --al-fg-soft: #64748b;
-  --al-border: #e5edf7;
-  --al-primary: #1268f3;
-}
+   THEME DARK MODE — override complet de la palette
+   ============================================================
+   Stratégie :
+     - Override des --al-* + --color-* (les composants qui consomment ces
+       variables basculent automatiquement).
+     - Override explicite des fonds blancs et bordures hardcodees (cartes
+       Reglages, panels Progression, modals).
+     - Adaptation Recharts : axes, grid, tooltips, legends, radar. */
 :root[data-theme="dark"] {
-  --al-bg: #0f172a;
-  --al-bg-panel: #1e293b;
-  --al-fg: #e2e8f0;
-  --al-fg-muted: #cbd5e1;
-  --al-fg-soft: #94a3b8;
-  --al-border: #334155;
-  --al-primary: #60a5fa;
   color-scheme: dark;
+  /* Palette Alpine Light dark */
+  --al-bg: #0b1220;
+  --al-surface: #131c2e;
+  --al-surface-soft: #1a2540;
+  --al-border: #2a3654;
+  --al-border-soft: #1f2942;
+  --al-text: #e2e8f0;
+  --al-text-soft: #cbd5e1;
+  --al-muted: #8aa0c4;
+  --al-primary: #60a5fa;
+  --al-primary-soft: #1e3a5f;
+  --al-primary-stronger: #93c5fd;
+  --al-success: #4ade80;
+  --al-success-soft: #14391f;
+  --al-warning: #fb923c;
+  --al-warning-soft: #3a2410;
+  --al-alert: #f87171;
+  --al-alert-soft: #3a1414;
+  --al-info: #60a5fa;
+  --al-info-soft: #1e3a5f;
+  --al-shadow-card: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --al-shadow-strong: 0 10px 30px rgba(0, 0, 0, 0.5);
+  /* Legacy --color-* */
+  --color-bg: #0b1220;
+  --color-surface: #131c2e;
+  --color-surface-light: #1a2540;
+  --color-border: #2a3654;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #8aa0c4;
+  /* Tones unifies (saturees pour contraste dark) */
+  --tone-1: #4ade80;
+  --tone-2: #a3e635;
+  --tone-3: #94a3b8;
+  --tone-4: #fb923c;
+  --tone-5: #f87171;
+  --tone-1-bg: rgba(74, 222, 128, 0.16);
+  --tone-2-bg: rgba(163, 230, 53, 0.12);
+  --tone-3-bg: rgba(148, 163, 184, 0.10);
+  --tone-4-bg: rgba(251, 146, 60, 0.16);
+  --tone-5-bg: rgba(248, 113, 113, 0.16);
 }
 
-/* Apply theme to background + body (other components garderont leur palette
-   actuelle pour cette V1 ; dark mode complet est un chantier multi-onglets). */
-:root[data-theme="dark"] body { background: var(--al-bg); color: var(--al-fg); }
+/* --- Body / shell ----------------------------------- */
+:root[data-theme="dark"] body { background: var(--al-bg); color: var(--al-text); }
+:root[data-theme="dark"] .alpine-sidebar,
+:root[data-theme="dark"] .alpine-shell-sidebar { background: #07101f; border-color: var(--al-border); }
+:root[data-theme="dark"] .alpine-topbar,
+:root[data-theme="dark"] .alpine-shell-topbar { background: var(--al-surface); border-color: var(--al-border); }
+:root[data-theme="dark"] .alpine-shell-main { background: var(--al-bg); }
+
+/* --- Cartes / panels generiques ------------------------------- */
+:root[data-theme="dark"] .reglages-card,
+:root[data-theme="dark"] .progression-panel,
+:root[data-theme="dark"] .progression-annual-kpi-card,
+:root[data-theme="dark"] .progression-kpi-card,
+:root[data-theme="dark"] .progression-regularity-kpi-card,
+:root[data-theme="dark"] .progression-comparisons-kpi-card,
+:root[data-theme="dark"] .alpine-kpi-card,
+:root[data-theme="dark"] .alpine-card,
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .progression-comparison-year-chips,
+:root[data-theme="dark"] .reglages-modal {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+  color: var(--al-text);
+}
+
+/* Headings et textes */
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2, :root[data-theme="dark"] h3,
+:root[data-theme="dark"] h4, :root[data-theme="dark"] strong { color: var(--al-text); }
+:root[data-theme="dark"] small,
+:root[data-theme="dark"] .alpine-muted,
+:root[data-theme="dark"] .reglages-row-hint,
+:root[data-theme="dark"] .progression-panel-sub { color: var(--al-muted); }
+:root[data-theme="dark"] .reglages-field label,
+:root[data-theme="dark"] .reglages-weekday-label,
+:root[data-theme="dark"] .reglages-quality-label { color: var(--al-text-soft); }
+
+/* --- Inputs / selects ---------------------------------------- */
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] .reglages-field input,
+:root[data-theme="dark"] .reglages-field select {
+  background: var(--al-surface-soft);
+  border-color: var(--al-border);
+  color: var(--al-text);
+}
+:root[data-theme="dark"] input:focus,
+:root[data-theme="dark"] select:focus,
+:root[data-theme="dark"] textarea:focus {
+  border-color: var(--al-primary);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+/* --- Boutons ------------------------------------------------- */
+:root[data-theme="dark"] .reglages-btn { background: var(--al-surface-soft); border-color: var(--al-border); color: var(--al-primary); }
+:root[data-theme="dark"] .reglages-btn:hover { background: var(--al-primary-soft); border-color: var(--al-primary); }
+:root[data-theme="dark"] .reglages-btn-primary { background: var(--al-primary); border-color: var(--al-primary); color: #07101f; }
+:root[data-theme="dark"] .reglages-btn-primary:hover { background: var(--al-primary-stronger); border-color: var(--al-primary-stronger); }
+:root[data-theme="dark"] .reglages-btn-soft { background: var(--al-primary-soft); border-color: var(--al-primary); color: var(--al-primary-stronger); }
+
+/* --- SubTabs ------------------------------------------------- */
+:root[data-theme="dark"] .alpine-subtabs button { color: var(--al-muted); }
+:root[data-theme="dark"] .alpine-subtabs button[aria-selected="true"],
+:root[data-theme="dark"] .alpine-subtabs button.is-active { background: var(--al-primary); color: #07101f; }
+
+/* --- Reglages specifiques ------------------------------------ */
+:root[data-theme="dark"] .reglages-row + .reglages-row,
+:root[data-theme="dark"] .reglages-history-row + .reglages-history-row,
+:root[data-theme="dark"] .reglages-actions-list li + li,
+:root[data-theme="dark"] .reglages-platform-data,
+:root[data-theme="dark"] .reglages-modal-actions { border-color: var(--al-border); }
+:root[data-theme="dark"] .reglages-platform-status.is-connected { background: rgba(74, 222, 128, 0.18); color: #6ee7b7; }
+:root[data-theme="dark"] .reglages-platform-status.is-disconnected { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
+:root[data-theme="dark"] .reglages-sessions-row { background: var(--al-surface-soft); border-color: var(--al-border); }
+:root[data-theme="dark"] .reglages-sessions-row.is-current { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.4); }
+:root[data-theme="dark"] .reglages-sessions-current-badge { background: rgba(74, 222, 128, 0.18); color: #6ee7b7; }
+:root[data-theme="dark"] .reglages-integration-icon,
+:root[data-theme="dark"] .reglages-platform-data-icon,
+:root[data-theme="dark"] .reglages-about-icon,
+:root[data-theme="dark"] .reglages-actions-icon { background: var(--al-primary-soft); color: var(--al-primary); }
+:root[data-theme="dark"] .reglages-tip { background: var(--al-primary-soft); border-color: var(--al-primary); color: var(--al-text-soft); }
+:root[data-theme="dark"] .reglages-tip strong { color: var(--al-text); }
+:root[data-theme="dark"] .reglages-quality-bar { background: var(--al-surface-soft); }
+:root[data-theme="dark"] .reglages-platform-name { color: inherit; }
+
+/* --- Progression KPI / charts ------------------------------- */
+:root[data-theme="dark"] .progression-kpi-card-value,
+:root[data-theme="dark"] .progression-annual-kpi-value,
+:root[data-theme="dark"] .progression-regularity-kpi-value,
+:root[data-theme="dark"] .progression-comparisons-kpi-value,
+:root[data-theme="dark"] .progression-monthly-comparison-cell strong,
+:root[data-theme="dark"] .progression-twelve-weeks-footer strong,
+:root[data-theme="dark"] .progression-cumulative-value,
+:root[data-theme="dark"] .progression-yoy-current,
+:root[data-theme="dark"] .progression-sport-value,
+:root[data-theme="dark"] .progression-terrain-metric-value,
+:root[data-theme="dark"] .progression-streak-label-item strong,
+:root[data-theme="dark"] .progression-weekday-value,
+:root[data-theme="dark"] .reglages-metric-value,
+:root[data-theme="dark"] .reglages-row strong { color: var(--al-text); }
+:root[data-theme="dark"] .progression-kpi-card-label,
+:root[data-theme="dark"] .progression-annual-kpi-label,
+:root[data-theme="dark"] .progression-regularity-kpi-label,
+:root[data-theme="dark"] .progression-comparisons-kpi-label { color: var(--al-muted); }
+:root[data-theme="dark"] .progression-comparison-year-chip { background: var(--al-surface-soft); color: var(--al-text-soft); border-color: transparent; }
+:root[data-theme="dark"] .progression-comparison-year-chip:hover { background: var(--al-primary-soft); }
+:root[data-theme="dark"] .progression-comparison-year-chip.is-active { background: var(--al-primary); color: #07101f; border-color: var(--al-primary); }
+:root[data-theme="dark"] .progression-insights-progress { background: rgba(74, 222, 128, 0.10); border-color: rgba(74, 222, 128, 0.3); }
+:root[data-theme="dark"] .progression-insights-watch { background: rgba(251, 146, 60, 0.10); border-color: rgba(251, 146, 60, 0.3); }
+:root[data-theme="dark"] .progression-overview-tip { background: var(--al-primary-soft); border-color: var(--al-primary); color: var(--al-text-soft); }
+:root[data-theme="dark"] .progression-regularity-week { background: var(--al-border); }
+:root[data-theme="dark"] .progression-regularity-week.is-future { background: var(--al-border-soft); }
+:root[data-theme="dark"] .progression-cumulative-bar,
+:root[data-theme="dark"] .progression-streak-dot,
+:root[data-theme="dark"] .progression-weekday-bar,
+:root[data-theme="dark"] .progression-terrain-metric-bar { background: var(--al-surface-soft); }
+:root[data-theme="dark"] .progression-takeaway-item,
+:root[data-theme="dark"] .progression-regularity-takeaway-item { background: var(--al-surface-soft); border-color: var(--al-border-soft); }
+:root[data-theme="dark"] .progression-takeaway-item.tone-positive,
+:root[data-theme="dark"] .progression-regularity-takeaway-item.tone-positive { background: rgba(74, 222, 128, 0.08); }
+:root[data-theme="dark"] .progression-takeaway-item.tone-warning,
+:root[data-theme="dark"] .progression-regularity-takeaway-item.tone-warning { background: rgba(251, 146, 60, 0.10); }
+:root[data-theme="dark"] .progression-regularity-tip-card { background: var(--al-primary-soft); border-color: var(--al-primary); color: var(--al-text-soft); }
+
+/* --- Modales & toasts --------------------------------------- */
+:root[data-theme="dark"] .reglages-modal-overlay { background: rgba(0, 0, 0, 0.65); }
+:root[data-theme="dark"] .reglages-modal-error { background: var(--al-alert-soft); border-color: var(--al-alert); color: var(--al-alert); }
+:root[data-theme="dark"] .alpine-toast { background: var(--al-surface); color: var(--al-text); }
+:root[data-theme="dark"] .reglages-pwd-strength-bar,
+:root[data-theme="dark"] .reglages-pwd-strength-label { color: var(--al-muted); }
+:root[data-theme="dark"] .reglages-pwd-strength-bar { background: var(--al-border); }
+
+/* --- Recharts adaptations dark ------------------------------ */
+:root[data-theme="dark"] .recharts-cartesian-grid line { stroke: var(--al-border) !important; }
+:root[data-theme="dark"] .recharts-text { fill: var(--al-muted) !important; }
+:root[data-theme="dark"] .recharts-cartesian-axis-line { stroke: var(--al-border) !important; }
+:root[data-theme="dark"] .recharts-default-tooltip,
+:root[data-theme="dark"] .recharts-tooltip-wrapper > div {
+  background: var(--al-surface) !important;
+  border-color: var(--al-border) !important;
+  color: var(--al-text) !important;
+}
+:root[data-theme="dark"] .recharts-tooltip-label,
+:root[data-theme="dark"] .recharts-tooltip-item { color: var(--al-text) !important; }
+:root[data-theme="dark"] .recharts-legend-item-text { color: var(--al-muted) !important; }
+:root[data-theme="dark"] .recharts-polar-grid-angle line,
+:root[data-theme="dark"] .recharts-polar-grid-concentric-polygon { stroke: var(--al-border) !important; }
+:root[data-theme="dark"] .recharts-polar-angle-axis-tick-value { fill: var(--al-text-soft) !important; }
+:root[data-theme="dark"] .recharts-radar-polygon { fill-opacity: 0.4; }
+
+/* --- Donut sport: stroke white -> surface */
+:root[data-theme="dark"] .progression-sport-donut-chart .recharts-pie-sector path { stroke: var(--al-surface) !important; }
+:root[data-theme="dark"] .progression-sport-donut-center strong { color: var(--al-text); }
+:root[data-theme="dark"] .progression-sport-donut-center small { color: var(--al-muted); }
+
+/* --- Sidebar (existing alpine-sidebar variants) ------------ */
+:root[data-theme="dark"] .alpine-sidebar nav a,
+:root[data-theme="dark"] .alpine-sidebar nav button { color: var(--al-text-soft); }
+:root[data-theme="dark"] .alpine-sidebar nav a:hover { background: var(--al-surface-soft); color: var(--al-text); }
+:root[data-theme="dark"] .alpine-sidebar nav a.active { background: var(--al-primary-soft); color: var(--al-primary-stronger); }
 
 /* ============================================================
    Density compact — reduit paddings principaux des cartes
