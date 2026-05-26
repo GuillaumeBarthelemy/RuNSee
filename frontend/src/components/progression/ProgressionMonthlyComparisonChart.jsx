@@ -6,8 +6,14 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
  *
  * Line chart 12 mois : annee courante vs N-1 + footer YTD/projection.
  */
-// Palette de gris dégradé pour les années overlay (de + récente à + ancienne)
-const OVERLAY_PALETTE = ["#cbd5e1", "#dde6f0", "#e5edf7"];
+// Palette distincte (hues différentes) pour identifier chaque année historique.
+// L'année comparée active (previous) reste en gris foncé (#94a3b8).
+// Les autres années (overlay) utilisent des couleurs distinctes mais subtiles.
+const OVERLAY_PALETTE = [
+  "#7c3aed", // violet (N-2)
+  "#f97316", // orange (N-3)
+  "#14b8a6", // teal (N-4)
+];
 
 function ProgressionMonthlyComparisonChart({ data = {} }) {
   const overlayYears = Array.isArray(data?.overlayYears) ? data.overlayYears : [];
@@ -32,9 +38,10 @@ function ProgressionMonthlyComparisonChart({ data = {} }) {
               type="monotone"
               dataKey={`overlay_${y}`}
               stroke={OVERLAY_PALETTE[Math.min(idx, OVERLAY_PALETTE.length - 1)]}
-              strokeWidth={1.2}
+              strokeWidth={1.6}
               dot={false}
-              strokeDasharray="2 4"
+              strokeDasharray="4 4"
+              strokeOpacity={0.7}
               name={String(y)}
             />
           ))}

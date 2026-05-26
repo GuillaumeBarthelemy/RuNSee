@@ -42,6 +42,8 @@ function formatMeters(n) {
   return `${v.toLocaleString("fr-FR").replace(/\s/g, " ")} m`;
 }
 function formatSignedPercent(v) {
+  // null signifie "comparaison impossible" (prev=0 par ex.)
+  if (v === null || v === undefined) return "—";
   const n = toFiniteNumber(v);
   if (Math.abs(n) < 0.5) return "0 %";
   const sign = n > 0 ? "+" : "-";
@@ -66,8 +68,21 @@ function formatSignedPts(v) {
   return `${sign}${Math.abs(n).toFixed(0)} pts`;
 }
 function deltaPct(curr, prev) {
-  if (prev <= 0) return 0;
+  // Retourne null si l'annee comparee n'a pas de donnees -> "—" affiche
+  // au lieu d'un trompeur "0 %" alors qu'on a +N km.
+  if (prev <= 0) return null;
   return ((curr - prev) / prev) * 100;
+}
+
+/**
+ * Determine la tone d'un delta :
+ *   - neutral si la valeur precedente est <= 0 (comparaison impossible)
+ *   - positive si curr >= prev
+ *   - warning sinon
+ */
+function deltaTone(curr, prev) {
+  if (prev <= 0) return "neutral";
+  return curr >= prev ? "positive" : "warning";
 }
 
 function activitiesInRange(activities, start, end) {
@@ -153,8 +168,10 @@ function buildKpi(currentYearActs, prevYearActs, last12wActs, prev12wActs, refDa
       label: `vs ${prevYear} (${prevMonthName})`,
       formattedValue: formatSignedPercent(ytdDelta),
       sublabel: "Volume",
-      formattedHint: formatSignedKm(currKm - prevKm),
-      tone: ytdDelta >= 0 ? "positive" : "warning",
+      formattedHint: prevKm > 0
+        ? formatSignedKm(currKm - prevKm)
+        : `${formatSignedKm(currKm)} (pas de réf.)`,
+      tone: deltaTone(currKm, prevKm),
     },
     {
       key: "vs_12w",
@@ -162,8 +179,10 @@ function buildKpi(currentYearActs, prevYearActs, last12wActs, prev12wActs, refDa
       label: "vs 12 dernières semaines",
       formattedValue: formatSignedPercent(w12Delta),
       sublabel: "Volume",
-      formattedHint: formatSignedKm(last12wKm - prev12wKm),
-      tone: w12Delta >= 0 ? "positive" : "warning",
+      formattedHint: prev12wKm > 0
+        ? formatSignedKm(last12wKm - prev12wKm)
+        : `${formatSignedKm(last12wKm)} (pas de réf.)`,
+      tone: deltaTone(last12wKm, prev12wKm),
     },
     {
       key: "trail_specific",
@@ -171,8 +190,10 @@ function buildKpi(currentYearActs, prevYearActs, last12wActs, prev12wActs, refDa
       label: "Trail spécifique",
       formattedValue: `${Math.round(trailPctNow)} %`,
       sublabel: "du volume",
-      formattedHint: `${formatSignedPts(trailDeltaPts)} vs ${prevYear}`,
-      tone: trailDeltaPts >= 0 ? "positive" : "warning",
+      formattedHint: prevKm > 0
+        ? `${formatSignedPts(trailDeltaPts)} vs ${prevYear}`
+        : `Pas de données ${prevYear}`,
+      tone: prevKm > 0 ? (trailDeltaPts >= 0 ? "positive" : "warning") : "neutral",
     },
     {
       key: "balance",
@@ -180,8 +201,10 @@ function buildKpi(currentYearActs, prevYearActs, last12wActs, prev12wActs, refDa
       label: "Équilibre route / trail",
       formattedValue: `${routePct} % / ${trailPct} %`,
       sublabel: "Route / Trail",
-      formattedHint: `${formatSignedPts(balanceDeltaPts)} trail vs ${prevYear}`,
-      tone: balanceDeltaPts >= 0 ? "positive" : "warning",
+      formattedHint: prevKm > 0
+        ? `${formatSignedPts(balanceDeltaPts)} trail vs ${prevYear}`
+        : `Pas de données ${prevYear}`,
+      tone: prevKm > 0 ? (balanceDeltaPts >= 0 ? "positive" : "warning") : "neutral",
     },
   ];
 }
@@ -244,11 +267,11 @@ function buildMonthlyComparison(activities, refDate, comparisonYearOffset = 1, a
     formattedYtdCurrent: formatKm(ytdCurrent),
     formattedYtdPrev: formatKm(ytdPrev),
     formattedYtdDelta: formatSignedPercent(deltaPct(ytdCurrent, ytdPrev)),
-    ytdDeltaTone: ytdCurrent >= ytdPrev ? "positive" : "warning",
+    ytdDeltaTone: deltaTone(ytdCurrent, ytdPrev),
     formattedProjection: formatKm(projection),
     formattedTotalPrev: formatKm(totalPrev),
     formattedProjectionDelta: formatSignedPercent(deltaPct(projection, totalPrev)),
-    projectionDeltaTone: projection >= totalPrev ? "positive" : "warning",
+    projectionDeltaTone: deltaTone(projection, totalPrev),
     ytdMonthLabel: `${labels[0].replace(".", "")} – ${labels[lastMonthIdx].replace(".", "")}`,
   };
 }
@@ -381,7 +404,7 @@ function buildTerrainElevation(currentYearActs, prevYearActs, refDate, compariso
       formattedPrev: formatMeters(prevElev),
       formattedDelta: formatSignedPercent(deltaPct(currElev, prevElev)),
       formattedDeltaAbs: formatSignedMeters(currElev - prevElev),
-      tone: currElev >= prevElev ? "positive" : "warning",
+      tone: deltaTone(currElev, prevElev),
     },
     elevationPerKm: {
       title: "Dénivelé / km",
@@ -394,7 +417,7 @@ function buildTerrainElevation(currentYearActs, prevYearActs, refDate, compariso
       formattedPrev: `${Math.round(prevElevPerKm)} m/km`,
       formattedDelta: formatSignedPercent(deltaPct(currElevPerKm, prevElevPerKm)),
       formattedDeltaAbs: `${currElevPerKm >= prevElevPerKm ? "+" : "-"}${Math.round(Math.abs(currElevPerKm - prevElevPerKm))} m/km`,
-      tone: currElevPerKm >= prevElevPerKm ? "positive" : "warning",
+      tone: deltaTone(currElevPerKm, prevElevPerKm),
     },
   };
 }
