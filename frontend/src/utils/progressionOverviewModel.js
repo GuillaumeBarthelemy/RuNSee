@@ -120,12 +120,14 @@ function buildCumulAnnuel(activities, refDate) {
     return withHr.reduce((s, a) => s + toFiniteNumber(a.averageHeartrate), 0) / withHr.length;
   };
 
-  // Sparklines : 12 mois courants (somme par mois)
+  // Sparklines : mois ecoulés uniquement (de janvier au mois en cours inclus)
+  // pour eviter la "chute a zero" sur les mois futurs.
+  const lastMonthIdx = refDate.getMonth(); // 0..11
   function monthlySpark(metricFn) {
-    const arr = new Array(12).fill(0);
+    const arr = new Array(lastMonthIdx + 1).fill(0);
     currentActs.forEach((a) => {
       const d = safeDate(a?.startDateLocal || a?.startDate);
-      if (d && d.getFullYear() === refDate.getFullYear()) {
+      if (d && d.getFullYear() === refDate.getFullYear() && d.getMonth() <= lastMonthIdx) {
         arr[d.getMonth()] += metricFn(a);
       }
     });
@@ -200,10 +202,10 @@ function buildCumulAnnuel(activities, refDate) {
       tone: curr.activeDays >= prev.activeDays ? "positive" : "warning",
       // Sparkline jours actifs par mois
       sparkline: (() => {
-        const arr = new Array(12).fill(null).map(() => new Set());
+        const arr = new Array(lastMonthIdx + 1).fill(null).map(() => new Set());
         currentActs.forEach((a) => {
           const d = safeDate(a?.startDateLocal || a?.startDate);
-          if (d && d.getFullYear() === refDate.getFullYear()) {
+          if (d && d.getFullYear() === refDate.getFullYear() && d.getMonth() <= lastMonthIdx) {
             arr[d.getMonth()].add(d.getDate());
           }
         });
@@ -224,12 +226,12 @@ function buildCumulAnnuel(activities, refDate) {
         ? (curr.avgHr <= prev.avgHr ? "positive" : "warning")
         : "neutral",
       sparkline: (() => {
-        const sums = new Array(12).fill(0);
-        const counts = new Array(12).fill(0);
+        const sums = new Array(lastMonthIdx + 1).fill(0);
+        const counts = new Array(lastMonthIdx + 1).fill(0);
         currentActs.forEach((a) => {
           const d = safeDate(a?.startDateLocal || a?.startDate);
           const hr = toFiniteNumber(a.averageHeartrate);
-          if (d && d.getFullYear() === refDate.getFullYear() && hr > 0) {
+          if (d && d.getFullYear() === refDate.getFullYear() && hr > 0 && d.getMonth() <= lastMonthIdx) {
             sums[d.getMonth()] += hr;
             counts[d.getMonth()] += 1;
           }
@@ -260,7 +262,13 @@ function buildWeeklyVolume(activities, refDate) {
     value: Number(values[idx].toFixed(1)),
     rolling: Number(rolling[idx].toFixed(1)),
   }));
-  const currentIdx = points.length - 1;
+  // On retient la derniere semaine ayant au moins une activite (la semaine en
+  // cours est souvent partielle -> on prefere afficher S-1 si la courante est vide).
+  let currentIdx = -1;
+  for (let i = points.length - 1; i >= 0; i -= 1) {
+    if (points[i].value > 0) { currentIdx = i; break; }
+  }
+  if (currentIdx === -1) currentIdx = points.length - 1;
   const currentPoint = points[currentIdx];
   return {
     points,
@@ -506,9 +514,20 @@ function buildLongTermTrends(activities, refDate) {
     };
   }
 
-  const data = years.map(totalsForYear);
+  // On ne garde que les annees ayant au moins une sortie pour eviter les
+  // sparklines en "cloche" quand l'historique est court.
+  const data = years
+    .map(totalsForYear)
+    .filter((d) => d.distanceKm > 0 || d.elevationM > 0);
+  if (data.length === 0) {
+    return [
+      { key: "charge", label: "Charge d'entraînement", formattedValue: "—", formattedDelta: "", tone: "neutral", points: [], color: "#15803d" },
+      { key: "volume", label: "Volume annuel (km)", formattedValue: "—", formattedDelta: "", tone: "neutral", points: [], color: "#1268f3" },
+      { key: "elevation", label: "Dénivelé annuel", formattedValue: "—", formattedDelta: "", tone: "neutral", points: [], color: "#a855f7" },
+    ];
+  }
   const last = data[data.length - 1];
-  const prev = data[data.length - 2];
+  const prev = data.length >= 2 ? data[data.length - 2] : { ...last, year: last.year - 1, distanceKm: 0, elevationM: 0, chargeProxy: 0 };
 
   function trendCard(key, label, fieldName, formatter, color) {
     const points = data.map((d) => ({ x: d.year, y: Number(d[fieldName].toFixed(1)) }));
