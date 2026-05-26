@@ -7,11 +7,13 @@ import EmptyState from "../components/visuals/alpine/EmptyState.jsx";
 import ProgressionVolumeTab from "../components/progression/ProgressionVolumeTab.jsx";
 import ProgressionOverviewTab from "../components/progression/ProgressionOverviewTab.jsx";
 import ProgressionRegularityTab from "../components/progression/ProgressionRegularityTab.jsx";
+import ProgressionComparisonsTab from "../components/progression/ProgressionComparisonsTab.jsx";
 import useActivityViewModel from "../hooks/useActivityViewModel.js";
 import { filterActivities } from "../utils/activityAggregations.js";
 import { buildProgressionVolumeModel } from "../utils/progressionVolumeModel.js";
 import { buildProgressionOverviewModel } from "../utils/progressionOverviewModel.js";
 import { buildProgressionRegularityModel } from "../utils/progressionRegularityModel.js";
+import { buildProgressionComparisonsModel } from "../utils/progressionComparisonsModel.js";
 
 const PROGRESSION_TABS = [
   { id: "overview", label: "Vue d'ensemble" },
@@ -97,6 +99,14 @@ export default function ProgressionPage() {
     [scopeActivities, sharedRange.end],
   );
 
+  const comparisonsModel = useMemo(
+    () => buildProgressionComparisonsModel({
+      activities: scopeActivities,
+      referenceDate: sharedRange.end,
+    }),
+    [scopeActivities, sharedRange.end],
+  );
+
   const periodActivitiesCount = useMemo(
     () => filterActivities(safeActivities, periodFilters, { groupSports: options.groupSports }).length,
     [periodFilters, options.groupSports, safeActivities],
@@ -154,6 +164,8 @@ export default function ProgressionPage() {
           <ProgressionVolumeTab model={volumeModel} />
         ) : activeTabId === "regularite" ? (
           <ProgressionRegularityTab model={regularityModel} />
+        ) : activeTabId === "comparaisons" ? (
+          <ProgressionComparisonsTab model={comparisonsModel} />
         ) : (
           <div className="card section progression-tab-placeholder">
             <EmptyState
