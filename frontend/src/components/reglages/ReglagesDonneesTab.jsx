@@ -116,7 +116,8 @@ function computeDataQuality(activities = []) {
  */
 function ReglagesDonneesTab() {
   const { pushToast } = useToast();
-  const { safeActivities } = useRunSeeData({ includeActivities: true });
+  // useRunSeeData expose `activities` (et non safeActivities) ; default fallback sur [].
+  const { activities = [] } = useRunSeeData({ includeActivities: true });
 
   const [summary, setSummary] = useState(null);
   const [jobs, setJobs] = useState([]);
@@ -164,7 +165,7 @@ function ReglagesDonneesTab() {
 
   const nextSyncAt = useMemo(() => nextAutoSyncEstimate(lastSyncAt, 30), [lastSyncAt]);
 
-  const quality = useMemo(() => computeDataQuality(safeActivities), [safeActivities]);
+  const quality = useMemo(() => computeDataQuality(activities), [activities]);
 
   const handleSyncNow = async () => {
     setSyncing(true);

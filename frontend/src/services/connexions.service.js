@@ -84,23 +84,24 @@ export async function purgeGarminData() {
 }
 
 /**
- * Helper : formate une date ISO en relatif court ("il y a 12 min", "il y a 3 h").
+ * Helper : formate une date ISO en relatif court.
+ * Gere passe ("Il y a 12 min") ET futur ("Dans 8 min").
  */
 export function formatRelativeDate(dateLike) {
   if (!dateLike) return "Jamais";
   const date = new Date(dateLike);
   if (Number.isNaN(date.getTime())) return "—";
   const now = Date.now();
-  const diffMs = now - date.getTime();
-  const diffMin = Math.round(diffMs / 60000);
-  if (diffMin < 1) return "À l'instant";
-  if (diffMin < 60) return `Il y a ${diffMin} min`;
-  if (diffMin < 24 * 60) {
-    const h = Math.round(diffMin / 60);
-    return `Il y a ${h} h`;
-  }
-  const days = Math.round(diffMin / (60 * 24));
-  if (days < 7) return `Il y a ${days} j`;
+  const diffMs = date.getTime() - now; // > 0 = futur, < 0 = passe
+  const absMin = Math.round(Math.abs(diffMs) / 60000);
+  const isFuture = diffMs > 0;
+  if (absMin < 1) return "À l'instant";
+  const prefix = isFuture ? "Dans" : "Il y a";
+  if (absMin < 60) return `${prefix} ${absMin} min`;
+  const absH = Math.round(absMin / 60);
+  if (absMin < 24 * 60) return `${prefix} ${absH} h`;
+  const absDays = Math.round(absMin / (60 * 24));
+  if (absDays < 7) return `${prefix} ${absDays} j`;
   return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
 
