@@ -60,12 +60,21 @@ function buildPublicConnectionResult(connection, extras = {}) {
 function extractGarminProfile(result = {}, email = "") {
   const profile = result?.profile && typeof result.profile === "object" ? result.profile : {};
   const accountIdentifier = normalizeString(profile.accountIdentifier) || normalizeString(email);
-  // Prefer email for displayName (lisible utilisateur) plutot que l'UUID Garmin.
-  // Si Garmin retourne explicitement un displayName (nom complet par ex.),
-  // on le garde en priorite.
-  const explicitName = normalizeString(profile.displayName);
   const emailString = normalizeString(email);
-  const displayName = explicitName || emailString || accountIdentifier;
+  const explicitName = normalizeString(profile.displayName);
+  // Le bridge Python Garmin retourne souvent profile.displayName = UUID
+  // (identifiant interne) au lieu d'un nom utilisateur reel. On prefere
+  // donc :
+  //   1. email saisi par l'utilisateur (toujours plus lisible)
+  //   2. profile.displayName si different de l'accountIdentifier (= nom reel)
+  //   3. accountIdentifier en dernier recours
+  let displayName = emailString;
+  if (!displayName && explicitName && explicitName !== accountIdentifier) {
+    displayName = explicitName;
+  }
+  if (!displayName) {
+    displayName = accountIdentifier;
+  }
 
   return {
     accountIdentifier,
