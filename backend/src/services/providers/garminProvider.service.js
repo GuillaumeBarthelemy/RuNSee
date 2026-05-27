@@ -60,7 +60,12 @@ function buildPublicConnectionResult(connection, extras = {}) {
 function extractGarminProfile(result = {}, email = "") {
   const profile = result?.profile && typeof result.profile === "object" ? result.profile : {};
   const accountIdentifier = normalizeString(profile.accountIdentifier) || normalizeString(email);
-  const displayName = normalizeString(profile.displayName) || accountIdentifier;
+  // Prefer email for displayName (lisible utilisateur) plutot que l'UUID Garmin.
+  // Si Garmin retourne explicitement un displayName (nom complet par ex.),
+  // on le garde en priorite.
+  const explicitName = normalizeString(profile.displayName);
+  const emailString = normalizeString(email);
+  const displayName = explicitName || emailString || accountIdentifier;
 
   return {
     accountIdentifier,
@@ -140,7 +145,7 @@ export async function getGarminConnectionStatus(appUserId) {
   return buildGarminConnectionWithRecoveryStatus(appUserId, connection);
 }
 
-function buildStravaProviderStatus(connection) {
+function buildStravaProviderStatus(connection, lastSyncJob = null) {
   const connected = Boolean(connection?.isActive);
 
   return {
@@ -152,7 +157,9 @@ function buildStravaProviderStatus(connection) {
       : "",
     accountIdentifier: connection?.athlete?.username || connection?.stravaAthleteId || "",
     connectedAt: connection?.connectedAt || null,
-    lastSyncAt: null,
+    // Derive lastSyncAt from the most recent successful SyncJob (Strava ne
+    // stocke pas la donnee directement sur le record connection).
+    lastSyncAt: lastSyncJob?.endedAt || null,
     lastErrorCode: "",
     lastErrorMessage: "",
     lastErrorAt: null,
@@ -172,15 +179,25 @@ function buildGarminProviderStatus(connection, recoveryBackfill = {}) {
 }
 
 export async function getProviderStatusesForUser(appUserId) {
-  const [stravaConnection, garminConnection, garminRecoveryBackfill] = await Promise.all([
+  const [stravaConnection, garminConnection, garminRecoveryBackfill, lastStravaSyncJob] = await Promise.all([
     findActiveConnectionForUser(appUserId, { includeAthlete: true }),
     findExternalProviderConnectionForUser(appUserId, GARMIN_PROVIDER_CODE),
     getGarminRecoveryBackfillStatus(appUserId),
+    // Dernier SyncJob Strava reussi (status success / completed) avec endedAt non null
+    prisma.syncJob.findFirst({
+      where: {
+        appUserId,
+        status: { in: ["success", "completed"] },
+        endedAt: { not: null },
+      },
+      orderBy: { endedAt: "desc" },
+      select: { endedAt: true, status: true },
+    }).catch(() => null),
   ]);
 
   return {
     providers: {
-      strava: buildStravaProviderStatus(stravaConnection),
+      strava: buildStravaProviderStatus(stravaConnection, lastStravaSyncJob),
       garmin: buildGarminProviderStatus(garminConnection, garminRecoveryBackfill),
     },
   };
