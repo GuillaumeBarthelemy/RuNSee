@@ -63,12 +63,13 @@ export function csrfMiddleware(req, res, next) {
   const cookies = parseCookieHeader(req.headers?.cookie);
   let token = String(cookies[CSRF_COOKIE_NAME] || "").trim();
 
-  // 1. Si pas de token, en generer un et le poser dans la reponse (non httpOnly
-  //    pour que le JS frontend puisse le lire et le renvoyer en header).
+  // 1. Si pas de token, en generer un et le poser dans la reponse en cookie.
+  //    Cookie httpOnly true : protege contre exfiltration via XSS (le JS
+  //    n'a pas besoin de le lire — on transmet la valeur via header).
   if (!token) {
     token = generateCsrfToken();
     res.cookie(CSRF_COOKIE_NAME, token, {
-      httpOnly: false,
+      httpOnly: true,
       sameSite: "lax",
       secure: env.isSecureCookies,
       path: "/",
@@ -76,6 +77,11 @@ export function csrfMiddleware(req, res, next) {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
   }
+
+  // Transmet le token via response header (lisible cross-subdomain par le
+  // JS frontend grace a Access-Control-Expose-Headers). Evite le probleme
+  // ou api.runnsee.net pose un cookie que runsee.runnsee.net ne peut lire.
+  res.setHeader("X-CSRF-Token", token);
 
   // 2. Sur methodes safe, on s'arrete la.
   if (SAFE_METHODS.has(req.method)) {

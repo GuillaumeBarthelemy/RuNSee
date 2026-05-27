@@ -18,10 +18,15 @@ function buildReq({ method = "GET", path = "/test", cookie = "", header } = {}) 
 
 function buildRes() {
   const cookies = [];
+  const headers = {};
   return {
     cookies,
+    headers,
     cookie(name, value, opts) {
       cookies.push({ name, value, opts });
+    },
+    setHeader(name, value) {
+      headers[name] = value;
     },
   };
 }
@@ -36,7 +41,8 @@ describe("csrfMiddleware (Lot 2)", () => {
     assert.equal(res.cookies.length, 1);
     assert.equal(res.cookies[0].name, "runsee_csrf");
     assert.ok(res.cookies[0].value.length > 20, "token devrait etre robuste");
-    assert.equal(res.cookies[0].opts.httpOnly, false, "doit etre lisible par le JS frontend");
+    assert.equal(res.cookies[0].opts.httpOnly, true, "doit etre httpOnly (token transmis via header X-CSRF-Token)");
+    assert.equal(res.headers["X-CSRF-Token"], res.cookies[0].value, "le header doit relayer le token");
   });
 
   it("ne regenere pas le cookie si deja present", () => {

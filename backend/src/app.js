@@ -44,6 +44,9 @@ function isAllowedOrigin(origin) {
 app.use(
   cors({
     credentials: true,
+    // Expose X-CSRF-Token au JS frontend (necessaire pour double-submit
+    // cross-subdomain : api.runnsee.net <-> runsee.runnsee.net).
+    exposedHeaders: ["X-CSRF-Token"],
     origin(origin, callback) {
       if (!origin) {
         return callback(null, true);
