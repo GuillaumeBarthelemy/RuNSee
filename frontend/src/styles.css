@@ -17534,3 +17534,62 @@ button.alert-banner-positive-item {
   background: var(--al-surface) !important;
   color: var(--al-text-soft);
 }
+
+/* ============================================================
+   PHASE 2 — Onglet Connexions : menu dropdown + states sync
+   ============================================================ */
+
+/* Platform actions wrapper relative pour positionner le menu */
+.reglages-platform-actions-menu {
+  position: relative; display: inline-block;
+}
+
+.reglages-platform-menu {
+  position: absolute; top: 100%; right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e5edf7;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.18);
+  list-style: none; padding: 6px; margin: 4px 0 0 0;
+  min-width: 240px;
+  z-index: 30;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.reglages-platform-menu-item {
+  display: block; width: 100%; text-align: left;
+  background: transparent; border: none; cursor: pointer;
+  padding: 8px 12px; border-radius: 6px;
+  font-size: 13px; color: #0f172a; font-family: inherit;
+}
+.reglages-platform-menu-item:hover { background: #f1f5f9; }
+.reglages-platform-menu-item.is-danger { color: #b91c1c; }
+.reglages-platform-menu-item.is-danger:hover { background: #fef2f2; }
+.reglages-platform-menu-item:disabled { color: #cbd5e1; cursor: not-allowed; }
+
+/* Error block dans platform card */
+.reglages-platform-error {
+  margin: 0;
+}
+
+/* Status badge erreur */
+.reglages-platform-status.is-error {
+  background: #fef2f2; color: #b91c1c;
+}
+
+/* Dark mode override */
+:root[data-theme="dark"] .reglages-platform-menu {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+  box-shadow: var(--al-shadow-strong);
+}
+:root[data-theme="dark"] .reglages-platform-menu-item { color: var(--al-text); }
+:root[data-theme="dark"] .reglages-platform-menu-item:hover { background: var(--al-surface-soft); }
+:root[data-theme="dark"] .reglages-platform-menu-item.is-danger { color: #fca5a5; }
+:root[data-theme="dark"] .reglages-platform-menu-item.is-danger:hover { background: rgba(248, 113, 113, 0.12); }
+:root[data-theme="dark"] .reglages-platform-status.is-error {
+  background: rgba(248, 113, 113, 0.18); color: #fca5a5;
+}
+:root[data-theme="dark"] .reglages-platform-error {
+  background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.3); color: #fca5a5;
+}

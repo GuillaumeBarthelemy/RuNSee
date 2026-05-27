@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import AppShell from "../layouts/AppShell.jsx";
 import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
@@ -8,7 +7,6 @@ import ReglagesEntrainementTab from "../components/reglages/ReglagesEntrainement
 import ReglagesDonneesTab from "../components/reglages/ReglagesDonneesTab.jsx";
 import ReglagesAboutTab from "../components/reglages/ReglagesAboutTab.jsx";
 import useAuth from "../hooks/useAuth.js";
-import { getGarminConnectionStatus } from "../services/externalProvider.service.js";
 
 const REGLAGES_TABS = [
   { id: "compte",       label: "Compte" },
@@ -33,25 +31,9 @@ export default function ReglagesPage() {
   const hash = location.hash.replace(/^#/, "");
   const activeTabId = REGLAGES_TABS.some((t) => t.id === hash) ? hash : "compte";
 
-  const [garminStatus, setGarminStatus] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    getGarminConnectionStatus()
-      .then((s) => { if (!cancelled) setGarminStatus(s); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
-
-  const stravaConnected = Boolean(user?.strava?.connected || user?.stravaConnected);
-  const stravaAccount = user?.strava?.athleteUsername || user?.strava?.athleteName || user?.email || "";
-  const stravaLastSync = user?.strava?.lastSync || "—";
-
-  const garminConnected = Boolean(garminStatus?.connected);
-  const garminAccount = garminStatus?.username || garminStatus?.account || "—";
-  const garminLastSync = garminStatus?.lastSyncAt || "—";
-
-  // AccountTab utilise useAuth() directement (refreshUser + logout)
-  // user reste utilisé pour le statut Strava ci-dessous.
+  // AccountTab et ConnexionsTab utilisent leurs propres hooks/services pour
+  // charger les donnees fraiches (user / providers status). On ne passe plus
+  // de props ici (autoriser auto-refresh apres save / sync / reconnect).
   void user;
 
   return (
@@ -66,14 +48,7 @@ export default function ReglagesPage() {
         {activeTabId === "compte" ? (
           <ReglagesAccountTab />
         ) : activeTabId === "connexions" ? (
-          <ReglagesConnexionsTab
-            stravaConnected={stravaConnected}
-            stravaAccount={stravaAccount}
-            stravaLastSync={stravaLastSync}
-            garminConnected={garminConnected}
-            garminAccount={garminAccount}
-            garminLastSync={garminLastSync}
-          />
+          <ReglagesConnexionsTab />
         ) : activeTabId === "entrainement" ? (
           <ReglagesEntrainementTab />
         ) : activeTabId === "donnees" ? (
