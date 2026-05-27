@@ -17381,3 +17381,156 @@ button.alert-banner-positive-item {
 :root[data-theme="dark"] [class*="-shell-content"],
 :root[data-theme="dark"] [class*="-shell-main"],
 :root[data-theme="dark"] main { background: transparent; color: var(--al-text-soft); }
+
+/* ============================================================
+   DARK MODE — Right Rails "À retenir" + insights restants
+   ============================================================ */
+
+/* --- Right rails "À retenir" (Analyse 5 sous-onglets) -------- */
+:root[data-theme="dark"] .alpine-rail-card,
+:root[data-theme="dark"] .alpine-rail-card--soft,
+:root[data-theme="dark"] .alpine-overview-rail,
+:root[data-theme="dark"] .alpine-charges-rail,
+:root[data-theme="dark"] .alpine-trends-rail,
+:root[data-theme="dark"] .alpine-intensities-rail,
+:root[data-theme="dark"] .alpine-recovery-rail,
+:root[data-theme="dark"] .alpine-activity-right-rail,
+:root[data-theme="dark"] [class*="-rail"]:not([class*="-rail-bullet"]):not([class*="-rail-title"]):not([class*="-rail-icon"]):not([class*="-rail-body"]):not([class*="-rail-cta"]):not([class*="-rail-card-head"]):not([class*="-rail-card-body"]):not([class*="-rail-card-footer"]) {
+  background: var(--al-surface) !important;
+  background-image: none !important;
+  border-color: var(--al-border) !important;
+  color: var(--al-text-soft);
+}
+
+/* Rail titles + texts */
+:root[data-theme="dark"] [class*="-rail-title"],
+:root[data-theme="dark"] [class*="-rail-bullet-title"],
+:root[data-theme="dark"] [class*="-rail-card-title"] { color: var(--al-text); }
+:root[data-theme="dark"] [class*="-rail-bullet-body"],
+:root[data-theme="dark"] [class*="-rail-card-body"],
+:root[data-theme="dark"] [class*="-rail-card-subtitle"] { color: var(--al-text-soft); }
+
+/* Rail bullet items */
+:root[data-theme="dark"] [class*="-rail-bullet"] {
+  background: transparent;
+  color: var(--al-text-soft);
+}
+
+/* Bullet icons backgrounds — tonalises avec alpha pour dark */
+:root[data-theme="dark"] [class*="-rail-bullet"].tone-1 [class*="-icon"],
+:root[data-theme="dark"] [class*="-rail-bullet"].tone-1 > [class*="-icon"] { background: rgba(74, 222, 128, 0.18) !important; color: #6ee7b7 !important; }
+:root[data-theme="dark"] [class*="-rail-bullet"].tone-2 [class*="-icon"],
+:root[data-theme="dark"] [class*="-rail-bullet"].tone-2 > [class*="-icon"] { background: rgba(163, 230, 53, 0.18) !important; color: #bef264 !important; }
+:root[data-theme="dark"] [class*="-rail-bullet"].tone-3 [class*="-icon"],
+:root[data-theme="dark"] [class*="-rail-bullet"].tone-3 > [class*="-icon"] { background: var(--al-surface-soft) !important; color: var(--al-text-soft) !important; }
+:root[data-theme="dark"] [class*="-rail-bullet"].tone-4 [class*="-icon"],
+:root[data-theme="dark"] [class*="-rail-bullet"].tone-4 > [class*="-icon"] { background: rgba(251, 146, 60, 0.18) !important; color: #fdba74 !important; }
+:root[data-theme="dark"] [class*="-rail-bullet"].tone-5 [class*="-icon"],
+:root[data-theme="dark"] [class*="-rail-bullet"].tone-5 > [class*="-icon"] { background: rgba(248, 113, 113, 0.18) !important; color: #fca5a5 !important; }
+
+/* Rail CTA button "Voir l'analyse complète" */
+:root[data-theme="dark"] [class*="-rail-cta"],
+:root[data-theme="dark"] [class*="-overview-cta-button"],
+:root[data-theme="dark"] [class*="-overview-cta"] {
+  background: var(--al-primary) !important;
+  color: #07101f !important;
+  border-color: var(--al-primary) !important;
+}
+:root[data-theme="dark"] [class*="-rail-cta"]:hover { background: var(--al-primary-stronger) !important; }
+
+/* --- Insights boxes / Legende des zones / recommendation ----- */
+:root[data-theme="dark"] [class*="-zones-legend"],
+:root[data-theme="dark"] [class*="-legend-card"],
+:root[data-theme="dark"] [class*="-insight-box"],
+:root[data-theme="dark"] [class*="-insight-card"],
+:root[data-theme="dark"] [class*="-recommendation"],
+:root[data-theme="dark"] [class*="-summary-box"],
+:root[data-theme="dark"] [class*="-info-box"],
+:root[data-theme="dark"] [class*="-empty-box"] {
+  background: var(--al-surface) !important;
+  background-image: none !important;
+  border-color: var(--al-border) !important;
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] [class*="-recommendation"][class*="-attention"],
+:root[data-theme="dark"] [class*="-recommendation"][class*="-warning"] {
+  background: rgba(251, 146, 60, 0.12) !important;
+  border-color: rgba(251, 146, 60, 0.3) !important;
+}
+:root[data-theme="dark"] [class*="-recommendation"][class*="-success"] {
+  background: rgba(74, 222, 128, 0.10) !important;
+  border-color: rgba(74, 222, 128, 0.3) !important;
+}
+
+/* --- Bottom insight notes (recovery summary, sleep summary) -- */
+:root[data-theme="dark"] [class*="-summary"][class*="-text"],
+:root[data-theme="dark"] [class*="-summary"][class*="-note"],
+:root[data-theme="dark"] [class*="-note-box"],
+:root[data-theme="dark"] [class*="-insight"] {
+  background: var(--al-surface) !important;
+  background-image: none !important;
+  border-color: var(--al-border) !important;
+  color: var(--al-text-soft) !important;
+}
+
+/* --- Recovery recommendation card (orange) ------------------- */
+:root[data-theme="dark"] [class*="recovery-recommendation"],
+:root[data-theme="dark"] [class*="recovery-detail-card"],
+:root[data-theme="dark"] [class*="recovery-detail"] {
+  background: rgba(251, 146, 60, 0.10) !important;
+  background-image: none !important;
+  border-color: rgba(251, 146, 60, 0.3) !important;
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] [class*="recovery-recommendation"] strong,
+:root[data-theme="dark"] [class*="recovery-detail-card"] strong { color: var(--al-text); }
+:root[data-theme="dark"] [class*="recovery-recommendation"] button,
+:root[data-theme="dark"] [class*="recovery-detail-card"] button {
+  background: var(--al-warning); color: #07101f; border-color: var(--al-warning);
+}
+
+/* --- Recharts tooltip text more visible ---------------------- */
+:root[data-theme="dark"] .recharts-tooltip-wrapper .recharts-default-tooltip { background: var(--al-surface) !important; }
+:root[data-theme="dark"] .recharts-tooltip-wrapper * { color: var(--al-text) !important; }
+:root[data-theme="dark"] .recharts-tooltip-label { color: var(--al-text-soft) !important; font-weight: 600; }
+
+/* Recharts custom Volume hebdo overlay (Progression Vue ensemble) */
+:root[data-theme="dark"] [class*="-overlay-value-box"],
+:root[data-theme="dark"] [class*="weekly-volume-current"] {
+  background: var(--al-surface) !important;
+  border-color: var(--al-border) !important;
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] [class*="weekly-volume-current"] strong { color: var(--al-text); }
+
+/* --- Conseil du jour footer banner ------------------------- */
+:root[data-theme="dark"] [class*="-conseil-du-jour"],
+:root[data-theme="dark"] [class*="-tip-banner"],
+:root[data-theme="dark"] [class*="-overview-tip"],
+:root[data-theme="dark"] [class*="-coach-bar"] {
+  background: var(--al-primary-soft) !important;
+  background-image: none !important;
+  border-color: var(--al-primary) !important;
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] [class*="-conseil-du-jour"] strong,
+:root[data-theme="dark"] [class*="-tip-banner"] strong,
+:root[data-theme="dark"] [class*="-overview-tip"] strong { color: var(--al-text); }
+:root[data-theme="dark"] [class*="-tip-link"],
+:root[data-theme="dark"] [class*="-coach-bar-action"] { color: var(--al-primary-stronger); }
+
+/* --- Empty hints / Pas assez de donnees ------------------- */
+:root[data-theme="dark"] [class*="-focus-empty"],
+:root[data-theme="dark"] [class*="-empty-message"],
+:root[data-theme="dark"] [class*="-empty-text"] {
+  background: var(--al-surface-soft);
+  color: var(--al-muted);
+}
+
+/* --- Heatmap legend / hint boxes -------------------------- */
+:root[data-theme="dark"] [class*="-heatmap-legend"],
+:root[data-theme="dark"] [class*="-heatmap-empty"],
+:root[data-theme="dark"] [class*="-stack-legend"] {
+  background: var(--al-surface) !important;
+  color: var(--al-text-soft);
+}
