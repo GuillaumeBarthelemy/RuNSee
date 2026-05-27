@@ -1,11 +1,26 @@
+/* global __APP_VERSION__, __APP_BUILD_DATE__, __APP_BUILD_SHA__ */
 import { memo } from "react";
 import { Link } from "react-router-dom";
 
-const APP_VERSION = "v1.2.0";
-const LAST_UPDATE = "2 mai 2025";
+const APP_VERSION = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev";
+const APP_BUILD_DATE = typeof __APP_BUILD_DATE__ !== "undefined" ? __APP_BUILD_DATE__ : null;
+const APP_BUILD_SHA = typeof __APP_BUILD_SHA__ !== "undefined" ? __APP_BUILD_SHA__ : "";
+
+function formatBuildDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
 
 /**
- * ReglagesAboutTab — Mockup p.25 onglet À propos.
+ * ReglagesAboutTab — Mockup p.25 onglet À propos (Phase 2).
+ *
+ * Wiring :
+ *   - Version + date de build + commit SHA injectes au build par Vite
+ *     (define __APP_VERSION__ / __APP_BUILD_DATE__ / __APP_BUILD_SHA__).
+ *   - Methodologie / Sources : pour l'instant pointe vers le glossaire en
+ *     attendant des pages dediees.
  */
 function ReglagesAboutTab() {
   return (
@@ -29,7 +44,7 @@ function ReglagesAboutTab() {
           <div>
             <strong>Méthodologie</strong>
             <small>Des indicateurs basés sur la physiologie de l'endurance et la science du sport.</small>
-            <a className="reglages-link" href="#methodologie">Découvrir notre méthodologie →</a>
+            <Link className="reglages-link" to="/glossaire">Découvrir notre méthodologie →</Link>
           </div>
         </section>
         <section className="reglages-card reglages-about-mini">
@@ -37,15 +52,15 @@ function ReglagesAboutTab() {
           <div>
             <strong>Sources scientifiques</strong>
             <small>Exploration des études et travaux à l'origine de nos indicateurs.</small>
-            <a className="reglages-link" href="#sources">Voir les références →</a>
+            <Link className="reglages-link" to="/glossaire">Voir les références →</Link>
           </div>
         </section>
         <section className="reglages-card reglages-about-mini">
           <span className="reglages-about-icon" aria-hidden="true">📦</span>
           <div>
             <strong>Version</strong>
-            <small>RunNSee Alpine Light · {APP_VERSION}</small>
-            <span className="reglages-about-meta">Dernière mise à jour : {LAST_UPDATE}</span>
+            <small>RunNSee Alpine Light · v{APP_VERSION}{APP_BUILD_SHA ? ` · ${APP_BUILD_SHA}` : ""}</small>
+            <span className="reglages-about-meta">Dernière mise à jour : {formatBuildDate(APP_BUILD_DATE)}</span>
           </div>
         </section>
         <section className="reglages-card reglages-about-mini">
