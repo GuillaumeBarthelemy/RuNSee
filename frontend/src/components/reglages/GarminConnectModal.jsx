@@ -18,12 +18,16 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (open) {
       setEmail(""); setPassword(""); setShowPwd(false); setError("");
+      setConsentAccepted(false); setMfaCode(""); setMfaRequired(false);
     }
   }, [open]);
 
@@ -38,16 +42,28 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email || !password || !consentAccepted) return;
     setError("");
     setSubmitting(true);
     try {
-      await connectGarmin({ email, password });
+      await connectGarmin({
+        email,
+        password,
+        consentAccepted: true,
+        mfaCode: mfaRequired ? mfaCode : undefined,
+      });
       pushToast({ message: "Garmin connecté.", tone: "success" });
       onSuccess();
       onClose();
     } catch (err) {
-      setError(extractErrorMessage(err));
+      const data = err?.response?.data;
+      // Si Garmin renvoie un challenge MFA, on bascule en mode MFA
+      if (data?.mfaRequired || /mfa|two-factor|verification/i.test(data?.userMessage || data?.message || "")) {
+        setMfaRequired(true);
+        setError("Code MFA requis. Saisis le code à 6 chiffres reçu sur ton compte Garmin.");
+      } else {
+        setError(extractErrorMessage(err));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -91,12 +107,46 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
           Afficher le mot de passe
         </label>
 
+        {mfaRequired ? (
+          <div className="reglages-field">
+            <label htmlFor="rg-garmin-mfa">Code MFA (6 chiffres)</label>
+            <input
+              id="rg-garmin-mfa"
+              type="text"
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              required
+              placeholder="123456"
+            />
+          </div>
+        ) : null}
+
+        <label className="reglages-consent-row">
+          <input
+            type="checkbox"
+            checked={consentAccepted}
+            onChange={(e) => setConsentAccepted(e.target.checked)}
+            required
+          />
+          <span>
+            J'accepte que mes identifiants soient utilisés pour établir une session
+            Garmin Connect. L'intégration Garmin est <strong>expérimentale</strong> et utilise
+            une API non officielle ; elle peut cesser de fonctionner sans préavis.
+          </span>
+        </label>
+
         {error ? <div className="reglages-modal-error">{error}</div> : null}
 
         <div className="reglages-modal-actions">
           <button type="button" className="reglages-btn" onClick={onClose} disabled={submitting}>Annuler</button>
-          <button type="submit" className="reglages-btn reglages-btn-primary" disabled={!email || !password || submitting}>
-            {submitting ? "Connexion…" : "Connecter Garmin"}
+          <button
+            type="submit"
+            className="reglages-btn reglages-btn-primary"
+            disabled={!email || !password || !consentAccepted || submitting || (mfaRequired && !mfaCode)}
+          >
+            {submitting ? "Connexion…" : mfaRequired ? "Valider le code MFA" : "Connecter Garmin"}
           </button>
         </div>
       </form>

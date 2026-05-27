@@ -17593,3 +17593,19 @@ button.alert-banner-positive-item {
 :root[data-theme="dark"] .reglages-platform-error {
   background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.3); color: #fca5a5;
 }
+
+/* Consent row checkbox (Garmin modal) */
+.reglages-consent-row {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px;
+  align-items: flex-start; font-size: 12px; color: #475569; line-height: 1.4;
+  background: #f8fafc; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid #e5edf7;
+}
+.reglages-consent-row input[type="checkbox"] { margin-top: 2px; cursor: pointer; }
+.reglages-consent-row strong { color: #0f172a; }
+:root[data-theme="dark"] .reglages-consent-row {
+  background: var(--al-surface-soft);
+  border-color: var(--al-border);
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] .reglages-consent-row strong { color: var(--al-text); }

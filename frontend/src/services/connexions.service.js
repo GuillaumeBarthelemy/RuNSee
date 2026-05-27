@@ -62,9 +62,10 @@ export async function disconnectStrava() {
 
 /**
  * Connecte Garmin avec email + password.
+ * Le backend exige consentAccepted: true (consentement experimental Garmin).
  */
-export async function connectGarmin({ email, password }) {
-  return apiConnectGarmin({ email, password });
+export async function connectGarmin({ email, password, mfaCode = undefined, consentAccepted = true }) {
+  return apiConnectGarmin({ email, password, mfaCode, consentAccepted });
 }
 
 /**
