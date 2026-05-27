@@ -23,10 +23,11 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
   const [mfaRequired, setMfaRequired] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
   useEffect(() => {
     if (open) {
-      setEmail(""); setPassword(""); setShowPwd(false); setError("");
+      setEmail(""); setPassword(""); setShowPwd(false); setError(""); setInfo("");
       setConsentAccepted(false); setMfaCode(""); setMfaRequired(false);
     }
   }, [open]);
@@ -44,6 +45,7 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
     e.preventDefault();
     if (!email || !password || !consentAccepted) return;
     setError("");
+    setInfo("");
     setSubmitting(true);
     try {
       const result = await connectGarmin({
@@ -56,7 +58,7 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
       // une validation MFA (et non une erreur). On bascule en mode MFA.
       if (result?.mfaRequired) {
         setMfaRequired(true);
-        setError(result?.message || "Code MFA requis. Saisis le code à 6 chiffres reçu par email Garmin.");
+        setInfo(result?.message || "Garmin a envoyé un code de validation à 6 chiffres par email. Saisis-le ci-dessous pour finaliser la connexion.");
         return;
       }
       // Sinon la connexion est effective
@@ -68,7 +70,7 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
       // Cas d'erreur : on regarde si l'erreur contient un signal MFA
       if (data?.mfaRequired || /mfa|two-factor|verification/i.test(data?.userMessage || data?.message || "")) {
         setMfaRequired(true);
-        setError("Code MFA requis. Saisis le code à 6 chiffres reçu par email Garmin.");
+        setInfo("Code MFA requis. Saisis le code à 6 chiffres reçu par email Garmin.");
       } else {
         setError(extractErrorMessage(err));
       }
@@ -145,6 +147,7 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
           </span>
         </label>
 
+        {info ? <div className="reglages-modal-info">{info}</div> : null}
         {error ? <div className="reglages-modal-error">{error}</div> : null}
 
         <div className="reglages-modal-actions">

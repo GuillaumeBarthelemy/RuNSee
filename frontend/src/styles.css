@@ -17609,3 +17609,14 @@ button.alert-banner-positive-item {
   color: var(--al-text-soft);
 }
 :root[data-theme="dark"] .reglages-consent-row strong { color: var(--al-text); }
+
+/* Modal info bandeau (instructions, non-erreur) */
+.reglages-modal-info {
+  background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;
+  padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.45;
+}
+:root[data-theme="dark"] .reglages-modal-info {
+  background: var(--al-primary-soft);
+  border-color: var(--al-primary);
+  color: var(--al-text-soft);
+}
