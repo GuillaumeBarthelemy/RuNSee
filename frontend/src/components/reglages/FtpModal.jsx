@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from "react";
+import useModal from "../../hooks/useModal.js";
 
 /**
  * FtpModal — Modifier la FTP (Functional Threshold Power) en watts.
@@ -20,12 +21,7 @@ function FtpModal({
     }
   }, [open, initialFtp]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const handler = (e) => { if (e.key === "Escape" && !submitting) onClose(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open, onClose, submitting]);
+  const { containerRef, handleOverlayClick } = useModal({ open, onClose, busy: submitting });
 
   if (!open) return null;
 
@@ -48,9 +44,9 @@ function FtpModal({
   };
 
   return (
-    <div className="reglages-modal-overlay" onClick={() => !submitting && onClose()} role="presentation">
-      <form className="reglages-modal" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-        <h3 className="reglages-modal-title">Modifier ta FTP</h3>
+    <div className="reglages-modal-overlay" onClick={handleOverlayClick} role="presentation">
+      <form ref={containerRef} className="reglages-modal" role="dialog" aria-modal="true" aria-labelledby="reglages-ftp-title" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+        <h3 id="reglages-ftp-title" className="reglages-modal-title">Modifier ta FTP</h3>
         <p className="reglages-modal-description">
           La FTP (Functional Threshold Power) est la puissance maximale que tu peux soutenir
           sur 1 heure. Elle permet de calculer tes zones de puissance.

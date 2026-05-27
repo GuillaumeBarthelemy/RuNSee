@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from "react";
 import { listSessions, revokeOtherSessions, revokeSession } from "../../services/account.service.js";
 import useToast from "../../hooks/useToast.js";
+import useModal from "../../hooks/useModal.js";
 
 function parseUserAgent(ua) {
   const text = String(ua || "").toLowerCase();
@@ -58,12 +59,7 @@ function SessionsModal({ open = false, onClose = () => {} }) {
     if (open) reload();
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const handler = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open, onClose]);
+  const { containerRef, handleOverlayClick } = useModal({ open, onClose });
 
   if (!open) return null;
 
@@ -91,8 +87,8 @@ function SessionsModal({ open = false, onClose = () => {} }) {
   const othersCount = sessions.filter((s) => !s.isCurrent).length;
 
   return (
-    <div className="reglages-modal-overlay" onClick={onClose} role="presentation">
-      <div className="reglages-modal reglages-modal-wide" role="dialog" aria-modal="true" aria-labelledby="reglages-sessions-title" onClick={(e) => e.stopPropagation()}>
+    <div className="reglages-modal-overlay" onClick={handleOverlayClick} role="presentation">
+      <div ref={containerRef} className="reglages-modal reglages-modal-wide" role="dialog" aria-modal="true" aria-labelledby="reglages-sessions-title" onClick={(e) => e.stopPropagation()}>
         <div className="reglages-modal-head">
           <h3 id="reglages-sessions-title" className="reglages-modal-title">Sessions actives</h3>
           <button type="button" className="reglages-modal-close" onClick={onClose} aria-label="Fermer">×</button>

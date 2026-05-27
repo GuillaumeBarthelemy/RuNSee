@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from "react";
 import useToast from "../../hooks/useToast.js";
+import useModal from "../../hooks/useModal.js";
 import { connectGarmin } from "../../services/connexions.service.js";
 
 function extractErrorMessage(err) {
@@ -32,12 +33,7 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
     }
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const handler = (e) => { if (e.key === "Escape" && !submitting) onClose(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open, onClose, submitting]);
+  const { containerRef, handleOverlayClick } = useModal({ open, onClose, busy: submitting });
 
   if (!open) return null;
 
@@ -80,8 +76,8 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
   };
 
   return (
-    <div className="reglages-modal-overlay" onClick={() => !submitting && onClose()} role="presentation">
-      <form className="reglages-modal" role="dialog" aria-modal="true" aria-labelledby="reglages-garmin-title" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+    <div className="reglages-modal-overlay" onClick={handleOverlayClick} role="presentation">
+      <form ref={containerRef} className="reglages-modal" role="dialog" aria-modal="true" aria-labelledby="reglages-garmin-title" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
         <h3 id="reglages-garmin-title" className="reglages-modal-title">Connecter Garmin Connect</h3>
         <p className="reglages-modal-description">
           Identifie-toi avec ton compte Garmin Connect. Tes identifiants sont utilisés

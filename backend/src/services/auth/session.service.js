@@ -3,6 +3,9 @@ import prisma from "../../config/prisma.js";
 import env from "../../config/env.js";
 
 const SESSION_TTL_MS = env.sessionTtlDays * 24 * 60 * 60 * 1000;
+// Throttle pour eviter une ecriture DB a chaque requete : on ne met a jour
+// lastSeenAt que si la derniere maj date de plus de 5 min.
+const LAST_SEEN_THROTTLE_MS = 5 * 60 * 1000;
 
 function hashSessionToken(token) {
   return createHash("sha256").update(String(token)).digest("hex");
@@ -118,14 +121,43 @@ export async function resolveSessionFromToken(rawToken) {
     expiresAt <= now ||
     session.appUser?.status === "disabled"
   ) {
-    await prisma.userSession.update({
-      where: { id: session.id },
-      data: {
-        revokedAt: session.revokedAt || new Date(),
-      },
-    }).catch(() => {});
+    // Marque la session revoked si pas deja fait. Erreur loggee (cf Lot 1
+    // .catch silencieux). Si l'update echoue on retourne null quand meme.
+    if (!session.revokedAt) {
+      try {
+        await prisma.userSession.update({
+          where: { id: session.id },
+          data: { revokedAt: new Date() },
+        });
+      } catch (err) {
+        console.warn("[session] failed to mark session revoked", {
+          sessionId: session.id,
+          error: err?.message,
+        });
+      }
+    }
 
     return null;
+  }
+
+  // Throttled lastSeenAt update : ecriture DB max 1x / 5 min / session.
+  const lastSeenAtMs = session.lastSeenAt
+    ? new Date(session.lastSeenAt).getTime()
+    : 0;
+  if (now - lastSeenAtMs > LAST_SEEN_THROTTLE_MS) {
+    try {
+      await prisma.userSession.update({
+        where: { id: session.id },
+        data: { lastSeenAt: new Date(now) },
+      });
+      session.lastSeenAt = new Date(now);
+    } catch (err) {
+      // Non bloquant : on continue meme si l'update echoue.
+      console.warn("[session] failed to update lastSeenAt", {
+        sessionId: session.id,
+        error: err?.message,
+      });
+    }
   }
 
   return session;

@@ -53,3 +53,8 @@ export async function getSyncJobById(jobId) {
   const response = await api.get(`/sync/jobs/${jobId}`);
   return response.data;
 }
+
+export async function getDataQuality({ days = 30 } = {}) {
+  const response = await api.get("/sync/data-quality", { params: { days } });
+  return response.data;
+}

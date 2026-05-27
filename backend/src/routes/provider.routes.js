@@ -23,13 +23,14 @@ import {
   startGarminRecoveryBackfillController,
 } from "../controllers/provider.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
+import { garminConnectRateLimiter } from "../middleware/rateLimit.middleware.js";
 
 const router = express.Router();
 
 router.get("/status", requireAuth, getProviderStatusesController);
 router.get("/garmin/status", requireAuth, getGarminConnectionStatusController);
 router.get("/garmin/metrics", requireAuth, getGarminSyncMetricsController);
-router.post("/garmin/connect", requireAuth, connectGarminController);
+router.post("/garmin/connect", garminConnectRateLimiter, requireAuth, connectGarminController);
 router.post("/garmin/disconnect", requireAuth, disconnectGarminController);
 router.post("/garmin/activities/enrich", requireAuth, enrichGarminActivitiesController);
 router.get("/garmin/activities/backfill/status", requireAuth, getGarminActivityBackfillStatusController);

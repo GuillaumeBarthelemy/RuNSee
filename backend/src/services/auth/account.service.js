@@ -41,7 +41,10 @@ function isPlausibleTimezone(tz) {
 export async function updateProfile({ appUserId, firstName, lastName, email, language, timezone }) {
   if (!appUserId) throw buildHttpError("Missing user id", "Utilisateur introuvable.", 400);
 
+  // Validation in-memory : on accumule data + flags d'intention sans toucher
+  // la DB tant que tout n'est pas valide. Reduit le risque de write partiel.
   const data = {};
+  let needsCurrent = false;
 
   if (firstName !== undefined) {
     const v = sanitizeString(firstName, { maxLen: 50 });
@@ -49,6 +52,7 @@ export async function updateProfile({ appUserId, firstName, lastName, email, lan
       throw buildHttpError("Invalid firstName.", "Le prénom doit contenir au moins 2 caractères.", 400);
     }
     data.firstName = v || null;
+    needsCurrent = true;
   }
 
   if (lastName !== undefined) {
@@ -57,30 +61,21 @@ export async function updateProfile({ appUserId, firstName, lastName, email, lan
       throw buildHttpError("Invalid lastName.", "Le nom doit contenir au moins 2 caractères.", 400);
     }
     data.lastName = v || null;
+    needsCurrent = true;
   }
 
+  let normalizedEmail = null;
+  let rawEmail = null;
   if (email !== undefined) {
-    const raw = sanitizeString(email, { maxLen: 254 });
-    if (raw.length === 0) {
+    rawEmail = sanitizeString(email, { maxLen: 254 });
+    if (rawEmail.length === 0) {
       throw buildHttpError("Invalid email.", "L'adresse e-mail est requise.", 400);
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail)) {
       throw buildHttpError("Invalid email.", "Adresse e-mail invalide.", 400);
     }
-    const normalized = normalizeEmail(raw);
-    // Verifie l'unicite seulement si different
-    const current = await prisma.appUser.findUnique({ where: { id: appUserId }, select: { emailNormalized: true } });
-    if (current?.emailNormalized !== normalized) {
-      const existing = await prisma.appUser.findUnique({
-        where: { emailNormalized: normalized },
-        select: { id: true },
-      });
-      if (existing && existing.id !== appUserId) {
-        throw buildHttpError("Email already in use.", "Cette adresse e-mail est déjà utilisée.", 409);
-      }
-      data.email = raw;
-      data.emailNormalized = normalized;
-    }
+    normalizedEmail = normalizeEmail(rawEmail);
+    needsCurrent = true;
   }
 
   if (language !== undefined) {
@@ -99,31 +94,51 @@ export async function updateProfile({ appUserId, firstName, lastName, email, lan
     data.timezone = v || "Europe/Paris";
   }
 
-  // Recompose displayName si firstName + lastName fournis
-  if (data.firstName !== undefined || data.lastName !== undefined) {
-    const fn = data.firstName ?? (await prisma.appUser.findUnique({
-      where: { id: appUserId }, select: { firstName: true },
-    }))?.firstName ?? "";
-    const ln = data.lastName ?? (await prisma.appUser.findUnique({
-      where: { id: appUserId }, select: { lastName: true },
-    }))?.lastName ?? "";
-    const composed = `${fn || ""} ${ln || ""}`.trim();
-    if (composed.length >= 2) {
-      data.displayName = composed;
-    }
-  }
-
-  if (Object.keys(data).length === 0) {
-    // Rien a faire — retourne l'utilisateur actuel
+  if (Object.keys(data).length === 0 && normalizedEmail === null) {
     return prisma.appUser.findUnique({ where: { id: appUserId } });
   }
 
-  const updated = await prisma.appUser.update({
-    where: { id: appUserId },
-    data,
-  });
+  // Transaction : 1 seul fetch (current) + verif unicite email + update.
+  // Garantit l'atomicite et evite le TOCTOU sur emailNormalized.
+  return prisma.$transaction(async (tx) => {
+    const current = needsCurrent
+      ? await tx.appUser.findUnique({
+          where: { id: appUserId },
+          select: { id: true, firstName: true, lastName: true, emailNormalized: true },
+        })
+      : null;
 
-  return updated;
+    if (needsCurrent && !current) {
+      throw buildHttpError("User not found.", "Utilisateur introuvable.", 404);
+    }
+
+    if (normalizedEmail !== null && current.emailNormalized !== normalizedEmail) {
+      const conflict = await tx.appUser.findUnique({
+        where: { emailNormalized: normalizedEmail },
+        select: { id: true },
+      });
+      if (conflict && conflict.id !== appUserId) {
+        throw buildHttpError("Email already in use.", "Cette adresse e-mail est déjà utilisée.", 409);
+      }
+      data.email = rawEmail;
+      data.emailNormalized = normalizedEmail;
+    }
+
+    if (data.firstName !== undefined || data.lastName !== undefined) {
+      const fn = data.firstName ?? current.firstName ?? "";
+      const ln = data.lastName ?? current.lastName ?? "";
+      const composed = `${fn || ""} ${ln || ""}`.trim();
+      if (composed.length >= 2) {
+        data.displayName = composed;
+      }
+    }
+
+    if (Object.keys(data).length === 0) {
+      return current;
+    }
+
+    return tx.appUser.update({ where: { id: appUserId }, data });
+  });
 }
 
 /**

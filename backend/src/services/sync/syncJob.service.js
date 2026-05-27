@@ -620,6 +620,59 @@ export async function listSyncJobs(appUserId, limit = 20) {
   });
 }
 
+/**
+ * Calcule la qualite des donnees sur les N derniers jours.
+ * Compte les activites du user sur la fenetre [now-Nj, now] et retourne
+ * 4 ratios : completes (movingTime + distance), FC, puissance, altimetrie.
+ *
+ * Le ratio puissance est null si AUCUNE activite n'a de watts > 0 sur la
+ * fenetre (course a pied sans capteur => evite un faux signal rouge).
+ */
+export async function getDataQualitySummary(appUserId, { days = 30 } = {}) {
+  const safeDays = Math.max(1, Math.min(Number(days) || 30, 365));
+  const cutoff = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000);
+
+  const baseWhere = {
+    appUserId,
+    startDate: { gte: cutoff },
+  };
+
+  const [total, complete, withFc, withPower, withAlt] = await Promise.all([
+    prisma.activity.count({ where: baseWhere }),
+    prisma.activity.count({
+      where: {
+        ...baseWhere,
+        movingTime: { gt: 0 },
+        distance: { gt: 0 },
+      },
+    }),
+    prisma.activity.count({
+      where: { ...baseWhere, averageHeartrate: { gt: 0 } },
+    }),
+    prisma.activity.count({
+      where: { ...baseWhere, averageWatts: { gt: 0 } },
+    }),
+    prisma.activity.count({
+      where: { ...baseWhere, totalElevationGain: { gt: 0 } },
+    }),
+  ]);
+
+  const ratio = (n) => (total > 0 ? Math.round((n / total) * 100) : 0);
+
+  return {
+    days: safeDays,
+    total,
+    complete: { count: complete, pct: ratio(complete) },
+    fc: { count: withFc, pct: ratio(withFc) },
+    // null si aucune activite avec watts : evite l'affichage d'une barre
+    // perpetuellement vide pour les coureurs sans capteur de puissance.
+    power: withPower > 0
+      ? { count: withPower, pct: ratio(withPower) }
+      : null,
+    altimetry: { count: withAlt, pct: ratio(withAlt) },
+  };
+}
+
 export async function getSyncSummary(appUserId) {
   const [
     totalActivities,
@@ -675,5 +728,8 @@ export async function getSyncSummary(appUserId) {
     lastIncrementalSync,
     lastDetailBackfillSync,
     currentJob,
+    // Expose la periodicite de l'auto-sync pour que le frontend puisse
+    // calculer "prochaine synchronisation" sans hardcoder 30 min.
+    autoSyncIntervalMinutes: env.autoIncrementalSyncIntervalMinutes || 30,
   };
 }

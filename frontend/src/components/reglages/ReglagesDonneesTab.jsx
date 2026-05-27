@@ -1,16 +1,16 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useToast from "../../hooks/useToast.js";
-import useRunSeeData from "../../hooks/useRunSeeData.js";
+import usePolling from "../../hooks/usePolling.js";
+import { buildQualityBars } from "./dataQuality.js";
 import { formatRelativeDate } from "../../services/connexions.service.js";
 import {
   getCurrentSyncJob,
+  getDataQuality,
   getSyncSummary,
   listSyncJobs,
   startDetailBackfill,
   startGlobalSync,
 } from "../../services/sync.service.js";
-
-const AUTO_SYNC_INTERVAL_LABEL = "Activée (toutes les 30 min)";
 
 function extractErrorMessage(err, fallback) {
   return err?.response?.data?.userMessage || err?.response?.data?.message || err?.message || fallback;
@@ -54,56 +54,6 @@ function nextAutoSyncEstimate(lastSyncAt, intervalMinutes = 30) {
   return new Date(t + intervalMinutes * 60_000);
 }
 
-/**
- * Calcule la qualite des donnees sur les 30 derniers jours :
- *   - Activités complètes (avec moving time + distance)
- *   - FC continue (averageHeartrate > 0)
- *   - Puissance (averageWatts > 0)
- *   - Altimétrie (totalElevationGain > 0 OU device altimeter renseigne)
- */
-function computeDataQuality(activities = []) {
-  const now = Date.now();
-  const cutoff = now - 30 * 24 * 60 * 60 * 1000;
-  const recent = activities.filter((a) => {
-    const d = new Date(a?.startDateLocal || a?.startDate || 0).getTime();
-    return Number.isFinite(d) && d >= cutoff;
-  });
-  const total = recent.length;
-  if (total === 0) {
-    return {
-      total: 0,
-      bars: [
-        { key: "complete",  label: "Activités complètes", value: 0, of: 0, total: 0, color: "#94a3b8" },
-        { key: "fc",        label: "FC continue",         value: 0, of: 0, total: 0, color: "#94a3b8" },
-        { key: "power",     label: "Puissance",           value: 0, of: 0, total: 0, color: "#94a3b8" },
-        { key: "altimetry", label: "Altimétrie",          value: 0, of: 0, total: 0, color: "#94a3b8" },
-      ],
-    };
-  }
-  const complete = recent.filter((a) => Number(a?.movingTime) > 0 && Number(a?.distance) > 0).length;
-  const withFc = recent.filter((a) => Number(a?.averageHeartrate) > 0).length;
-  const withPower = recent.filter((a) => Number(a?.averageWatts) > 0).length;
-  const withAlt = recent.filter((a) => Number(a?.totalElevationGain) > 0).length;
-  const pickColor = (pct) => {
-    if (pct >= 90) return "#15803d";
-    if (pct >= 70) return "#22c55e";
-    if (pct >= 50) return "#eab308";
-    return "#f97316";
-  };
-  const mkBar = (key, label, count) => {
-    const pct = Math.round((count / total) * 100);
-    return { key, label, value: pct, of: count, total, color: pickColor(pct) };
-  };
-  return {
-    total,
-    bars: [
-      mkBar("complete",  "Activités complètes", complete),
-      mkBar("fc",        "FC continue",         withFc),
-      mkBar("power",     "Puissance",           withPower),
-      mkBar("altimetry", "Altimétrie",          withAlt),
-    ],
-  };
-}
 
 /**
  * ReglagesDonneesTab — Mockup p.24 (Phase 2).
@@ -116,42 +66,53 @@ function computeDataQuality(activities = []) {
  */
 function ReglagesDonneesTab() {
   const { pushToast } = useToast();
-  // useRunSeeData expose `activities` (et non safeActivities) ; default fallback sur [].
-  const { activities = [] } = useRunSeeData({ includeActivities: true });
 
   const [summary, setSummary] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [currentJob, setCurrentJob] = useState(null);
+  const [qualityPayload, setQualityPayload] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [actionBusy, setActionBusy] = useState({});
+  const syncTimerRef = useRef(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => () => {
+    mountedRef.current = false;
+    if (syncTimerRef.current) {
+      clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = null;
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
-    try {
-      const [sum, j, cur] = await Promise.all([
-        getSyncSummary().catch(() => null),
-        listSyncJobs(8).catch(() => []),
-        getCurrentSyncJob().catch(() => null),
-      ]);
-      setSummary(sum);
-      setJobs(Array.isArray(j) ? j : []);
-      setCurrentJob(cur);
-    } catch {
-      // Silent (ne pas spammer toast en cas d'erreur reseau au mount)
-    }
+    const [sum, j, cur, q] = await Promise.all([
+      getSyncSummary().catch(() => null),
+      listSyncJobs(8).catch(() => []),
+      getCurrentSyncJob().catch(() => null),
+      getDataQuality({ days: 30 }).catch(() => null),
+    ]);
+    if (!mountedRef.current) return;
+    setSummary(sum);
+    setJobs(Array.isArray(j) ? j : []);
+    setCurrentJob(cur);
+    if (q) setQualityPayload(q);
   }, []);
 
   useEffect(() => {
     setLoading(true);
-    refresh().finally(() => setLoading(false));
+    refresh().finally(() => {
+      if (mountedRef.current) setLoading(false);
+    });
   }, [refresh]);
 
-  // Polling 5s pendant qu'un job est en cours
-  useEffect(() => {
-    if (!syncing && !currentJob) return undefined;
-    const id = setInterval(refresh, 5000);
-    return () => clearInterval(id);
-  }, [syncing, currentJob, refresh]);
+  // Polling backoff exponentiel pendant qu'un job tourne.
+  usePolling(refresh, {
+    enabled: syncing || Boolean(currentJob),
+    baseIntervalMs: 5000,
+    maxIntervalMs: 30000,
+    maxConsecutiveErrors: 6,
+  });
 
   const lastSyncAt = useMemo(() => {
     const candidates = [
@@ -163,22 +124,30 @@ function ReglagesDonneesTab() {
     return candidates.sort((a, b) => new Date(b) - new Date(a))[0];
   }, [summary]);
 
-  const nextSyncAt = useMemo(() => nextAutoSyncEstimate(lastSyncAt, 30), [lastSyncAt]);
+  // Periodicite reelle exposee par le backend (env-driven), fallback 30 min.
+  const autoSyncIntervalMinutes = summary?.autoSyncIntervalMinutes || 30;
+  const nextSyncAt = useMemo(
+    () => nextAutoSyncEstimate(lastSyncAt, autoSyncIntervalMinutes),
+    [lastSyncAt, autoSyncIntervalMinutes],
+  );
 
-  const quality = useMemo(() => computeDataQuality(activities), [activities]);
+  const quality = useMemo(() => buildQualityBars(qualityPayload), [qualityPayload]);
 
   const handleSyncNow = async () => {
     setSyncing(true);
     try {
       await startGlobalSync();
       pushToast({ message: "Synchronisation globale lancée.", tone: "success" });
-      // Refresh immediat + polling
       await refresh();
     } catch (err) {
       pushToast({ message: extractErrorMessage(err, "Échec de la synchronisation."), tone: "error" });
     } finally {
-      // Garde le state syncing tant que currentJob non null OU 5s min
-      setTimeout(() => setSyncing(false), 5000);
+      // Cleanup explicite : ecrasement de tout timer pendant.
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = setTimeout(() => {
+        if (mountedRef.current) setSyncing(false);
+        syncTimerRef.current = null;
+      }, 5000);
     }
   };
 
@@ -211,7 +180,7 @@ function ReglagesDonneesTab() {
           <div className="reglages-row">
             <div>
               <small>Automatique</small>
-              <strong>{AUTO_SYNC_INTERVAL_LABEL}</strong>
+              <strong>{`Activée (toutes les ${autoSyncIntervalMinutes} min)`}</strong>
               <span className="reglages-row-hint">Réglable depuis la configuration serveur.</span>
             </div>
           </div>

@@ -81,13 +81,52 @@ function validateEmail(email) {
   };
 }
 
+// Top mots de passe les plus repandus — refus immediat (extrait HIBP top 100).
+const COMMON_PASSWORDS = new Set([
+  "password", "123456", "12345678", "qwerty", "abc123", "letmein",
+  "welcome", "monkey", "dragon", "password1", "password123", "admin",
+  "admin123", "iloveyou", "azerty", "azerty123", "motdepasse", "soleil",
+  "12345", "123456789", "1234567890", "qwerty123", "1q2w3e4r", "11111111",
+  "00000000", "987654321", "qwertyuiop", "asdfghjkl", "zxcvbnm", "passw0rd",
+]);
+
 export function validatePassword(password) {
   const value = String(password || "");
 
-  if (value.length < 8) {
+  if (value.length < 10) {
     throw buildHttpError(
       "Password too short.",
-      "Le mot de passe doit contenir au moins 8 caracteres.",
+      "Le mot de passe doit contenir au moins 10 caracteres.",
+      400
+    );
+  }
+
+  if (value.length > 256) {
+    throw buildHttpError(
+      "Password too long.",
+      "Le mot de passe ne doit pas depasser 256 caracteres.",
+      400
+    );
+  }
+
+  const hasUpper = /[A-Z]/.test(value);
+  const hasLower = /[a-z]/.test(value);
+  const hasDigit = /\d/.test(value);
+  const hasSpecial = /[^A-Za-z0-9]/.test(value);
+  const score = [hasUpper, hasLower, hasDigit, hasSpecial].filter(Boolean).length;
+
+  if (score < 3) {
+    throw buildHttpError(
+      "Password not complex enough.",
+      "Le mot de passe doit combiner au moins 3 types de caracteres parmi : majuscule, minuscule, chiffre, caractere special.",
+      400
+    );
+  }
+
+  if (COMMON_PASSWORDS.has(value.toLowerCase())) {
+    throw buildHttpError(
+      "Password too common.",
+      "Ce mot de passe est trop courant. Choisis-en un plus unique.",
       400
     );
   }

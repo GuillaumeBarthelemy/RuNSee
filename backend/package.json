@@ -21,7 +21,8 @@
     "db:export:sqlite": "node scripts/db/export-sqlite-dump.js",
     "db:import:postgres": "node scripts/db/import-postgresql-dump.js",
     "db:snapshot": "node scripts/db/report-database-snapshot.js",
-    "db:compare-schemas": "node scripts/db/compare-prisma-schemas.js"
+    "db:compare-schemas": "node scripts/db/compare-prisma-schemas.js",
+    "providers:reencrypt": "node scripts/providers/reencrypt-sessions.js"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.6.0",
@@ -31,6 +32,8 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
     "pg": "^8.20.0"
   },
   "devDependencies": {

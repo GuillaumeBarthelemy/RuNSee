@@ -89,9 +89,18 @@ const frontendAllowedOrigins = parseOrigins(
   [localAppUrl, publicAppUrl]
 );
 const databaseProvider = resolveDatabaseProvider(process.env.DATABASE_URL);
-const sessionCookieName = String(
+// Prefixe __Host- : impose secure + path=/ + pas de Domain. Force le navigateur
+// a refuser le cookie s'il est servi en HTTP.
+// IMPORTANT : changer le nom du cookie deconnecte tous les utilisateurs
+// existants. Donc opt-in explicite via SESSION_COOKIE_HOST_PREFIX=true.
+// Migration recommandee : activer pendant une fenetre de maintenance.
+const _rawCookieName = String(
   process.env.SESSION_COOKIE_NAME || "runsee_session"
 ).trim() || "runsee_session";
+const _useHostPrefix = parseBoolean(process.env.SESSION_COOKIE_HOST_PREFIX, false);
+const sessionCookieName = _useHostPrefix && !_rawCookieName.startsWith("__Host-")
+  ? `__Host-${_rawCookieName}`
+  : _rawCookieName;
 const sessionTtlDays = Math.max(
   1,
   parseNumber(process.env.SESSION_TTL_DAYS, 30)
@@ -102,8 +111,18 @@ const isSecureCookies =
   publicAppUrl.startsWith("https://") ||
   (process.env.NODE_ENV || "development") === "production";
 
+// trust proxy : nombre de hops reverse proxy devant Express.
+//   0 = pas de proxy (deploy direct, dev local)
+//   1 = 1 reverse proxy (nginx, Caddy)
+//   true = aveugle (NE PAS utiliser en prod, permet le spoofing x-forwarded-for)
+// Defaut : 1 en production (deploy nginx), 0 en dev.
+const trustProxy = process.env.TRUST_PROXY !== undefined
+  ? (Number.isFinite(Number(process.env.TRUST_PROXY)) ? Number(process.env.TRUST_PROXY) : process.env.TRUST_PROXY)
+  : ((process.env.NODE_ENV || "development") === "production" ? 1 : 0);
+
 const env = {
   nodeEnv: process.env.NODE_ENV || "development",
+  trustProxy,
   appPort,
   appHost,
   frontendPort,

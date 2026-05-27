@@ -17620,3 +17620,37 @@ button.alert-banner-positive-item {
   border-color: var(--al-primary);
   color: var(--al-text-soft);
 }
+
+/* =========================================================================
+ * Dark mode — passes residuelles Lot 5
+ * ========================================================================= */
+
+/* Heatmap regularite : level 0 hardcode #f1f5f9 -> trop clair en dark.
+   Override via attribute selector sur SVG fill. */
+:root[data-theme="dark"] .alpine-trends-heatmap rect[fill="#f1f5f9"] {
+  fill: var(--al-surface-soft);
+}
+:root[data-theme="dark"] .alpine-trends-heatmap-legend i[style*="rgb(241, 245, 249)"],
+:root[data-theme="dark"] .alpine-trends-heatmap-legend i[style*="#f1f5f9"] {
+  background: var(--al-surface-soft) !important;
+  border: 1px solid var(--al-border);
+}
+
+/* Toast count chip (Lot 5 dedup) */
+.alpine-toast-count {
+  margin-left: 6px;
+  font-size: 11px;
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Field hint (Lot 1 password modal) */
+.reglages-field-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--al-muted, #94a3b8);
+  line-height: 1.4;
+}
+:root[data-theme="dark"] .reglages-field-hint { color: var(--al-muted); }
+

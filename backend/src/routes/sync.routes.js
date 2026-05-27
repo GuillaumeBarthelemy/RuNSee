@@ -5,6 +5,7 @@ import {
   queueGlobalSync,
   queueDetailBackfill,
   getCurrentJob,
+  getDataQuality,
   getJobById,
   getJobs,
   getSummary,
@@ -21,5 +22,6 @@ router.get("/jobs/current", requireAuth, getCurrentJob);
 router.get("/jobs/:jobId", requireAuth, getJobById);
 router.get("/jobs", requireAuth, getJobs);
 router.get("/summary", requireAuth, getSummary);
+router.get("/data-quality", requireAuth, getDataQuality);
 
 export default router;

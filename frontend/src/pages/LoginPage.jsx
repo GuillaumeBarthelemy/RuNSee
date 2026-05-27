@@ -83,8 +83,26 @@ export default function LoginPage() {
       return;
     }
 
-    if (password.length < 8) {
-      setLocalError("Le mot de passe doit contenir au moins 8 caracteres.");
+    // En signup : politique alignee sur backend validatePassword
+    // (10 chars + 3 categories). En login : on accepte tout pour ne pas
+    // bloquer les comptes existants avec un ancien mot de passe < 10 chars.
+    if (mode === "signup") {
+      if (password.length < 10) {
+        setLocalError("Le mot de passe doit contenir au moins 10 caracteres.");
+        return;
+      }
+      const categories = [
+        /[A-Z]/.test(password),
+        /[a-z]/.test(password),
+        /\d/.test(password),
+        /[^A-Za-z0-9]/.test(password),
+      ].filter(Boolean).length;
+      if (categories < 3) {
+        setLocalError("Combine au moins 3 types : majuscule, minuscule, chiffre, caractere special.");
+        return;
+      }
+    } else if (password.length < 1) {
+      setLocalError("Saisis ton mot de passe.");
       return;
     }
 

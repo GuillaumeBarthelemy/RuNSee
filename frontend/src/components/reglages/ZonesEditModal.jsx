@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useState } from "react";
+import useModal from "../../hooks/useModal.js";
 
 /**
  * ZonesEditModal — Edition manuelle des zones FC (Z1max, Z2max, Z3max, Z4max).
@@ -39,12 +40,7 @@ function ZonesEditModal({
     }
   }, [open, initialValues, fcMax]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const handler = (e) => { if (e.key === "Escape" && !submitting) onClose(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open, onClose, submitting]);
+  const { containerRef, handleOverlayClick } = useModal({ open, onClose, busy: submitting });
 
   const validation = useMemo(() => {
     const z1 = Number(values.heartRateZone1Max);
@@ -89,9 +85,9 @@ function ZonesEditModal({
   };
 
   return (
-    <div className="reglages-modal-overlay" onClick={() => !submitting && onClose()} role="presentation">
-      <form className="reglages-modal" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-        <h3 className="reglages-modal-title">Modifier les zones de fréquence cardiaque</h3>
+    <div className="reglages-modal-overlay" onClick={handleOverlayClick} role="presentation">
+      <form ref={containerRef} className="reglages-modal" role="dialog" aria-modal="true" aria-labelledby="reglages-zones-title" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+        <h3 id="reglages-zones-title" className="reglages-modal-title">Modifier les zones de fréquence cardiaque</h3>
         <p className="reglages-modal-description">
           Saisis le seuil supérieur de chaque zone (en bpm). La <strong>Z5 VO₂max</strong>
           {" "}correspond à tout ce qui est au-dessus de Z4. FC max actuelle : <strong>{fcMax} bpm</strong>.

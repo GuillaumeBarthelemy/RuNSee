@@ -5,6 +5,7 @@ import { startAutoIncrementalSyncScheduler } from "./services/sync/autoSync.serv
 import { recoverActiveSyncJobsOnStartup } from "./services/sync/syncJob.service.js";
 import { startAutoGarminRecoverySyncScheduler } from "./services/providers/garminRecoveryAutoSync.service.js";
 import { startAutoGarminActivityBackfillScheduler } from "./services/providers/garminHistoricalBackfill.service.js";
+import { startSessionCleanupJob } from "./jobs/cleanupSessions.js";
 
 app.listen(env.appPort, env.appHost, () => {
   console.log(`RuNSee backend local: ${env.localApiUrl}`);
@@ -17,4 +18,5 @@ app.listen(env.appPort, env.appHost, () => {
   startAutoIncrementalSyncScheduler();
   startAutoGarminRecoverySyncScheduler();
   startAutoGarminActivityBackfillScheduler();
+  startSessionCleanupJob();
 });

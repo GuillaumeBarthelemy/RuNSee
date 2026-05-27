@@ -1,7 +1,9 @@
-import { memo, useEffect } from "react";
+import { memo } from "react";
+import useModal from "../../hooks/useModal.js";
 
 /**
  * ConfirmDialog — Modal de confirmation reutilisable.
+ * A11y via useModal : ESC, focus trap, focus restore.
  */
 function ConfirmDialog({
   open = false,
@@ -13,17 +15,12 @@ function ConfirmDialog({
   onConfirm = () => {},
   onCancel = () => {},
 }) {
-  useEffect(() => {
-    if (!open) return undefined;
-    const handler = (e) => { if (e.key === "Escape") onCancel(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open, onCancel]);
+  const { containerRef, handleOverlayClick } = useModal({ open, onClose: onCancel });
 
   if (!open) return null;
   return (
-    <div className="reglages-modal-overlay" onClick={onCancel} role="presentation">
-      <div className="reglages-modal" role="dialog" aria-modal="true" aria-labelledby="reglages-confirm-title" onClick={(e) => e.stopPropagation()}>
+    <div className="reglages-modal-overlay" onClick={handleOverlayClick} role="presentation">
+      <div ref={containerRef} className="reglages-modal" role="dialog" aria-modal="true" aria-labelledby="reglages-confirm-title" onClick={(e) => e.stopPropagation()}>
         <h3 id="reglages-confirm-title" className="reglages-modal-title">{title}</h3>
         {description ? <p className="reglages-modal-description">{description}</p> : null}
         <div className="reglages-modal-actions">

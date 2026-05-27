@@ -558,6 +558,7 @@ model SyncJob {
 
   @@index([status, queuedAt])
   @@index([jobType, queuedAt])
+  @@index([appUserId, queuedAt(sort: Desc)])
 }
 
 model SyncCursor {

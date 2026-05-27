@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useAuth from "../hooks/useAuth.js";
 import { updatePreferences as apiUpdatePreferences } from "../services/account.service.js";
+import { setLanguage as setI18nLanguage } from "../i18n/i18n.js";
 import { UserPreferencesContext } from "./UserPreferencesContextBase.js";
+
+const PREFERENCES_DEBOUNCE_MS = 500;
 
 function pickPreferences(user) {
   return {
@@ -56,36 +59,65 @@ export function UserPreferencesProvider({ children }) {
     root.setAttribute("data-density", density);
   }, [theme, density]);
 
-  const setPreferences = useCallback(async (next) => {
-    const payload = {};
-    if (next.theme !== undefined) {
-      setThemeState(next.theme);
-      payload.theme = next.theme;
-    }
-    if (next.units !== undefined) {
-      setUnitsState(next.units);
-      payload.units = next.units;
-    }
-    if (next.density !== undefined) {
-      setDensityState(next.density);
-      payload.density = next.density;
-    }
-    if (Object.keys(payload).length > 0) {
-      try {
-        await apiUpdatePreferences(payload);
-        if (typeof refreshUser === "function") {
-          await refreshUser();
-        }
-      } catch (err) {
-        // Si le backend echoue, on rollback dans la prochaine sync user
-        // mais on n'efface pas l'UX optimiste. On expose juste l'erreur.
-        if (typeof console !== "undefined") {
-          console.error("[UserPreferences] save failed", err);
-        }
-        throw err;
+  // i18n : pilote la langue depuis user.language (default 'fr').
+  useEffect(() => {
+    setI18nLanguage(user?.language || "fr");
+  }, [user?.language]);
+
+  // Debounce + coalesce : si l'utilisateur change rapidement theme puis
+  // density, on n'envoie qu'1 seul PATCH avec les 2 champs.
+  const pendingPayloadRef = useRef({});
+  const debounceTimerRef = useRef(null);
+
+  const flushPreferences = useCallback(async () => {
+    debounceTimerRef.current = null;
+    const payload = pendingPayloadRef.current;
+    pendingPayloadRef.current = {};
+    if (Object.keys(payload).length === 0) return;
+    try {
+      await apiUpdatePreferences(payload);
+      if (typeof refreshUser === "function") {
+        await refreshUser();
+      }
+    } catch (err) {
+      // UX optimiste conservee ; la prochaine sync user remettra d'aplomb.
+      if (typeof console !== "undefined") {
+        console.error("[UserPreferences] save failed", err);
       }
     }
   }, [refreshUser]);
+
+  // Cleanup au demontage : flush immediat si payload en attente.
+  useEffect(() => () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+      // Flush sync best-effort (non-await possible car unmount).
+      const payload = pendingPayloadRef.current;
+      if (Object.keys(payload).length > 0) {
+        apiUpdatePreferences(payload).catch(() => {});
+      }
+      pendingPayloadRef.current = {};
+    }
+  }, []);
+
+  const setPreferences = useCallback((next) => {
+    if (next.theme !== undefined) {
+      setThemeState(next.theme);
+      pendingPayloadRef.current.theme = next.theme;
+    }
+    if (next.units !== undefined) {
+      setUnitsState(next.units);
+      pendingPayloadRef.current.units = next.units;
+    }
+    if (next.density !== undefined) {
+      setDensityState(next.density);
+      pendingPayloadRef.current.density = next.density;
+    }
+    if (Object.keys(pendingPayloadRef.current).length === 0) return;
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(flushPreferences, PREFERENCES_DEBOUNCE_MS);
+  }, [flushPreferences]);
 
   const value = useMemo(() => ({ theme, units, density, setPreferences }), [theme, units, density, setPreferences]);
 

@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from "react";
+import useModal from "../../hooks/useModal.js";
 
 /**
  * FcMaxModal — Modifier la FC max + FC repos + sexe biologique.
@@ -32,12 +33,7 @@ function FcMaxModal({
     }
   }, [open, initialFcMax, initialRestingHr, initialBiologicalSex]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const handler = (e) => { if (e.key === "Escape" && !submitting) onClose(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open, onClose, submitting]);
+  const { containerRef, handleOverlayClick } = useModal({ open, onClose, busy: submitting });
 
   if (!open) return null;
 
@@ -68,9 +64,9 @@ function FcMaxModal({
   };
 
   return (
-    <div className="reglages-modal-overlay" onClick={() => !submitting && onClose()} role="presentation">
-      <form className="reglages-modal" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-        <h3 className="reglages-modal-title">Modifier ta fréquence cardiaque</h3>
+    <div className="reglages-modal-overlay" onClick={handleOverlayClick} role="presentation">
+      <form ref={containerRef} className="reglages-modal" role="dialog" aria-modal="true" aria-labelledby="reglages-fcmax-title" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+        <h3 id="reglages-fcmax-title" className="reglages-modal-title">Modifier ta fréquence cardiaque</h3>
         <p className="reglages-modal-description">
           Ces valeurs personnalisent les zones FC, la TRIMP et l'estimation de la charge.
           Garde-les à jour quand tes tests terrain évoluent.

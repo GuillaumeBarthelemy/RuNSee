@@ -1,6 +1,7 @@
 import { getRequiredAuthUser } from "../middleware/auth.middleware.js";
 import {
   getCurrentSyncJob,
+  getDataQualitySummary,
   getSyncJobById,
   listSyncJobs,
   getSyncSummary,
@@ -118,6 +119,17 @@ export async function getSummary(req, res, next) {
     const user = getRequiredAuthUser(req);
     const summary = await getSyncSummary(user.id);
     return res.json(summary);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getDataQuality(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const days = Number(req.query.days || 30);
+    const result = await getDataQualitySummary(user.id, { days });
+    return res.json(result);
   } catch (error) {
     next(error);
   }
