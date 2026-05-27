@@ -17211,3 +17211,173 @@ button.alert-banner-positive-item {
 :root[data-theme="dark"] [class*="activity-card-stats"] strong { color: var(--al-text); }
 :root[data-theme="dark"] [class*="activity-card-icon"] { background: var(--al-primary-soft); color: var(--al-primary); }
 :root[data-theme="dark"] .alpine-activity-group-label { color: var(--al-muted); }
+
+/* ============================================================
+   DARK MODE — PASSE GLOBALE FINALE
+   ============================================================
+   Cible :
+     - Gradients linear avec rgba(255,255,255) -> background-image:none
+       + background-color forced surface.
+     - AdminPage legacy (.admin-*) avec backgrounds gradient.
+     - .alpine-overview-state-* (ATL/CTL Fatigue relative).
+     - .alpine-overview-daily-histo + autres composants Analyse Overview.
+     - Activities filterbar + vue tableau / cartes.
+*/
+
+/* --- AdminPage legacy : .admin-* ------------------------------ */
+:root[data-theme="dark"] .admin-preferences-card,
+:root[data-theme="dark"] .admin-data-card,
+:root[data-theme="dark"] .admin-settings-panel,
+:root[data-theme="dark"] .admin-preference-row,
+:root[data-theme="dark"] .admin-preference-control,
+:root[data-theme="dark"] [class*="admin-physio"],
+:root[data-theme="dark"] [class*="admin-profile"],
+:root[data-theme="dark"] [class*="admin-objective"],
+:root[data-theme="dark"] [class*="admin-strava"],
+:root[data-theme="dark"] [class*="admin-garmin"] {
+  background: var(--al-surface) !important;
+  background-image: none !important;
+  border-color: var(--al-border) !important;
+  color: var(--al-text);
+}
+
+:root[data-theme="dark"] .admin-preferences-grid,
+:root[data-theme="dark"] .admin-settings-grid {
+  background: transparent !important;
+}
+
+/* --- Pills FC max / FC repos / Sexe biologique --------------- */
+:root[data-theme="dark"] [class*="admin-pill"],
+:root[data-theme="dark"] [class*="admin-tag"],
+:root[data-theme="dark"] [class*="-physio-tag"] {
+  background: var(--al-surface-soft) !important;
+  border-color: var(--al-border) !important;
+  color: var(--al-text-soft);
+}
+
+/* --- Banner mountain gradient sur admin --------------------- */
+:root[data-theme="dark"] [class*="-banner"][class*="mountain"],
+:root[data-theme="dark"] [class*="-page-header"]::before {
+  opacity: 0.5;
+}
+
+/* --- Overview state card / ATL CTL fatigue relative --------- */
+:root[data-theme="dark"] .alpine-overview-state-card,
+:root[data-theme="dark"] [class*="alpine-overview-state"]:not([class*="state-row-label"]):not([class*="state-row-value"]):not([class*="state-kicker"]):not([class*="state-title"]):not([class*="state-note"]) {
+  background: var(--al-surface) !important;
+  background-image: none !important;
+  border-color: var(--al-border) !important;
+  color: var(--al-text);
+}
+:root[data-theme="dark"] [class*="state-row"] { background: transparent !important; }
+:root[data-theme="dark"] [class*="state-row-label"] { color: var(--al-text-soft); }
+:root[data-theme="dark"] .alpine-overview-state-kicker { color: var(--al-muted); }
+:root[data-theme="dark"] [class*="state-tooltip"],
+:root[data-theme="dark"] [class*="state-popover"],
+:root[data-theme="dark"] [class*="state-ratio"],
+:root[data-theme="dark"] [class*="state-fatigue"] {
+  background: var(--al-surface-soft) !important;
+  background-image: none !important;
+  border-color: var(--al-border) !important;
+  color: var(--al-text-soft);
+}
+
+/* --- Overview takeaway + daily histo ------------------------ */
+:root[data-theme="dark"] .alpine-overview-takeaway,
+:root[data-theme="dark"] .alpine-overview-daily-histo,
+:root[data-theme="dark"] [class*="-overview-daily-histo"],
+:root[data-theme="dark"] [class*="-overview-takeaway"] {
+  background: var(--al-surface);
+  background-image: none;
+  border-color: var(--al-border);
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] [class*="-takeaway-title"] { color: var(--al-text); }
+
+/* --- Activities filterbar / view toggle --------------------- */
+:root[data-theme="dark"] .alpine-activities-filterbar,
+:root[data-theme="dark"] .alpine-activities-view-toggle,
+:root[data-theme="dark"] [class*="-view-toggle"] {
+  background: var(--al-surface) !important;
+  border-color: var(--al-border) !important;
+}
+:root[data-theme="dark"] .alpine-activities-view-toggle button { background: var(--al-surface-soft); color: var(--al-text-soft); border-color: var(--al-border); }
+:root[data-theme="dark"] .alpine-activities-view-toggle button.is-active,
+:root[data-theme="dark"] .alpine-activities-view-toggle button[aria-pressed="true"] { background: var(--al-primary); color: #07101f; border-color: var(--al-primary); }
+
+/* --- Force tous les gradients clairs vers surface ---------- */
+/* Cible les elements qui utilisent rgba(255,255,255,...) dans
+   leur linear-gradient. Approche : neutralise le background-image
+   pour les cards courants. */
+:root[data-theme="dark"] [class*="-card"][class*="alpine"]:not([class*="-card-icon"]),
+:root[data-theme="dark"] [class*="-card"][class*="admin"]:not([class*="-card-icon"]),
+:root[data-theme="dark"] [class*="-row"][class*="preference"]:not([class*="-row-foot"]),
+:root[data-theme="dark"] [class*="-panel"][class*="analytics"],
+:root[data-theme="dark"] [class*="-panel"][class*="performance"] {
+  background-image: none !important;
+  background-color: var(--al-surface);
+}
+
+/* --- Force Strava badge orange + Intensité badges en dark --- */
+:root[data-theme="dark"] [class*="-badge-strava"],
+:root[data-theme="dark"] [class*="strava-badge"] { background: rgba(252, 76, 2, 0.18); color: #fc4c02; border: 1px solid rgba(252, 76, 2, 0.4); }
+:root[data-theme="dark"] [class*="-intensity-easy"],
+:root[data-theme="dark"] [class*="-intensity-facile"] { background: rgba(74, 222, 128, 0.16); color: #6ee7b7; }
+:root[data-theme="dark"] [class*="-intensity-moderate"],
+:root[data-theme="dark"] [class*="-intensity-moderee"] { background: rgba(251, 146, 60, 0.16); color: #fdba74; }
+:root[data-theme="dark"] [class*="-intensity-intense"] { background: rgba(248, 113, 113, 0.16); color: #fca5a5; }
+
+/* --- Right rail cards / Vue hebdo / Repartition sports ----- */
+:root[data-theme="dark"] [class*="-right-rail"] > *,
+:root[data-theme="dark"] [class*="-week-summary"],
+:root[data-theme="dark"] [class*="-sport-distribution"],
+:root[data-theme="dark"] [class*="-best-week"] {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+  color: var(--al-text-soft);
+}
+:root[data-theme="dark"] [class*="-right-rail"] strong { color: var(--al-text); }
+:root[data-theme="dark"] [class*="-right-rail"] [class*="-bar"] { background: var(--al-surface-soft); }
+:root[data-theme="dark"] [class*="-right-rail"] [class*="-bar-fill"] { background: var(--al-primary); }
+
+/* --- Stats KPI inline (SORTIES 4, DISTANCE TOTALE...) ----- */
+:root[data-theme="dark"] [class*="-kpi-stat"],
+:root[data-theme="dark"] [class*="-kpi-strip"],
+:root[data-theme="dark"] [class*="-kpis-strip"] > * {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+  color: var(--al-text);
+}
+:root[data-theme="dark"] [class*="-kpi-stat-label"],
+:root[data-theme="dark"] [class*="-kpis-strip"] [class*="-label"] { color: var(--al-muted); }
+
+/* --- Liens / boutons "Voir tous les *" --------------------- */
+:root[data-theme="dark"] [class*="-link-all"],
+:root[data-theme="dark"] [class*="-see-all"],
+:root[data-theme="dark"] [class*="link-see-all"] { color: var(--al-primary); }
+
+/* --- Glossary / Indicateurs page --------------------------- */
+:root[data-theme="dark"] [class*="glossaire-card"],
+:root[data-theme="dark"] [class*="glossary-card"],
+:root[data-theme="dark"] [class*="-indicator-card"] {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+}
+
+/* --- Generique : tous les gradients linear avec rgba(255 255 255) -> none */
+:root[data-theme="dark"] body * {
+  /* Aucun effet par defaut; on cible specifiquement via les classes ci-dessus
+     pour eviter de casser des composants legitimes (sparklines area gradients). */
+}
+
+/* --- AppShell page header banner background ---------------- */
+:root[data-theme="dark"] [class*="-page-header"]::after,
+:root[data-theme="dark"] [class*="-page-header"] {
+  background: transparent;
+}
+:root[data-theme="dark"] [class*="-page-header"][class*="with-mountains"] { background: var(--al-bg); }
+
+/* --- AppShell main content wrapper ------------------------- */
+:root[data-theme="dark"] [class*="-shell-content"],
+:root[data-theme="dark"] [class*="-shell-main"],
+:root[data-theme="dark"] main { background: transparent; color: var(--al-text-soft); }
