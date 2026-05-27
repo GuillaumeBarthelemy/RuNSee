@@ -62,6 +62,14 @@ function sanitizeBiologicalSex(value) {
   return ["male", "female"].includes(normalized) ? normalized : "unspecified";
 }
 
+const ALLOWED_SMOOTHING = new Set(["exp30", "ma15", "none"]);
+const ALLOWED_ZONES_METHODS = new Set(["custom_hr", "karvonen", "lactate"]);
+
+function sanitizeEnum(value, allowed, fallback) {
+  const v = String(value || "").trim().toLowerCase();
+  return allowed.has(v) ? v : fallback;
+}
+
 function sanitizeSettingsInput(input = {}) {
   const rawRestingHeartrate = input.restingHeartrate ?? input.heartRateRest;
 
@@ -74,6 +82,10 @@ function sanitizeSettingsInput(input = {}) {
     heartRateZone2Max: toNullableInteger(input.heartRateZone2Max, { min: 60, max: 250 }),
     heartRateZone3Max: toNullableInteger(input.heartRateZone3Max, { min: 60, max: 250 }),
     heartRateZone4Max: toNullableInteger(input.heartRateZone4Max, { min: 60, max: 250 }),
+    ftpWatts: toNullableInteger(input.ftpWatts, { min: 50, max: 600 }),
+    paceSmoothingMethod: sanitizeEnum(input.paceSmoothingMethod, ALLOWED_SMOOTHING, "exp30"),
+    zonesCalculationMethod: sanitizeEnum(input.zonesCalculationMethod, ALLOWED_ZONES_METHODS, "custom_hr"),
+    gapEnabled: toBoolean(input.gapEnabled, true),
     intensitySourcePriority: sanitizeIntensitySourcePriority(input.intensitySourcePriority),
     efficiencyMinDurationMinutes: toNullableInteger(input.efficiencyMinDurationMinutes, { min: 5, max: 180 })
       ?? DEFAULT_TRAINING_ANALYTICS_SETTINGS.efficiencyMinDurationMinutes,
@@ -104,6 +116,11 @@ function serializeSettings(record = null) {
     heartRateZone2Max: safeRecord.heartRateZone2Max ?? DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone2Max,
     heartRateZone3Max: safeRecord.heartRateZone3Max ?? DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone3Max,
     heartRateZone4Max: safeRecord.heartRateZone4Max ?? DEFAULT_TRAINING_ANALYTICS_SETTINGS.heartRateZone4Max,
+    ftpWatts: safeRecord.ftpWatts ?? null,
+    paceSmoothingMethod: safeRecord.paceSmoothingMethod || "exp30",
+    zonesCalculationMethod: safeRecord.zonesCalculationMethod || "custom_hr",
+    gapEnabled: safeRecord.gapEnabled !== undefined && safeRecord.gapEnabled !== null
+      ? Boolean(safeRecord.gapEnabled) : true,
     intensitySourcePriority: safeRecord.intensitySourcePriority || DEFAULT_TRAINING_ANALYTICS_SETTINGS.intensitySourcePriority,
     efficiencyMinDurationMinutes:
       safeRecord.efficiencyMinDurationMinutes ?? DEFAULT_TRAINING_ANALYTICS_SETTINGS.efficiencyMinDurationMinutes,
@@ -125,6 +142,10 @@ function areSettingsEqual(left = {}, right = {}) {
     && left.efficiencyMaxElevationPerKm === right.efficiencyMaxElevationPerKm
     && left.efficiencyExcludeTrail === right.efficiencyExcludeTrail
     && left.biologicalSex === right.biologicalSex
+    && (left.ftpWatts ?? null) === (right.ftpWatts ?? null)
+    && (left.paceSmoothingMethod || "exp30") === (right.paceSmoothingMethod || "exp30")
+    && (left.zonesCalculationMethod || "custom_hr") === (right.zonesCalculationMethod || "custom_hr")
+    && Boolean(left.gapEnabled) === Boolean(right.gapEnabled)
     && HEART_RATE_FIELDS.every((field) => (left[field] ?? null) === (right[field] ?? null))
   );
 }

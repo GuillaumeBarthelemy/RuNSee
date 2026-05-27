@@ -1,4 +1,13 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import useToast from "../../hooks/useToast.js";
+import useUserPreferences from "../../hooks/useUserPreferences.js";
+import {
+  getTrainingAnalyticsSettings,
+  saveTrainingAnalyticsSettings,
+} from "../../services/trainingAnalyticsSettings.service.js";
+import FcMaxModal from "./FcMaxModal.jsx";
+import FtpModal from "./FtpModal.jsx";
+import ZonesEditModal from "./ZonesEditModal.jsx";
 
 const ZONE_META = [
   { key: "z1", label: "Z1 Récupération", maxPct: 64, color: "#3b82f6" },
@@ -31,24 +40,71 @@ const SPEED_UNIT_OPTIONS = [
   { value: "mph", label: "mph" },
 ];
 
-/**
- * ReglagesEntrainementTab — Mockup p.23 onglet Entraînement.
- *
- * FC max + zones / FTP + unites / preferences de calcul.
- */
-function ReglagesEntrainementTab({ fcMax = 184, ftp = 268, lastFcUpdate = "28 avr. 2025", lastFtpUpdate = "15 avr. 2025" }) {
-  const [smoothing, setSmoothing] = useState("exp30");
-  const [zonesMethod, setZonesMethod] = useState("custom_hr");
-  const [gap, setGap] = useState("on");
-  const [speedUnit, setSpeedUnit] = useState("kmh");
-  const [paceUnit, setPaceUnit] = useState("min_km");
-  const [powerUnit, setPowerUnit] = useState("watts");
-  const [weightUnit, setWeightUnit] = useState("kg");
+function formatDate(d) {
+  if (!d) return "—";
+  const date = new Date(d);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+}
 
-  // Calcul des zones (FC max-based)
+function extractErrorMessage(err, fallback) {
+  return err?.response?.data?.userMessage || err?.response?.data?.message || err?.message || fallback;
+}
+
+/**
+ * ReglagesEntrainementTab — Mockup p.23 (Phase 2).
+ *
+ * Wiring complet :
+ *   - Charge GET /settings/training-analytics au montage
+ *   - 3 modals : FcMaxModal, FtpModal, ZonesEditModal
+ *   - Préférences calcul (lissage / méthode zones / GAP) -> PUT settings
+ *   - Préférences unités (vitesse / allure / poids) -> UserPreferences (units global)
+ *     (couvre metric vs imperial). Speed/pace specifiques restent en local pour l'instant.
+ */
+function ReglagesEntrainementTab() {
+  const { pushToast } = useToast();
+  const { units } = useUserPreferences();
+
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [savingPref, setSavingPref] = useState(false);
+
+  const [fcModalOpen, setFcModalOpen] = useState(false);
+  const [ftpModalOpen, setFtpModalOpen] = useState(false);
+  const [zonesModalOpen, setZonesModalOpen] = useState(false);
+
+  const loadSettings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getTrainingAnalyticsSettings();
+      setSettings(data?.settings || null);
+    } catch (err) {
+      pushToast({ message: extractErrorMessage(err, "Impossible de charger les paramètres."), tone: "error" });
+    } finally {
+      setLoading(false);
+    }
+  }, [pushToast]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const fcMax = settings?.heartRateMax ?? 184;
+  const restingHr = settings?.restingHeartrate ?? 60;
+  const biologicalSex = settings?.biologicalSex || "unspecified";
+  const ftp = settings?.ftpWatts ?? null;
+  const effectiveFrom = settings?.effectiveFrom || null;
+
+  // Zones : utilise les valeurs DB si presentes, sinon recalcule depuis fcMax
   const zones = useMemo(() => {
-    // Calcule d'abord les bornes (uppers), puis derive lower depuis l'index precedent
-    const uppers = ZONE_META.map((z) => Math.round(fcMax * (z.maxPct / 100)));
+    const z1 = settings?.heartRateZone1Max;
+    const z2 = settings?.heartRateZone2Max;
+    const z3 = settings?.heartRateZone3Max;
+    const z4 = settings?.heartRateZone4Max;
+    const hasCustom = z1 && z2 && z3 && z4;
+    const uppers = hasCustom
+      ? [z1, z2, z3, z4, fcMax]
+      : ZONE_META.map((z) => Math.round(fcMax * (z.maxPct / 100)));
     return ZONE_META.map((z, i) => {
       const upper = uppers[i];
       const prevUpper = i === 0 ? 0 : uppers[i - 1];
@@ -57,13 +113,59 @@ function ReglagesEntrainementTab({ fcMax = 184, ftp = 268, lastFcUpdate = "28 av
       if (i === 0) display = `< ${upper + 1} bpm`;
       else if (i === ZONE_META.length - 1) display = `> ${prevUpper} bpm`;
       else display = `${lower} – ${upper} bpm`;
+      const pctMax = Math.round((upper / fcMax) * 100);
+      const pctPrev = i === 0 ? 0 : Math.round((prevUpper / fcMax) * 100);
       let displayPct;
-      if (i === 0) displayPct = `< ${z.maxPct}%`;
-      else if (i === ZONE_META.length - 1) displayPct = `> ${ZONE_META[i - 1].maxPct}%`;
-      else displayPct = `${ZONE_META[i - 1].maxPct} – ${z.maxPct}%`;
+      if (i === 0) displayPct = `< ${pctMax}%`;
+      else if (i === ZONE_META.length - 1) displayPct = `> ${pctPrev}%`;
+      else displayPct = `${pctPrev} – ${pctMax}%`;
       return { ...z, lower, upper, display, displayPct };
     });
-  }, [fcMax]);
+  }, [settings, fcMax]);
+
+  // --- Save handlers (modals) ---
+  const handleSaveFc = async (payload) => {
+    const next = { ...(settings || {}), ...payload };
+    await saveTrainingAnalyticsSettings(next);
+    pushToast({ message: "Fréquence cardiaque enregistrée.", tone: "success" });
+    await loadSettings();
+  };
+  const handleSaveFtp = async (payload) => {
+    const next = { ...(settings || {}), ...payload };
+    await saveTrainingAnalyticsSettings(next);
+    pushToast({ message: "FTP enregistrée.", tone: "success" });
+    await loadSettings();
+  };
+  const handleSaveZones = async (payload) => {
+    const next = { ...(settings || {}), ...payload };
+    await saveTrainingAnalyticsSettings(next);
+    pushToast({ message: "Zones FC enregistrées.", tone: "success" });
+    await loadSettings();
+  };
+
+  // --- Save handler (préférences calcul) ---
+  const updatePreference = async (patch) => {
+    if (savingPref) return;
+    setSavingPref(true);
+    const next = { ...(settings || {}), ...patch };
+    setSettings(next); // Optimistic
+    try {
+      await saveTrainingAnalyticsSettings(next);
+      pushToast({ message: "Préférence enregistrée.", tone: "success", duration: 2000 });
+    } catch (err) {
+      pushToast({ message: extractErrorMessage(err, "Erreur."), tone: "error" });
+      await loadSettings(); // rollback
+    } finally {
+      setSavingPref(false);
+    }
+  };
+
+  const speedUnit = units === "imperial" ? "mph" : "kmh";
+  const paceUnit = units === "imperial" ? "min_mi" : "min_km";
+
+  if (loading) {
+    return <div className="reglages-tab"><p>Chargement…</p></div>;
+  }
 
   return (
     <div className="reglages-tab reglages-entrainement-tab">
@@ -74,9 +176,14 @@ function ReglagesEntrainementTab({ fcMax = 184, ftp = 268, lastFcUpdate = "28 av
             <div>
               <small>FC max (bpm)</small>
               <strong className="reglages-metric-value">{fcMax}</strong>
-              <span className="reglages-metric-hint">Définie le {lastFcUpdate}</span>
+              <span className="reglages-metric-hint">
+                FC repos : {restingHr} bpm · Sexe : {biologicalSex === "male" ? "Homme" : biologicalSex === "female" ? "Femme" : "—"}
+              </span>
+              {effectiveFrom ? (
+                <span className="reglages-metric-hint">Définie le {formatDate(effectiveFrom)}</span>
+              ) : null}
             </div>
-            <button type="button" className="reglages-btn">Modifier</button>
+            <button type="button" className="reglages-btn" onClick={() => setFcModalOpen(true)}>Modifier</button>
           </div>
         </section>
 
@@ -92,7 +199,9 @@ function ReglagesEntrainementTab({ fcMax = 184, ftp = 268, lastFcUpdate = "28 av
               </li>
             ))}
           </ul>
-          <button type="button" className="reglages-btn reglages-btn-block">Modifier les zones</button>
+          <button type="button" className="reglages-btn reglages-btn-block" onClick={() => setZonesModalOpen(true)}>
+            Modifier les zones
+          </button>
         </section>
 
         <section className="reglages-card">
@@ -100,10 +209,14 @@ function ReglagesEntrainementTab({ fcMax = 184, ftp = 268, lastFcUpdate = "28 av
           <div className="reglages-metric-row">
             <div>
               <small>FTP (W)</small>
-              <strong className="reglages-metric-value">{ftp}</strong>
-              <span className="reglages-metric-hint">Définie le {lastFtpUpdate}</span>
+              <strong className="reglages-metric-value">{ftp || "—"}</strong>
+              <span className="reglages-metric-hint">
+                {ftp ? `Définie le ${formatDate(effectiveFrom)}` : "Pas encore définie"}
+              </span>
             </div>
-            <button type="button" className="reglages-btn">Modifier</button>
+            <button type="button" className="reglages-btn" onClick={() => setFtpModalOpen(true)}>
+              {ftp ? "Modifier" : "Définir"}
+            </button>
           </div>
         </section>
 
@@ -111,30 +224,33 @@ function ReglagesEntrainementTab({ fcMax = 184, ftp = 268, lastFcUpdate = "28 av
           <h3>Unités d'entraînement</h3>
           <div className="reglages-field reglages-field-row">
             <label>Vitesse</label>
-            <select value={speedUnit} onChange={(e) => setSpeedUnit(e.target.value)}>
+            <select value={speedUnit} disabled>
               {SPEED_UNIT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div className="reglages-field reglages-field-row">
             <label>Allure</label>
-            <select value={paceUnit} onChange={(e) => setPaceUnit(e.target.value)}>
+            <select value={paceUnit} disabled>
               {PACE_UNIT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div className="reglages-field reglages-field-row">
             <label>Puissance</label>
-            <select value={powerUnit} onChange={(e) => setPowerUnit(e.target.value)}>
+            <select defaultValue="watts" disabled>
               <option value="watts">Watts</option>
               <option value="w_kg">W/kg</option>
             </select>
           </div>
           <div className="reglages-field reglages-field-row">
             <label>Poids</label>
-            <select value={weightUnit} onChange={(e) => setWeightUnit(e.target.value)}>
+            <select defaultValue={units === "imperial" ? "lb" : "kg"} disabled>
               <option value="kg">Kilogrammes</option>
               <option value="lb">Livres</option>
             </select>
           </div>
+          <p className="reglages-metric-hint" style={{ marginTop: 4 }}>
+            Pour changer le système d'unités, va dans <strong>Compte → Préférences d'affichage → Unités</strong>.
+          </p>
         </section>
       </div>
 
@@ -143,24 +259,59 @@ function ReglagesEntrainementTab({ fcMax = 184, ftp = 268, lastFcUpdate = "28 av
         <div className="reglages-calc-grid">
           <div className="reglages-field">
             <label>Méthode de lissage de la FC</label>
-            <select value={smoothing} onChange={(e) => setSmoothing(e.target.value)}>
+            <select
+              value={settings?.paceSmoothingMethod || "exp30"}
+              onChange={(e) => updatePreference({ paceSmoothingMethod: e.target.value })}
+              disabled={savingPref}
+            >
               {SMOOTHING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div className="reglages-field">
             <label>Calcul des zones</label>
-            <select value={zonesMethod} onChange={(e) => setZonesMethod(e.target.value)}>
+            <select
+              value={settings?.zonesCalculationMethod || "custom_hr"}
+              onChange={(e) => updatePreference({ zonesCalculationMethod: e.target.value })}
+              disabled={savingPref}
+            >
               {ZONES_METHOD_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div className="reglages-field">
             <label>Allure de référence (GAP)</label>
-            <select value={gap} onChange={(e) => setGap(e.target.value)}>
+            <select
+              value={settings?.gapEnabled === false ? "off" : "on"}
+              onChange={(e) => updatePreference({ gapEnabled: e.target.value === "on" })}
+              disabled={savingPref}
+            >
               {GAP_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
         </div>
       </section>
+
+      {/* Modals */}
+      <FcMaxModal
+        open={fcModalOpen}
+        initialFcMax={fcMax}
+        initialRestingHr={restingHr}
+        initialBiologicalSex={biologicalSex}
+        onClose={() => setFcModalOpen(false)}
+        onSave={handleSaveFc}
+      />
+      <FtpModal
+        open={ftpModalOpen}
+        initialFtp={ftp || 250}
+        onClose={() => setFtpModalOpen(false)}
+        onSave={handleSaveFtp}
+      />
+      <ZonesEditModal
+        open={zonesModalOpen}
+        initialValues={settings || {}}
+        fcMax={fcMax}
+        onClose={() => setZonesModalOpen(false)}
+        onSave={handleSaveZones}
+      />
     </div>
   );
 }

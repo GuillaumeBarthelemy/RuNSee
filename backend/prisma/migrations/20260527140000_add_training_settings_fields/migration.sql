@@ -1,0 +1,5 @@
+ALTER TABLE "UserTrainingAnalyticsSettings"
+  ADD COLUMN IF NOT EXISTS "ftpWatts" INTEGER,
+  ADD COLUMN IF NOT EXISTS "paceSmoothingMethod" TEXT NOT NULL DEFAULT 'exp30',
+  ADD COLUMN IF NOT EXISTS "zonesCalculationMethod" TEXT NOT NULL DEFAULT 'custom_hr',
+  ADD COLUMN IF NOT EXISTS "gapEnabled" BOOLEAN NOT NULL DEFAULT true;

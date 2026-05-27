@@ -85,7 +85,11 @@ model UserTrainingAnalyticsSettings {
   heartRateZone2Max            Int?
   heartRateZone3Max            Int?
   heartRateZone4Max            Int?
+  ftpWatts                     Int?
   intensitySourcePriority      String   @default("heart_rate")
+  paceSmoothingMethod          String   @default("exp30")
+  zonesCalculationMethod       String   @default("custom_hr")
+  gapEnabled                   Boolean  @default(true)
   efficiencyMinDurationMinutes Int      @default(20)
   efficiencyMaxElevationPerKm  Int      @default(25)
   efficiencyExcludeTrail       Boolean  @default(true)
