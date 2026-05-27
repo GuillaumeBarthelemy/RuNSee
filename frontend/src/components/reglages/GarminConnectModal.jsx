@@ -46,21 +46,29 @@ function GarminConnectModal({ open = false, onClose = () => {}, onSuccess = () =
     setError("");
     setSubmitting(true);
     try {
-      await connectGarmin({
+      const result = await connectGarmin({
         email,
         password,
         consentAccepted: true,
         mfaCode: mfaRequired ? mfaCode : undefined,
       });
-      pushToast({ message: "Garmin connecté.", tone: "success" });
+      // Le backend renvoie 200 OK avec mfaRequired:true quand Garmin demande
+      // une validation MFA (et non une erreur). On bascule en mode MFA.
+      if (result?.mfaRequired) {
+        setMfaRequired(true);
+        setError(result?.message || "Code MFA requis. Saisis le code à 6 chiffres reçu par email Garmin.");
+        return;
+      }
+      // Sinon la connexion est effective
+      pushToast({ message: result?.message || "Garmin connecté.", tone: "success" });
       onSuccess();
       onClose();
     } catch (err) {
       const data = err?.response?.data;
-      // Si Garmin renvoie un challenge MFA, on bascule en mode MFA
+      // Cas d'erreur : on regarde si l'erreur contient un signal MFA
       if (data?.mfaRequired || /mfa|two-factor|verification/i.test(data?.userMessage || data?.message || "")) {
         setMfaRequired(true);
-        setError("Code MFA requis. Saisis le code à 6 chiffres reçu sur ton compte Garmin.");
+        setError("Code MFA requis. Saisis le code à 6 chiffres reçu par email Garmin.");
       } else {
         setError(extractErrorMessage(err));
       }
