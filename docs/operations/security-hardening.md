@@ -130,6 +130,35 @@ Notes :
 
 `GET /sync/summary` expose désormais `autoSyncIntervalMinutes` (depuis `env.autoIncrementalSyncIntervalMinutes`).
 
+## Lot Activity — Classification des séances
+
+### Endpoint
+
+`PATCH /activities/:stravaActivityId/classification` (auth requise, CSRF).
+```json
+{ "sessionType": "tempo", "markers": ["specifique", "club"], "notes": "..." }
+```
+- `sessionType` ∈ 13 types canoniques (voir `activityClassification.service.js`).
+- `markers` : max 4, parmi 8 marqueurs.
+- `notes` : max 500 chars.
+- Isolation cross-user vérifiée.
+
+### Auto-classification historique
+
+```bash
+cd backend
+npm run activities:auto-classify -- --dry-run   # simulation
+npm run activities:auto-classify                # applique
+```
+- Ne touche que les activités `userSessionType IS NULL`.
+- `userClassifiedAt` reste NULL → l'UI affiche un badge **"auto"** incitant à confirmer.
+- Idempotent.
+- **Fallback FC max** : si l'utilisateur n'a pas configuré sa FC max, le script l'estime à partir du pic FC observé (`max(maxHeartrate)` sur ses activités). Sur la base dev (890 activités sans FC max configurée), ça fait passer le taux de "autre" de 79 % à 22 %.
+
+### Dépendance FC max
+
+Les heuristiques de suggestion (récup / tempo / seuil / VMA) utilisent la **FC max active** de l'utilisateur (`UserTrainingAnalyticsSettings.heartRateMax`). Sans FC max configurée (Réglages > Entraînement), la suggestion retombe sur les seules heuristiques durée/distance/D+ (sortie longue, côtes, endurance, compétition). Pas d'erreur, juste moins de finesse.
+
 ## Lot 7 — i18n + Cleanup + Rotation clés
 
 ### Audit git history `.env*`
