@@ -18,7 +18,7 @@ export const SESSION_TYPES = Object.freeze({
   sortie_longue:   { label: "Sortie longue",          intensity: "low" },
   recuperation:    { label: "Récupération",           intensity: "low" },
   tempo:           { label: "Tempo / Seuil 2",        intensity: "mid" },
-  seuil:           { label: "Seuil / Lactate",        intensity: "mid" },
+  seuil:           { label: "Seuil / Lactate",        intensity: "high" },
   vma_courte:      { label: "VMA courte",             intensity: "high" },
   vma_longue:      { label: "VMA longue",             intensity: "high" },
   fartlek:         { label: "Fartlek",                intensity: "mid" },

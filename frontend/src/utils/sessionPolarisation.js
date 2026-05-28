@@ -4,9 +4,9 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // Regroupe les intensites taxonomie en 3 zones de polarisation classique.
 export const POLAR_BUCKETS = {
-  low:  { label: "Facile (Z1-Z2)", color: "#22c55e" },
-  mid:  { label: "Modéré (Z3-Z4)", color: "#eab308" },
-  high: { label: "Intense (Z5+)",  color: "#ef4444" },
+  low:  { label: "Facile (Z1-Z2)",  color: "#22c55e" },
+  mid:  { label: "Modéré (Z3)",     color: "#eab308" },
+  high: { label: "Intense (Z4-Z5)", color: "#ef4444" },
 };
 
 // Types consideres "qualite/intensite" (séances structurees).

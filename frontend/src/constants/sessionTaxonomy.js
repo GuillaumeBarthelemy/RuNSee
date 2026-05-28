@@ -11,7 +11,7 @@ export const SESSION_TYPES = [
   { key: "sortie_longue",  label: "Sortie longue",        intensity: "low",  tone: "success", icon: "🛤" },
   { key: "recuperation",   label: "Récupération",         intensity: "low",  tone: "success", icon: "💚" },
   { key: "tempo",          label: "Tempo",                intensity: "mid",  tone: "warning", icon: "🟡" },
-  { key: "seuil",          label: "Seuil",                intensity: "mid",  tone: "warning", icon: "🟠" },
+  { key: "seuil",          label: "Seuil",                intensity: "high", tone: "warning", icon: "🟠" },
   { key: "vma_courte",     label: "VMA courte",           intensity: "high", tone: "danger",  icon: "🔥" },
   { key: "vma_longue",     label: "VMA longue",           intensity: "high", tone: "danger",  icon: "⚡" },
   { key: "fartlek",        label: "Fartlek",              intensity: "mid",  tone: "warning", icon: "🎲" },
