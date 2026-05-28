@@ -289,6 +289,16 @@ model Activity {
   cardiacDecouplingPercent     Float?
   cardiacDecouplingComputedAt  DateTime?
 
+  // Classification utilisateur (Lot Activity Refonte) :
+  //   userSessionType    : type d'effort (enum logique cote service)
+  //   userSessionMarkers : JSON array de marqueurs (specifique, club, ...)
+  //   userNotes          : notes libres (500 chars max)
+  //   userClassifiedAt   : null = auto-suggestion non confirmee, date = confirmee user
+  userSessionType       String?
+  userSessionMarkers    String?
+  userNotes             String?
+  userClassifiedAt      DateTime?
+
   providerEnrichments   ActivityProviderEnrichment[]
   providerLinks         ActivityProviderLink[]
 
@@ -301,6 +311,7 @@ model Activity {
   @@index([sourceProvider, startDate])
   @@index([appUserId, isMerged])
   @@index([mergedIntoActivityId])
+  @@index([appUserId, userSessionType])
 }
 
 model ExternalProviderConnection {

@@ -17654,3 +17654,140 @@ button.alert-banner-positive-item {
 }
 :root[data-theme="dark"] .reglages-field-hint { color: var(--al-muted); }
 
+
+/* =========================================================================
+ * Classification des seances (Lot Activity Refonte)
+ * ========================================================================= */
+
+/* Textarea reglages (reutilisable) */
+.reglages-textarea {
+  width: 100%;
+  border: 1px solid var(--al-border, #e5edf7);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--al-surface, #fff);
+  color: var(--al-text, #0f172a);
+}
+.reglages-textarea:focus {
+  outline: none;
+  border-color: var(--al-primary, #2563eb);
+}
+:root[data-theme="dark"] .reglages-textarea {
+  background: var(--al-surface-soft);
+  border-color: var(--al-border);
+  color: var(--al-text);
+}
+
+/* Pills (affichage sur la fiche detail) */
+.activity-class-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+.activity-class-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.activity-class-pill-success { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+.activity-class-pill-warning { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+.activity-class-pill-danger  { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+.activity-class-pill-neutral { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+.activity-class-pill-marker  { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+.activity-class-pill-empty   { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; font-style: italic; }
+.activity-class-pill-auto {
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.7;
+}
+.activity-class-edit-btn {
+  background: none;
+  border: 1px dashed var(--al-border, #cbd5e1);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--al-text-soft, #475569);
+}
+.activity-class-edit-btn:hover { border-color: var(--al-primary, #2563eb); color: var(--al-primary, #2563eb); }
+
+/* Grille de selection type d'effort (modal) */
+.activity-class-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+.activity-class-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1.5px solid var(--al-border, #e2e8f0);
+  background: var(--al-surface, #fff);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--al-text, #0f172a);
+  transition: border-color 0.12s, background 0.12s;
+}
+.activity-class-chip:hover { border-color: var(--al-primary, #2563eb); }
+.activity-class-chip.is-active { border-width: 2px; }
+.activity-class-chip-success.is-active { border-color: #16a34a; background: #f0fdf4; }
+.activity-class-chip-warning.is-active { border-color: #d97706; background: #fffbeb; }
+.activity-class-chip-danger.is-active  { border-color: #dc2626; background: #fef2f2; }
+.activity-class-chip-neutral.is-active { border-color: #64748b; background: #f8fafc; }
+.activity-class-chip-icon { font-size: 14px; }
+.activity-class-chip-label { line-height: 1.1; }
+
+/* Marqueurs (toggles) */
+.activity-class-markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.activity-class-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--al-border, #e2e8f0);
+  background: var(--al-surface, #fff);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--al-text-soft, #475569);
+}
+.activity-class-marker.is-active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e40af;
+  font-weight: 600;
+}
+.activity-class-marker:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Dark mode */
+:root[data-theme="dark"] .activity-class-pill-success { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+:root[data-theme="dark"] .activity-class-pill-warning { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.3); }
+:root[data-theme="dark"] .activity-class-pill-danger  { background: rgba(248,113,113,0.15); color: #fca5a5; border-color: rgba(248,113,113,0.3); }
+:root[data-theme="dark"] .activity-class-pill-neutral { background: var(--al-surface-soft); color: var(--al-text-soft); border-color: var(--al-border); }
+:root[data-theme="dark"] .activity-class-pill-marker  { background: var(--al-primary-soft); color: var(--al-text-soft); border-color: var(--al-primary); }
+:root[data-theme="dark"] .activity-class-pill-empty   { background: var(--al-surface-soft); color: var(--al-muted); border-color: var(--al-border); }
+:root[data-theme="dark"] .activity-class-chip { background: var(--al-surface-soft); border-color: var(--al-border); color: var(--al-text); }
+:root[data-theme="dark"] .activity-class-marker { background: var(--al-surface-soft); border-color: var(--al-border); color: var(--al-text-soft); }
+:root[data-theme="dark"] .activity-class-marker.is-active { background: var(--al-primary-soft); border-color: var(--al-primary); color: var(--al-text); }

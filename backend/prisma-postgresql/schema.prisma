@@ -282,6 +282,12 @@ model Activity {
   cardiacDecouplingPercent     Float?
   cardiacDecouplingComputedAt  DateTime?
 
+  // Classification utilisateur (Lot Activity Refonte)
+  userSessionType       String?
+  userSessionMarkers    String?
+  userNotes             String?
+  userClassifiedAt      DateTime?
+
   providerEnrichments   ActivityProviderEnrichment[]
   providerLinks         ActivityProviderLink[]
 
@@ -294,6 +300,7 @@ model Activity {
   @@index([sourceProvider, startDate])
   @@index([appUserId, isMerged])
   @@index([mergedIntoActivityId])
+  @@index([appUserId, userSessionType])
 }
 
 model ExternalProviderConnection {

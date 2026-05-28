@@ -19,3 +19,13 @@ export async function updateActivityRpe(stravaActivityId, userRpe) {
   const response = await api.patch(`/activities/${stravaActivityId}/rpe`, { userRpe });
   return response.data;
 }
+
+/**
+ * Met a jour la classification utilisateur d'une activite.
+ * @param {string} stravaActivityId
+ * @param {{ sessionType?: string, markers?: string[], notes?: string }} payload
+ */
+export async function updateActivityClassification(stravaActivityId, payload) {
+  const response = await api.patch(`/activities/${stravaActivityId}/classification`, payload);
+  return response.data;
+}

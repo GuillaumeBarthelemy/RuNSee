@@ -7,6 +7,7 @@ import {
 import { enrichActivityByStravaId } from "../services/activityEnrichment.service.js";
 import { EXTERNAL_PROVIDER_CODES } from "../services/providers/externalProvider.constants.js";
 import { buildPublicGarminActivityEnrichment } from "../services/providers/garminActivityEnrichment.service.js";
+import { deserializeMarkers } from "../services/activities/activityClassification.service.js";
 
 function buildActivityDetailResponse(activity) {
   if (!activity) {
@@ -22,6 +23,8 @@ function buildActivityDetailResponse(activity) {
 
   return {
     ...activity,
+    // Marqueurs stockes en JSON string en DB -> array pour le client.
+    userSessionMarkers: deserializeMarkers(activity.userSessionMarkers),
     garminActivityEnrichment: buildPublicGarminActivityEnrichment(garminActivityEnrichment),
   };
 }
@@ -99,6 +102,32 @@ function sanitizeRpeValue(value) {
   }
 
   return Math.min(10, Math.max(1, numeric));
+}
+
+export async function updateActivityClassification(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const { stravaActivityId } = req.params;
+    const existing = await getStoredActivityByPublicIdForUser(user.id, stravaActivityId);
+
+    if (!existing) {
+      return res.status(404).json({ message: "Activity not found." });
+    }
+
+    const { classifyActivity } = await import("../services/activities/activityClassification.service.js");
+    await classifyActivity({
+      appUserId: user.id,
+      activityId: existing.id,
+      sessionType: req.body?.sessionType,
+      markers: req.body?.markers,
+      notes: req.body?.notes,
+    });
+
+    const updated = await getStoredActivityByPublicIdForUser(user.id, stravaActivityId);
+    return res.json(buildActivityDetailResponse(updated));
+  } catch (error) {
+    next(error);
+  }
 }
 
 export async function updateActivityRpe(req, res, next) {

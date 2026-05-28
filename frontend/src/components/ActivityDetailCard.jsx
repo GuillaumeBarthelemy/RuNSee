@@ -1,10 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import ActivityDetailTabs from "./ActivityDetailTabs.jsx";
 import ActivityHeaderKpis from "./ActivityHeaderKpis.jsx";
 import ActivityIntensityCard from "./ActivityIntensityCard.jsx";
 import ActivityPerformanceStrip from "./ActivityPerformanceStrip.jsx";
+import ActivityClassificationModal from "./activity/ActivityClassificationModal.jsx";
+import ActivityClassificationPills from "./activity/ActivityClassificationPills.jsx";
 import { getDisplaySportLabel } from "../utils/activityAggregations.js";
 import { buildActivityTrainingInsights } from "../utils/trainingMetrics.js";
+import { suggestSessionType } from "../constants/sessionTaxonomy.js";
 
 const noop = () => {};
 
@@ -77,6 +80,16 @@ export default function ActivityDetailCard({
     [safeActivity, trainingAnalyticsSettings],
   );
 
+  const [classModalOpen, setClassModalOpen] = useState(false);
+  const suggestedType = useMemo(
+    () => suggestSessionType(safeActivity, { fcMax: trainingAnalyticsSettings?.heartRateMax }),
+    [safeActivity, trainingAnalyticsSettings],
+  );
+
+  const handleClassificationSaved = (updated) => {
+    onActivityUpdated(updated);
+  };
+
   return (
     <section className="card detail-shell">
       <header className="card-header-row activity-detail-header wrap-on-mobile">
@@ -92,6 +105,19 @@ export default function ActivityDetailCard({
           </button>
         ) : null}
       </header>
+
+      <ActivityClassificationPills
+        activity={safeActivity}
+        onEdit={() => setClassModalOpen(true)}
+      />
+
+      <ActivityClassificationModal
+        open={classModalOpen}
+        activity={safeActivity}
+        suggestedType={suggestedType}
+        onClose={() => setClassModalOpen(false)}
+        onSaved={handleClassificationSaved}
+      />
 
       <ActivityHeaderKpis activity={safeActivity} />
 
