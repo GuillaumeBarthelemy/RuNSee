@@ -14,7 +14,6 @@ import {
   ZONE_LABELS,
   buildIntensityKpi,
   buildIntensityWeeklySeries,
-  buildIntensityRouteVsTrail,
   buildIntensityRolling30Comparison,
   shareZ1Z2,
   shareZ3Z5,
@@ -25,6 +24,8 @@ import {
   classifyVariety,
   buildFooterTakeaway,
 } from "../../utils/analyticsIntensities.js";
+import { buildSessionPolarisation, countQualitySessions } from "../../utils/sessionPolarisation.js";
+import ProgressionPolarisationCard from "../progression/ProgressionPolarisationCard.jsx";
 
 /**
  * AnalyticsIntensitiesTab — Onglet "Intensités" (Lot 04 V5, PDF page 10).
@@ -396,117 +397,6 @@ function IntensitiesWeeklyStack({ weekly = [] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Sub-component : Route vs Trail
-// ---------------------------------------------------------------------------
-
-function RoadGlyph({ color = "#1268f3" }) {
-  return (
-    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
-      <path
-        fill={color}
-        d="M11 5h10l3 22h-5l-1-7h-4l-1 7H8l3-22Zm3 2-.8 6h5.6L18 7h-4Zm-.4 8 -.5 3h5.8l-.5-3h-4.8Z"
-      />
-    </svg>
-  );
-}
-function TreeGlyph({ color = "#16a34a" }) {
-  return (
-    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
-      <path
-        fill={color}
-        d="M16 3 23 13H19l4 7H17v6h-2v-6H9l4-7H9l7-10Z"
-      />
-    </svg>
-  );
-}
-
-/**
- * Donut unique scindé verticalement Route | Trail.
- * Chaque moitié prend la couleur de la zone dominante de son terrain.
- */
-function RouteTrailSplitDonut({ roadColor, trailColor }) {
-  // 2 arcs SVG : demi-cercle gauche (Route) et demi-cercle droit (Trail).
-  // Rayon 50, centre (60,60), stroke épais → effet donut.
-  return (
-    <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
-      {/* Demi-anneau gauche (Route) */}
-      <path
-        d="M60 12 A 48 48 0 0 0 60 108"
-        fill="none"
-        stroke={roadColor}
-        strokeWidth="18"
-      />
-      {/* Demi-anneau droit (Trail) */}
-      <path
-        d="M60 12 A 48 48 0 0 1 60 108"
-        fill="none"
-        stroke={trailColor}
-        strokeWidth="18"
-      />
-      {/* Trait de séparation vertical au milieu */}
-      <line x1="60" y1="6" x2="60" y2="114" stroke="#ffffff" strokeWidth="3" />
-    </svg>
-  );
-}
-
-function IntensitiesRouteVsTrail({ data }) {
-  if (!data) return null;
-  const { road, trail } = data;
-  if (!road || !trail) return null;
-
-  const roadColor = ZONE_COLORS[road.zoneKey] || "#94a3b8";
-  const trailColor = ZONE_COLORS[trail.zoneKey] || "#94a3b8";
-
-  return (
-    <section className="alpine-intensities-card">
-      <header className="alpine-intensities-card-head">
-        <h3 className="alpine-intensities-card-title">Intensité dominante</h3>
-        <span className="alpine-intensities-card-subtitle">Comparaison route vs trail</span>
-      </header>
-
-      <div className="alpine-intensities-rt-split">
-        {/* SVG donut split */}
-        <div className="alpine-intensities-rt-split-viz">
-          <RouteTrailSplitDonut roadColor={roadColor} trailColor={trailColor} />
-          <div className="alpine-intensities-rt-glyph alpine-intensities-rt-glyph--left">
-            <RoadGlyph color={roadColor} />
-          </div>
-          <div className="alpine-intensities-rt-glyph alpine-intensities-rt-glyph--right">
-            <TreeGlyph color={trailColor} />
-          </div>
-        </div>
-
-        {/* Labels sous le donut, alignés avec leur moitié */}
-        <div className="alpine-intensities-rt-split-labels">
-          <div className="alpine-intensities-rt-split-col">
-            <strong className="alpine-intensities-rt-context" style={{ color: roadColor }}>Route</strong>
-            <span className="alpine-intensities-rt-zone">
-              <span className="dot" style={{ background: roadColor }} />
-              <strong>{road.zoneKey.toUpperCase()}</strong> {ZONE_LABELS[road.zoneKey]}
-            </span>
-            <span className="alpine-intensities-rt-share">{road.sharePercent} % du temps</span>
-          </div>
-          <div className="alpine-intensities-rt-split-col">
-            <strong className="alpine-intensities-rt-context" style={{ color: trailColor }}>Trail</strong>
-            <span className="alpine-intensities-rt-zone">
-              <span className="dot" style={{ background: trailColor }} />
-              <strong>{trail.zoneKey.toUpperCase()}</strong> {ZONE_LABELS[trail.zoneKey]}
-            </span>
-            <span className="alpine-intensities-rt-share">{trail.sharePercent} % du temps</span>
-          </div>
-        </div>
-      </div>
-
-      <p className="alpine-intensities-rt-insight">
-        {road.zoneKey === trail.zoneKey
-          ? "Même intensité dominante sur route et trail."
-          : `Intensité dominante différente entre route (${ZONE_LABELS[road.zoneKey]}) et trail (${ZONE_LABELS[trail.zoneKey]}).`}
-      </p>
-    </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Sub-component : Légende des zones (synchro settings user)
 // ---------------------------------------------------------------------------
 
@@ -666,13 +556,16 @@ function AnalyticsIntensitiesTab({
     [activities, endDate, trainingAnalyticsSettings],
   );
 
-  const routeVsTrail = useMemo(
-    () => buildIntensityRouteVsTrail(activities, {
-      startDate: sharedRange?.start,
-      endDate,
-      settings: trainingAnalyticsSettings,
-    }),
-    [activities, sharedRange?.start, endDate, trainingAnalyticsSettings],
+  // Polarisation (classification user) — remplace Route vs Trail.
+  const polarisation = useMemo(
+    () => buildSessionPolarisation(activities, { weeks: 12, referenceDate: endDate }),
+    [activities, endDate],
+  );
+
+  // Compte des seances qualite via classification (fiabilise le KPI).
+  const qualityFromClassification = useMemo(
+    () => countQualitySessions(activities, { weeks: 12, referenceDate: endDate }),
+    [activities, endDate],
   );
 
   const rolling30 = useMemo(
@@ -728,10 +621,12 @@ function AnalyticsIntensitiesTab({
             icon={<KpiIconFlame />}
             iconClass="icon-tone-red"
             label="Séances de qualité"
-            value={kpi.qualitySessionCount}
+            value={qualityFromClassification ? qualityFromClassification.count : kpi.qualitySessionCount}
             valueUnit="séances"
-            subtitle={`${kpi.qualitySessionShare} % du total`}
-            delta={formatDeltaAbs(rolling30?.delta?.qualitySessionCount)}
+            subtitle={qualityFromClassification
+              ? `${qualityFromClassification.sharePct} % des séances classées`
+              : `${kpi.qualitySessionShare} % du total`}
+            delta={qualityFromClassification ? null : formatDeltaAbs(rolling30?.delta?.qualitySessionCount)}
           />
           <IntensityKpiCard
             icon={<KpiIconGauge />}
@@ -744,10 +639,10 @@ function AnalyticsIntensitiesTab({
           />
         </section>
 
-        {/* §4 + §5 : Évolution + Route vs Trail */}
+        {/* §4 + §5 : Évolution hebdo + Polarisation (classification user) */}
         <div className="alpine-intensities-row-2">
           <IntensitiesWeeklyStack weekly={weekly} />
-          <IntensitiesRouteVsTrail data={routeVsTrail} />
+          <ProgressionPolarisationCard polarisation={polarisation} />
         </div>
 
         {/* §7 : Lecture intensité */}
