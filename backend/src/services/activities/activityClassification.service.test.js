@@ -49,14 +49,25 @@ describe("suggestSessionType heuristiques", () => {
     assert.equal(suggestSessionType(a, { fcMax: 190 }), "recuperation");
   });
 
-  it("FC max > 92% FCmax + duree < 40 min -> vma_courte", () => {
+  it("pic VMA + FC moyenne soutenue (>=85%) + duree < 40 min -> vma_courte", () => {
     const a = {
       movingTime: 35 * 60,
       distance: 7000,
-      averageHeartrate: 160,
-      maxHeartrate: 180, // 94.7%
+      averageHeartrate: 164, // 86.3% (soutenue)
+      maxHeartrate: 180,     // 94.7% (pic)
     };
     assert.equal(suggestSessionType(a, { fcMax: 190 }), "vma_courte");
+  });
+
+  it("pic isole (>92%) mais FC moyenne moderee (<85%) -> tempo, PAS vma", () => {
+    // Seance tempo terminee par un sprint : pic eleve mais moyenne en Z3.
+    const a = {
+      movingTime: 35 * 60,
+      distance: 7000,
+      averageHeartrate: 161, // 84.7% -> tempo
+      maxHeartrate: 180,     // 94.7% (pic isole)
+    };
+    assert.equal(suggestSessionType(a, { fcMax: 190 }), "tempo");
   });
 
   it("FC max > 92% FCmax + duree >= 40 min -> vma_longue", () => {

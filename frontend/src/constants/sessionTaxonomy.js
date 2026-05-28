@@ -58,7 +58,7 @@ export function suggestSessionType(activity = {}, ctx = {}) {
 
   if (avgHr > 0 && fcMax > 0) {
     const hrPct = avgHr / fcMax;
-    if (maxHr > 0 && maxHr / fcMax > 0.92) {
+    if (maxHr > 0 && maxHr / fcMax > 0.92 && hrPct >= 0.85) {
       return movingTime < 40 * 60 ? "vma_courte" : "vma_longue";
     }
     if (hrPct < 0.68 && movingTime < 45 * 60) return "recuperation";

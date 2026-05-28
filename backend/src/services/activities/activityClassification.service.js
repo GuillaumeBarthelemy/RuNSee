@@ -83,9 +83,11 @@ export function suggestSessionType(activity = {}, ctx = {}) {
   // 4. Recuperation : FC moyenne basse + duree courte
   if (avgHr > 0 && fcMax > 0) {
     const hrPct = avgHr / fcMax;
-    // FC max > 92% FCmax suggere un pic d'intensite type VMA (priorite sur
-    // la FC moyenne qui peut etre tiree vers le bas par les recuperations).
-    if (maxHr > 0 && maxHr / fcMax > 0.92) {
+    // VMA : un pic eleve (maxHr > 92% FCmax) ET une FC moyenne reellement
+    // soutenue (>= 85% FCmax). La double condition evite le faux positif sur
+    // une seance tempo/seuil terminee par un sprint (pic isole, moyenne plus
+    // basse). Sans le garde-fou avg, un Z3/Z4 dominant etait classe VMA.
+    if (maxHr > 0 && maxHr / fcMax > 0.92 && hrPct >= 0.85) {
       return movingTime < 40 * 60 ? "vma_courte" : "vma_longue";
     }
     if (hrPct < 0.68 && movingTime < 45 * 60) return "recuperation";
