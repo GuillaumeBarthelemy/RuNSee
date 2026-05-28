@@ -6,7 +6,6 @@ import StravaAppSettingsCard from "../StravaAppSettingsCard.jsx";
 import {
   saveStravaAppConfig,
   deleteStravaAppConfig,
-  disconnectStravaAccount,
 } from "../../services/auth.service.js";
 import {
   getGarminActivityBackfillStatus,
@@ -20,33 +19,22 @@ function extractErr(err, fallback) {
 }
 
 /**
- * ReglagesAdvancedConnexions — Section "Paramètres avancés" (repliable) de
- * l'onglet Connexions. Regroupe les fonctions migrees depuis l'ancienne
- * page /admin (supprimee) :
- *   - Import historique d'activites Garmin (backfill).
- *   - Configuration d'une application Strava personnelle (clientId/secret).
+ * GarminBackfillSection — Import historique d'activites Garmin.
+ * A inserer dans la carte plateforme Garmin (parametres avances).
  */
-function ReglagesAdvancedConnexions({ garminConnected = false, stravaConnected = false }) {
-  const { user, refreshUser } = useAuth();
+function GarminBackfillSectionImpl({ garminConnected = false }) {
   const { pushToast } = useToast();
   const [backfill, setBackfill] = useState(null);
-  const [garminBusy, setGarminBusy] = useState(false);
-  const [stravaBusy, setStravaBusy] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const loadBackfill = useCallback(async () => {
-    try {
-      setBackfill(await getGarminActivityBackfillStatus());
-    } catch {
-      // silencieux : section avancee, non bloquante
-    }
+    try { setBackfill(await getGarminActivityBackfillStatus()); } catch { /* non bloquant */ }
   }, []);
 
-  useEffect(() => {
-    if (garminConnected) loadBackfill();
-  }, [garminConnected, loadBackfill]);
+  useEffect(() => { if (garminConnected) loadBackfill(); }, [garminConnected, loadBackfill]);
 
-  const runGarmin = async (fn, okMsg) => {
-    setGarminBusy(true);
+  const run = async (fn, okMsg) => {
+    setBusy(true);
     try {
       await fn();
       pushToast({ message: okMsg, tone: "success" });
@@ -54,12 +42,35 @@ function ReglagesAdvancedConnexions({ garminConnected = false, stravaConnected =
     } catch (err) {
       pushToast({ message: extractErr(err, "Erreur."), tone: "error" });
     } finally {
-      setGarminBusy(false);
+      setBusy(false);
     }
   };
 
-  const handleSaveStravaApp = async ({ clientId, clientSecret }) => {
-    setStravaBusy(true);
+  if (!garminConnected) return null;
+
+  return (
+    <GarminActivityBackfillCard
+      backfill={backfill}
+      isConnected={garminConnected}
+      isPending={busy}
+      onStart={() => run(startGarminActivityBackfill, "Import historique Garmin lancé.")}
+      onPause={() => run(pauseGarminActivityBackfill, "Import en pause.")}
+      onResume={() => run(resumeGarminActivityBackfill, "Import repris.")}
+    />
+  );
+}
+
+/**
+ * StravaAppSection — Configuration d'une application Strava personnelle.
+ * A inserer dans la carte plateforme Strava (parametres avances).
+ */
+function StravaAppSectionImpl() {
+  const { user, refreshUser } = useAuth();
+  const { pushToast } = useToast();
+  const [busy, setBusy] = useState(false);
+
+  const handleSave = async ({ clientId, clientSecret }) => {
+    setBusy(true);
     try {
       const result = await saveStravaAppConfig({ clientId, clientSecret });
       if (typeof refreshUser === "function") await refreshUser();
@@ -72,12 +83,12 @@ function ReglagesAdvancedConnexions({ garminConnected = false, stravaConnected =
     } catch (err) {
       pushToast({ message: extractErr(err, "Erreur lors de l'enregistrement de l'application Strava."), tone: "error" });
     } finally {
-      setStravaBusy(false);
+      setBusy(false);
     }
   };
 
-  const handleDeleteStravaApp = async () => {
-    setStravaBusy(true);
+  const handleDelete = async () => {
+    setBusy(true);
     try {
       await deleteStravaAppConfig();
       if (typeof refreshUser === "function") await refreshUser();
@@ -85,49 +96,22 @@ function ReglagesAdvancedConnexions({ garminConnected = false, stravaConnected =
     } catch (err) {
       pushToast({ message: extractErr(err, "Erreur lors du retrait de l'application Strava."), tone: "error" });
     } finally {
-      setStravaBusy(false);
+      setBusy(false);
     }
   };
 
-  const handleDisconnectStrava = async () => {
-    setStravaBusy(true);
-    try {
-      await disconnectStravaAccount();
-      if (typeof refreshUser === "function") await refreshUser();
-      pushToast({ message: "Compte Strava déconnecté.", tone: "success" });
-    } catch (err) {
-      pushToast({ message: extractErr(err, "Erreur lors de la déconnexion Strava."), tone: "error" });
-    } finally {
-      setStravaBusy(false);
-    }
-  };
-
+  // Note : la deconnexion Strava est geree par le menu de la carte plateforme
+  // (evite le doublon). On masque donc le bouton de la carte app.
   return (
-    <details className="reglages-advanced">
-      <summary className="reglages-advanced-summary">Paramètres avancés</summary>
-      <div className="reglages-advanced-body">
-        {garminConnected ? (
-          <GarminActivityBackfillCard
-            backfill={backfill}
-            isConnected={garminConnected}
-            isPending={garminBusy}
-            onStart={() => runGarmin(startGarminActivityBackfill, "Import historique Garmin lancé.")}
-            onPause={() => runGarmin(pauseGarminActivityBackfill, "Import en pause.")}
-            onResume={() => runGarmin(resumeGarminActivityBackfill, "Import repris.")}
-          />
-        ) : null}
-
-        <StravaAppSettingsCard
-          stravaApp={user?.stravaApp || null}
-          isPending={stravaBusy}
-          onSave={handleSaveStravaApp}
-          onDelete={handleDeleteStravaApp}
-          onDisconnectStrava={handleDisconnectStrava}
-          canDisconnectStrava={stravaConnected}
-        />
-      </div>
-    </details>
+    <StravaAppSettingsCard
+      stravaApp={user?.stravaApp || null}
+      isPending={busy}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      canDisconnectStrava={false}
+    />
   );
 }
 
-export default memo(ReglagesAdvancedConnexions);
+export const GarminBackfillSection = memo(GarminBackfillSectionImpl);
+export const StravaAppSection = memo(StravaAppSectionImpl);

@@ -13,7 +13,7 @@ import {
 import ConfirmDialog from "./ConfirmDialog.jsx";
 import GarminConnectModal from "./GarminConnectModal.jsx";
 import PlatformActionsMenu from "./PlatformActionsMenu.jsx";
-import ReglagesAdvancedConnexions from "./ReglagesAdvancedConnexions.jsx";
+import { GarminBackfillSection, StravaAppSection } from "./ReglagesAdvancedConnexions.jsx";
 
 const STRAVA_BRAND = { name: "Strava", color: "#fc4c02" };
 const GARMIN_BRAND = { name: "Garmin", color: "#1a1a1a" };
@@ -57,6 +57,8 @@ function PlatformCard({
   onConnect,
   onResync,
   menuActions,
+  advanced = null,
+  advancedLabel = "Paramètres avancés",
 }) {
   const connected = Boolean(status?.connected);
   const hasError = Boolean(status?.lastErrorCode && status?.lastErrorAt);
@@ -126,6 +128,12 @@ function PlatformCard({
           ))}
         </ul>
       </div>
+      {advanced ? (
+        <details className="reglages-platform-advanced">
+          <summary className="reglages-advanced-summary">{advancedLabel}</summary>
+          <div className="reglages-advanced-body">{advanced}</div>
+        </details>
+      ) : null}
     </section>
   );
 }
@@ -298,6 +306,8 @@ function ReglagesConnexionsTab() {
         menuActions={stravaConnected ? [
           { label: "Déconnecter Strava", danger: true, onClick: () => setConfirmDisconnect("strava") },
         ] : []}
+        advancedLabel="Application Strava personnelle"
+        advanced={<StravaAppSection stravaConnected={stravaConnected} />}
       />
 
       <PlatformCard
@@ -311,6 +321,8 @@ function ReglagesConnexionsTab() {
           { label: "Purger les données Garmin", danger: true, onClick: () => setConfirmPurgeGarmin(true) },
           { label: "Déconnecter Garmin", danger: true, onClick: () => setConfirmDisconnect("garmin") },
         ] : []}
+        advancedLabel="Import historique des activités"
+        advanced={garminConnected ? <GarminBackfillSection garminConnected={garminConnected} /> : null}
       />
 
       <h3 className="reglages-section-title">Autres intégrations</h3>
@@ -328,11 +340,6 @@ function ReglagesConnexionsTab() {
           comingSoon
         />
       </ul>
-
-      <ReglagesAdvancedConnexions
-        garminConnected={garminConnected}
-        stravaConnected={stravaConnected}
-      />
 
       {/* Modals */}
       <GarminConnectModal

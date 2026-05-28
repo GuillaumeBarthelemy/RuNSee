@@ -18168,3 +18168,13 @@ button.alert-banner-positive-item {
 :root[data-theme="dark"] .reglages-advanced-body .field-input {
   background: var(--al-surface-soft); border-color: var(--al-border); color: var(--al-text);
 }
+
+/* Parametres avances integres dans les cartes plateforme (#1 refactor) */
+.reglages-platform-advanced {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--al-border, #e5edf7);
+}
+.reglages-platform-advanced .reglages-advanced-summary { padding: 4px 0; }
+.reglages-platform-advanced .reglages-advanced-body { padding: 12px 0 0; }
+:root[data-theme="dark"] .reglages-platform-advanced { border-color: var(--al-border); }
