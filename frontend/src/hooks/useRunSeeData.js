@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo } from "react";
 import { RunSeeDataContext } from "../context/RunSeeDataContextBase.js";
 
-export default function useRunSeeData({ includeActivities = true } = {}) {
+export default function useRunSeeData({ includeActivities = true, includeRaw = false } = {}) {
   const context = useContext(RunSeeDataContext);
 
   if (!context) {
@@ -11,8 +11,8 @@ export default function useRunSeeData({ includeActivities = true } = {}) {
   const { state, setError, ensureData, reload } = context;
 
   useEffect(() => {
-    ensureData({ includeActivities }).catch(() => {});
-  }, [ensureData, includeActivities]);
+    ensureData({ includeActivities, includeRaw }).catch(() => {});
+  }, [ensureData, includeActivities, includeRaw]);
 
   const isBusy = useMemo(
     () => ["queued", "running"].includes(state.currentJob?.status),
@@ -21,8 +21,8 @@ export default function useRunSeeData({ includeActivities = true } = {}) {
 
   const isLoading = state.isBaseLoading || (includeActivities && (!state.activitiesLoaded || state.isActivitiesLoading));
   const scopedReload = useCallback(
-    () => reload({ includeActivities }),
-    [includeActivities, reload],
+    () => reload({ includeActivities, includeRaw }),
+    [includeActivities, includeRaw, reload],
   );
 
   return {

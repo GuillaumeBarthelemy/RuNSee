@@ -1,6 +1,8 @@
 import api from "./api.js";
 
 export async function getActivities(params = {}) {
+  // Par defaut le backend exclut rawJson (perf). Passer { includeRaw: true }
+  // pour recuperer les splits complets (page Performance / records).
   const response = await api.get("/activities", { params });
   return response.data;
 }

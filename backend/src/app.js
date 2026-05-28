@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import prisma from "./config/prisma.js";
 import { globalRateLimiter } from "./middleware/rateLimit.middleware.js";
 import { csrfMiddleware } from "./middleware/csrf.middleware.js";
@@ -31,6 +32,10 @@ app.use(
     contentSecurityPolicy: false, // CSP configuree au niveau frontend / reverse proxy
   })
 );
+
+// Compression gzip/brotli des reponses (gros payloads JSON : /activities).
+// Filet origin->edge en complement de la compression Cloudflare.
+app.use(compression());
 
 // Rate limiter global (300 req / 15 min / IP).
 app.use(globalRateLimiter);

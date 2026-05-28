@@ -355,19 +355,23 @@ export async function saveDetailedActivity(activity, athleteId) {
   return upsertDetailedActivity(activity, athleteId);
 }
 
-export async function listActivities(filters = {}) {
+export async function listActivities(filters = {}, options = {}) {
   const where = applyStoredActivityIntegrityFilters(buildWhereClause(filters), {
     requireStartDate: true,
   });
 
+  // Perf : par defaut on EXCLUT `rawJson` (splits/streams complets, ~15 MB
+  // sur 1000 activites). Les modeles liste utilisent les colonnes
+  // precalculees + `summaryJson` (leger). Seule la page Performance, qui
+  // calcule les records depuis les segment_efforts, demande includeRaw.
+  const includeRaw = Boolean(options.includeRaw);
+
   // Inclusion des enrichissements Garmin (EPOC, recoveryTime, training effect)
-  // pour que la liste expose les mêmes signaux que la fiche détail. Sans cela,
-  // la Vue d'ensemble Analyse ne peut pas afficher EPOC sur la période.
-  // Le `normalizedJson` est string ; il est parsé côté controller via
-  // `buildPublicGarminActivityEnrichment`.
+  // pour que la liste expose les mêmes signaux que la fiche détail.
   return prisma.activity.findMany({
     where,
     orderBy: { startDate: "desc" },
+    ...(includeRaw ? {} : { omit: { rawJson: true } }),
     include: {
       providerEnrichments: {
         select: {

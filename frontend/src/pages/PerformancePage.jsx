@@ -64,6 +64,7 @@ export default function PerformancePage() {
     reload,
   } = useActivityViewModel({
     includeActivities: true,
+    includeRaw: true, // Performance calcule les records depuis les segment_efforts (rawJson)
   });
   const attemptedRecordEnrichmentsRef = useRef(new Set());
   const isAutoEnrichingRecordsRef = useRef(false);

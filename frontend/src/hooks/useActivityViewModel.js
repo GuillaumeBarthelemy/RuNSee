@@ -46,6 +46,7 @@ const DEFAULT_TABLE = {
 const noop = () => {};
 export default function useActivityViewModel({
   includeActivities = true,
+  includeRaw = false,
 } = {}) {
   const {
     athlete,
@@ -55,7 +56,7 @@ export default function useActivityViewModel({
     reload,
     trainingAnalyticsSettings,
     trainingAnalyticsSettingsHistory,
-  } = useRunSeeData({ includeActivities });
+  } = useRunSeeData({ includeActivities, includeRaw });
   const { dashboardState, dashboardActions } = useDashboardState();
 
   const safeActivities = useMemo(

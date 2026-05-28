@@ -20,6 +20,7 @@ const INITIAL_STATE = {
   isActivitiesLoading: false,
   baseLoaded: false,
   activitiesLoaded: false,
+  rawLoaded: false,
   error: "",
 };
 
@@ -35,6 +36,7 @@ export function RunSeeDataProvider({ children }) {
   const activitiesRequestRef = useRef(null);
   const lastBaseLoadedAtRef = useRef(0);
   const lastActivitiesLoadedAtRef = useRef(0);
+  const rawLoadedRef = useRef(false);
 
   useEffect(() => {
     stateRef.current = state;
@@ -134,28 +136,39 @@ export function RunSeeDataProvider({ children }) {
     return baseRequestRef.current;
   }, []);
 
-  const loadActivities = useCallback(async ({ force = false } = {}) => {
+  const loadActivities = useCallback(async ({ force = false, includeRaw = false } = {}) => {
     const current = stateRef.current;
 
     if (activitiesRequestRef.current) {
       return activitiesRequestRef.current;
     }
 
-    if (!force && current.activitiesLoaded && Date.now() - lastActivitiesLoadedAtRef.current < ACTIVITIES_STALE_MS) {
+    // Si on demande les splits (includeRaw) mais qu'ils ne sont pas encore
+    // charges, on force le rechargement meme si la liste legere est fraiche.
+    const needsRawUpgrade = includeRaw && !rawLoadedRef.current;
+
+    if (!force && !needsRawUpgrade && current.activitiesLoaded
+        && Date.now() - lastActivitiesLoadedAtRef.current < ACTIVITIES_STALE_MS) {
       return current.activities;
     }
 
     setState((previous) => ({ ...previous, isActivitiesLoading: true }));
 
+    // Conserve le mode raw une fois active (les refresh background gardent
+    // les splits si une page Performance les a demandes).
+    const wantRaw = includeRaw || rawLoadedRef.current;
+
     const request = (async () => {
       try {
-        const activities = await getActivities();
+        const activities = await getActivities(wantRaw ? { includeRaw: true } : {});
         lastActivitiesLoadedAtRef.current = Date.now();
+        rawLoadedRef.current = wantRaw;
         setState((previous) => ({
           ...previous,
           activities: Array.isArray(activities) ? activities : [],
           isActivitiesLoading: false,
           activitiesLoaded: true,
+          rawLoaded: wantRaw,
           error: "",
         }));
       } catch (error) {
@@ -176,16 +189,16 @@ export function RunSeeDataProvider({ children }) {
     return activitiesRequestRef.current;
   }, []);
 
-  const ensureData = useCallback(async ({ includeActivities = false, force = false } = {}) => {
+  const ensureData = useCallback(async ({ includeActivities = false, includeRaw = false, force = false } = {}) => {
     await loadBase({ force });
 
     if (includeActivities) {
-      await loadActivities({ force });
+      await loadActivities({ force, includeRaw });
     }
   }, [loadActivities, loadBase]);
 
-  const reload = useCallback(async ({ includeActivities = false } = {}) => {
-    await ensureData({ includeActivities, force: true });
+  const reload = useCallback(async ({ includeActivities = false, includeRaw = false } = {}) => {
+    await ensureData({ includeActivities, includeRaw, force: true });
   }, [ensureData]);
 
   useEffect(() => {

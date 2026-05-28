@@ -57,15 +57,18 @@ function buildActivityListResponse(activity) {
 export async function getActivities(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
-    const { from, to, type, sportType } = req.query;
+    const { from, to, type, sportType, includeRaw } = req.query;
 
-    const activities = await listActivities({
-      appUserId: user.id,
-      from,
-      to,
-      type,
-      sportType,
-    });
+    const activities = await listActivities(
+      {
+        appUserId: user.id,
+        from,
+        to,
+        type,
+        sportType,
+      },
+      { includeRaw: String(includeRaw) === "true" },
+    );
 
     return res.json(activities.map(buildActivityListResponse));
   } catch (error) {
