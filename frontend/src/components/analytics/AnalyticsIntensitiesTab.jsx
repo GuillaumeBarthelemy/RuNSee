@@ -556,16 +556,28 @@ function AnalyticsIntensitiesTab({
     [activities, endDate, trainingAnalyticsSettings],
   );
 
+  // Fenetre = filtre de periode actif (sharedRange). Fallback 12 sem si la
+  // periode n'a pas de borne de debut (ex: "tout l'historique").
+  const periodStart = sharedRange?.start instanceof Date ? sharedRange.start : null;
+
   // Polarisation (classification user) — remplace Route vs Trail.
   const polarisation = useMemo(
-    () => buildSessionPolarisation(activities, { weeks: 12, referenceDate: endDate }),
-    [activities, endDate],
+    () => buildSessionPolarisation(activities, {
+      startDate: periodStart,
+      endDate,
+      weeks: 12,
+    }),
+    [activities, periodStart, endDate],
   );
 
   // Compte des seances qualite via classification (fiabilise le KPI).
   const qualityFromClassification = useMemo(
-    () => countQualitySessions(activities, { weeks: 12, referenceDate: endDate }),
-    [activities, endDate],
+    () => countQualitySessions(activities, {
+      startDate: periodStart,
+      endDate,
+      weeks: 12,
+    }),
+    [activities, periodStart, endDate],
   );
 
   const rolling30 = useMemo(

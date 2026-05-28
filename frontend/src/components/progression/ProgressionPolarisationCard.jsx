@@ -21,7 +21,8 @@ function ProgressionPolarisationCard({ polarisation = {} }) {
     );
   }
 
-  const { buckets = [], byType = [], easyPct, total, weeks } = polarisation;
+  const { buckets = [], byType = [], easyPct, total, weeks, periodLabel } = polarisation;
+  const windowLabel = periodLabel || `${weeks} dernières semaines`;
 
   // Insight 80/20 : un bon ratio endurance est >= 75% facile.
   const insightTone = easyPct >= 75 ? "positive" : easyPct >= 60 ? "neutral" : "warning";
@@ -35,7 +36,7 @@ function ProgressionPolarisationCard({ polarisation = {} }) {
     <section className="progression-panel progression-polarisation-card">
       <div className="progression-panel-head">
         <h3>Polarisation de l'entraînement</h3>
-        <span className="progression-panel-sub">{total} séances classées · {weeks} dernières semaines · par nombre de séances</span>
+        <span className="progression-panel-sub">{total} séances classées · {windowLabel} · par nombre de séances</span>
       </div>
 
       {/* Barre empilee low/mid/high */}

@@ -158,7 +158,7 @@ function SleepRecoveryChart({ daily = [] }) {
 
       <ul className="alpine-recovery-chart-legend" aria-hidden="true">
         <li><span className="dot" style={{ background: COL_SLEEP, borderRadius: 2 }} /> Sommeil (h)</li>
-        <li><span className="dot" style={{ background: COL_RECOVERY }} /> Récupération (%)</li>
+        <li><span className="dot" style={{ background: COL_RECOVERY }} /> Énergie / Body Battery (%)</li>
       </ul>
 
       {!hasData ? (
@@ -173,7 +173,7 @@ function SleepRecoveryChart({ daily = [] }) {
             <Tooltip
               formatter={(v, name) => {
                 if (name === "sleepHours") return [v != null ? formatHmin(v) : "—", "Sommeil"];
-                if (name === "recoveryPct") return [v != null ? `${Math.round(v)} %` : "—", "Récupération"];
+                if (name === "recoveryPct") return [v != null ? `${Math.round(v)} %` : "—", "Énergie / Body Battery"];
                 return [v, name];
               }}
               contentStyle={{ fontSize: 12, borderRadius: 6, border: "1px solid #cbd5e1" }}

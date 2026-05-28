@@ -37,6 +37,19 @@ describe("buildSessionPolarisation", () => {
     const r = buildSessionPolarisation(acts, { weeks: 12, referenceDate: REF });
     expect(r.total).toBe(1);
   });
+
+  it("respecte une plage explicite startDate/endDate (filtre periode)", () => {
+    const acts = [
+      act("2026-05-27", "endurance_fond"), // dans plage
+      act("2026-05-10", "vma_courte"),     // hors plage (avant start)
+    ];
+    const r = buildSessionPolarisation(acts, {
+      startDate: new Date("2026-05-20"),
+      endDate: new Date("2026-05-28"),
+    });
+    expect(r.total).toBe(1);
+    expect(r.periodLabel).toBeTruthy();
+  });
 });
 
 describe("countQualitySessions", () => {

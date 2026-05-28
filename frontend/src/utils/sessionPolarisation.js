@@ -28,20 +28,32 @@ export function intensityToPolarBucket(intensity) {
 }
 
 /**
- * Calcule la polarisation des seances classifiees sur une fenetre (en
- * nombre de seances) : repartition low/mid/high (modele 80/20) + detail
- * par type.
+ * Calcule la polarisation des seances classifiees : repartition low/mid/high
+ * (modele 80/20) + detail par type, en NOMBRE de seances.
+ *
+ * Fenetre temporelle : soit explicite via { startDate, endDate } (ex: filtre
+ * de periode), soit derivee de { weeks, referenceDate } (fenetre glissante).
  *
  * @param {Array} activities
- * @param {Object} opts — { weeks = 12, referenceDate = now }
- * @returns {{ hasData, total, weeks, buckets[], byType[], easyPct, hardPct }}
+ * @param {Object} opts — { weeks = 12, referenceDate, startDate, endDate, periodLabel }
+ * @returns {{ hasData, total, weeks, periodLabel, buckets[], byType[], easyPct, hardPct }}
  */
-export function buildSessionPolarisation(activities = [], { weeks = 12, referenceDate = null } = {}) {
-  const ref = safeDate(referenceDate) || new Date();
-  const startDate = new Date(ref.getTime() - weeks * 7 * MS_PER_DAY);
+export function buildSessionPolarisation(activities = [], {
+  weeks = 12,
+  referenceDate = null,
+  startDate: explicitStart = null,
+  endDate: explicitEnd = null,
+  periodLabel = null,
+} = {}) {
+  const end = safeDate(explicitEnd) || safeDate(referenceDate) || new Date();
+  const start = safeDate(explicitStart)
+    || new Date(end.getTime() - weeks * 7 * MS_PER_DAY);
+  // Libelle de periode : explicite, sinon "X dernieres semaines".
+  const resolvedLabel = periodLabel
+    || `${Math.max(1, Math.round((end - start) / (7 * MS_PER_DAY)))} dernières semaines`;
   const recent = (Array.isArray(activities) ? activities : []).filter((a) => {
     const d = safeDate(a?.startDateLocal || a?.startDate);
-    return d && d >= startDate && d <= ref && a?.userSessionType;
+    return d && d >= start && d <= end && a?.userSessionType;
   });
 
   const bucketCounts = { low: 0, mid: 0, high: 0 };
@@ -87,6 +99,7 @@ export function buildSessionPolarisation(activities = [], { weeks = 12, referenc
     hasData: true,
     total: classified,
     weeks,
+    periodLabel: resolvedLabel,
     buckets,
     byType,
     easyPct,
@@ -99,12 +112,17 @@ export function buildSessionPolarisation(activities = [], { weeks = 12, referenc
  * fenetre. Sert au KPI fiabilise "Seances de qualite".
  * @returns {{ count, total, sharePct } | null} null si aucune classification
  */
-export function countQualitySessions(activities = [], { weeks = 12, referenceDate = null } = {}) {
-  const ref = safeDate(referenceDate) || new Date();
-  const startDate = new Date(ref.getTime() - weeks * 7 * MS_PER_DAY);
+export function countQualitySessions(activities = [], {
+  weeks = 12,
+  referenceDate = null,
+  startDate: explicitStart = null,
+  endDate: explicitEnd = null,
+} = {}) {
+  const end = safeDate(explicitEnd) || safeDate(referenceDate) || new Date();
+  const start = safeDate(explicitStart) || new Date(end.getTime() - weeks * 7 * MS_PER_DAY);
   const recent = (Array.isArray(activities) ? activities : []).filter((a) => {
     const d = safeDate(a?.startDateLocal || a?.startDate);
-    return d && d >= startDate && d <= ref;
+    return d && d >= start && d <= end;
   });
   const classified = recent.filter((a) => a?.userSessionType);
   if (classified.length === 0) return null;
