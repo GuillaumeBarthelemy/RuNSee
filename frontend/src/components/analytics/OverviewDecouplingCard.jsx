@@ -64,7 +64,8 @@ function OverviewDecouplingCard({ summary = {}, comparisonLabel = "" }) {
               {" "}pour une même allure. {summary.averagePercent < 5 ? "Bonne gestion de l'effort." : "Marge à reconquérir sur la durée."}
               <br />
               <span className="alpine-overview-focus-sample">
-                {summary.sampleSize} sortie{summary.sampleSize > 1 ? "s" : ""} avec splits exploitables.
+                {summary.sampleSize} sortie{summary.sampleSize > 1 ? "s" : ""} avec splits exploitables
+                {summary.enduranceFiltered ? " · séances endurance uniquement" : ""}.
               </span>
             </p>
           </>

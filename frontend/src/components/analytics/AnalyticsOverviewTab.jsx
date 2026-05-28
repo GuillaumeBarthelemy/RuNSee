@@ -132,8 +132,9 @@ function AnalyticsOverviewTab({
       fatigueDelta: atlDelta,
       volumeHours,
       volumeHoursDelta: volumeDeltaH,
+      activities: analyticsActivities,
     }),
-    [charge7d, chargeDeltaPct, fatigueValue, atlDelta, volumeHours, volumeDeltaH],
+    [charge7d, chargeDeltaPct, fatigueValue, atlDelta, volumeHours, volumeDeltaH, analyticsActivities],
   );
 
   // --- Conseil bas de page (CoachAdviceBar) ---

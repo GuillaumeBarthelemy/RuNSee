@@ -34,6 +34,25 @@ function toFiniteNumber(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
+// Types d'effort "aerobie stable" sur lesquels le decouplage Pa:Hr est
+// physiologiquement pertinent (Allen & Coggan). Les seances fractionnees /
+// intenses (tempo, seuil, VMA, cote, fartlek) faussent la mesure.
+const ENDURANCE_SESSION_TYPES = new Set([
+  "endurance_fond",
+  "sortie_longue",
+  "recuperation",
+]);
+
+/**
+ * Filtre les activites sur les types endurance pour les metriques aerobies.
+ * Si aucune activite n'est classifiee endurance (pas de classification ou
+ * que des seances intenses), retourne le set complet (fallback retrocompat).
+ */
+function filterEnduranceForAerobicMetric(activities = []) {
+  const endurance = activities.filter((a) => ENDURANCE_SESSION_TYPES.has(a?.userSessionType));
+  return endurance.length > 0 ? endurance : activities;
+}
+
 // ---------------------------------------------------------------------------
 // Comparaison "4 semaines précédentes" (décision utilisateur)
 // ---------------------------------------------------------------------------
@@ -255,7 +274,11 @@ export function buildPeriodPaceAdjustedSummary(efficiencyModel = {}) {
  *   label: string,
  * }}
  */
-export function buildPeriodDecouplingSummary(activities = []) {
+export function buildPeriodDecouplingSummary(allActivities = []) {
+  // Restreint aux seances endurance (le decouplage n'a de sens qu'en aerobie
+  // stable). Fallback sur toutes les activites si aucune classification.
+  const activities = filterEnduranceForAerobicMetric(allActivities);
+  const enduranceFiltered = activities !== allActivities;
   let weightedSum = 0;
   let weightTotal = 0;
   let sampleSize = 0;
@@ -283,6 +306,7 @@ export function buildPeriodDecouplingSummary(activities = []) {
       sampleSize: 0,
       tone: 3,
       label: "Donnée disponible par activité",
+      enduranceFiltered,
     };
   }
 
@@ -303,6 +327,7 @@ export function buildPeriodDecouplingSummary(activities = []) {
     sampleSize,
     tone,
     label,
+    enduranceFiltered,
   };
 }
 
@@ -587,6 +612,64 @@ export function buildPeriodEpocSummary(activities = []) {
  *
  * @returns Array<{ key, tone, title, text }>
  */
+// Types d'effort consideres "qualite/intensite" pour le suivi de la
+// stimulation haute (VMA, seuil, tempo, cote, fartlek, competition).
+const INTENSITY_SESSION_TYPES = new Set([
+  "vma_courte", "vma_longue", "seuil", "tempo", "cote", "fartlek", "competition",
+]);
+
+/**
+ * Construit un bullet "intensite" : jours depuis la derniere seance qualite.
+ * Retourne null si aucune activite classifiee.
+ */
+function buildIntensityTakeaway(activities = [], referenceDate = null) {
+  if (!Array.isArray(activities) || activities.length === 0) return null;
+  const classified = activities.filter((a) => a?.userSessionType);
+  if (classified.length === 0) return null;
+
+  const ref = referenceDate ? new Date(referenceDate) : new Date();
+  let lastIntenseDate = null;
+  for (const a of classified) {
+    if (!INTENSITY_SESSION_TYPES.has(a.userSessionType)) continue;
+    const d = new Date(a.startDateLocal || a.startDate);
+    if (Number.isNaN(d.getTime())) continue;
+    if (!lastIntenseDate || d > lastIntenseDate) lastIntenseDate = d;
+  }
+
+  if (!lastIntenseDate) {
+    return {
+      key: "intensity",
+      tone: 4,
+      title: "Pas de séance qualité",
+      text: "Aucune séance d'intensité (VMA, seuil, tempo) classifiée récemment. Pense à stimuler ta vitesse.",
+    };
+  }
+
+  const days = Math.floor((ref - lastIntenseDate) / (24 * 60 * 60 * 1000));
+  if (days >= 14) {
+    return {
+      key: "intensity",
+      tone: 4,
+      title: "Intensité en sommeil",
+      text: `Pas de séance qualité depuis ${days} jours. Une touche de VMA ou seuil relancerait ta vitesse.`,
+    };
+  }
+  if (days >= 7) {
+    return {
+      key: "intensity",
+      tone: 3,
+      title: "Intensité espacée",
+      text: `Dernière séance qualité il y a ${days} jours. Pense à en replacer une bientôt.`,
+    };
+  }
+  return {
+    key: "intensity",
+    tone: 1,
+    title: "Intensité entretenue",
+    text: `Séance qualité il y a ${days} jour${days > 1 ? "s" : ""}. Bon équilibre stimulation / récupération.`,
+  };
+}
+
 export function buildOverviewTakeaways({
   charge7d = 0,
   chargeDelta = null,
@@ -594,6 +677,8 @@ export function buildOverviewTakeaways({
   fatigueDelta = null,
   volumeHours = 0,
   volumeHoursDelta = 0,
+  activities = [],
+  referenceDate = null,
 } = {}) {
   // volumeHours influe sur le label "stable" lorsque le delta est négligeable.
   const volumeHasContent = Number.isFinite(volumeHours) && volumeHours > 0;
@@ -671,6 +756,10 @@ export function buildOverviewTakeaways({
     title: volumeTitle,
     text: volumeText,
   });
+
+  // Intensite (base classification user) — ajoute seulement si data dispo.
+  const intensityBullet = buildIntensityTakeaway(activities, referenceDate);
+  if (intensityBullet) bullets.push(intensityBullet);
 
   return bullets;
 }

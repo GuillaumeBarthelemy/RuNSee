@@ -57,6 +57,70 @@ describe("buildPeriodDecouplingSummary", () => {
     const r = buildPeriodDecouplingSummary([{ movingTime: 3600, decouplingPercent: 10 }]);
     expect(r.tone).toBe(5);
   });
+
+  it("filtre sur les seances endurance quand classifiees (Lot B)", () => {
+    const activities = [
+      { movingTime: 3600, decouplingPercent: 2, userSessionType: "endurance_fond" },
+      { movingTime: 3600, decouplingPercent: 12, userSessionType: "vma_courte" }, // exclue
+    ];
+    const r = buildPeriodDecouplingSummary(activities);
+    expect(r.enduranceFiltered).toBe(true);
+    expect(r.sampleSize).toBe(1); // seule l'endurance retenue
+    expect(r.averagePercent).toBeCloseTo(2, 1);
+  });
+
+  it("fallback sur toutes les activites si aucune endurance classifiee", () => {
+    const activities = [
+      { movingTime: 3600, decouplingPercent: 5, userSessionType: "vma_courte" },
+    ];
+    const r = buildPeriodDecouplingSummary(activities);
+    expect(r.enduranceFiltered).toBe(false);
+    expect(r.sampleSize).toBe(1);
+  });
+});
+
+describe("buildOverviewTakeaways — bullet intensite (Lot B)", () => {
+  it("pas de bullet intensite si aucune activite classifiee", () => {
+    const bullets = buildOverviewTakeaways({ charge7d: 100, activities: [{ movingTime: 3600 }] });
+    expect(bullets.find((b) => b.key === "intensity")).toBeUndefined();
+  });
+
+  it("alerte si pas de seance qualite depuis >= 14j", () => {
+    const ref = new Date("2026-05-28");
+    const old = new Date("2026-05-01").toISOString(); // 27j avant
+    const bullets = buildOverviewTakeaways({
+      charge7d: 100,
+      activities: [{ startDate: old, userSessionType: "vma_courte" }],
+      referenceDate: ref,
+    });
+    const b = bullets.find((x) => x.key === "intensity");
+    expect(b).toBeTruthy();
+    expect(b.tone).toBe(4);
+    expect(b.text).toMatch(/depuis 27 jours/);
+  });
+
+  it("positif si seance qualite recente (< 7j)", () => {
+    const ref = new Date("2026-05-28");
+    const recent = new Date("2026-05-25").toISOString(); // 3j
+    const bullets = buildOverviewTakeaways({
+      charge7d: 100,
+      activities: [{ startDate: recent, userSessionType: "seuil" }],
+      referenceDate: ref,
+    });
+    const b = bullets.find((x) => x.key === "intensity");
+    expect(b.tone).toBe(1);
+  });
+
+  it("alerte si aucune seance d'intensite (que de l'endurance)", () => {
+    const ref = new Date("2026-05-28");
+    const bullets = buildOverviewTakeaways({
+      charge7d: 100,
+      activities: [{ startDate: "2026-05-26", userSessionType: "endurance_fond" }],
+      referenceDate: ref,
+    });
+    const b = bullets.find((x) => x.key === "intensity");
+    expect(b.title).toMatch(/Pas de séance qualité/);
+  });
 });
 
 describe("buildPeriodEpocSummary", () => {
