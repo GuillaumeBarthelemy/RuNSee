@@ -18085,3 +18085,86 @@ button.alert-banner-positive-item {
 .reglages-advanced-body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 16px; }
 :root[data-theme="dark"] .reglages-advanced { background: var(--al-surface-soft); border-color: var(--al-border); }
 :root[data-theme="dark"] .reglages-advanced-summary { color: var(--al-text); }
+
+/* =========================================================================
+ * Alignement Alpine des composants legacy migres dans Reglages (#2 review)
+ * Scope : section objectifs (Entrainement) + parametres avances (Connexions)
+ * ========================================================================= */
+.reglages-race-objectives-section,
+.reglages-advanced-body {
+  /* Neutralise le double-carding : les cards internes deviennent plates */
+}
+.reglages-race-objectives-section .card,
+.reglages-race-objectives-section .card-accent,
+.reglages-advanced-body .card,
+.reglages-advanced-body .garmin-recovery-panel,
+.reglages-advanced-body .garmin-activity-backfill-panel {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+/* Titres -> style Alpine reglages */
+.reglages-race-objectives-section .card-title,
+.reglages-race-objectives-section .subcard-title,
+.reglages-advanced-body .card-title,
+.reglages-advanced-body .subcard-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--al-text, #0f172a);
+}
+.reglages-race-objectives-section .card-subtitle,
+.reglages-advanced-body .card-subtitle,
+.reglages-advanced-body .small-text,
+.reglages-race-objectives-section .field-label,
+.reglages-advanced-body .field-label {
+  color: var(--al-text-soft, #475569);
+}
+/* Champs -> bordure/radius Alpine */
+.reglages-race-objectives-section .field-input,
+.reglages-advanced-body .field-input {
+  border: 1px solid var(--al-border, #e5edf7);
+  border-radius: 8px;
+}
+.reglages-race-objectives-section .field-input:focus,
+.reglages-advanced-body .field-input:focus {
+  outline: none;
+  border-color: var(--al-primary, #1268f3);
+}
+/* Boutons primary/dark -> bleu Alpine (au lieu de l'orange legacy) */
+.reglages-race-objectives-section .button-primary,
+.reglages-race-objectives-section .button-dark,
+.reglages-advanced-body .button-primary,
+.reglages-advanced-body .button-dark {
+  background: var(--al-primary, #1268f3);
+  border-color: var(--al-primary, #1268f3);
+  color: #fff;
+  box-shadow: none;
+  border-radius: 8px;
+}
+.reglages-race-objectives-section .button-primary:hover:not(:disabled),
+.reglages-race-objectives-section .button-dark:hover:not(:disabled),
+.reglages-advanced-body .button-primary:hover:not(:disabled),
+.reglages-advanced-body .button-dark:hover:not(:disabled) {
+  background: var(--al-primary-stronger, #0a4fbb);
+}
+.reglages-race-objectives-section .button-outline,
+.reglages-advanced-body .button-outline {
+  border-radius: 8px;
+  border: 1px solid var(--al-border, #cbd5e1);
+  background: var(--al-surface, #fff);
+  color: var(--al-text-soft, #475569);
+}
+/* Table historique objectifs -> lisibilite Alpine */
+.reglages-race-objectives-section .table th {
+  color: var(--al-muted, #94a3b8);
+  font-weight: 700;
+}
+/* Dark mode */
+:root[data-theme="dark"] .reglages-race-objectives-section .card-title,
+:root[data-theme="dark"] .reglages-advanced-body .card-title { color: var(--al-text); }
+:root[data-theme="dark"] .reglages-race-objectives-section .field-input,
+:root[data-theme="dark"] .reglages-advanced-body .field-input {
+  background: var(--al-surface-soft); border-color: var(--al-border); color: var(--al-text);
+}
