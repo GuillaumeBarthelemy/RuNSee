@@ -29,3 +29,8 @@ export async function updateActivityClassification(stravaActivityId, payload) {
   const response = await api.patch(`/activities/${stravaActivityId}/classification`, payload);
   return response.data;
 }
+
+export async function getActivityBenchmark(stravaActivityId) {
+  const response = await api.get(`/activities/${stravaActivityId}/benchmark`);
+  return response.data;
+}

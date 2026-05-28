@@ -104,6 +104,22 @@ function sanitizeRpeValue(value) {
   return Math.min(10, Math.max(1, numeric));
 }
 
+export async function getActivityBenchmark(req, res, next) {
+  try {
+    const user = getRequiredAuthUser(req);
+    const { stravaActivityId } = req.params;
+    const existing = await getStoredActivityByPublicIdForUser(user.id, stravaActivityId);
+    if (!existing) {
+      return res.status(404).json({ message: "Activity not found." });
+    }
+    const { buildActivityBenchmark } = await import("../services/activities/activityBenchmark.service.js");
+    const benchmark = await buildActivityBenchmark(user.id, existing);
+    return res.json(benchmark);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function updateActivityClassification(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);

@@ -18051,3 +18051,14 @@ button.alert-banner-positive-item {
 @media (max-width: 900px) {
   .activity-detail-perf-row { grid-template-columns: 1fr; }
 }
+
+/* Lot C4 — Delta benchmark dans le KPI strip */
+.activity-header-kpi-delta {
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.activity-header-kpi-delta.tone-positive { color: #16a34a; }
+.activity-header-kpi-delta.tone-warning  { color: #dc2626; }
+:root[data-theme="dark"] .activity-header-kpi-delta.tone-positive { color: #4ade80; }
+:root[data-theme="dark"] .activity-header-kpi-delta.tone-warning  { color: #fca5a5; }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ActivityDetailTabs from "./ActivityDetailTabs.jsx";
 import ActivityHeaderKpis from "./ActivityHeaderKpis.jsx";
 import ActivityIntensityCard from "./ActivityIntensityCard.jsx";
@@ -10,6 +10,7 @@ import { getDisplaySportLabel } from "../utils/activityAggregations.js";
 import { buildActivityTrainingInsights } from "../utils/trainingMetrics.js";
 import { buildActivityTakeaways } from "../utils/activityTakeaways.js";
 import { suggestSessionType } from "../constants/sessionTaxonomy.js";
+import { getActivityBenchmark } from "../services/activity.service.js";
 
 const noop = () => {};
 
@@ -93,6 +94,18 @@ export default function ActivityDetailCard({
     [safeActivity, trainingAnalyticsSettings],
   );
 
+  // Benchmark vs historique comparable (meme sport, distance +/-20 %).
+  const [benchmark, setBenchmark] = useState(null);
+  const publicId = safeActivity.stravaActivityId || safeActivity.id;
+  useEffect(() => {
+    if (!publicId) return undefined;
+    let cancelled = false;
+    getActivityBenchmark(publicId)
+      .then((b) => { if (!cancelled) setBenchmark(b); })
+      .catch(() => { if (!cancelled) setBenchmark(null); });
+    return () => { cancelled = true; };
+  }, [publicId]);
+
   const handleClassificationSaved = (updated) => {
     onActivityUpdated(updated);
   };
@@ -126,7 +139,7 @@ export default function ActivityDetailCard({
         onSaved={handleClassificationSaved}
       />
 
-      <ActivityHeaderKpis activity={safeActivity} />
+      <ActivityHeaderKpis activity={safeActivity} benchmark={benchmark} />
 
       <div className="activity-detail-perf-row">
         <ActivityPerformanceStrip

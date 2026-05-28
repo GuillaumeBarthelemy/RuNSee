@@ -63,7 +63,20 @@ const KPI_INFO = {
   }),
 };
 
-function HeaderKpi({ label, value, hint, info, icon, iconClass }) {
+// Formate un delta benchmark en libelle court avec ton.
+// betterIsLower : true => un delta negatif est "bon" (allure, FC).
+function formatBenchmarkDelta(metric) {
+  if (!metric || !Number.isFinite(metric.deltaPct) || metric.deltaPct === 0) return null;
+  const { deltaPct, betterIsLower } = metric;
+  const sign = deltaPct > 0 ? "+" : "";
+  const good = betterIsLower ? deltaPct < 0 : deltaPct > 0;
+  return {
+    text: `${sign}${deltaPct} % vs habituel`,
+    tone: good ? "positive" : "warning",
+  };
+}
+
+function HeaderKpi({ label, value, hint, info, icon, iconClass, delta }) {
   return (
     <div className="activity-header-kpi">
       <div className="metric-label-row">
@@ -73,12 +86,14 @@ function HeaderKpi({ label, value, hint, info, icon, iconClass }) {
       </div>
       <strong>{value}</strong>
       <span>{hint}</span>
+      {delta ? <span className={`activity-header-kpi-delta tone-${delta.tone}`}>{delta.text}</span> : null}
     </div>
   );
 }
 
-function ActivityHeaderKpis({ activity = {} }) {
+function ActivityHeaderKpis({ activity = {}, benchmark = null }) {
   const distanceKm = toNumber(activity?.distance) / 1000;
+  const bench = benchmark?.hasData ? benchmark : null;
 
   return (
     <div className="activity-header-kpi-grid">
@@ -97,6 +112,7 @@ function ActivityHeaderKpis({ activity = {} }) {
         value={formatDuration(activity?.movingTime)}
         hint="Hors pauses detectees"
         info={KPI_INFO.movingTime}
+        delta={bench ? formatBenchmarkDelta(bench.pace) : null}
       />
       <HeaderKpi
         label="D+"
@@ -113,6 +129,7 @@ function ActivityHeaderKpis({ activity = {} }) {
         value={formatHeartRate(activity?.averageHeartrate)}
         hint="Capteur cardio"
         info={KPI_INFO.heartRate}
+        delta={bench ? formatBenchmarkDelta(bench.heartRate) : null}
       />
     </div>
   );
