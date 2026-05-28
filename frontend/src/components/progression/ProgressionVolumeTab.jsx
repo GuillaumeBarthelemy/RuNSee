@@ -2,6 +2,7 @@ import { memo } from "react";
 import ProgressionKpiCard from "./ProgressionKpiCard.jsx";
 import ProgressionWeeklyChart from "./ProgressionWeeklyChart.jsx";
 import ProgressionCompositionChart from "./ProgressionCompositionChart.jsx";
+import ProgressionPolarisationCard from "./ProgressionPolarisationCard.jsx";
 import ProgressionTakeawayCard from "./ProgressionTakeawayCard.jsx";
 import EmptyState from "../visuals/alpine/EmptyState.jsx";
 
@@ -71,6 +72,8 @@ function ProgressionVolumeTab({ model = {} }) {
         data={model.composition || []}
         meta={model.compositionMeta || {}}
       />
+
+      <ProgressionPolarisationCard polarisation={model.polarisation || {}} />
     </div>
   );
 }

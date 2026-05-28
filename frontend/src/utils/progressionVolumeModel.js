@@ -11,10 +11,92 @@
 
 import { buildWeeklySeries } from "./activityAggregations.js";
 import { isRunLikeActivity } from "./activityInsights.js";
+import { getSessionTypeDef, SESSION_TYPES } from "../constants/sessionTaxonomy.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const ROLLING_WINDOW_WEEKS = 4;
 const COMPOSITION_WEEKS = 12;
+const POLARISATION_WEEKS = 12;
+
+// Regroupe les intensites taxonomie en 3 zones de polarisation classique.
+const POLAR_BUCKETS = {
+  low:  { label: "Facile (Z1-Z2)", color: "#22c55e" },
+  mid:  { label: "Modéré (Z3-Z4)", color: "#eab308" },
+  high: { label: "Intense (Z5+)",  color: "#ef4444" },
+};
+
+function intensityToPolarBucket(intensity) {
+  if (intensity === "low") return "low";
+  if (intensity === "mid") return "mid";
+  if (intensity === "high") return "high";
+  return null; // none / inconnu -> exclu de la polarisation
+}
+
+/**
+ * Calcule la polarisation des seances classifiees sur les 12 dernieres
+ * semaines : repartition low/mid/high (modele 80/20) + detail par type.
+ * Base sur le NOMBRE de seances (plus parlant que le volume pour la
+ * polarisation d'entrainement).
+ */
+function buildPolarisation(activities, referenceDate) {
+  const ref = safeDate(referenceDate) || new Date();
+  const startDate = new Date(ref.getTime() - POLARISATION_WEEKS * 7 * MS_PER_DAY);
+  const recent = (Array.isArray(activities) ? activities : []).filter((a) => {
+    const d = safeDate(a?.startDateLocal || a?.startDate);
+    return d && d >= startDate && d <= ref && a?.userSessionType;
+  });
+
+  const bucketCounts = { low: 0, mid: 0, high: 0 };
+  const typeCounts = {};
+  let classified = 0;
+
+  recent.forEach((a) => {
+    const def = getSessionTypeDef(a.userSessionType);
+    if (!def) return;
+    const bucket = intensityToPolarBucket(def.intensity);
+    if (!bucket) return;
+    bucketCounts[bucket] += 1;
+    typeCounts[a.userSessionType] = (typeCounts[a.userSessionType] || 0) + 1;
+    classified += 1;
+  });
+
+  if (classified === 0) {
+    return { hasData: false };
+  }
+
+  const buckets = Object.entries(POLAR_BUCKETS).map(([key, def]) => ({
+    key,
+    label: def.label,
+    color: def.color,
+    count: bucketCounts[key],
+    pct: Math.round((bucketCounts[key] / classified) * 100),
+  }));
+
+  const byType = SESSION_TYPES
+    .filter((t) => typeCounts[t.key])
+    .map((t) => ({
+      key: t.key,
+      label: t.label,
+      icon: t.icon,
+      count: typeCounts[t.key],
+      pct: Math.round((typeCounts[t.key] / classified) * 100),
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // Insight 80/20 : ratio facile vs (modere+intense)
+  const easyPct = buckets.find((b) => b.key === "low")?.pct || 0;
+  const hardPct = 100 - easyPct;
+
+  return {
+    hasData: true,
+    total: classified,
+    weeks: POLARISATION_WEEKS,
+    buckets,
+    byType,
+    easyPct,
+    hardPct,
+  };
+}
 
 function toFiniteNumber(value) {
   const n = Number(value);
@@ -273,6 +355,9 @@ export function buildProgressionVolumeModel({ activities = [], referenceDate = n
   // Composition 12 dernieres semaines (toutes activites pour 'Autre' = Walk/Hike)
   const composition = buildCompositionData(activities, ref);
 
+  // Polarisation (classification user) 12 dernieres semaines
+  const polarisation = buildPolarisation(runs, ref);
+
   // 'À retenir' messages contextualises
   const takeaways = buildTakeaways(agg);
 
@@ -328,6 +413,7 @@ export function buildProgressionVolumeModel({ activities = [], referenceDate = n
     },
     composition,
     compositionMeta: COMPOSITION_META,
+    polarisation,
     takeaways,
   };
 }

@@ -111,4 +111,34 @@ describe("buildProgressionVolumeModel", () => {
     const dist = m.takeaways.find((t) => t.key === "distance");
     expect(dist?.tone).toBe("positive");
   });
+
+  it("polarisation : hasData=false si aucune seance classifiee", () => {
+    const m = buildProgressionVolumeModel({
+      activities: [makeRun({ date: "2026-05-15", km: 10 })],
+      referenceDate: new Date("2026-05-21"),
+    });
+    expect(m.polarisation.hasData).toBe(false);
+  });
+
+  it("polarisation : repartit low/mid/high sur les seances classifiees", () => {
+    const ref = new Date("2026-05-21");
+    const acts = [];
+    // 8 endurance (low), 2 tempo (mid) sur les 12 dernieres semaines
+    for (let i = 0; i < 8; i += 1) {
+      const d = new Date(ref.getTime() - i * 2 * 86400000);
+      acts.push({ ...makeRun({ date: d.toISOString() }), userSessionType: "endurance_fond" });
+    }
+    for (let i = 0; i < 2; i += 1) {
+      const d = new Date(ref.getTime() - (i * 2 + 1) * 86400000);
+      acts.push({ ...makeRun({ date: d.toISOString() }), userSessionType: "tempo" });
+    }
+    const m = buildProgressionVolumeModel({ activities: acts, referenceDate: ref });
+    expect(m.polarisation.hasData).toBe(true);
+    expect(m.polarisation.total).toBe(10);
+    expect(m.polarisation.easyPct).toBe(80); // 8/10 facile
+    const low = m.polarisation.buckets.find((b) => b.key === "low");
+    expect(low.count).toBe(8);
+    expect(low.pct).toBe(80);
+    expect(m.polarisation.byType[0].key).toBe("endurance_fond"); // trie par count desc
+  });
 });

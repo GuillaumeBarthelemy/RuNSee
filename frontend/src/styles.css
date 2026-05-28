@@ -17791,3 +17791,59 @@ button.alert-banner-positive-item {
 :root[data-theme="dark"] .activity-class-chip { background: var(--al-surface-soft); border-color: var(--al-border); color: var(--al-text); }
 :root[data-theme="dark"] .activity-class-marker { background: var(--al-surface-soft); border-color: var(--al-border); color: var(--al-text-soft); }
 :root[data-theme="dark"] .activity-class-marker.is-active { background: var(--al-primary-soft); border-color: var(--al-primary); color: var(--al-text); }
+
+/* =========================================================================
+ * Polarisation entrainement (Lot B - exploitation classification)
+ * ========================================================================= */
+.progression-polar-bar {
+  display: flex;
+  width: 100%;
+  height: 28px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 10px 0 8px;
+  background: var(--al-surface-soft, #f1f5f9);
+}
+.progression-polar-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 0;
+  transition: width 0.3s;
+}
+.progression-polar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--al-text-soft, #475569);
+  margin-bottom: 10px;
+}
+.progression-polar-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.progression-polar-legend-item i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.progression-polar-insight {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+.progression-polar-insight-positive { background: #dcfce7; color: #15803d; }
+.progression-polar-insight-neutral  { background: #fef3c7; color: #b45309; }
+.progression-polar-insight-warning  { background: #fee2e2; color: #b91c1c; }
+.progression-polar-types { display: flex; flex-direction: column; gap: 6px; }
+.progression-polar-type-row { display: grid; grid-template-columns: 140px 1fr 32px; align-items: center; gap: 8px; font-size: 12px; }
+.progression-polar-type-label { color: var(--al-text, #0f172a); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.progression-polar-type-bar { height: 8px; background: var(--al-surface-soft, #f1f5f9); border-radius: 999px; overflow: hidden; }
+.progression-polar-type-fill { display: block; height: 100%; background: var(--al-primary, #1268f3); border-radius: 999px; }
+.progression-polar-type-count { text-align: right; font-weight: 600; color: var(--al-text-soft, #475569); }
+.progression-panel-empty { font-size: 13px; color: var(--al-muted, #94a3b8); padding: 8px 0; }
+
+:root[data-theme="dark"] .progression-polar-insight-positive { background: rgba(34,197,94,0.15); color: #4ade80; }
+:root[data-theme="dark"] .progression-polar-insight-neutral  { background: rgba(234,179,8,0.15); color: #fbbf24; }
+:root[data-theme="dark"] .progression-polar-insight-warning  { background: rgba(248,113,113,0.15); color: #fca5a5; }
+:root[data-theme="dark"] .progression-polar-bar,
+:root[data-theme="dark"] .progression-polar-type-bar { background: var(--al-surface-soft); }
