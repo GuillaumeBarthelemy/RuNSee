@@ -5011,11 +5011,11 @@ body.modal-open {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  border: 1px solid rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(18, 104, 243, 0.12);
   border-radius: 20px;
   padding: 16px;
   background:
-    radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 34%),
+    radial-gradient(circle at top right, rgba(18, 104, 243, 0.07), transparent 34%),
     rgba(255, 255, 255, 0.72);
 }
 
@@ -5080,17 +5080,17 @@ body.modal-open {
 
 .activity-tab-button:hover,
 .activity-tab-button:focus-visible {
-  border-color: rgba(249, 115, 22, 0.26);
-  background: rgba(249, 115, 22, 0.08);
+  border-color: rgba(18, 104, 243, 0.26);
+  background: rgba(18, 104, 243, 0.08);
   color: var(--color-text-primary);
   outline: none;
 }
 
 .activity-tab-button.is-active {
-  border-color: rgba(249, 115, 22, 0.34);
-  background: #fff7ed;
-  color: #c2410c;
-  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.10);
+  border-color: rgba(18, 104, 243, 0.34);
+  background: #eff5ff;
+  color: #1268f3;
+  box-shadow: 0 8px 18px rgba(18, 104, 243, 0.10);
 }
 
 .activity-tab-panel {
@@ -17876,4 +17876,67 @@ button.alert-banner-positive-item {
 :root[data-theme="dark"] .progression-composition-toggle-btn.is-active {
   background: var(--al-surface);
   color: var(--al-primary);
+}
+
+/* =========================================================================
+ * Lot C — Refonte fiche detail activite (alignement Alpine + dark mode)
+ * ========================================================================= */
+
+/* Icones KPI strip */
+.activity-header-kpi .metric-label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.activity-header-kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.activity-header-kpi-icon.icon-tone-blue   { background: rgba(18,104,243,0.10); }
+.activity-header-kpi-icon.icon-tone-violet { background: rgba(124,58,237,0.10); }
+.activity-header-kpi-icon.icon-tone-green  { background: rgba(21,128,61,0.10); }
+.activity-header-kpi-icon.icon-tone-red    { background: rgba(239,68,68,0.10); }
+
+/* Dark mode — fiche detail */
+:root[data-theme="dark"] .detail-shell {
+  background: var(--al-surface);
+  border-color: var(--al-border);
+}
+:root[data-theme="dark"] .activity-header-kpi {
+  background: var(--al-surface-soft);
+  border-color: var(--al-border);
+}
+:root[data-theme="dark"] .activity-header-kpi strong { color: var(--al-text); }
+:root[data-theme="dark"] .activity-header-kpi > span { color: var(--al-muted); }
+:root[data-theme="dark"] .activity-performance-strip {
+  background: var(--al-surface-soft);
+  border-color: var(--al-border);
+}
+:root[data-theme="dark"] .activity-performance-tile {
+  background: var(--al-surface);
+}
+:root[data-theme="dark"] .activity-tabs-list {
+  background: var(--al-surface-soft);
+  border-color: var(--al-border);
+}
+:root[data-theme="dark"] .activity-tab-button { color: var(--al-text-soft); }
+:root[data-theme="dark"] .activity-tab-button.is-active {
+  background: var(--al-primary-soft);
+  border-color: var(--al-primary);
+  color: var(--al-text);
+}
+:root[data-theme="dark"] .activity-description-panel {
+  background: var(--al-surface-soft);
+  border-color: var(--al-border);
+}
+:root[data-theme="dark"] .detail-chip {
+  background: var(--al-surface-soft);
+  border-color: var(--al-border);
+  color: var(--al-text-soft);
 }

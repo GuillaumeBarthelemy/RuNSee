@@ -63,10 +63,11 @@ const KPI_INFO = {
   }),
 };
 
-function HeaderKpi({ label, value, hint, info }) {
+function HeaderKpi({ label, value, hint, info, icon, iconClass }) {
   return (
     <div className="activity-header-kpi">
       <div className="metric-label-row">
+        {icon ? <span className={`activity-header-kpi-icon ${iconClass || ""}`} aria-hidden="true">{icon}</span> : null}
         <span className="metric-label">{label}</span>
         <InfoTooltip title={label} content={info} label={`Afficher l'aide pour ${label}`} />
       </div>
@@ -83,24 +84,32 @@ function ActivityHeaderKpis({ activity = {} }) {
     <div className="activity-header-kpi-grid">
       <HeaderKpi
         label="Distance"
+        icon="🏔"
+        iconClass="icon-tone-blue"
         value={formatDistance(activity?.distance)}
         hint={distanceKm > 0 ? `${distanceKm.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} km bruts` : "Non disponible"}
         info={KPI_INFO.distance}
       />
       <HeaderKpi
         label="Temps mouvement"
+        icon="⏱"
+        iconClass="icon-tone-violet"
         value={formatDuration(activity?.movingTime)}
         hint="Hors pauses detectees"
         info={KPI_INFO.movingTime}
       />
       <HeaderKpi
         label="D+"
+        icon="⛰"
+        iconClass="icon-tone-green"
         value={formatElevation(activity?.totalElevationGain)}
         hint="Charge terrain"
         info={KPI_INFO.elevation}
       />
       <HeaderKpi
         label="FC moy."
+        icon="❤"
+        iconClass="icon-tone-red"
         value={formatHeartRate(activity?.averageHeartrate)}
         hint="Capteur cardio"
         info={KPI_INFO.heartRate}
