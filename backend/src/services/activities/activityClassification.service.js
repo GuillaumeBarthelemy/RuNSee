@@ -83,15 +83,17 @@ export function suggestSessionType(activity = {}, ctx = {}) {
   // 4. Recuperation : FC moyenne basse + duree courte
   if (avgHr > 0 && fcMax > 0) {
     const hrPct = avgHr / fcMax;
-    if (hrPct < 0.68 && movingTime < 45 * 60) return "recuperation";
-    if (hrPct < 0.72) return "endurance_fond";
-    // FC max > 92% FCmax suggere VMA
+    // FC max > 92% FCmax suggere un pic d'intensite type VMA (priorite sur
+    // la FC moyenne qui peut etre tiree vers le bas par les recuperations).
     if (maxHr > 0 && maxHr / fcMax > 0.92) {
       return movingTime < 40 * 60 ? "vma_courte" : "vma_longue";
     }
-    // Zone tempo/seuil 78-88% FCmax
-    if (hrPct >= 0.78 && hrPct < 0.88) return "tempo";
-    if (hrPct >= 0.88) return "seuil";
+    if (hrPct < 0.68 && movingTime < 45 * 60) return "recuperation";
+    // Endurance fondamentale = tout l'aerobie de base (< 78% FCmax), ce qui
+    // couvre Z1-Z2 (pas de trou entre recup et tempo).
+    if (hrPct < 0.78) return "endurance_fond";
+    if (hrPct < 0.88) return "tempo";
+    return "seuil";
   }
 
   // 5. Fallback duree-based

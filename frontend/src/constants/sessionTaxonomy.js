@@ -58,13 +58,13 @@ export function suggestSessionType(activity = {}, ctx = {}) {
 
   if (avgHr > 0 && fcMax > 0) {
     const hrPct = avgHr / fcMax;
-    if (hrPct < 0.68 && movingTime < 45 * 60) return "recuperation";
-    if (hrPct < 0.72) return "endurance_fond";
     if (maxHr > 0 && maxHr / fcMax > 0.92) {
       return movingTime < 40 * 60 ? "vma_courte" : "vma_longue";
     }
-    if (hrPct >= 0.78 && hrPct < 0.88) return "tempo";
-    if (hrPct >= 0.88) return "seuil";
+    if (hrPct < 0.68 && movingTime < 45 * 60) return "recuperation";
+    if (hrPct < 0.78) return "endurance_fond";
+    if (hrPct < 0.88) return "tempo";
+    return "seuil";
   }
 
   if (movingTime >= 60 * 60) return "endurance_fond";

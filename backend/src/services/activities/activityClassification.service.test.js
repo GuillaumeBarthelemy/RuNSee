@@ -89,6 +89,16 @@ describe("suggestSessionType heuristiques", () => {
     assert.equal(suggestSessionType(a, { fcMax: 190 }), "seuil");
   });
 
+  it("zone Z2 haute (72-78% FCmax) courte -> endurance_fond (pas de trou)", () => {
+    const a = {
+      movingTime: 40 * 60,
+      distance: 8000,
+      averageHeartrate: 143, // 75% de 190
+      maxHeartrate: 160,     // 84% (pas de pic VMA)
+    };
+    assert.equal(suggestSessionType(a, { fcMax: 190 }), "endurance_fond");
+  });
+
   it("fallback duree >= 60 min sans FC -> endurance_fond", () => {
     assert.equal(suggestSessionType({ movingTime: 70 * 60, distance: 10000 }), "endurance_fond");
   });
