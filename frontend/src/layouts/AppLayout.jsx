@@ -31,7 +31,15 @@ export default function AppLayout() {
   const { user, logout } = useAuth();
   const { athlete, summary, currentJob, isBusy, reload, setError } = useRunSeeData({ includeActivities: false });
   const providerStatuses = useProviderStatuses();
-  const { activeRace } = useRaceObjectives();
+  const { activeRace, races } = useRaceObjectives();
+  // Objectifs secondaires : prochaines courses a venir (date future), hors
+  // objectif principal (actif), triees par date, top 2.
+  // nowTs via init paresseuse (Date.now() interdit dans le rendu : regle purity).
+  const [nowTs] = useState(() => Date.now());
+  const secondaryRaces = (Array.isArray(races) ? races : [])
+    .filter((r) => r && r.id !== activeRace?.id && new Date(r.raceDate).getTime() >= nowTs)
+    .sort((a, b) => new Date(a.raceDate) - new Date(b.raceDate))
+    .slice(0, 2);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSyncLaunching, setIsSyncLaunching] = useState(false);
 
@@ -95,7 +103,7 @@ export default function AppLayout() {
         </div>
 
         <div className="alpine-sidebar-cards">
-          <SidebarObjectiveCard activeRace={activeRace} />
+          <SidebarObjectiveCard activeRace={activeRace} secondaryRaces={secondaryRaces} />
           <SidebarAdviceCard linkTo="/analytics" />
         </div>
 

@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useState } from "react";
 import useRaceObjectives from "../../hooks/useRaceObjectives.js";
 import useToast from "../../hooks/useToast.js";
 
@@ -97,10 +97,20 @@ function ReglagesObjectivesTab() {
 
   const isCustom = distanceKey === "custom";
 
-  const sortedRaces = useMemo(() => {
-    const list = Array.isArray(races) ? [...races] : [];
-    return list.sort((a, b) => new Date(a.raceDate) - new Date(b.raceDate));
-  }, [races]);
+  // Separation actifs/a venir vs passes pour la lisibilite.
+  // nowTs via init paresseuse (Date.now() interdit dans le rendu : regle purity).
+  const [nowTs] = useState(() => Date.now());
+  const list = Array.isArray(races) ? [...races] : [];
+  const upcomingRaces = [];
+  const pastRaces = [];
+  list.forEach((r) => {
+    const isActive = activeRace?.id === r.id;
+    const isFuture = new Date(r.raceDate).getTime() >= nowTs;
+    if (isActive || isFuture) upcomingRaces.push(r);
+    else pastRaces.push(r);
+  });
+  upcomingRaces.sort((a, b) => new Date(a.raceDate) - new Date(b.raceDate));
+  pastRaces.sort((a, b) => new Date(b.raceDate) - new Date(a.raceDate));
 
   const resetForm = () => {
     setName(""); setRaceDate(""); setDistanceKey("10k"); setCustomMeters("");
@@ -155,15 +165,15 @@ function ReglagesObjectivesTab() {
   return (
     <div className="reglages-tab reglages-objectives-tab">
       <section className="reglages-card">
-        <h3>Mes objectifs</h3>
+        <h3>Objectifs actifs &amp; à venir</h3>
         <p className="reglages-row-hint">
-          L'objectif actif pilote le countdown, le chrono prédit et le plan de taper dans Performance.
+          L'objectif principal (actif) pilote le countdown, le chrono prédit et le plan de taper dans Performance.
         </p>
-        {sortedRaces.length === 0 ? (
-          <p className="reglages-row-hint">Aucun objectif pour l'instant. Ajoute ta prochaine course ci-dessous.</p>
+        {upcomingRaces.length === 0 ? (
+          <p className="reglages-row-hint">Aucun objectif actif ou à venir. Ajoute ta prochaine course ci-dessous.</p>
         ) : (
           <div className="reglages-objectives-list">
-            {sortedRaces.map((race) => (
+            {upcomingRaces.map((race) => (
               <ObjectiveCard
                 key={race.id}
                 race={race}
@@ -176,6 +186,26 @@ function ReglagesObjectivesTab() {
           </div>
         )}
       </section>
+
+      {pastRaces.length > 0 ? (
+        <section className="reglages-card">
+          <details>
+            <summary className="reglages-advanced-summary">Objectifs passés ({pastRaces.length})</summary>
+            <div className="reglages-objectives-list reglages-advanced-body">
+              {pastRaces.map((race) => (
+                <ObjectiveCard
+                  key={race.id}
+                  race={race}
+                  isActive={false}
+                  onArchive={handleArchive}
+                  onReactivate={handleReactivate}
+                  busy={isMutating}
+                />
+              ))}
+            </div>
+          </details>
+        </section>
+      ) : null}
 
       <section className="reglages-card">
         <h3>Ajouter un objectif</h3>

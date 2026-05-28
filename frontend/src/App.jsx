@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import PageLoadingState from "./components/PageLoadingState.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { RunSeeDataProvider } from "./context/RunSeeDataContext.jsx";
+import { RaceObjectivesProvider } from "./context/RaceObjectivesContext.jsx";
 import { ToastProvider } from "./context/ToastProvider.jsx";
 import { UserPreferencesProvider } from "./context/UserPreferencesProvider.jsx";
 import useAuth from "./hooks/useAuth.js";
@@ -73,7 +74,9 @@ function AuthenticatedAppLayout() {
   return (
     <RequireAuth>
       <RunSeeDataProvider>
-        <AppLayout />
+        <RaceObjectivesProvider>
+          <AppLayout />
+        </RaceObjectivesProvider>
       </RunSeeDataProvider>
     </RequireAuth>
   );
