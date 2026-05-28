@@ -130,6 +130,13 @@ export default function PerformancePage() {
     [performanceScopeActivities],
   );
 
+  // Onglet actif (hash) calcule tot : calcul paresseux des modeles feuilles
+  // mono-onglet (records / allures / fc-performance) pour accelerer
+  // l'ouverture de ces sous-onglets.
+  const perfLocation = useLocation();
+  const perfHash = perfLocation.hash.replace(/^#/, "");
+  const perfActiveTab = PERFORMANCE_TABS.some((t) => t.id === perfHash) ? perfHash : "overview";
+
   const bestEfforts = useMemo(
     () => buildBestEfforts(canonicalPerformanceScopeActivities, 3),
     [canonicalPerformanceScopeActivities],
@@ -201,31 +208,31 @@ export default function PerformancePage() {
   // Utilise vdotProfile (Daniels paces + race predictions) + vdotHistory pour
   // l'evolution allure seuil 30j.
   const alluresReferenceModel = useMemo(
-    () => buildAlluresReferenceModel({
+    () => (perfActiveTab === "allures" ? buildAlluresReferenceModel({
       vdotProfile,
       vdotHistory,
       referenceDate: sharedRange.end,
-    }),
-    [vdotProfile, vdotHistory, sharedRange.end],
+    }) : null),
+    [perfActiveTab, vdotProfile, vdotHistory, sharedRange.end],
   );
 
-  // Modele onglet Records (mockup p.16).
+  // Modele onglet Records (mockup p.16) — le plus lourd (splits/segments).
   const recordsModel = useMemo(
-    () => buildRecordsModel({ scopeActivities: canonicalPerformanceScopeActivities }),
-    [canonicalPerformanceScopeActivities],
+    () => (perfActiveTab === "records" ? buildRecordsModel({ scopeActivities: canonicalPerformanceScopeActivities }) : null),
+    [perfActiveTab, canonicalPerformanceScopeActivities],
   );
 
   // Modele onglet FC de performance (mockup p.15).
   const fcPerformanceModel = useMemo(
-    () => buildFcPerformanceModel({
+    () => (perfActiveTab === "fc-performance" ? buildFcPerformanceModel({
       scopeActivities: canonicalPerformanceScopeActivities,
       vdotProfile,
       vdotHistory,
       intensityModel: overviewModel?.zonePreview?.intensityModel || overviewModel?.zonePreview || null,
       settings: trainingAnalyticsSettings,
       referenceDate: sharedRange.end,
-    }),
-    [canonicalPerformanceScopeActivities, vdotProfile, vdotHistory, overviewModel, trainingAnalyticsSettings, sharedRange.end],
+    }) : null),
+    [perfActiveTab, canonicalPerformanceScopeActivities, vdotProfile, vdotHistory, overviewModel, trainingAnalyticsSettings, sharedRange.end],
   );
 
   const recordEnrichmentCandidates = useMemo(
@@ -270,10 +277,8 @@ export default function PerformancePage() {
     };
   }, [recordEnrichmentCandidates, reload]);
 
-  // Onglet actif depuis le hash URL (meme logique que AnalyticsPage).
-  const location = useLocation();
-  const hash = location.hash.replace(/^#/, "");
-  const activeTabId = PERFORMANCE_TABS.some((t) => t.id === hash) ? hash : "overview";
+  // Onglet actif (reutilise le calcul precoce).
+  const activeTabId = perfActiveTab;
 
   const handleSharedPresetChange = (preset) => {
     if (preset === "custom") {

@@ -116,19 +116,26 @@ export default function AnalyticsPage() {
 
   const chartGranularity = getAnalyticsGranularity(sharedRange);
 
+  // Onglet actif (hash URL) — calcule tot pour ne construire QUE les modeles
+  // du sous-onglet affiche (perf : evite de calculer 7 modeles sur 980
+  // activites a chaque ouverture).
+  const hash = location.hash.replace(/^#/, "");
+  const activeTabId = ANALYTICS_TABS.some((t) => t.id === hash) ? hash : "overview";
+  const needOverview = activeTabId === "overview";
+
   // ---------------------------------------------------------------------------
-  // View models (calculs métier intacts)
+  // View models (calculs métier intacts) — calcul paresseux par sous-onglet
   // ---------------------------------------------------------------------------
 
   const trainingLoadModel = useMemo(
-    () => buildTrainingLoadStateModel(analyticsScopeActivities, {
+    () => (needOverview ? buildTrainingLoadStateModel(analyticsScopeActivities, {
       startDate: sharedRange.start,
       endDate: sharedRange.end,
       granularity: chartGranularity,
       weekStartsOn: options.userWeekStartsOn,
       settings: trainingAnalyticsSettings,
-    }),
-    [analyticsScopeActivities, chartGranularity, options.userWeekStartsOn, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
+    }) : null),
+    [needOverview, analyticsScopeActivities, chartGranularity, options.userWeekStartsOn, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
   );
 
   // Modèle de charge sur 1 an glissant pour l'onglet Charges : permet au
@@ -136,58 +143,58 @@ export default function AnalyticsPage() {
   // de la période globale "1-31 mai". Le coût est négligeable (même calcul
   // que ci-dessus mais sur un range plus large).
   const chargesTrainingLoadModel = useMemo(
-    () => buildTrainingLoadStateModel(analyticsScopeActivities, {
+    () => (activeTabId === "charges" ? buildTrainingLoadStateModel(analyticsScopeActivities, {
       startDate: addDays(sharedRange.end, -365),
       endDate: sharedRange.end,
       granularity: "day",
       weekStartsOn: options.userWeekStartsOn,
       settings: trainingAnalyticsSettings,
-    }),
-    [analyticsScopeActivities, options.userWeekStartsOn, sharedRange.end, trainingAnalyticsSettings],
+    }) : null),
+    [activeTabId, analyticsScopeActivities, options.userWeekStartsOn, sharedRange.end, trainingAnalyticsSettings],
   );
 
   const efficiencyModel = useMemo(
-    () => buildEfficiencyHistoryModel(analyticsScopeActivities, {
+    () => (needOverview ? buildEfficiencyHistoryModel(analyticsScopeActivities, {
       startDate: sharedRange.start,
       endDate: sharedRange.end,
       granularity: chartGranularity,
       settings: trainingAnalyticsSettings,
       weekStartsOn: options.userWeekStartsOn,
-    }),
-    [analyticsScopeActivities, chartGranularity, options.userWeekStartsOn, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
+    }) : null),
+    [needOverview, analyticsScopeActivities, chartGranularity, options.userWeekStartsOn, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
   );
 
   const intensityModel = useMemo(
-    () => buildConsolidatedIntensityDistributionModel(analyticsActivities, {
+    () => ((needOverview || activeTabId === "intensites") ? buildConsolidatedIntensityDistributionModel(analyticsActivities, {
       startDate: sharedRange.start,
       endDate: sharedRange.end,
       settings: trainingAnalyticsSettings,
-    }),
-    [analyticsActivities, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
+    }) : null),
+    [needOverview, activeTabId, analyticsActivities, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
   );
 
   const periodWeeks = Math.max(1, Math.ceil(sharedRange.days / 7));
   const analyticsVolumeGrouping = options.analyticsVolumeGrouping === "calendar" ? "calendar" : "rolling";
   const weeklySummary = useMemo(
-    () => buildRegularitySummary(analyticsScopeActivities, {
+    () => ((needOverview || activeTabId === "charges") ? buildRegularitySummary(analyticsScopeActivities, {
       weeks: periodWeeks,
       startDate: sharedRange.start,
       endDate: sharedRange.end,
       weekStartsOn: options.userWeekStartsOn,
       viewMode: analyticsVolumeGrouping,
       settings: trainingAnalyticsSettings,
-    }),
-    [analyticsScopeActivities, analyticsVolumeGrouping, options.userWeekStartsOn, periodWeeks, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
+    }) : null),
+    [needOverview, activeTabId, analyticsScopeActivities, analyticsVolumeGrouping, options.userWeekStartsOn, periodWeeks, sharedRange.end, sharedRange.start, trainingAnalyticsSettings],
   );
 
   const loadDynamicsProfile = useMemo(
-    () => buildLoadDynamicsProfile({ loadModel: trainingLoadModel, efficiencyModel }),
-    [trainingLoadModel, efficiencyModel],
+    () => (needOverview ? buildLoadDynamicsProfile({ loadModel: trainingLoadModel, efficiencyModel }) : null),
+    [needOverview, trainingLoadModel, efficiencyModel],
   );
 
   const recoveryVm = useMemo(
-    () => buildRecoveryViewModel(recoverySnapshots),
-    [recoverySnapshots],
+    () => (activeTabId === "recuperation" ? buildRecoveryViewModel(recoverySnapshots) : null),
+    [activeTabId, recoverySnapshots],
   );
 
   // ---------------------------------------------------------------------------
@@ -215,13 +222,6 @@ export default function AnalyticsPage() {
     setOption("analyticsHeartRateDistributionMetric", "load");
     setOption("analyticsVolumeGrouping", "rolling");
   };
-
-  // ---------------------------------------------------------------------------
-  // Onglet actif (hash URL)
-  // ---------------------------------------------------------------------------
-
-  const hash = location.hash.replace(/^#/, "");
-  const activeTabId = ANALYTICS_TABS.some((t) => t.id === hash) ? hash : "overview";
 
   // ---------------------------------------------------------------------------
   // Render
