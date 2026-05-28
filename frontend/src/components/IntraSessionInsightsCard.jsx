@@ -69,6 +69,26 @@ const SIGNAL_INFO = {
   ],
 };
 
+// Jauge horizontale generique : place un marqueur sur une echelle [min,max]
+// avec une zone "cible" optionnelle. Utilisee pour VI et cadence (C2b).
+function MiniGauge({ value, min, max, target = null, ariaLabel = "" }) {
+  if (!Number.isFinite(value)) return null;
+  const clamp = (v) => Math.min(100, Math.max(0, v));
+  const pct = clamp(((value - min) / (max - min)) * 100);
+  const targetStart = target ? clamp(((target[0] - min) / (max - min)) * 100) : null;
+  const targetWidth = target ? clamp(((target[1] - target[0]) / (max - min)) * 100) : null;
+  return (
+    <div className="intra-gauge" role="img" aria-label={ariaLabel}>
+      <div className="intra-gauge-track">
+        {target ? (
+          <span className="intra-gauge-target" style={{ left: `${targetStart}%`, width: `${targetWidth}%` }} />
+        ) : null}
+        <span className="intra-gauge-marker" style={{ left: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 function MetricBlock({ title, info, headline, detail, tone = "neutral", children }) {
   return (
     <section className={`intra-session-block intra-session-block-${tone}`.trim()}>
@@ -162,7 +182,17 @@ function IntraSessionInsightsCard({ activity = null, trainingAnalyticsSettings =
           headline={variabilityHeadline}
           detail={variabilityDetail}
           tone={variability.tone || "neutral"}
-        />
+        >
+          {variability.hasData ? (
+            <MiniGauge
+              value={variability.variabilityIndex}
+              min={0.95}
+              max={1.20}
+              target={[0.95, 1.05]}
+              ariaLabel={`Variability Index ${variability.variabilityIndex}`}
+            />
+          ) : null}
+        </MetricBlock>
 
         {isRun ? (
           <MetricBlock
@@ -171,7 +201,17 @@ function IntraSessionInsightsCard({ activity = null, trainingAnalyticsSettings =
             headline={cadenceHeadline}
             detail={cadenceDetail}
             tone={cadence.cadenceTone || "neutral"}
-          />
+          >
+            {cadence.hasData ? (
+              <MiniGauge
+                value={cadence.cadenceSpm}
+                min={150}
+                max={195}
+                target={[170, 185]}
+                ariaLabel={`Cadence ${cadence.cadenceSpm} spm`}
+              />
+            ) : null}
+          </MetricBlock>
         ) : null}
       </div>
 

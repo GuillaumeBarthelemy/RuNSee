@@ -5,8 +5,10 @@ import ActivityIntensityCard from "./ActivityIntensityCard.jsx";
 import ActivityPerformanceStrip from "./ActivityPerformanceStrip.jsx";
 import ActivityClassificationModal from "./activity/ActivityClassificationModal.jsx";
 import ActivityClassificationPills from "./activity/ActivityClassificationPills.jsx";
+import ActivityTakeawaysCard from "./activity/ActivityTakeawaysCard.jsx";
 import { getDisplaySportLabel } from "../utils/activityAggregations.js";
 import { buildActivityTrainingInsights } from "../utils/trainingMetrics.js";
+import { buildActivityTakeaways } from "../utils/activityTakeaways.js";
 import { suggestSessionType } from "../constants/sessionTaxonomy.js";
 
 const noop = () => {};
@@ -86,6 +88,11 @@ export default function ActivityDetailCard({
     [safeActivity, trainingAnalyticsSettings],
   );
 
+  const takeaways = useMemo(
+    () => buildActivityTakeaways(safeActivity, { settings: trainingAnalyticsSettings }),
+    [safeActivity, trainingAnalyticsSettings],
+  );
+
   const handleClassificationSaved = (updated) => {
     onActivityUpdated(updated);
   };
@@ -121,11 +128,14 @@ export default function ActivityDetailCard({
 
       <ActivityHeaderKpis activity={safeActivity} />
 
-      <ActivityPerformanceStrip
-        activity={safeActivity}
-        trainingInsights={trainingInsights}
-        trainingAnalyticsSettings={trainingAnalyticsSettings}
-      />
+      <div className="activity-detail-perf-row">
+        <ActivityPerformanceStrip
+          activity={safeActivity}
+          trainingInsights={trainingInsights}
+          trainingAnalyticsSettings={trainingAnalyticsSettings}
+        />
+        <ActivityTakeawaysCard items={takeaways} />
+      </div>
 
       <ActivityIntensityCard
         activity={safeActivity}

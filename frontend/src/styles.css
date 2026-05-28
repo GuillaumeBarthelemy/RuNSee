@@ -17975,3 +17975,79 @@ button.alert-banner-positive-item {
 :root[data-theme="dark"] .intra-session-zone-cell-z4 { background: rgba(249, 115, 22, 0.18); }
 :root[data-theme="dark"] .intra-session-zone-cell-z5 { background: rgba(239, 68, 68, 0.18); }
 :root[data-theme="dark"] .intra-session-card { background: var(--al-surface); border-color: var(--al-border); }
+
+/* Lot C2b — Mini jauge (VI, cadence) */
+.intra-gauge { margin-top: 8px; }
+.intra-gauge-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e 0%, #eab308 55%, #ef4444 100%);
+  opacity: 0.85;
+}
+.intra-gauge-target {
+  position: absolute;
+  top: -2px;
+  height: 12px;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.12);
+  border: 1px dashed rgba(15, 23, 42, 0.35);
+}
+.intra-gauge-marker {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: #0f172a;
+  transform: translateX(-50%);
+  box-shadow: 0 0 0 2px #fff;
+}
+:root[data-theme="dark"] .intra-gauge-marker { background: #f8fafc; box-shadow: 0 0 0 2px var(--al-surface); }
+:root[data-theme="dark"] .intra-gauge-target { background: rgba(248,250,252,0.10); border-color: rgba(248,250,252,0.3); }
+
+/* Lot C3 — Carte "A retenir" + layout perf row */
+.activity-detail-perf-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+.activity-takeaways-card {
+  border: 1px solid var(--al-border, #e5edf7);
+  border-radius: 20px;
+  padding: 16px;
+  background: var(--al-surface-soft, #f8fafc);
+}
+.activity-takeaways-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--al-text, #0f172a);
+}
+.activity-takeaways-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.activity-takeaway {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 12.5px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--al-surface, #fff);
+  border-left: 3px solid var(--al-border, #cbd5e1);
+}
+.activity-takeaway-positive { border-left-color: #22c55e; }
+.activity-takeaway-neutral  { border-left-color: #1268f3; }
+.activity-takeaway-warning  { border-left-color: #f59e0b; }
+.activity-takeaway-icon { flex-shrink: 0; font-size: 14px; }
+.activity-takeaway-text { color: var(--al-text-soft, #334155); }
+
+:root[data-theme="dark"] .activity-takeaways-card { background: var(--al-surface-soft); border-color: var(--al-border); }
+:root[data-theme="dark"] .activity-takeaways-title { color: var(--al-text); }
+:root[data-theme="dark"] .activity-takeaway { background: var(--al-surface); }
+:root[data-theme="dark"] .activity-takeaway-text { color: var(--al-text-soft); }
+
+@media (max-width: 900px) {
+  .activity-detail-perf-row { grid-template-columns: 1fr; }
+}
