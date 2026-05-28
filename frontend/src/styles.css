@@ -17940,3 +17940,38 @@ button.alert-banner-positive-item {
   border-color: var(--al-border);
   color: var(--al-text-soft);
 }
+
+/* Lot C2 — Barre empilee zones FC (intra-seance) */
+.intra-session-zone-bar {
+  display: flex;
+  width: 100%;
+  height: 26px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: var(--al-surface-soft, #f1f5f9);
+}
+.intra-session-zone-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 0;
+  transition: width 0.3s;
+}
+.intra-session-zone-seg-z1 { background: #5eead4; color: #134e4a; }
+.intra-session-zone-seg-z2 { background: #60a5fa; }
+.intra-session-zone-seg-z3 { background: #facc15; color: #713f12; }
+.intra-session-zone-seg-z4 { background: #f97316; }
+.intra-session-zone-seg-z5 { background: #ef4444; }
+:root[data-theme="dark"] .intra-session-zone-bar { background: var(--al-surface-soft); }
+
+/* Lot C2 — cellules zones FC en dark mode */
+:root[data-theme="dark"] .intra-session-zone-cell-z1 { background: rgba(94, 234, 212, 0.16); }
+:root[data-theme="dark"] .intra-session-zone-cell-z2 { background: rgba(96, 165, 250, 0.18); }
+:root[data-theme="dark"] .intra-session-zone-cell-z3 { background: rgba(250, 204, 21, 0.18); }
+:root[data-theme="dark"] .intra-session-zone-cell-z4 { background: rgba(249, 115, 22, 0.18); }
+:root[data-theme="dark"] .intra-session-zone-cell-z5 { background: rgba(239, 68, 68, 0.18); }
+:root[data-theme="dark"] .intra-session-card { background: var(--al-surface); border-color: var(--al-border); }

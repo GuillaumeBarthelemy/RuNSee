@@ -182,15 +182,32 @@ function IntraSessionInsightsCard({ activity = null, trainingAnalyticsSettings =
         </header>
 
         {timeInZone.hasData ? (
-          <div className="intra-session-zone-grid">
-            {timeInZone.zones.map((zone) => (
-              <div key={zone.key} className={`intra-session-zone-cell intra-session-zone-cell-${zone.key}`}>
-                <span className="status-pill status-idle">{zone.shortLabel}</span>
-                <strong>{formatMinutesFromSeconds(zone.durationSeconds)}</strong>
-                <span className="small-text">{zone.sharePercent} % · {zone.rangeLabel || "-"}</span>
-              </div>
-            ))}
-          </div>
+          <>
+            {/* Barre empilee proportionnelle : lecture immediate de la repartition */}
+            <div className="intra-session-zone-bar" role="img" aria-label="Répartition du temps par zone FC">
+              {timeInZone.zones
+                .filter((z) => z.sharePercent > 0)
+                .map((zone) => (
+                  <span
+                    key={zone.key}
+                    className={`intra-session-zone-seg intra-session-zone-seg-${zone.key}`}
+                    style={{ width: `${zone.sharePercent}%` }}
+                    title={`${zone.shortLabel} : ${zone.sharePercent}% (${formatMinutesFromSeconds(zone.durationSeconds)})`}
+                  >
+                    {zone.sharePercent >= 8 ? `${zone.sharePercent}%` : ""}
+                  </span>
+                ))}
+            </div>
+            <div className="intra-session-zone-grid">
+              {timeInZone.zones.map((zone) => (
+                <div key={zone.key} className={`intra-session-zone-cell intra-session-zone-cell-${zone.key}`}>
+                  <span className="status-pill status-idle">{zone.shortLabel}</span>
+                  <strong>{formatMinutesFromSeconds(zone.durationSeconds)}</strong>
+                  <span className="small-text">{zone.sharePercent} % · {zone.rangeLabel || "-"}</span>
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           <p className="small-text">{timeInZone.message}</p>
         )}
