@@ -18178,3 +18178,51 @@ button.alert-banner-positive-item {
 .reglages-platform-advanced .reglages-advanced-summary { padding: 4px 0; }
 .reglages-platform-advanced .reglages-advanced-body { padding: 12px 0 0; }
 :root[data-theme="dark"] .reglages-platform-advanced { border-color: var(--al-border); }
+
+/* =========================================================================
+ * Onglet Objectifs (#2 refonte) — cartes + formulaire
+ * ========================================================================= */
+.reglages-objectives-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.reglages-objective-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--al-border, #e5edf7);
+  border-radius: 12px;
+  background: var(--al-surface, #fff);
+}
+.reglages-objective-card.is-active {
+  border-color: var(--al-primary, #1268f3);
+  background: var(--al-primary-soft, #eff5ff);
+}
+.reglages-objective-card.is-past { opacity: 0.7; }
+.reglages-objective-head { display: flex; align-items: center; gap: 8px; }
+.reglages-objective-name { font-size: 14px; color: var(--al-text, #0f172a); }
+.reglages-objective-badge {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 2px 7px; border-radius: 999px;
+}
+.reglages-objective-badge.is-active { background: #dcfce7; color: #15803d; }
+.reglages-objective-badge.is-past { background: #f1f5f9; color: #64748b; }
+.reglages-objective-meta {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px;
+  font-size: 12.5px; color: var(--al-text-soft, #475569);
+}
+.reglages-objective-countdown { font-weight: 700; color: var(--al-primary, #1268f3); }
+.reglages-objective-form-grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;
+}
+.reglages-objective-form-grid .reglages-field-span2 { grid-column: span 2; }
+.reglages-objective-advanced { margin-top: 12px; }
+.reglages-objective-form-actions { margin-top: 14px; }
+@media (max-width: 760px) {
+  .reglages-objective-form-grid { grid-template-columns: 1fr 1fr; }
+  .reglages-objective-form-grid .reglages-field-span2 { grid-column: span 2; }
+  .reglages-objective-card { flex-direction: column; align-items: stretch; }
+}
+:root[data-theme="dark"] .reglages-objective-card { background: var(--al-surface); border-color: var(--al-border); }
+:root[data-theme="dark"] .reglages-objective-card.is-active { background: var(--al-primary-soft); border-color: var(--al-primary); }
+:root[data-theme="dark"] .reglages-objective-name { color: var(--al-text); }
+:root[data-theme="dark"] .reglages-objective-badge.is-active { background: rgba(34,197,94,0.15); color: #4ade80; }

@@ -4,6 +4,7 @@ import SubTabs from "../components/visuals/alpine/SubTabs.jsx";
 import ReglagesAccountTab from "../components/reglages/ReglagesAccountTab.jsx";
 import ReglagesConnexionsTab from "../components/reglages/ReglagesConnexionsTab.jsx";
 import ReglagesEntrainementTab from "../components/reglages/ReglagesEntrainementTab.jsx";
+import ReglagesObjectivesTab from "../components/reglages/ReglagesObjectivesTab.jsx";
 import ReglagesDonneesTab from "../components/reglages/ReglagesDonneesTab.jsx";
 import ReglagesAboutTab from "../components/reglages/ReglagesAboutTab.jsx";
 import useAuth from "../hooks/useAuth.js";
@@ -12,6 +13,7 @@ const REGLAGES_TABS = [
   { id: "compte",       label: "Compte" },
   { id: "connexions",   label: "Connexions" },
   { id: "entrainement", label: "Entraînement" },
+  { id: "objectifs",    label: "Objectifs" },
   { id: "donnees",      label: "Données" },
   { id: "apropos",      label: "À propos" },
 ];
@@ -51,6 +53,8 @@ export default function ReglagesPage() {
           <ReglagesConnexionsTab />
         ) : activeTabId === "entrainement" ? (
           <ReglagesEntrainementTab />
+        ) : activeTabId === "objectifs" ? (
+          <ReglagesObjectivesTab />
         ) : activeTabId === "donnees" ? (
           <ReglagesDonneesTab />
         ) : (
