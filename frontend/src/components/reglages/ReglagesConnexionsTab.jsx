@@ -13,6 +13,7 @@ import {
 import ConfirmDialog from "./ConfirmDialog.jsx";
 import GarminConnectModal from "./GarminConnectModal.jsx";
 import PlatformActionsMenu from "./PlatformActionsMenu.jsx";
+import ReglagesAdvancedConnexions from "./ReglagesAdvancedConnexions.jsx";
 
 const STRAVA_BRAND = { name: "Strava", color: "#fc4c02" };
 const GARMIN_BRAND = { name: "Garmin", color: "#1a1a1a" };
@@ -327,6 +328,11 @@ function ReglagesConnexionsTab() {
           comingSoon
         />
       </ul>
+
+      <ReglagesAdvancedConnexions
+        garminConnected={garminConnected}
+        stravaConnected={stravaConnected}
+      />
 
       {/* Modals */}
       <GarminConnectModal

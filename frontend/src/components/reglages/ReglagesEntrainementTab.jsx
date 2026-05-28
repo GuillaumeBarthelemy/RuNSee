@@ -8,6 +8,7 @@ import {
 import FcMaxModal from "./FcMaxModal.jsx";
 import FtpModal from "./FtpModal.jsx";
 import ZonesEditModal from "./ZonesEditModal.jsx";
+import ReglagesRaceObjectives from "./ReglagesRaceObjectives.jsx";
 
 const ZONE_META = [
   { key: "z1", label: "Z1 Récupération", maxPct: 64, color: "#3b82f6" },
@@ -288,6 +289,10 @@ function ReglagesEntrainementTab() {
             </select>
           </div>
         </div>
+      </section>
+
+      <section className="reglages-card reglages-race-objectives-section">
+        <ReglagesRaceObjectives />
       </section>
 
       {/* Modals */}
