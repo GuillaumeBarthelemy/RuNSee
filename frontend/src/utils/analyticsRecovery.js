@@ -12,6 +12,10 @@
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function safeNum(v) {
+  // null / undefined / "" ne doivent PAS devenir 0 (Number(null) === 0).
+  // Sinon un champ absent (ex: trainingReadinessScore) court-circuite les
+  // fallbacks `??` et fausse les moyennes.
+  if (v === null || v === undefined || v === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
