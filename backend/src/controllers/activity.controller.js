@@ -1,6 +1,7 @@
 import prisma from "../config/prisma.js";
 import { getRequiredAuthUser } from "../middleware/auth.middleware.js";
 import {
+  getActivitiesVersion,
   getStoredActivityByPublicIdForUser,
   listActivities,
 } from "../repositories/activity.repository.js";
@@ -58,17 +59,20 @@ export async function getActivities(req, res, next) {
   try {
     const user = getRequiredAuthUser(req);
     const { from, to, type, sportType, includeRaw } = req.query;
+    const wantRaw = String(includeRaw) === "true";
+    const filters = { appUserId: user.id, from, to, type, sportType };
 
-    const activities = await listActivities(
-      {
-        appUserId: user.id,
-        from,
-        to,
-        type,
-        sportType,
-      },
-      { includeRaw: String(includeRaw) === "true" },
-    );
+    // ETag conditionnel : si rien n'a change, on repond 304 sans reconstruire
+    // ni transferer le payload (revalidation SWR economique).
+    const version = await getActivitiesVersion(filters);
+    const etag = `W/"acts-${wantRaw ? "raw" : "light"}-${version}"`;
+    res.set("ETag", etag);
+    res.set("Cache-Control", "private, no-cache");
+    if (req.headers["if-none-match"] === etag) {
+      return res.status(304).end();
+    }
+
+    const activities = await listActivities(filters, { includeRaw: wantRaw });
 
     return res.json(activities.map(buildActivityListResponse));
   } catch (error) {

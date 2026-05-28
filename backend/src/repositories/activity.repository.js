@@ -392,6 +392,22 @@ export async function listActivities(filters = {}, options = {}) {
   });
 }
 
+/**
+ * Version legere de la liste d'activites pour l'ETag : count + max(updatedAt).
+ * Permet de repondre 304 sans reconstruire le payload complet.
+ */
+export async function getActivitiesVersion(filters = {}) {
+  const where = applyStoredActivityIntegrityFilters(buildWhereClause(filters), {
+    requireStartDate: true,
+  });
+  const [count, agg] = await Promise.all([
+    prisma.activity.count({ where }),
+    prisma.activity.aggregate({ where, _max: { updatedAt: true } }),
+  ]);
+  const maxUpdated = agg?._max?.updatedAt ? new Date(agg._max.updatedAt).getTime() : 0;
+  return `${count}-${maxUpdated}`;
+}
+
 export async function countActivities(filters = {}) {
   const where = applyStoredActivityIntegrityFilters(buildWhereClause(filters), {
     requireStartDate: true,

@@ -3,7 +3,7 @@ import { getCurrentAthlete } from "../services/athlete.service.js";
 import { getActivities } from "../services/activity.service.js";
 import { getCurrentSyncJob, getSyncSummary } from "../services/sync.service.js";
 import { getTrainingAnalyticsSettings } from "../services/trainingAnalyticsSettings.service.js";
-import { readActivitiesCache, writeActivitiesCache } from "../utils/activityCache.js";
+import { readActivitiesCache, writeActivitiesCache, readBaseCache, writeBaseCache } from "../utils/activityCache.js";
 import useAuth from "../hooks/useAuth.js";
 import { RunSeeDataContext } from "./RunSeeDataContextBase.js";
 
@@ -64,6 +64,24 @@ export function RunSeeDataProvider({ children }) {
 
     setState((previous) => ({ ...previous, isBaseLoading: true }));
 
+    // SWR : hydrate la base depuis le cache pour un rendu instantane (Accueil,
+    // entetes) pendant la revalidation reseau.
+    if (!current.baseLoaded && userIdRef.current) {
+      readBaseCache(userIdRef.current).then((cached) => {
+        if (cached && !stateRef.current.baseLoaded) {
+          setState((previous) => ({
+            ...previous,
+            athlete: cached.athlete ?? previous.athlete,
+            summary: cached.summary ?? previous.summary,
+            trainingAnalyticsSettings: cached.trainingAnalyticsSettings ?? previous.trainingAnalyticsSettings,
+            trainingAnalyticsSettingsHistory: cached.trainingAnalyticsSettingsHistory ?? previous.trainingAnalyticsSettingsHistory,
+            baseLoaded: true,
+            isBaseLoading: true, // revalidation en cours
+          }));
+        }
+      }).catch(() => {});
+    }
+
     const request = (async () => {
       try {
         const [athleteRes, summaryRes, currentJobRes, trainingSettingsRes] = await Promise.allSettled([
@@ -119,6 +137,12 @@ export function RunSeeDataProvider({ children }) {
           baseLoaded: true,
           error: errors.length ? extractErrorMessage(errors[0], "Erreur de chargement des donnees RuNSee.") : "",
         }));
+        // Persiste la base (hors currentJob, volatil) pour le SWR.
+        if (userIdRef.current) {
+          writeBaseCache(userIdRef.current, {
+            athlete, summary, trainingAnalyticsSettings, trainingAnalyticsSettingsHistory,
+          });
+        }
       } catch (error) {
         setState((previous) => ({
           ...previous,
@@ -166,18 +190,27 @@ export function RunSeeDataProvider({ children }) {
 
     // SWR : si rien en memoire, on hydrate depuis IndexedDB pour un rendu
     // quasi-instantane pendant que la requete reseau revalide en fond.
+    // Performance (raw) : si pas de cache raw, on retombe sur le cache light
+    // pour afficher tout de suite (les records se peuplent quand le raw
+    // arrive). -> 1er affichage instantane meme sur la page Performance.
     if (!current.activitiesLoaded && userIdRef.current) {
-      readActivitiesCache(userIdRef.current, cacheMode).then((cached) => {
+      (async () => {
+        let cached = await readActivitiesCache(userIdRef.current, cacheMode).catch(() => null);
+        let hydratedRaw = wantRaw;
+        if (!cached && wantRaw) {
+          cached = await readActivitiesCache(userIdRef.current, "light").catch(() => null);
+          hydratedRaw = false; // donnees light -> raw pas encore charge
+        }
         if (cached && !stateRef.current.activitiesLoaded) {
           setState((previous) => ({
             ...previous,
             activities: cached.activities,
             activitiesLoaded: true,
-            rawLoaded: wantRaw,
-            isActivitiesLoading: true, // revalidation en cours
+            rawLoaded: hydratedRaw,
+            isActivitiesLoading: true, // revalidation (raw) en cours
           }));
         }
-      }).catch(() => {});
+      })();
     }
 
     const request = (async () => {

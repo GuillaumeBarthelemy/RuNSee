@@ -20,10 +20,11 @@ export default function useRunSeeData({ includeActivities = true, includeRaw = f
   );
 
   // Cache-first (SWR) : on considere "charge" des qu'on a des donnees
-  // (cache ou reseau). La revalidation en fond (isActivitiesLoading) ne
-  // bloque pas l'UI -> rendu quasi-instantane au refresh.
-  const isLoading = state.isBaseLoading || (includeActivities && !state.activitiesLoaded);
-  const isRevalidating = includeActivities && state.activitiesLoaded && state.isActivitiesLoading;
+  // (cache ou reseau), pour base ET activites. La revalidation en fond
+  // ne bloque pas l'UI -> rendu quasi-instantane au refresh.
+  const isLoading = !state.baseLoaded || (includeActivities && !state.activitiesLoaded);
+  const isRevalidating = (state.isBaseLoading && state.baseLoaded)
+    || (includeActivities && state.activitiesLoaded && state.isActivitiesLoading);
   const scopedReload = useCallback(
     () => reload({ includeActivities, includeRaw }),
     [includeActivities, includeRaw, reload],
