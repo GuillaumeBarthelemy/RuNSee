@@ -35,7 +35,7 @@ function ProgressionPolarisationCard({ polarisation = {} }) {
     <section className="progression-panel progression-polarisation-card">
       <div className="progression-panel-head">
         <h3>Polarisation de l'entraînement</h3>
-        <span className="progression-panel-sub">{total} séances classées · {weeks} dernières semaines</span>
+        <span className="progression-panel-sub">{total} séances classées · {weeks} dernières semaines · par nombre de séances</span>
       </div>
 
       {/* Barre empilee low/mid/high */}

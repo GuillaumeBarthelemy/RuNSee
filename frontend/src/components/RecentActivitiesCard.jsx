@@ -3,12 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getDisplaySportLabel } from "../utils/activityAggregations.js";
 import { getActivityPublicId } from "../utils/activityLinks.js";
 import { formatPace } from "../utils/activityInsights.js";
-import { getSessionTypeDef } from "../constants/sessionTaxonomy.js";
+import { resolveActivitySessionTag } from "../utils/activitySessionTag.js";
 import InfoTooltip from "./InfoTooltip.jsx";
-
-// Mappe le ton taxonomie (success/warning/danger/neutral) vers les classes
-// de tag existantes du composant (positive/warning/neutral).
-const TONE_MAP = { success: "positive", warning: "warning", danger: "warning", neutral: "neutral" };
 
 function formatDate(value) {
   if (!value) return "-";
@@ -119,25 +115,15 @@ function RecentActivitiesCard({
                   <div className="small-text">
                     {formatDate(activity?.startDate || activity?.startDateLocal)} - {getDisplaySportLabel(activity, { groupSports: true })}
                   </div>
-                  {(activity?.userSessionType || activity?.estimatedSessionLabel || activity?.dominantIntensityLabel || activity?.loadBandLabel || activity?.microTag) ? (
+                  {(() => {
+                    const sessionTag = resolveActivitySessionTag(activity);
+                    return (sessionTag || activity?.dominantIntensityLabel || activity?.loadBandLabel || activity?.microTag) ? (
                     <div className="recent-activity-tags">
-                      {(() => {
-                        // Classification user prioritaire sur le label auto-estime.
-                        const typeDef = getSessionTypeDef(activity?.userSessionType);
-                        if (typeDef) {
-                          const isAuto = !activity?.userClassifiedAt;
-                          return (
-                            <span className={`recent-activity-tag recent-activity-tag-${TONE_MAP[typeDef.tone] || "neutral"}`}>
-                              {typeDef.icon} {typeDef.label}{isAuto ? " ·auto" : ""}
-                            </span>
-                          );
-                        }
-                        return activity?.estimatedSessionLabel ? (
-                          <span className={`recent-activity-tag recent-activity-tag-${activity?.sessionTypeTone || "neutral"}`.trim()}>
-                            {activity.estimatedSessionLabel}
-                          </span>
-                        ) : null;
-                      })()}
+                      {sessionTag ? (
+                        <span className={`recent-activity-tag recent-activity-tag-${sessionTag.tone}`}>
+                          {sessionTag.label}
+                        </span>
+                      ) : null}
                       {activity?.loadBandLabel ? (
                         <span className={`recent-activity-tag recent-activity-tag-${activity?.loadBandTone || "neutral"}`.trim()}>
                           {activity.loadBandLabel}
@@ -154,7 +140,8 @@ function RecentActivitiesCard({
                         </span>
                       ) : null}
                     </div>
-                  ) : null}
+                    ) : null;
+                  })()}
                 </div>
                 <div className="recent-activity-metrics">
                   <span>{formatDistance(activity?.distance)}</span>
