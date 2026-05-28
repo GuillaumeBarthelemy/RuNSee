@@ -7,6 +7,7 @@ import {
 } from "./activityInsights.js";
 import { resolveHeartRateZoneConfig } from "./heartRatePreferences.js";
 import { normalizeTrainingAnalyticsSettings } from "./trainingMetrics.js";
+import { getActivityRawPayload } from "./parsedRawCache.js";
 
 function toNumber(value) {
   return Number.isFinite(Number(value)) ? Number(value) : 0;
@@ -1057,7 +1058,7 @@ function normalizeSegment(segment = {}, source = "activity") {
 }
 
 function getDetailedSegments(item = {}) {
-  const payload = parseJsonSafe(item?.rawJson) || parseJsonSafe(item?.summaryJson) || {};
+  const payload = getActivityRawPayload(item) || parseJsonSafe(item?.summaryJson) || {};
 
   return {
     laps: Array.isArray(payload?.laps)

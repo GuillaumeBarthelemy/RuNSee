@@ -15,6 +15,7 @@ import {
   buildBestEffortRecords,
   isRunLikeActivity,
 } from "./activityInsights.js";
+import { getActivityRawPayload } from "./parsedRawCache.js";
 
 function toFiniteNumber(value) {
   const n = Number(value);
@@ -174,10 +175,7 @@ function buildBestSegments(activities) {
   const allEfforts = [];
   (Array.isArray(activities) ? activities : []).forEach((a) => {
     if (!isRunLikeActivity(a)) return;
-    let payload = a?.rawJson;
-    if (typeof payload === "string") {
-      try { payload = JSON.parse(payload); } catch { payload = null; }
-    }
+    const payload = getActivityRawPayload(a);
     const efforts = Array.isArray(payload?.segment_efforts) ? payload.segment_efforts : [];
     efforts.forEach((eff) => {
       // PR Strava uniquement (pr_rank = 1)

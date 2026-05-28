@@ -9,6 +9,7 @@ import {
 } from "./activityAggregations.js";
 import { getActivityGradeAdjustedPaceSecondsPerKm } from "./gradeAdjustedPace.js";
 import { resolveHeartRateZoneConfig } from "./heartRatePreferences.js";
+import { getActivityRawPayload } from "./parsedRawCache.js";
 import { startOfWeek as resolveWeekStart } from "./weekStart.js";
 
 const RUN_SCOPE_LABEL = RUN_SPORT_GROUP_LABEL;
@@ -1095,19 +1096,8 @@ export function buildReferencePace(activities = [], options = {}) {
   };
 }
 
-function parseJsonSafe(value) {
-  if (!value) return null;
-  if (typeof value === "object") return value;
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-}
-
 function buildHeartRateSegments(activity = {}) {
-  const payload = parseJsonSafe(activity.rawJson);
+  const payload = getActivityRawPayload(activity);
   const candidateSources = [
     { source: "split", segments: Array.isArray(payload?.splits_metric) ? payload.splits_metric : [] },
     { source: "lap", segments: Array.isArray(payload?.laps) ? payload.laps : [] },
@@ -1494,12 +1484,12 @@ function getRecordSourceText(activity = {}) {
 }
 
 function hasDetailedActivityPayload(activity = {}) {
-  const payload = parseJsonSafe(activity?.rawJson);
+  const payload = getActivityRawPayload(activity);
   return Boolean(payload && typeof payload === "object");
 }
 
 function getDetailedBestEfforts(activity = {}) {
-  const payload = parseJsonSafe(activity?.rawJson);
+  const payload = getActivityRawPayload(activity);
   return Array.isArray(payload?.best_efforts) ? payload.best_efforts : [];
 }
 
