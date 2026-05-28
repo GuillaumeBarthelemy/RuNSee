@@ -136,6 +136,10 @@ export function AuthProvider({ children }) {
     try {
       await logout();
     } finally {
+      // Purge le cache local des activites (privacy / changement de compte).
+      import("../utils/activityCache.js")
+        .then((m) => m.clearActivitiesCache())
+        .catch(() => {});
       setState((current) => ({
         ...current,
         user: null,

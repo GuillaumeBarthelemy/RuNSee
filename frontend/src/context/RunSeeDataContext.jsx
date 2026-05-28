@@ -3,6 +3,8 @@ import { getCurrentAthlete } from "../services/athlete.service.js";
 import { getActivities } from "../services/activity.service.js";
 import { getCurrentSyncJob, getSyncSummary } from "../services/sync.service.js";
 import { getTrainingAnalyticsSettings } from "../services/trainingAnalyticsSettings.service.js";
+import { readActivitiesCache, writeActivitiesCache } from "../utils/activityCache.js";
+import useAuth from "../hooks/useAuth.js";
 import { RunSeeDataContext } from "./RunSeeDataContextBase.js";
 
 const BASE_STALE_MS = 60_000;
@@ -37,6 +39,9 @@ export function RunSeeDataProvider({ children }) {
   const lastBaseLoadedAtRef = useRef(0);
   const lastActivitiesLoadedAtRef = useRef(0);
   const rawLoadedRef = useRef(false);
+  const { user } = useAuth();
+  const userIdRef = useRef(null);
+  userIdRef.current = user?.id || null;
 
   useEffect(() => {
     stateRef.current = state;
@@ -157,20 +162,40 @@ export function RunSeeDataProvider({ children }) {
     // Conserve le mode raw une fois active (les refresh background gardent
     // les splits si une page Performance les a demandes).
     const wantRaw = includeRaw || rawLoadedRef.current;
+    const cacheMode = wantRaw ? "raw" : "light";
+
+    // SWR : si rien en memoire, on hydrate depuis IndexedDB pour un rendu
+    // quasi-instantane pendant que la requete reseau revalide en fond.
+    if (!current.activitiesLoaded && userIdRef.current) {
+      readActivitiesCache(userIdRef.current, cacheMode).then((cached) => {
+        if (cached && !stateRef.current.activitiesLoaded) {
+          setState((previous) => ({
+            ...previous,
+            activities: cached.activities,
+            activitiesLoaded: true,
+            rawLoaded: wantRaw,
+            isActivitiesLoading: true, // revalidation en cours
+          }));
+        }
+      }).catch(() => {});
+    }
 
     const request = (async () => {
       try {
         const activities = await getActivities(wantRaw ? { includeRaw: true } : {});
         lastActivitiesLoadedAtRef.current = Date.now();
         rawLoadedRef.current = wantRaw;
+        const arr = Array.isArray(activities) ? activities : [];
         setState((previous) => ({
           ...previous,
-          activities: Array.isArray(activities) ? activities : [],
+          activities: arr,
           isActivitiesLoading: false,
           activitiesLoaded: true,
           rawLoaded: wantRaw,
           error: "",
         }));
+        // Met a jour le cache persistant (best-effort, non bloquant).
+        if (userIdRef.current) writeActivitiesCache(userIdRef.current, cacheMode, arr);
       } catch (error) {
         setState((previous) => ({
           ...previous,
