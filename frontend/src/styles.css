@@ -17847,3 +17847,33 @@ button.alert-banner-positive-item {
 :root[data-theme="dark"] .progression-polar-insight-warning  { background: rgba(248,113,113,0.15); color: #fca5a5; }
 :root[data-theme="dark"] .progression-polar-bar,
 :root[data-theme="dark"] .progression-polar-type-bar { background: var(--al-surface-soft); }
+
+/* Toggle composition sport/intensite (Lot B batch M) */
+.progression-composition-toggle {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--al-surface-soft, #f1f5f9);
+  padding: 3px;
+  border-radius: 8px;
+  margin-left: auto;
+}
+.progression-composition-toggle-btn {
+  border: none;
+  background: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--al-text-soft, #475569);
+}
+.progression-composition-toggle-btn.is-active {
+  background: var(--al-surface, #fff);
+  color: var(--al-primary, #1268f3);
+  box-shadow: 0 1px 3px rgba(15,23,42,0.08);
+}
+:root[data-theme="dark"] .progression-composition-toggle { background: var(--al-surface-soft); }
+:root[data-theme="dark"] .progression-composition-toggle-btn.is-active {
+  background: var(--al-surface);
+  color: var(--al-primary);
+}

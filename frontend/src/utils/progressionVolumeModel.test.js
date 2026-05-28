@@ -120,6 +120,24 @@ describe("buildProgressionVolumeModel", () => {
     expect(m.polarisation.hasData).toBe(false);
   });
 
+  it("compositionByIntensity : repartit la distance par intensite/semaine", () => {
+    const ref = new Date("2026-05-21");
+    const acts = [
+      // semaine courante : 10km endurance (low) + 5km vma (high)
+      { ...makeRun({ date: "2026-05-20", km: 10 }), userSessionType: "endurance_fond" },
+      { ...makeRun({ date: "2026-05-19", km: 5 }), userSessionType: "vma_courte" },
+    ];
+    const m = buildProgressionVolumeModel({ activities: acts, referenceDate: ref });
+    expect(Array.isArray(m.compositionByIntensity)).toBe(true);
+    const nonEmpty = m.compositionByIntensity.filter((w) => (w.low + w.mid + w.high) > 0);
+    expect(nonEmpty.length).toBeGreaterThanOrEqual(1);
+    // 10km low / 15km total ≈ 67%, 5km high ≈ 33%
+    const wk = nonEmpty[nonEmpty.length - 1];
+    expect(wk.low).toBe(67);
+    expect(wk.high).toBe(33);
+    expect(m.compositionByIntensityMeta.low.color).toBeTruthy();
+  });
+
   it("polarisation : repartit low/mid/high sur les seances classifiees", () => {
     const ref = new Date("2026-05-21");
     const acts = [];

@@ -9,7 +9,7 @@
  *   - 'A retenir' messages contextualises
  */
 
-import { buildWeeklySeries } from "./activityAggregations.js";
+import { buildWeeklySeries, buildWeeklyBuckets } from "./activityAggregations.js";
 import { isRunLikeActivity } from "./activityInsights.js";
 import { getSessionTypeDef, SESSION_TYPES } from "../constants/sessionTaxonomy.js";
 
@@ -30,6 +30,53 @@ function intensityToPolarBucket(intensity) {
   if (intensity === "mid") return "mid";
   if (intensity === "high") return "high";
   return null; // none / inconnu -> exclu de la polarisation
+}
+
+// Meta pour le chart empilé par intensité (toggle composition).
+const INTENSITY_COMPOSITION_META = {
+  low:  { label: "Facile (Z1-Z2)", color: "#22c55e" },
+  mid:  { label: "Modéré (Z3-Z4)", color: "#eab308" },
+  high: { label: "Intense (Z5+)",  color: "#ef4444" },
+};
+
+/**
+ * Composition hebdomadaire par intensite (low/mid/high) sur 12 semaines,
+ * en % de distance. Base sur la classification user. Memes buckets que
+ * la composition par sport pour un toggle coherent.
+ */
+function buildIntensityCompositionData(activities, referenceDate) {
+  const ref = safeDate(referenceDate) || new Date();
+  const startDate = new Date(ref.getTime() - COMPOSITION_WEEKS * 7 * MS_PER_DAY);
+  const buckets = buildWeeklyBuckets({
+    startDate,
+    endDate: ref,
+    weeks: COMPOSITION_WEEKS,
+    grouping: "calendar",
+  });
+
+  return buckets.map((bucket) => {
+    const weekActs = (Array.isArray(activities) ? activities : []).filter((a) => {
+      const d = safeDate(a?.startDateLocal || a?.startDate);
+      return d && d >= bucket.coverageStart && d <= bucket.coverageEnd && a?.userSessionType;
+    });
+    const totals = { low: 0, mid: 0, high: 0 };
+    weekActs.forEach((a) => {
+      const def = getSessionTypeDef(a.userSessionType);
+      const bucketKey = def && (def.intensity === "low" || def.intensity === "mid" || def.intensity === "high")
+        ? def.intensity
+        : null;
+      if (bucketKey) totals[bucketKey] += toFiniteNumber(a.distance) / 1000;
+    });
+    const total = totals.low + totals.mid + totals.high;
+    const pct = Object.fromEntries(
+      Object.entries(totals).map(([k, v]) => [k, total > 0 ? Math.round((v / total) * 100) : 0]),
+    );
+    return {
+      label: bucket.shortLabel || bucket.period,
+      total: Number(total.toFixed(1)),
+      ...pct,
+    };
+  });
 }
 
 /**
@@ -358,6 +405,9 @@ export function buildProgressionVolumeModel({ activities = [], referenceDate = n
   // Polarisation (classification user) 12 dernieres semaines
   const polarisation = buildPolarisation(runs, ref);
 
+  // Composition hebdo par intensite (pour le toggle du chart composition)
+  const compositionByIntensity = buildIntensityCompositionData(runs, ref);
+
   // 'À retenir' messages contextualises
   const takeaways = buildTakeaways(agg);
 
@@ -413,6 +463,8 @@ export function buildProgressionVolumeModel({ activities = [], referenceDate = n
     },
     composition,
     compositionMeta: COMPOSITION_META,
+    compositionByIntensity,
+    compositionByIntensityMeta: INTENSITY_COMPOSITION_META,
     polarisation,
     takeaways,
   };

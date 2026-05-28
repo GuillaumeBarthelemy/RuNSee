@@ -71,6 +71,8 @@ function ProgressionVolumeTab({ model = {} }) {
       <ProgressionCompositionChart
         data={model.composition || []}
         meta={model.compositionMeta || {}}
+        intensityData={model.compositionByIntensity || []}
+        intensityMeta={model.compositionByIntensityMeta || {}}
       />
 
       <ProgressionPolarisationCard polarisation={model.polarisation || {}} />
