@@ -18248,3 +18248,27 @@ button.alert-banner-positive-item {
 .alpine-sidebar-objective-secondary-meta { font-size: 10.5px; color: var(--al-text-soft, #64748b); }
 :root[data-theme="dark"] .alpine-sidebar-objective-secondary { border-color: var(--al-border); }
 :root[data-theme="dark"] .alpine-sidebar-objective-secondary-name { color: var(--al-text); }
+
+/* Bloc "Objectif chrono" (allure <-> temps <-> vitesse) */
+.reglages-objective-chrono {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--al-border, #e5edf7);
+  border-radius: 12px;
+  background: var(--al-surface-soft, #f8fafc);
+}
+.reglages-objective-chrono-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--al-text-soft, #475569);
+  margin-bottom: 8px;
+}
+.reglages-objective-chrono-derived { justify-content: flex-end; }
+.reglages-objective-chrono-speed {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--al-primary, #1268f3);
+}
+:root[data-theme="dark"] .reglages-objective-chrono { background: var(--al-surface-soft); border-color: var(--al-border); }
+:root[data-theme="dark"] .reglages-objective-chrono-title { color: var(--al-text-soft); }

@@ -23,6 +23,42 @@ function paceFromString(str) {
   return Number(m[1]) * 60 + Number(m[2]);
 }
 
+// "H:MM:SS" ou "MM:SS" -> secondes totales
+function timeFromString(str) {
+  const s = String(str || "").trim();
+  if (!s) return null;
+  const parts = s.split(":").map((p) => Number(p));
+  if (parts.some((p) => Number.isNaN(p))) return null;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return null;
+}
+
+function formatPace(secPerKm) {
+  if (!Number.isFinite(secPerKm) || secPerKm <= 0) return "";
+  const m = Math.floor(secPerKm / 60);
+  const s = Math.round(secPerKm % 60);
+  // gere l'arrondi 60s
+  const mm = s === 60 ? m + 1 : m;
+  const ss = s === 60 ? 0 : s;
+  return `${mm}:${String(ss).padStart(2, "0")}`;
+}
+
+function formatTime(totalSec) {
+  if (!Number.isFinite(totalSec) || totalSec <= 0) return "";
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = Math.round(totalSec % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+// vitesse km/h depuis allure s/km
+function speedFromPace(secPerKm) {
+  if (!Number.isFinite(secPerKm) || secPerKm <= 0) return null;
+  return 3600 / secPerKm;
+}
+
 function formatDate(value) {
   if (!value) return "—";
   const d = new Date(value);
@@ -90,12 +126,62 @@ function ReglagesObjectivesTab() {
   const [distanceKey, setDistanceKey] = useState("10k");
   const [customMeters, setCustomMeters] = useState("");
   const [targetPace, setTargetPace] = useState("");
+  const [targetTime, setTargetTime] = useState("");
   const [elevationGain, setElevationGain] = useState("");
   const [terrain, setTerrain] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
 
   const isCustom = distanceKey === "custom";
+
+  // Distance courante en km (preset ou perso) pour les calculs allure/temps.
+  const distanceKm = (() => {
+    const meters = isCustom
+      ? Number(customMeters)
+      : (DISTANCES.find((d) => d.key === distanceKey)?.meters || 0);
+    return Number.isFinite(meters) && meters > 0 ? meters / 1000 : 0;
+  })();
+
+  // Saisir l'allure OU le temps : on calcule l'autre + la vitesse selon la
+  // distance. Le champ saisi reste la source ; l'autre est derive.
+  const handlePaceChange = (value) => {
+    setTargetPace(value);
+    const paceSec = paceFromString(value);
+    if (paceSec && distanceKm > 0) {
+      setTargetTime(formatTime(paceSec * distanceKm));
+    } else if (!value) {
+      setTargetTime("");
+    }
+  };
+
+  const handleTimeChange = (value) => {
+    setTargetTime(value);
+    const timeSec = timeFromString(value);
+    if (timeSec && distanceKm > 0) {
+      setTargetPace(formatPace(timeSec / distanceKm));
+    } else if (!value) {
+      setTargetPace("");
+    }
+  };
+
+  // Recalcule l'autre champ quand la distance change (source = allure si
+  // saisie, sinon temps).
+  const handleDistanceChange = (value) => {
+    setDistanceKey(value);
+    const km = value === "custom"
+      ? Number(customMeters) / 1000
+      : (DISTANCES.find((d) => d.key === value)?.meters || 0) / 1000;
+    const paceSec = paceFromString(targetPace);
+    const timeSec = timeFromString(targetTime);
+    if (km > 0 && paceSec) {
+      setTargetTime(formatTime(paceSec * km));
+    } else if (km > 0 && timeSec) {
+      setTargetPace(formatPace(timeSec / km));
+    }
+  };
+
+  const paceSecLive = paceFromString(targetPace);
+  const speedKmh = speedFromPace(paceSecLive);
 
   // Separation actifs/a venir vs passes pour la lisibilite.
   // nowTs via init paresseuse (Date.now() interdit dans le rendu : regle purity).
@@ -114,7 +200,7 @@ function ReglagesObjectivesTab() {
 
   const resetForm = () => {
     setName(""); setRaceDate(""); setDistanceKey("10k"); setCustomMeters("");
-    setTargetPace(""); setElevationGain(""); setTerrain(""); setNotes(""); setError("");
+    setTargetPace(""); setTargetTime(""); setElevationGain(""); setTerrain(""); setNotes(""); setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -142,6 +228,13 @@ function ReglagesObjectivesTab() {
       return;
     }
     if (paceSec) payload.targetPaceSecondsPerKm = paceSec;
+
+    const timeSec = timeFromString(targetTime);
+    if (targetTime.trim() && !timeSec) {
+      setError("Temps attendu au format H:MM:SS ou MM:SS (ex. 0:45:30).");
+      return;
+    }
+    if (timeSec) payload.targetDurationSeconds = timeSec;
 
     setError("");
     try {
@@ -221,25 +314,55 @@ function ReglagesObjectivesTab() {
             </div>
             <div className="reglages-field">
               <label htmlFor="obj-dist">Distance</label>
-              <select id="obj-dist" value={distanceKey} onChange={(e) => setDistanceKey(e.target.value)}>
+              <select id="obj-dist" value={distanceKey} onChange={(e) => handleDistanceChange(e.target.value)}>
                 {DISTANCES.map((d) => <option key={d.key} value={d.key}>{d.label}</option>)}
               </select>
             </div>
             {isCustom ? (
               <div className="reglages-field">
                 <label htmlFor="obj-custom">Distance (m)</label>
-                <input id="obj-custom" type="number" min="800" step="10" value={customMeters} placeholder="Ex. 15000" onChange={(e) => setCustomMeters(e.target.value)} />
+                <input id="obj-custom" type="number" min="800" step="10" value={customMeters} placeholder="Ex. 15000"
+                  onChange={(e) => { setCustomMeters(e.target.value); }}
+                  onBlur={() => handleDistanceChange("custom")}
+                />
               </div>
             ) : null}
+          </div>
+
+          {/* Objectif chrono : allure OU temps -> calcul auto de l'autre + vitesse */}
+          <div className="reglages-objective-chrono">
+            <span className="reglages-objective-chrono-title">Objectif chrono (optionnel)</span>
+            <div className="reglages-objective-form-grid">
+              <div className="reglages-field">
+                <label htmlFor="obj-pace">Allure cible (MM:SS /km)</label>
+                <input id="obj-pace" type="text" value={targetPace} placeholder="Ex. 4:50"
+                  onChange={(e) => handlePaceChange(e.target.value)} />
+              </div>
+              <div className="reglages-field">
+                <label htmlFor="obj-time">Temps cible (H:MM:SS)</label>
+                <input id="obj-time" type="text" value={targetTime} placeholder="Ex. 0:45:30"
+                  onChange={(e) => handleTimeChange(e.target.value)} />
+              </div>
+              <div className="reglages-field reglages-objective-chrono-derived">
+                <label>Vitesse</label>
+                <span className="reglages-objective-chrono-speed">
+                  {speedKmh ? `${speedKmh.toFixed(1).replace(".", ",")} km/h` : "—"}
+                </span>
+              </div>
+            </div>
+            {distanceKm > 0 && (paceSecLive || timeFromString(targetTime)) ? (
+              <span className="reglages-row-hint">
+                Sur {formatDistance(distanceKm * 1000)} : {targetPace || "—"} /km · {targetTime || "—"}
+                {speedKmh ? ` · ${speedKmh.toFixed(1).replace(".", ",")} km/h` : ""}
+              </span>
+            ) : (
+              <span className="reglages-row-hint">Saisis l'allure ou le temps : l'autre se calcule selon la distance.</span>
+            )}
           </div>
 
           <details className="reglages-objective-advanced">
             <summary className="reglages-advanced-summary">Détails avancés (optionnel)</summary>
             <div className="reglages-objective-form-grid reglages-advanced-body">
-              <div className="reglages-field">
-                <label htmlFor="obj-pace">Allure cible (MM:SS)</label>
-                <input id="obj-pace" type="text" value={targetPace} placeholder="Ex. 4:50" onChange={(e) => setTargetPace(e.target.value)} />
-              </div>
               <div className="reglages-field">
                 <label htmlFor="obj-elev">D+ objectif (m)</label>
                 <input id="obj-elev" type="number" min="0" step="10" value={elevationGain} placeholder="Ex. 850" onChange={(e) => setElevationGain(e.target.value)} />
