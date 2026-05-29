@@ -22,7 +22,7 @@ function PerformanceAlluresReferenceTab({ model = {} }) {
   if (!model?.hasData) {
     return (
       <div className="performance-allures-reference-tab">
-        <PerformanceEmptyState message={model.emptyReason || "Tes allures s'afficheront ici dès que ton VDOT sera estimable."} />
+        <PerformanceEmptyState message={model.emptyReason || "Tes allures s'afficheront ici dès que ton VO2max sera estimable."} />
       </div>
     );
   }
@@ -39,14 +39,14 @@ function PerformanceAlluresReferenceTab({ model = {} }) {
                 compact
                 title="Allures de référence"
                 glossaryKey="vdot"
-                content={[{ text: "Allures cibles (E/M/T/I/R) dérivées de ton VDOT, l'indice de performance Daniels équivalent au VO2max." }]}
+                content={[{ text: "Allures cibles (E/M/T/I/R) dérivées de ton VO2max estimé (indice de performance Daniels)." }]}
                 label="Afficher l'aide pour les allures de référence"
               />
             </span>
             <small>{model.subtitle}</small>
           </div>
           <div className="performance-allures-header-vdot">
-            <small>VDOT estimé</small>
+            <small>VO2max estimé</small>
             <strong>{model.formattedVdot}</strong>
           </div>
         </div>

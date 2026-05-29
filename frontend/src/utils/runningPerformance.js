@@ -1,4 +1,4 @@
-// Profil de performance Daniels : VDOT (~ VO2max) et allures cibles E/M/T/I/R.
+// Profil de performance Daniels : VO2max (~ VO2max) et allures cibles E/M/T/I/R.
 //
 // Reference : Jack Daniels, Daniels' Running Formula (4e ed., 2022). Les formules
 // utilisees ci-dessous sont les regressions Daniels & Gilbert publiees a l'origine
@@ -62,7 +62,7 @@ const ROAD_TRAINING_PACE_TARGETS = [
   },
 ];
 
-// Plages indicatives pour qualifier le VDOT (orientees coureur amateur a competiteur).
+// Plages indicatives pour qualifier le VO2max (orientees coureur amateur a competiteur).
 // Daniels publie les valeurs pour des athletes de toutes categories ; on garde une grille
 // simple, a affiner si besoin.
 export const VDOT_THRESHOLDS = [
@@ -105,7 +105,7 @@ function vo2maxPercentageFromDurationMinutes(durationMinutes) {
   );
 }
 
-// VDOT a partir d'un effort (distance + temps).
+// VO2max a partir d'un effort (distance + temps).
 // Retourne 0 si l'effort n'est pas exploitable (distance/temps absurdes).
 export function calculateVdot({ distanceMeters, elapsedSeconds }) {
   const distance = toFiniteNumber(distanceMeters);
@@ -136,7 +136,7 @@ export function calculateVdot({ distanceMeters, elapsedSeconds }) {
   return Number.isFinite(vdot) && vdot > 0 ? Number(vdot.toFixed(1)) : 0;
 }
 
-// Inversion : a partir d'un VDOT et d'un pourcentage de VO2max cible,
+// Inversion : a partir d'un VO2max et d'un pourcentage de VO2max cible,
 // retourne l'allure (sec/km) a maintenir. Utilise pour deriver les allures Daniels.
 export function paceFromVdotAndIntensity(vdot, intensityPercentage) {
   const targetVo2 = toFiniteNumber(vdot) * (toFiniteNumber(intensityPercentage) / 100);
@@ -165,7 +165,7 @@ export function paceFromVdotAndIntensity(vdot, intensityPercentage) {
   return Math.round((60000 / velocity) * 10) / 10;
 }
 
-// Derive les allures Daniels (E/M/T/I/R) a partir d'un VDOT.
+// Derive les allures Daniels (E/M/T/I/R) a partir d'un VO2max.
 export function buildDanielsTrainingPaces(vdot) {
   const safeVdot = toFiniteNumber(vdot);
 
@@ -635,13 +635,13 @@ function describeRoadProfile(finalCandidates = []) {
   return "Profil route equilibre sur les records retenus.";
 }
 
-// Construit le profil VDOT a partir d'un set de records route deja calcule par
+// Construit le profil VO2max a partir d'un set de records route deja calcule par
 // buildBestEffortRecords (5 km / 10 km / semi / marathon).
 // Strategie :
-//  1. Pour chaque distance disponible, calculer un VDOT candidat.
+//  1. Pour chaque distance disponible, calculer un VO2max candidat.
 //  2. Ponderer par fiabilite de la source, recence et specificite de distance.
 //  3. Consolider autour de la mediane ponderee pour limiter les records aberrants.
-//  4. Deriver les allures d'entrainement et les projections route avec le meme VDOT.
+//  4. Deriver les allures d'entrainement et les projections route avec le meme VO2max.
 export function buildVdotProfile({ records = [], referenceDate = null } = {}) {
   const safeRecords = Array.isArray(records) ? records : [];
   const reference = safeDate(referenceDate) || new Date();
@@ -699,7 +699,7 @@ export function buildVdotProfile({ records = [], referenceDate = null } = {}) {
       raceRows: buildRoadRaceRows({ records: safeRecords, predictions: buildRoadRacePredictions(0) }),
       confidence: describeConfidence(0),
       profileSummary: "Pas encore assez de records route comparables.",
-      message: "Pas encore de record route exploitable pour estimer ton VDOT.",
+      message: "Pas encore de record route exploitable pour estimer ton VO2max.",
     };
   }
 
@@ -738,7 +738,7 @@ export function buildVdotProfile({ records = [], referenceDate = null } = {}) {
     ? raceRows.reduce((sum, row) => sum + row.confidence.score, 0) / raceRows.length
     : 0;
 
-  // Source = effort dont le VDOT est le plus proche de la valeur consolidee.
+  // Source = effort dont le VO2max est le plus proche de la valeur consolidee.
   const sortedByDistance = [...finalCandidates].sort(
     (left, right) => Math.abs(left.vdot - consolidatedVdot) - Math.abs(right.vdot - consolidatedVdot),
   );
@@ -760,7 +760,7 @@ export function buildVdotProfile({ records = [], referenceDate = null } = {}) {
     confidence: describeConfidence(averageConfidence),
     profileSummary: describeRoadProfile(finalCandidates),
     message: source
-      ? `VDOT consolide a partir de ${finalCandidates.length}/${candidates.length} record(s) route. Source principale : ${source.recordLabel}.`
-      : "VDOT estime sur tes records route recents.",
+      ? `VO2max consolide a partir de ${finalCandidates.length}/${candidates.length} record(s) route. Source principale : ${source.recordLabel}.`
+      : "VO2max estime sur tes records route recents.",
   };
 }

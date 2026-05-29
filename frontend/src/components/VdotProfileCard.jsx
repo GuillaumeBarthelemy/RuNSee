@@ -119,19 +119,19 @@ function VdotProfileCard({ profile = {}, info = [], confidence = null }) {
             <InfoTooltip title="Potentiel route" content={info} label="Afficher l'aide pour le potentiel route" />
           </div>
           <p className="card-subtitle">
-            Estimation de ton VDOT performance, de tes temps route et de tes allures EF / S1 / S2 a partir des records fiables.
+            Estimation de ton VO2max performance, de tes temps route et de tes allures EF / S1 / S2 a partir des records fiables.
           </p>
           {safeProfile.message ? <p className="small-text">{safeProfile.message}</p> : null}
         </div>
         <div className="vdot-summary-row">
           <AnalysisConfidenceBadge confidence={confidence} compact />
           <div className={`vdot-summary vdot-summary-${tone}`.trim()}>
-            <span className="vdot-summary-label">VDOT perf.</span>
+            <span className="vdot-summary-label">VO2max perf.</span>
             <strong className="vdot-summary-value">{vo2maxLabel}</strong>
             <span className="small-text">VO2max equivalent</span>
           </div>
           <div className={`vdot-summary vdot-summary-${profileConfidence.tone || "neutral"}`.trim()}>
-            <span className="vdot-summary-label">Fiabilite VDOT</span>
+            <span className="vdot-summary-label">Fiabilite VO2max</span>
             <strong className="vdot-summary-value">{profileConfidence.label || "-"}</strong>
             <span className="small-text">{levelLabel}</span>
           </div>
@@ -162,7 +162,7 @@ function VdotProfileCard({ profile = {}, info = [], confidence = null }) {
           <div className="vdot-panel">
             <div className="vdot-panel-head">
               <h3 className="subcard-title">Allures route utiles</h3>
-              <p className="small-text">Plages d'entrainement derivees du meme VDOT : elles servent a calibrer les seances, pas a predire directement une course.</p>
+              <p className="small-text">Plages d'entrainement derivees du meme VO2max : elles servent a calibrer les seances, pas a predire directement une course.</p>
             </div>
             <div className="vdot-pace-grid">
               {paces.map((entry) => (

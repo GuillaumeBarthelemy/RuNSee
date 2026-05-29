@@ -12,7 +12,7 @@ const TONE_TO_NUMERIC = {
 function explainConfidence(label) {
   if (!label) return "";
   if (/elev/i.test(label)) {
-    return "De nombreuses données récentes et diversifiées permettent une estimation fiable de ton VDOT et de ton profil.";
+    return "De nombreuses données récentes et diversifiées permettent une estimation fiable de ton VO2max et de ton profil.";
   }
   if (/moyenne/i.test(label)) {
     return "Quelques données manquent ou sont datées. L'estimation reste exploitable mais à lire avec recul.";

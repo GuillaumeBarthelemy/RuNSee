@@ -23,7 +23,7 @@ function PerformanceVdotHistoryChart({ history = [] }) {
         <div className="performance-panel-head">
           <h3>Évolution sur 90 jours</h3>
         </div>
-        <PerformanceEmptyState message="Pas assez de points pour tracer l'évolution VDOT." />
+        <PerformanceEmptyState message="Pas assez de points pour tracer l'évolution VO2max." />
       </section>
     );
   }
@@ -32,7 +32,7 @@ function PerformanceVdotHistoryChart({ history = [] }) {
     <section className="performance-panel performance-vdot-history-card">
       <div className="performance-panel-head">
         <h3>Évolution sur 90 jours</h3>
-        <span className="performance-panel-sub">(VDOT estimé)</span>
+        <span className="performance-panel-sub">(VO2max estimé)</span>
       </div>
       <ResponsiveContainer width="100%" height={180}>
         <AreaChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
@@ -60,7 +60,7 @@ function PerformanceVdotHistoryChart({ history = [] }) {
           />
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5edf7" }}
-            formatter={(value) => [Number(value).toFixed(1), "VDOT"]}
+            formatter={(value) => [Number(value).toFixed(1), "VO2max"]}
           />
           <Area
             type="monotone"

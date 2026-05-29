@@ -512,7 +512,7 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
 
     return {
       key: "vdot",
-      label: "VDOT estimé",
+      label: "VO2max estimé",
       value: currentValue,
       // Affichage 1 decimale pour voir les micro-variations (mockup p.12 entier mais
       // user demande la finesse decimale ; cohérent avec l'axe Y du trend chart).
@@ -542,9 +542,9 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
   if (!vdotProfile?.hasData || !Number.isFinite(Number(vdotProfile.vdot)) || Number(vdotProfile.vdot) <= 0) {
     return {
       key: "vdot",
-      label: "VDOT estimé",
+      label: "VO2max estimé",
       hasData: false,
-      emptyReason: "Données insuffisantes pour estimer le VDOT.",
+      emptyReason: "Données insuffisantes pour estimer le VO2max.",
     };
   }
 
@@ -566,7 +566,7 @@ function buildVdotSignal({ scopeItems, vdotProfile, range, settings, vdotHistory
         : "Faible";
   return {
     key: "vdot",
-    label: "VDOT estimé",
+    label: "VO2max estimé",
     value: vdotValueFallback,
     formattedValue: vdotValueFallback.toFixed(1),
     unit: "",
@@ -1057,7 +1057,7 @@ function buildTakeaway({ signals, confidence, zonePreview, paceDistribution }) {
       ? ` (${vdotSignal.trendLabel.split(" vs ")[0]})`
       : "";
     paragraphs.push(
-      `VDOT ${vdotSignal.formattedValue}${deltaPart}, ${lvl} (Daniels 1979).`,
+      `VO2max ${vdotSignal.formattedValue}${deltaPart}, ${lvl} (Daniels 1979).`,
     );
   }
   if (enduranceSig?.hasData) {

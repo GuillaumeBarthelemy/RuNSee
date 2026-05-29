@@ -53,6 +53,7 @@ function PerformanceMetricCard({ metric = {} }) {
             <PerformanceMiniTrend
               points={metric.series || []}
               tone={tone}
+              invert={metric.key === "adjustedPace"}
               label={`Tendance ${metric.label}`}
             />
           </div>

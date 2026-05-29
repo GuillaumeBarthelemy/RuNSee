@@ -55,7 +55,7 @@ function buildMonotonePath(points) {
   return d;
 }
 
-function normalizePoints(points = []) {
+function normalizePoints(points = [], invert = false) {
   const values = points
     .map((point) => Number(point?.value))
     .filter((value) => Number.isFinite(value));
@@ -79,15 +79,20 @@ function normalizePoints(points = []) {
       const value = Number(point?.value);
       if (!Number.isFinite(value)) return null;
       const x = (index / Math.max(1, points.length - 1)) * VB_W;
+      // Ratio 0..1 de la valeur dans la plage. `invert` (ex: allure, plus bas =
+      // meilleur) place la meilleure valeur EN HAUT — aligné sur la grande
+      // courbe Tendances (YAxis reversed) pour un rendu identique.
+      const ratio = (value - min) / spread;
+      const placed = invert ? 1 - ratio : ratio;
       // 10% de marge haut/bas pour ne pas coller la courbe aux bords.
-      const y = VB_H - 6 - ((value - min) / spread) * (VB_H - 12);
+      const y = VB_H - 6 - placed * (VB_H - 12);
       return { x, y };
     })
     .filter(Boolean);
 }
 
-function PerformanceMiniTrend({ points = [], tone = "neutral", label = "Tendance" }) {
-  const normalized = normalizePoints(points);
+function PerformanceMiniTrend({ points = [], tone = "neutral", label = "Tendance", invert = false }) {
+  const normalized = normalizePoints(points, invert);
 
   if (normalized.length < 2) return null;
 

@@ -38,7 +38,7 @@ function formatDistance(meters) {
 
 const INFO_BLOCKS = [
   { label: "En bref", text: "Suivi de ta course objectif active : countdown, chrono predit, allure cible et plan de taper recommande." },
-  { label: "Calcul", text: "Le chrono predit combine la formule de Riegel sur ton record le plus proche en distance et la prediction Daniels VDOT, ponderees selon la specificite. Le plan de taper s'inspire de Mujika (2010) : reduction progressive du volume sur 7 a 21 jours selon la distance, avec maintien de l'intensite jusqu'a J-7." },
+  { label: "Calcul", text: "Le chrono predit combine la formule de Riegel sur ton record le plus proche en distance et la prediction Daniels VO2max, ponderees selon la specificite. Le plan de taper s'inspire de Mujika (2010) : reduction progressive du volume sur 7 a 21 jours selon la distance, avec maintien de l'intensite jusqu'a J-7." },
   { label: "Comment lire ta valeur", text: "Phase 'preparation' = construction. Phase 'taper en cours' = affutage actif. La courbe TSB doit remonter pour atteindre la fenetre fraicheur (+10 a +25) le jour J." },
   { label: "Action concrete", text: "Pendant le taper, conserve l'intensite des seances qualite mais reduis la duree (-25 a -50 %). Coupe les sorties longues a J-10 pour le marathon, J-7 pour le semi." },
   { label: "Pour aller plus loin", text: "Mujika I (2010), Intense training: the key to optimal performance before and during the taper. Bosquet et al. (2007), Effects of tapering on performance: a meta-analysis." },
@@ -92,7 +92,7 @@ function RaceCountdownCard({ profile = {}, confidence = null }) {
           <span className="field-label">Chrono predit</span>
           <strong className="race-countdown-value">{formatRaceTime(prediction?.predictedSeconds)}</strong>
           <span className="small-text">
-            Riegel : {formatRaceTime(prediction?.riegelSeconds)}. Daniels (VDOT {prediction?.averageVdot}) : {formatRaceTime(prediction?.danielsSeconds)}.
+            Riegel : {formatRaceTime(prediction?.riegelSeconds)}. Daniels (VO2max {prediction?.averageVdot}) : {formatRaceTime(prediction?.danielsSeconds)}.
           </span>
         </section>
 

@@ -362,8 +362,8 @@ export function buildPerformanceConfidence({
         id: "vdot",
         passed: Boolean(vdotProfile?.hasData),
         weight: 20,
-        positive: "VDOT consolide disponible",
-        missing: "VDOT non calculable",
+        positive: "VO2max consolide disponible",
+        missing: "VO2max non calculable",
       }),
       makeCheck({
         id: "heart_rate",

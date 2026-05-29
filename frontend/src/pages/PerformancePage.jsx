@@ -31,7 +31,7 @@ import { buildVdotProfile } from "../utils/runningPerformance.js";
 // livres rendent un placeholder "en cours de construction" — voir .ai/current_context.md.
 const PERFORMANCE_TABS = [
   { id: "overview", label: "Vue d'ensemble" },
-  { id: "vdot", label: "VDOT & profil" },
+  { id: "vdot", label: "VO2max & profil" },
   { id: "allures", label: "Allures de référence" },
   { id: "fc-performance", label: "FC de performance" },
   { id: "records", label: "Records" },

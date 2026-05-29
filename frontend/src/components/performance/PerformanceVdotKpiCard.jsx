@@ -14,7 +14,7 @@ import InfoTooltip from "../InfoTooltip.jsx";
  * PerformanceVdotKpiCard — Mockup p.13 row 1 col 1.
  *
  * Combine en une seule card :
- *   - VDOT estimé (gros) + hint tone
+ *   - VO2max estimé (gros) + hint tone
  *   - "Évolution sur 90 jours" + mini chart
  *   - Delta pill "+1 vs 90 jours précédents (fév. - avr.)"
  */
@@ -31,9 +31,9 @@ function PerformanceVdotKpiCard({ kpi = {}, history = [], deltaLabel = "", delta
     <section className="performance-panel performance-vdot-kpi-card">
       <header className="performance-vdot-kpi-head">
         <span className="performance-vdot-kpi-label">
-          VDOT estimé
+          VO2max estimé
           <InfoTooltip
-            title="VDOT estimé"
+            title="VO2max estimé"
             content={[
               { label: "Source", text: kpi.source === "garmin"
                 ? "Valeur Garmin (wellness quotidien Firstbeat). Validation labo Knaier 2019 r=0.93 vs VO₂max mesurée."
@@ -41,7 +41,7 @@ function PerformanceVdotKpiCard({ kpi = {}, history = [], deltaLabel = "", delta
               { label: "Lecture", text: "Indicateur de niveau aérobie, pas une mesure laboratoire." },
             ]}
             compact
-            label="Aide VDOT"
+            label="Aide VO2max"
           />
         </span>
       </header>
@@ -85,7 +85,7 @@ function PerformanceVdotKpiCard({ kpi = {}, history = [], deltaLabel = "", delta
               />
               <Tooltip
                 contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5edf7" }}
-                formatter={(value) => [Number(value).toFixed(1), "VDOT"]}
+                formatter={(value) => [Number(value).toFixed(1), "VO2max"]}
               />
               <Area
                 type="monotone"

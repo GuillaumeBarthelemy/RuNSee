@@ -46,7 +46,7 @@ function PerformanceProfileRadar({ axes = [], referenceVdot = null }) {
         <h3>Profil de performance <span className="performance-panel-sub">(indicatif)</span></h3>
         {referenceVdot != null ? (
           <small className="performance-profile-radar-subtitle">
-            Comparé à la référence (VDOT {Number(referenceVdot).toFixed(0)})
+            Comparé à la référence (VO2max {Number(referenceVdot).toFixed(0)})
           </small>
         ) : null}
       </div>
@@ -56,7 +56,7 @@ function PerformanceProfileRadar({ axes = [], referenceVdot = null }) {
           <PolarAngleAxis dataKey="axis" tick={{ fontSize: 10, fill: "#355886" }} />
           <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8" }} stroke="#e5edf7" />
           <Radar
-            name="Référence (VDOT 54)"
+            name="Référence (VO2max 54)"
             dataKey="reference"
             stroke={COLOR_REFERENCE}
             strokeWidth={1.5}
@@ -79,7 +79,7 @@ function PerformanceProfileRadar({ axes = [], referenceVdot = null }) {
           <span className="legend-swatch" /> Ton profil (estimé)
         </span>
         <span className="legend-item legend-reference">
-          <span className="legend-swatch legend-swatch-dashed" /> Référence (VDOT {referenceVdot != null ? Number(referenceVdot).toFixed(0) : "—"})
+          <span className="legend-swatch legend-swatch-dashed" /> Référence (VO2max {referenceVdot != null ? Number(referenceVdot).toFixed(0) : "—"})
         </span>
       </div>
     </section>

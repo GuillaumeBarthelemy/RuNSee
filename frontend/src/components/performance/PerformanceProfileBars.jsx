@@ -67,7 +67,7 @@ function PerformanceProfileBars({ axes = [], referenceVdot = null }) {
         })}
       </ul>
       <p className="performance-profile-bars-footer">
-        Scores centrés sur ton VDOT consolidé{referenceVdot != null ? ` (${Number(referenceVdot).toFixed(0)})` : ""}.
+        Scores centrés sur ton VO2max consolidé{referenceVdot != null ? ` (${Number(referenceVdot).toFixed(0)})` : ""}.
         50 = équilibre attendu, &gt; 50 = axe en avance, &lt; 50 = à développer.
       </p>
     </section>
