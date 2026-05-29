@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import OverviewRangeBar from "./OverviewRangeBar.jsx";
 import AlpineSelect from "../visuals/alpine/AlpineSelect.jsx";
+import InfoTooltip from "../InfoTooltip.jsx";
 import { clampTone } from "../../utils/tonePicker.js";
 import {
   buildRecoveryRolling30,
@@ -351,13 +352,22 @@ function MiniSparkBars({ values = [], color = COL_SLEEP, height = 28 }) {
   );
 }
 
-function LectureCard({ icon, iconClass, label, value, unit, hint, hintTone, rangeBar, objectif, spark, sparkColor, sparkType = "line", deltaText }) {
+function LectureCard({ icon, iconClass, label, value, unit, hint, hintTone, rangeBar, objectif, spark, sparkColor, sparkType = "line", deltaText, glossaryKey = "", help = "" }) {
   const tone = clampTone(hintTone);
   return (
     <article className="alpine-recovery-lecture-card">
       <header className="alpine-recovery-lecture-head">
         <span className={`alpine-recovery-lecture-icon ${iconClass}`}>{icon}</span>
         <span className="alpine-recovery-lecture-label">{label}</span>
+        {glossaryKey && help ? (
+          <InfoTooltip
+            compact
+            title={label}
+            glossaryKey={glossaryKey}
+            content={[{ text: help }]}
+            label={`Afficher l'aide pour ${label}`}
+          />
+        ) : null}
       </header>
       <div className="alpine-recovery-lecture-value-row">
         <strong className="alpine-recovery-lecture-value">{value}</strong>
@@ -632,6 +642,8 @@ function AnalyticsRecoveryTab({
             <LectureCard
               icon={<IconMoon />} iconClass="icon-tone-blue"
               label="Sommeil"
+              glossaryKey="sleepScore"
+              help="Durée et qualité de sommeil mesurées par Garmin. Cible 7-9 h pour une bonne récupération."
               value={formatHmin(cur.sleepHours)} unit=""
               hint={sleepCls.hint} hintTone={sleepCls.tone}
               rangeBar={{ value: cur.sleepHours, min: 5, max: 9, gradient: "cool" }}
@@ -643,6 +655,8 @@ function AnalyticsRecoveryTab({
             <LectureCard
               icon={<IconPulse />} iconClass="icon-tone-green"
               label="HRV"
+              glossaryKey="vfc"
+              help="Variabilité cardiaque nocturne : marqueur de récupération du système nerveux. Compare à TA baseline."
               value={cur.hrvMs != null ? Math.round(cur.hrvMs) : "—"} unit="ms"
               hint={hrvCls.hint} hintTone={hrvCls.tone}
               rangeBar={{ value: cur.hrvMs, min: 30, max: 90, gradient: "cool" }}
@@ -654,6 +668,8 @@ function AnalyticsRecoveryTab({
             <LectureCard
               icon={<IconHeart />} iconClass="icon-tone-red"
               label="FC repos"
+              glossaryKey="restingHr"
+              help="FC minimale nocturne. Plus basse = mieux récupéré ; une hausse de +5 bpm signale la fatigue."
               value={cur.restingHr != null ? Math.round(cur.restingHr) : "—"} unit="bpm"
               hint={rhrCls.hint} hintTone={rhrCls.tone}
               rangeBar={{ value: cur.restingHr, min: 40, max: 70, gradient: "warm" }}
@@ -665,6 +681,8 @@ function AnalyticsRecoveryTab({
             <LectureCard
               icon={<IconLotus />} iconClass="icon-tone-orange"
               label="Stress"
+              glossaryKey="stressAvg"
+              help="Stress moyen du jour mesuré par Garmin (via la VFC continue). Plus bas = plus reposé."
               value={cur.stress != null ? Math.round(cur.stress) : "—"} unit="/100"
               hint={stressCls.hint} hintTone={stressCls.tone}
               rangeBar={{ value: cur.stress, min: 0, max: 100, gradient: "warm" }}

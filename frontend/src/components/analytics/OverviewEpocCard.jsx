@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { Link } from "react-router-dom";
 import { clampTone } from "../../utils/tonePicker.js";
+import InfoTooltip from "../InfoTooltip.jsx";
 import { enrichGarminActivities, getGarminConnectionStatus } from "../../services/externalProvider.service.js";
 
 /**
@@ -127,7 +128,16 @@ function OverviewEpocCard({ summary = {}, linkTo = "/analytics#charges" }) {
     <article className={`alpine-overview-focus-card tone-${tone}`}>
       <header className="alpine-overview-focus-head">
         <span className="alpine-overview-focus-kicker">Stimulus aérobie</span>
-        <h3 className="alpine-overview-focus-title">Charge d'entraînement Garmin</h3>
+        <div className="title-with-info">
+          <h3 className="alpine-overview-focus-title">Charge d'entraînement Garmin</h3>
+          <InfoTooltip
+            compact
+            title="Charge d'entraînement (EPOC)"
+            glossaryKey="epoc"
+            content={[{ text: "Ampleur du stimulus aérobie d'une séance (Training Load Firstbeat, héritier de l'EPOC) : indique le besoin de récupération." }]}
+            label="Afficher l'aide pour la charge d'entraînement"
+          />
+        </div>
       </header>
 
       <div className="alpine-overview-focus-body alpine-overview-epoc-body">
@@ -178,7 +188,7 @@ function OverviewEpocCard({ summary = {}, linkTo = "/analytics#charges" }) {
               </p>
             ) : null}
 
-            <Link to="/admin#connexions" className="alpine-overview-focus-link">
+            <Link to="/reglages#connexions" className="alpine-overview-focus-link">
               Vérifier la connexion Garmin →
             </Link>
           </div>

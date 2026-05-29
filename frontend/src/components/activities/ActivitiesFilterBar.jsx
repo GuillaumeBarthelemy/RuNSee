@@ -130,7 +130,7 @@ function ActivitiesFilterBar({
           ) : (
             <span className="alpine-activities-filter-empty">
               <span>Toutes</span>
-              <Link to="/admin#entrainement" title="Configurer les zones FC personnelles">
+              <Link to="/reglages#entrainement" title="Configurer les zones FC personnelles">
                 Configurer
               </Link>
             </span>

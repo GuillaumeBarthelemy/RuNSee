@@ -93,7 +93,7 @@ export default function UserMenu({
             type="button"
             role="menuitem"
             className="alpine-user-menu-item"
-            onClick={() => handleNavigate("/admin")}
+            onClick={() => handleNavigate("/reglages")}
           >
             Réglages
           </button>

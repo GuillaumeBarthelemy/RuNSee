@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
 import { clampTone } from "../../utils/tonePicker.js";
+import InfoTooltip from "../InfoTooltip.jsx";
 import OverviewRangeBar from "./OverviewRangeBar.jsx";
 
 /**
@@ -30,7 +31,16 @@ function OverviewDecouplingCard({ summary = {}, comparisonLabel = "" }) {
     <article className={`alpine-overview-focus-card tone-${tone}`}>
       <header className="alpine-overview-focus-head">
         <span className="alpine-overview-focus-kicker">Endurance</span>
-        <h3 className="alpine-overview-focus-title">Dérive cardiaque</h3>
+        <div className="title-with-info">
+          <h3 className="alpine-overview-focus-title">Dérive cardiaque</h3>
+          <InfoTooltip
+            compact
+            title="Dérive cardiaque"
+            glossaryKey="aerobicDecoupling"
+            content={[{ text: "Hausse du ratio FC/allure entre la 1re et la 2e moitié d'une sortie. Plus c'est bas, meilleure est l'endurance aérobie." }]}
+            label="Afficher l'aide pour la dérive cardiaque"
+          />
+        </div>
       </header>
 
       <div className="alpine-overview-focus-body">

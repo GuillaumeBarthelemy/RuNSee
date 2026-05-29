@@ -1,5 +1,16 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
+import InfoTooltip from "../InfoTooltip.jsx";
+
+const INTENSITY_HELP = (
+  <InfoTooltip
+    compact
+    title="Répartition des intensités"
+    glossaryKey="polarization"
+    content={[{ text: "Temps passé par zone d'intensité. Le modèle polarisé vise ~80 % facile et une part nette d'intense." }]}
+    label="Afficher l'aide pour la répartition des intensités"
+  />
+);
 
 /**
  * OverviewIntensityDonut — Right rail "Répartition des intensités" PDF page 7.
@@ -43,12 +54,15 @@ function OverviewIntensityDonut({ intensityModel = {}, linkTo = "/analytics#inte
     return (
       <article className="alpine-overview-donut-card">
         <header>
-          <h3 className="alpine-overview-donut-title">Répartition des intensités</h3>
+          <div className="title-with-info">
+            <h3 className="alpine-overview-donut-title">Répartition des intensités</h3>
+            {INTENSITY_HELP}
+          </div>
         </header>
         <p className="alpine-overview-focus-empty">
           Configurez vos zones FC en Réglages pour activer la répartition.
         </p>
-        <Link to="/admin#entrainement" className="alpine-overview-focus-link">
+        <Link to="/reglages#entrainement" className="alpine-overview-focus-link">
           Configurer les zones FC →
         </Link>
       </article>

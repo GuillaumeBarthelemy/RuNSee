@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { clampTone } from "../../utils/tonePicker.js";
+import InfoTooltip from "../InfoTooltip.jsx";
 import OverviewRangeBar from "./OverviewRangeBar.jsx";
 
 /**
@@ -26,7 +27,16 @@ function OverviewPaceAdjustedCard({ summary = {}, comparisonLabel = "" }) {
     <article className={`alpine-overview-focus-card tone-${tone}`}>
       <header className="alpine-overview-focus-head">
         <span className="alpine-overview-focus-kicker">Performance</span>
-        <h3 className="alpine-overview-focus-title">Allure ajustée</h3>
+        <div className="title-with-info">
+          <h3 className="alpine-overview-focus-title">Allure ajustée</h3>
+          <InfoTooltip
+            compact
+            title="Allure ajustée (GAP)"
+            glossaryKey="gap"
+            content={[{ text: "Ton allure équivalente sur le plat, corrigée du coût énergétique du dénivelé (modèle Minetti)." }]}
+            label="Afficher l'aide pour l'allure ajustée"
+          />
+        </div>
       </header>
 
       <div className="alpine-overview-focus-body">

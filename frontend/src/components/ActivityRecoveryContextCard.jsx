@@ -1,4 +1,5 @@
 import { memo } from "react";
+import InfoTooltip from "./InfoTooltip.jsx";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -81,7 +82,16 @@ function ActivityRecoveryContextCard({ context = null }) {
 
   return (
     <section className="activity-recovery-context-card">
-      <h3 className="subcard-title">Contexte récupération avant / après</h3>
+      <div className="title-with-info">
+        <h3 className="subcard-title">Contexte récupération avant / après</h3>
+        <InfoTooltip
+          compact
+          title="Contexte récupération"
+          glossaryKey="vfc"
+          content={[{ text: "Sommeil, VFC et FC repos la nuit avant et après la séance, comparés à ta baseline 28 jours." }]}
+          label="Afficher l'aide pour le contexte récupération"
+        />
+      </div>
       <ContextRow label="Avant (nuit précédente)" snapshot={context.before} />
       <ContextRow label="Après (nuit suivante)" snapshot={context.after} />
     </section>

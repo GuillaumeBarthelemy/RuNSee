@@ -1,4 +1,5 @@
 import { memo } from "react";
+import InfoTooltip from "../InfoTooltip.jsx";
 
 /**
  * ProgressionPolarisationCard — Repartition des seances par intensite
@@ -7,12 +8,24 @@ import { memo } from "react";
  * Props :
  *   - polarisation : { hasData, total, weeks, buckets[], byType[], easyPct, hardPct }
  */
+const POLAR_HELP = (
+  <InfoTooltip
+    compact
+    title="Polarisation (80/20)"
+    glossaryKey="polarization"
+    content={[{ text: "Répartition de tes séances classées en facile / modéré / intense. On vise ~80 % de facile (Z1-Z2)." }]}
+    label="Afficher l'aide pour la polarisation"
+  />
+);
 function ProgressionPolarisationCard({ polarisation = {} }) {
   if (!polarisation?.hasData) {
     return (
       <section className="progression-panel progression-polarisation-card">
         <div className="progression-panel-head">
-          <h3>Polarisation de l'entraînement</h3>
+          <span className="title-with-info">
+            <h3>Polarisation de l'entraînement</h3>
+            {POLAR_HELP}
+          </span>
         </div>
         <p className="progression-panel-empty">
           Classifie tes séances (type d'effort) pour visualiser ta répartition facile / intense.

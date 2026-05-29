@@ -378,6 +378,8 @@ export default function DashboardPage() {
         />
         <KpiCardCompact
           label="Récupération"
+          glossaryKey="trainingReadinessRunsee"
+          help="Aptitude du jour (0-100) : combine sommeil, VFC, FC repos, stress et énergie."
           value={readinessScore != null ? `${readinessScore}` : "—"}
           unit="%"
           hint={readinessScore != null
@@ -388,6 +390,8 @@ export default function DashboardPage() {
         />
         <KpiCardCompact
           label="Disponibilité"
+          glossaryKey="trainingReadinessRunsee"
+          help="Capacité du jour à encaisser une séance dure : 60 % Aptitude + 40 % fraîcheur (TSB). Estimation."
           value={availability.score != null ? `${availability.score}` : "—"}
           unit="%"
           hint={availability.label}

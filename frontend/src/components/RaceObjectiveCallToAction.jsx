@@ -5,7 +5,7 @@ function RaceObjectiveCallToAction({
   title = "Course objectif",
   subtitle = "Ajoute une course dans les reglages pour afficher le compte a rebours, l'allure cible et le plan de taper.",
   ctaLabel = "Configurer une course",
-  to = "/admin#race-objectives",
+  to = "/reglages#objectifs",
 }) {
   return (
     <section className="card race-objective-cta">

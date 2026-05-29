@@ -1,5 +1,6 @@
 import { memo } from "react";
 import KpiGaugeCircular from "./KpiGaugeCircular.jsx";
+import InfoTooltip from "../../InfoTooltip.jsx";
 import { clampTone } from "../../../utils/tonePicker.js";
 
 /**
@@ -29,6 +30,8 @@ function KpiCardCompact({
   tone = null,
   icon = null,
   gauge = null,
+  glossaryKey = "",
+  help = "",
 }) {
   const toneClass = tone != null ? `alpine-kpi-compact-tone-${clampTone(tone)}` : "";
 
@@ -40,7 +43,20 @@ function KpiCardCompact({
         </span>
       ) : null}
       <div className="alpine-kpi-compact-body">
-        <span className="alpine-kpi-compact-label">{label}</span>
+        {glossaryKey && help ? (
+          <span className="title-with-info">
+            <span className="alpine-kpi-compact-label">{label}</span>
+            <InfoTooltip
+              compact
+              title={label}
+              glossaryKey={glossaryKey}
+              content={[{ text: help }]}
+              label={`Afficher l'aide pour ${label}`}
+            />
+          </span>
+        ) : (
+          <span className="alpine-kpi-compact-label">{label}</span>
+        )}
         <div className="alpine-kpi-compact-value-row">
           <strong className="alpine-kpi-compact-value">{value}</strong>
           {unit ? <span className="alpine-kpi-compact-unit">{unit}</span> : null}
