@@ -13689,6 +13689,15 @@ button.alert-banner-positive-item {
   gap: 12px;
 }
 
+/* Densite "fit" : sur grands ecrans, reduit l'espacement pour tenir
+   l'onglet Vue d'ensemble Performance sans scroll. Aucune coupe de contenu :
+   on ne touche qu'aux gaps/paddings, le scroll reste possible si besoin. */
+@media (min-height: 900px) and (min-width: 1100px) {
+  .performance-overview-tab { gap: 10px; }
+  .performance-overview-tab .performance-metric-grid { min-height: 0; padding: 12px 14px; gap: 8px; }
+  .performance-overview-tab .performance-overview-grid { gap: 10px; }
+}
+
 .performance-hero-card,
 .performance-takeaway,
 .performance-panel,
