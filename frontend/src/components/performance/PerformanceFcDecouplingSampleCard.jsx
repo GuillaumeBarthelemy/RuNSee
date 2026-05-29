@@ -1,5 +1,16 @@
 import { memo } from "react";
+import InfoTooltip from "../InfoTooltip.jsx";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
+
+const DECOUPLING_HELP = (
+  <InfoTooltip
+    compact
+    title="Dérive cardiaque"
+    glossaryKey="aerobicDecoupling"
+    content={[{ text: "Hausse du ratio FC/allure entre les 2 moitiés d'une sortie longue. < 5 % = base aérobie solide." }]}
+    label="Afficher l'aide pour la dérive cardiaque"
+  />
+);
 
 function formatDurationHm(seconds) {
   const n = Math.max(0, Math.round(Number(seconds) || 0));
@@ -19,7 +30,7 @@ function PerformanceFcDecouplingSampleCard({ sample = null }) {
     return (
       <section className="performance-panel performance-fc-decoupling-sample-card">
         <div className="performance-panel-head">
-          <h3>Exemple de dérive cardiaque</h3>
+          <span className="title-with-info"><h3>Exemple de dérive cardiaque</h3>{DECOUPLING_HELP}</span>
         </div>
         <PerformanceEmptyState message="Pas de sortie longue récente avec mesure de dérive." />
       </section>
@@ -32,7 +43,7 @@ function PerformanceFcDecouplingSampleCard({ sample = null }) {
   return (
     <section className="performance-panel performance-fc-decoupling-sample-card">
       <div className="performance-panel-head">
-        <h3>Exemple de dérive cardiaque</h3>
+        <span className="title-with-info"><h3>Exemple de dérive cardiaque</h3>{DECOUPLING_HELP}</span>
         <span className="performance-panel-sub">(sortie longue récente)</span>
       </div>
       <div className="performance-fc-decoupling-sample-body">

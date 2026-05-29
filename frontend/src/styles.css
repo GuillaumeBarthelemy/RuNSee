@@ -11,6 +11,17 @@
   --color-text-secondary: #54657D;
   --color-text-muted: #7B8CA3;
 
+  /* --- Typographie des titres de cartes (harmonisation globale) ----------
+     Source unique de vérité pour la police des titres de cartes/panneaux.
+     - tier "page"    : titre de carte de premier niveau (.card-title)
+     - tier "compact" : titres des cartes analytiques/panneaux (h3 14px)
+     La couleur pointe sur --color-text-primary (adapté en dark mode). */
+  --card-title-color: var(--color-text-primary);
+  --card-title-size: 22px;
+  --card-title-weight: 600;
+  --card-title-compact-size: 14px;
+  --card-title-compact-weight: 700;
+
   --color-accent: #F97316;
   --color-accent-soft: #FB923C;
 
@@ -776,10 +787,10 @@ select {
 
 .card-title {
   margin: 0;
-  font-size: 22px;
-  font-weight: 600;
+  font-size: var(--card-title-size);
+  font-weight: var(--card-title-weight);
   line-height: 1.3;
-  color: var(--color-text-primary);
+  color: var(--card-title-color);
 }
 
 .title-with-info {
@@ -10888,9 +10899,9 @@ button.alert-banner-positive-item {
   letter-spacing: 0.06em;
 }
 .alpine-overview-focus-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--al-text, #0f2147);
+  font-size: var(--card-title-compact-size);
+  font-weight: var(--card-title-compact-weight);
+  color: var(--card-title-color);
   margin: 0;
 }
 .alpine-overview-focus-body {
@@ -11101,9 +11112,9 @@ button.alert-banner-positive-item {
   letter-spacing: 0.06em;
 }
 .alpine-overview-state-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--al-text, #0f2147);
+  font-size: var(--card-title-compact-size);
+  font-weight: var(--card-title-compact-weight);
+  color: var(--card-title-color);
   margin: 0;
 }
 .alpine-overview-state-list {
@@ -11234,9 +11245,9 @@ button.alert-banner-positive-item {
   box-shadow: var(--al-shadow-card);
 }
 .alpine-overview-donut-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--al-text, #0f2147);
+  font-size: var(--card-title-compact-size);
+  font-weight: var(--card-title-compact-weight);
+  color: var(--card-title-color);
   margin: 0 0 10px;
 }
 .alpine-overview-donut-body {
@@ -11984,9 +11995,9 @@ button.alert-banner-positive-item {
 }
 .alpine-trends-card-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--al-text, #0f2147);
+  font-size: var(--card-title-compact-size);
+  font-weight: var(--card-title-compact-weight);
+  color: var(--card-title-color);
 }
 .alpine-trends-period-toggle {
   display: inline-flex;
@@ -12537,9 +12548,9 @@ button.alert-banner-positive-item {
 }
 .alpine-intensities-card-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--al-text, #0f2147);
+  font-size: var(--card-title-compact-size);
+  font-weight: var(--card-title-compact-weight);
+  color: var(--card-title-color);
 }
 .alpine-intensities-card-subtitle {
   font-size: 11px;
@@ -13130,9 +13141,9 @@ button.alert-banner-positive-item {
 }
 .alpine-recovery-card-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--al-text, #0f2147);
+  font-size: var(--card-title-compact-size);
+  font-weight: var(--card-title-compact-weight);
+  color: var(--card-title-color);
 }
 
 /* §1 KPI row */
@@ -14704,7 +14715,10 @@ button.alert-banner-positive-item {
 /* --- Limites de lecture --- */
 .performance-limits-card { padding: 14px 16px; }
 .performance-limits-title {
-  display: inline-flex; align-items: center; gap: 6px; color: #0f2147;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--card-title-compact-size);
+  font-weight: var(--card-title-compact-weight);
+  color: var(--card-title-color);
 }
 .performance-limits-icon { color: #1268f3; display: inline-flex; }
 .performance-limits-list {
@@ -14758,9 +14772,9 @@ button.alert-banner-positive-item {
 
 /* Takeaway — titre principal "À retenir" + sous-titre dynamique */
 .performance-takeaway-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--al-text, #0f2147);
+  font-size: var(--card-title-compact-size);
+  font-weight: var(--card-title-compact-weight);
+  color: var(--card-title-color);
   margin: 0 0 4px;
 }
 .performance-takeaway-subtitle {
@@ -14802,6 +14816,14 @@ button.alert-banner-positive-item {
   gap: 12px;
   align-items: flex-start;
   margin-bottom: 10px;
+}
+
+/* Titre de panneau Performance (h3 nu) — aligné sur le tier compact global. */
+.performance-panel-head h3 {
+  margin: 0;
+  font-size: var(--card-title-compact-size);
+  font-weight: var(--card-title-compact-weight);
+  color: var(--card-title-color);
 }
 
 .performance-panel-head strong {
@@ -15675,7 +15697,10 @@ button.alert-banner-positive-item {
   display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
 }
 .progression-panel-head h3 {
-  margin: 0; font-size: 14px; font-weight: 600; color: #0f172a;
+  margin: 0;
+  font-size: var(--card-title-compact-size);
+  font-weight: var(--card-title-compact-weight);
+  color: var(--card-title-color);
 }
 .progression-panel-sub {
   font-size: 11px; color: #64748b;

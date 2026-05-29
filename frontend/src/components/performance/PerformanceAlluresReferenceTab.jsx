@@ -1,4 +1,5 @@
 import { memo } from "react";
+import InfoTooltip from "../InfoTooltip.jsx";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
 import PerformancePaceCard from "./PerformancePaceCard.jsx";
 import PerformancePaceComparisonBars from "./PerformancePaceComparisonBars.jsx";
@@ -32,7 +33,16 @@ function PerformanceAlluresReferenceTab({ model = {} }) {
       <section className="performance-panel performance-allures-header">
         <div className="performance-panel-head">
           <div className="performance-allures-header-title">
-            <h3>{model.title}</h3>
+            <span className="title-with-info">
+              <h3>{model.title}</h3>
+              <InfoTooltip
+                compact
+                title="Allures de référence"
+                glossaryKey="vdot"
+                content={[{ text: "Allures cibles (E/M/T/I/R) dérivées de ton VDOT, l'indice de performance Daniels équivalent au VO2max." }]}
+                label="Afficher l'aide pour les allures de référence"
+              />
+            </span>
             <small>{model.subtitle}</small>
           </div>
           <div className="performance-allures-header-vdot">

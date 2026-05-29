@@ -8,9 +8,20 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import InfoTooltip from "../InfoTooltip.jsx";
 import PerformanceEmptyState from "./PerformanceEmptyState.jsx";
 
 const COLOR = "#f97316"; // Orange (mockup p.14)
+
+const THRESHOLD_HELP = (
+  <InfoTooltip
+    compact
+    title="Allure seuil (Z4)"
+    glossaryKey="criticalSpeed"
+    content={[{ text: "Allure soutenable ~30-60 min, proche du seuil lactique. Repère pour calibrer tes séances tempo/seuil." }]}
+    label="Afficher l'aide pour l'allure seuil"
+  />
+);
 
 function formatPaceTick(seconds) {
   const n = Math.max(0, Math.round(Number(seconds) || 0));
@@ -47,7 +58,7 @@ function PerformanceThresholdEvolutionChart({ evolution = {} }) {
     return (
       <section className="performance-panel performance-threshold-evolution-card">
         <div className="performance-panel-head">
-          <h3>Évolution de ton allure seuil (Z4)</h3>
+          <span className="title-with-info"><h3>Évolution de ton allure seuil (Z4)</h3>{THRESHOLD_HELP}</span>
         </div>
         <PerformanceEmptyState message="Pas assez de données récentes pour tracer l'évolution de ton seuil." />
       </section>
@@ -59,7 +70,7 @@ function PerformanceThresholdEvolutionChart({ evolution = {} }) {
   return (
     <section className="performance-panel performance-threshold-evolution-card">
       <div className="performance-panel-head">
-        <h3>Évolution de ton allure seuil (Z4)</h3>
+        <span className="title-with-info"><h3>Évolution de ton allure seuil (Z4)</h3>{THRESHOLD_HELP}</span>
         <span className="performance-panel-sub">Allure seuil (/km)</span>
       </div>
       <div className="performance-threshold-evolution-body">
