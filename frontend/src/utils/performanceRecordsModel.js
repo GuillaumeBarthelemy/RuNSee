@@ -121,7 +121,18 @@ function buildTrailRecords(activities) {
     // Tri par temps ascendant pour avoir le meilleur
     matching.sort((a, b) => toFiniteNumber(a.movingTime) - toFiniteNumber(b.movingTime));
     const best = matching[0];
-    const previous = matching[1] || null;
+    // Record precedent = meilleur temps parmi les sorties ANTERIEURES a la date
+    // du record actuel (coherent avec la logique route de buildBestEffortRecords).
+    // Eviter matching[1] qui prend la 2e plus rapide sans contrainte de date
+    // (elle pouvait etre posterieure au record => progression incoherente).
+    const bestDate = safeDate(best.startDateLocal || best.startDate);
+    const previous = matching
+      .slice(1)
+      .filter((a) => {
+        const d = safeDate(a.startDateLocal || a.startDate);
+        return bestDate && d && d < bestDate;
+      })
+      .sort((a, b) => toFiniteNumber(a.movingTime) - toFiniteNumber(b.movingTime))[0] || null;
     return {
       key: target.key,
       label: target.label,
@@ -315,7 +326,9 @@ export function buildRecordsModel({ scopeActivities = [] } = {}) {
   const progression = buildProgressionRows(allRecords);
   const history = buildHistoryRows(allRecords);
 
-  // Stat conseil : % de records ameliores cette annee
+  // Stat conseil : part des records actuels dont le PR a ete etabli cette annee
+  // (r.date = date du meilleur effort en cours). Ce n'est PAS un taux de
+  // progression : c'est la fraction de tes records qui datent de l'annee civile.
   const yearStart = new Date(new Date().getFullYear(), 0, 1);
   const thisYearRecords = allRecords.filter((r) => {
     const d = safeDate(r.date);

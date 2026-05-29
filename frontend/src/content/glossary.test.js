@@ -1,5 +1,44 @@
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { findGlossaryEntry, GLOSSARY_CATEGORIES, GLOSSARY_ENTRIES } from "./glossary.js";
+
+const SRC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+// Scan recursif des sources (jsx/js hors tests/node_modules) pour extraire
+// toutes les cles glossaire referencees : `glossaryKey="x"`, `termKey="x"`
+// (props JSX) et `glossaryKey: "x"` (objets de config tooltip).
+function collectSourceFiles(dir) {
+  const files = [];
+  for (const name of readdirSync(dir)) {
+    if (name === "node_modules") continue;
+    const fullPath = join(dir, name);
+    if (statSync(fullPath).isDirectory()) {
+      files.push(...collectSourceFiles(fullPath));
+      continue;
+    }
+    if (!/\.(jsx?|tsx?)$/.test(name)) continue;
+    if (/\.test\.(jsx?|tsx?)$/.test(name)) continue;
+    files.push(fullPath);
+  }
+  return files;
+}
+
+function collectReferencedGlossaryKeys() {
+  const pattern = /(?:termKey|glossaryKey)\s*[=:]\s*"([A-Za-z0-9_-]+)"/g;
+  const refs = new Map(); // key -> Set(fichiers)
+  for (const file of collectSourceFiles(SRC_DIR)) {
+    const content = readFileSync(file, "utf8");
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      const key = match[1];
+      if (!refs.has(key)) refs.set(key, new Set());
+      refs.get(key).add(file.replace(SRC_DIR, "src"));
+    }
+  }
+  return refs;
+}
 
 describe("glossary entries", () => {
   it("a au moins 21 entrees", () => {
@@ -30,6 +69,19 @@ describe("glossary entries", () => {
     for (const entry of GLOSSARY_ENTRIES) {
       expect(entry.short.length).toBeLessThanOrEqual(200);
     }
+  });
+
+  it("toute cle glossaire referencee dans le code pointe vers une ancre reelle", () => {
+    const keys = new Set(GLOSSARY_ENTRIES.map((entry) => entry.key));
+    const referenced = collectReferencedGlossaryKeys();
+    const broken = [];
+    for (const [key, files] of referenced) {
+      // L'ancre /glossaire#key cible entry.key : on verifie la cle exacte.
+      if (!keys.has(key)) {
+        broken.push(`${key} (refs: ${[...files].join(", ")})`);
+      }
+    }
+    expect(broken, `Liens glossaire morts:\n${broken.join("\n")}`).toEqual([]);
   });
 
   it("contient les entrees canoniques pour la recuperation et les signaux avances", () => {

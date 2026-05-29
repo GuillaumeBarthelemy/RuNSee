@@ -76,8 +76,8 @@ const ALERT_ACTION_BY_KEY = {
   "vdot-en-hausse": { label: "Voir Performance", href: "/performance" },
   "vdot-en-baisse": { label: "Voir Performance", href: "/performance" },
   "nouveau-record": { label: "Voir Performance", href: "/performance" },
-  "fc-repos-non-renseignee": { label: "Aller en Reglages", href: "/admin" },
-  "fc-max-non-renseignee": { label: "Aller en Reglages", href: "/admin" },
+  "fc-repos-non-renseignee": { label: "Aller en Reglages", href: "/reglages" },
+  "fc-max-non-renseignee": { label: "Aller en Reglages", href: "/reglages" },
   "cardio-absent-derniere-seance": null,
 };
 
@@ -660,7 +660,7 @@ export function buildTodayAlerts(context = {}) {
       severity: "info",
       title: "Frequence cardiaque au repos a renseigner",
       message: "La frequence cardiaque de repos affine la charge cardio. Ajoute-la dans l'administration si tu la connais.",
-      action: { label: "Ouvrir l'administration", href: "/admin" },
+      action: { label: "Ouvrir les reglages", href: "/reglages" },
       order: 1,
     }));
   }
@@ -672,7 +672,7 @@ export function buildTodayAlerts(context = {}) {
       severity: "info",
       title: "Frequence cardiaque maximale a verifier",
       message: "Une frequence cardiaque max fiable rend les zones et la charge plus stables.",
-      action: { label: "Ouvrir l'administration", href: "/admin" },
+      action: { label: "Ouvrir les reglages", href: "/reglages" },
       order: 2,
     }));
   }

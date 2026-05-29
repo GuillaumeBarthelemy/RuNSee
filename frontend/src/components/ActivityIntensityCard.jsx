@@ -1,17 +1,18 @@
 import { memo } from "react";
 import GlossaryLink from "./GlossaryLink.jsx";
-import RangeBar from "./visuals/RangeBar.jsx";
-import { calculateCardiacDecouplingFromPayload } from "../utils/cardiacDecoupling.js";
 import { classifyEpoc, extractEpocFromGarminPayload } from "../utils/epocLevel.js";
-import { decouplingTone } from "../utils/tonePicker.js";
 
 /**
  * ActivityIntensityCard — Phase H4.
  *
- * Regroupe les 3 indicateurs Phase H sur une activité :
+ * Regroupe les indicateurs d'intensité d'une activité :
  *  - Allure ajustée (GAP Minetti) déjà calculée par activityInsights
- *  - Dérive cardiaque (Decoupling Pa:Hr)
  *  - Dette d'oxygène (EPOC vulgarisé qualitatif)
+ *
+ * La dérive cardiaque (Pa:Hr) est volontairement affichée uniquement dans
+ * IntraSessionInsightsCard, qui utilise un calcul plus rigoureux
+ * (buildAerobicDecouplingProfile : gate EF < 82 % FCmax, ≥ 60 min, moitiés
+ * par durée cumulée), pour éviter deux valeurs divergentes sur la même fiche.
  *
  * Affiche uniquement les indicateurs disponibles, vulgarisés.
  */
@@ -38,16 +39,13 @@ function ActivityIntensityCard({ activity = null, detailedPayload = null, garmin
     && observedPace > 0 && adjustedPace > 0
     && Math.abs(observedPace - adjustedPace) >= 1;
 
-  // --- Decoupling cardiaque ---
-  const decoupling = calculateCardiacDecouplingFromPayload(detailedPayload);
-
   // --- EPOC ---
   const epocRaw = extractEpocFromGarminPayload(garminSnapshot)
     || extractEpocFromGarminPayload(detailedPayload);
   const epoc = classifyEpoc(epocRaw);
 
-  // Si aucun des 3 indicateurs n'est disponible, on n'affiche pas la carte
-  if (!hasGap && !decoupling.hasData && !epoc.hasData) {
+  // Si aucun indicateur n'est disponible, on n'affiche pas la carte
+  if (!hasGap && !epoc.hasData) {
     return null;
   }
 
@@ -84,41 +82,6 @@ function ActivityIntensityCard({ activity = null, detailedPayload = null, garmin
                   Équivalent terrain plat plus lent — descente prédominante.
                 </span>
               ) : null}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Dérive cardiaque */}
-        {decoupling.hasData ? (
-          <div className="activity-intensity-row">
-            <div className="activity-intensity-row-label">
-              <span>Dérive cardiaque</span>
-              <GlossaryLink termKey="aerobicDecoupling">?</GlossaryLink>
-            </div>
-            <div className="activity-intensity-row-content">
-              <RangeBar
-                label=""
-                value={decoupling.decouplingPercent}
-                min={-3}
-                max={12}
-                unit="%"
-                zones={[
-                  { from: -3, to: 2, tone: 1, label: "Excellent" },
-                  { from: 2, to: 5, tone: 2, label: "Bon" },
-                  { from: 5, to: 8, tone: 4, label: "Vigilance" },
-                  { from: 8, to: 12, tone: 5, label: "Alerte" },
-                ]}
-                tone={decouplingTone(decoupling.decouplingPercent)}
-              />
-              <span className="activity-intensity-hint">
-                {decoupling.decouplingPercent < 2
-                  ? "Endurance aérobie solide sur cette sortie."
-                  : decoupling.decouplingPercent < 5
-                  ? "Bonne stabilité allure/FC."
-                  : decoupling.decouplingPercent < 8
-                  ? "Légère dérive — sortie un peu trop longue ou intense."
-                  : "Dérive marquée — bloc trop dense pour le moment."}
-              </span>
             </div>
           </div>
         ) : null}

@@ -831,55 +831,6 @@ export function buildLoadVarianceProfile(activities = [], options = {}) {
   };
 }
 
-export function buildIntensityPolarizationProfile(model = {}, metric = "duration") {
-  const zones = Array.isArray(model?.zones) ? model.zones : [];
-  const shareKey = metric === "load" ? "loadShare" : "durationShare";
-  const lowShare = zones
-    .filter((zone) => ["z1", "z2"].includes(zone?.key))
-    .reduce((sum, zone) => sum + toNumber(zone?.[shareKey]), 0);
-  const moderateShare = zones
-    .filter((zone) => zone?.key === "z3")
-    .reduce((sum, zone) => sum + toNumber(zone?.[shareKey]), 0);
-  const highShare = zones
-    .filter((zone) => ["z4", "z5"].includes(zone?.key))
-    .reduce((sum, zone) => sum + toNumber(zone?.[shareKey]), 0);
-
-  let label = "Non calculee";
-  let message = "Pas assez de donnees d'intensite pour qualifier la structure.";
-  let tone = "neutral";
-
-  if (model?.hasData) {
-    if (lowShare >= 75 && moderateShare <= 15 && highShare >= 5) {
-      label = "Plutot polarisee";
-      message = "La majorite du temps reste facile avec une exposition intense nette.";
-      tone = "positive";
-    } else if (lowShare >= 65 && moderateShare > highShare) {
-      label = "Pyramidale";
-      message = "La structure privilegie l'endurance avec une part intermediaire notable.";
-      tone = "positive";
-    } else if (moderateShare + highShare >= 45) {
-      label = "Intensite concentree";
-      message = "La part de zones moderees/intenses est elevee sur la selection.";
-      tone = "warning";
-    } else {
-      label = "Endurance dominante";
-      message = "La selection est surtout placee en zones faciles.";
-      tone = "neutral";
-    }
-  }
-
-  return {
-    hasData: Boolean(model?.hasData),
-    label,
-    tone,
-    message,
-    lowShare: roundValue(lowShare, 0),
-    moderateShare: roundValue(moderateShare, 0),
-    highShare: roundValue(highShare, 0),
-    metric,
-  };
-}
-
 function getPredictionConfidence(sampleSize, flatSampleSize) {
   const base = Math.min(65, sampleSize * 10);
   const terrainBonus = Math.min(20, flatSampleSize * 4);

@@ -71,9 +71,24 @@ function hasElevationLoss(activity = {}) {
   return toNumber(activity.totalElevationLoss) > 0 || toNumber(activity.elevationLoss) > 0;
 }
 
+function parseMaybeJson(value) {
+  if (!value) return null;
+  if (typeof value === "object") return value;
+  if (typeof value !== "string") return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
 function hasSplits(activity = {}) {
-  return Array.isArray(activity.splitsMetric) && activity.splitsMetric.length > 0
-    || Array.isArray(activity.rawJson?.splits_metric) && activity.rawJson.splits_metric.length > 0;
+  if (Array.isArray(activity.splitsMetric) && activity.splitsMetric.length > 0) {
+    return true;
+  }
+  // rawJson peut etre un objet deja parse OU une chaine JSON brute.
+  const raw = parseMaybeJson(activity.rawJson);
+  return Array.isArray(raw?.splits_metric) && raw.splits_metric.length > 0;
 }
 
 function hasRecentSnapshot(snapshots = [], referenceDate = new Date(), maxAgeDays = 3) {

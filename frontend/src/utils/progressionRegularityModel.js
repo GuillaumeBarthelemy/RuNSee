@@ -149,10 +149,10 @@ function buildHeatmap(activities, refDate, year) {
   // Determine seuils d'intensite (quartiles des distances > 0)
   const distances = [...dayStats.values()].map((v) => v.distance).filter((d) => d > 0).sort((a, b) => a - b);
   const q = (p) => distances[Math.floor((distances.length - 1) * p)] || 0;
+  // 3 niveaux actifs (1/2/3) => seulement 2 seuils necessaires (terciles).
   const thresholds = {
     light: q(0.33),
     moderate: q(0.66),
-    high: q(0.9),
   };
   function intensity(d) {
     if (d <= 0) return 0;
