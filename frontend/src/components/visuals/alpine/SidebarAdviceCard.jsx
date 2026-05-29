@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
+import BrandMountainIcon from "./BrandMountainIcon.jsx";
 
 /**
  * SidebarAdviceCard — Alpine Light (Lot 2-bis).
@@ -26,9 +27,7 @@ function SidebarAdviceCard({
   return (
     <article className="alpine-sidebar-advice-card">
       <span className="alpine-sidebar-advice-kicker" aria-hidden="true">
-        <svg viewBox="0 0 16 16" fill="none">
-          <path d="M2 12 L6 6 L9 9 L11 7 L14 12 Z" fill="currentColor" fillOpacity="0.85" />
-        </svg>
+        <BrandMountainIcon />
       </span>
       <strong className="alpine-sidebar-advice-title">{title}</strong>
       <p className="alpine-sidebar-advice-text">{adviceText}</p>

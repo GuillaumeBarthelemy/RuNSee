@@ -8888,6 +8888,7 @@ button.alert-banner-positive-item {
   display: inline-flex;
   width: 32px;
   height: 32px;
+  color: var(--al-primary, #1268f3);
 }
 .alpine-sidebar-brand-icon svg { width: 100%; height: 100%; }
 

@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
+import BrandMountainIcon from "./BrandMountainIcon.jsx";
 
 function formatRaceDate(value) {
   if (!value) return "";
@@ -41,9 +42,7 @@ function SidebarObjectiveCard({ activeRace = null, secondaryRaces = [] }) {
       {activeRace ? (
         <div className="alpine-sidebar-objective-body">
           <span className="alpine-sidebar-objective-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M3 19 L9 9 L13 14 L17 8 L21 19 Z" fill="currentColor" fillOpacity="0.85" />
-            </svg>
+            <BrandMountainIcon />
           </span>
           <div className="alpine-sidebar-objective-text">
             <strong>{activeRace.name || "Course objectif"}</strong>
