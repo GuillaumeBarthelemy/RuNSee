@@ -10397,6 +10397,83 @@ button.alert-banner-positive-item {
   border-color: var(--al-primary, #1268f3);
 }
 
+/* --- Refonte filtrage : bouton Filtres + badge --- */
+.alpine-activities-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 6px 12px;
+  border: 1px solid var(--al-border, #dfe8f5);
+  background: var(--al-surface, #ffffff);
+  color: var(--al-text-soft, #2a3f6b);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.alpine-activities-filter-toggle svg { width: 15px; height: 15px; }
+.alpine-activities-filter-toggle:hover,
+.alpine-activities-filter-toggle.is-open {
+  background: var(--al-primary-soft, #e8f1ff);
+  color: var(--al-primary, #1268f3);
+  border-color: var(--al-primary, #1268f3);
+}
+.alpine-activities-filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--al-primary, #1268f3);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* --- Chips de filtres actifs --- */
+.alpine-activities-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.alpine-activities-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+  border-radius: 999px;
+  background: var(--al-primary-soft, #e8f1ff);
+  color: var(--al-primary-stronger, #0a4fbb);
+  font-size: 11px;
+  font-weight: 600;
+}
+.alpine-activities-chip button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+  border-radius: 999px;
+}
+.alpine-activities-chip button:hover { color: var(--al-alert, #ef4444); }
+
+/* --- Panneau filtres avancés --- */
+.alpine-activities-filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--al-border-soft, #eaf0fa);
+}
+
 .alpine-activities-filterbar-meta {
   margin-top: 6px;
   padding-top: 6px;
