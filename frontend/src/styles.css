@@ -9198,8 +9198,8 @@ button.alert-banner-positive-item {
   min-width: 0;
 }
 
-/* Si une barre de filtres est passée en actions, elle se déploie
-   pleinement à droite et n'affiche pas son fond carte (déjà dans le topbar) */
+/* Filtres passés en slot `actions` : la barre s'etale a droite, transparente,
+   et expose ses controles directement dans le bandeau de page. */
 .alpine-topbar-right .alpine-activities-filterbar {
   margin: 0;
   background: transparent;
@@ -9207,7 +9207,18 @@ button.alert-banner-positive-item {
   box-shadow: none;
   padding: 0;
   flex: 1 1 auto;
-  min-width: 360px;
+  min-width: 460px;
+}
+.alpine-topbar-right .alpine-activities-filterbar-row {
+  justify-content: flex-end;
+}
+.alpine-topbar-right .alpine-activities-filterbar-meta,
+.alpine-topbar-right .alpine-activities-chips {
+  justify-content: flex-end;
+  display: flex;
+}
+.alpine-topbar-right .alpine-activities-filterbar-meta {
+  margin-top: 4px;
 }
 
 /* WeatherBadge */
@@ -10299,48 +10310,60 @@ button.alert-banner-positive-item {
    Mini-lot 14 — ActivitiesFilterBar Alpine compact (PDF page 6)
    ============================================================================ */
 
+/* --- Filter bar (Alpine Light) -----------------------------------------
+   UX cible : controles "pill", fonds blancs, accent bleu sur focus/hover,
+   tailles de texte lisibles (>=12px), labels discrets en surete d'usage. */
 .alpine-activities-filterbar {
-  background: var(--al-surface, #ffffff);
-  border: 1px solid var(--al-border, #dfe8f5);
-  border-radius: 10px;
-  padding: 4px 8px;
-  margin-bottom: 8px;
-  box-shadow: var(--al-shadow-card);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 0;
+  box-shadow: none;
 }
 
 .alpine-activities-filterbar-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .alpine-activities-filter {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: 6px;
+  font-size: 13px;
   color: var(--al-text-soft, #2a3f6b);
-  background: var(--al-surface-alt, #f5f8ff);
-  border: 1px solid var(--al-border-soft, #eaf0fa);
-  border-radius: 6px;
-  padding: 2px 6px;
-  height: 26px;
+  background: var(--al-surface, #ffffff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 999px;
+  padding: 0 12px;
+  height: 32px;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+.alpine-activities-filter:hover {
+  border-color: var(--al-primary-soft, #c6dcff);
+}
+.alpine-activities-filter:focus-within {
+  border-color: var(--al-primary, #1268f3);
+  box-shadow: 0 0 0 3px rgba(18, 104, 243, 0.12);
+  background: var(--al-surface, #ffffff);
 }
 
 .alpine-activities-filter-label {
-  font-size: 9px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--al-muted, #64748b);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .alpine-activities-filter select,
 .alpine-activities-filter input[type="search"] {
   border: none;
   background: transparent;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--al-text, #0f2147);
   outline: none;
@@ -10354,14 +10377,19 @@ button.alert-banner-positive-item {
 }
 
 .alpine-activities-filter--search {
-  flex: 1 1 200px;
-  min-width: 180px;
+  flex: 1 1 220px;
+  min-width: 200px;
   max-width: 320px;
+  padding: 0 12px 0 14px;
 }
 .alpine-activities-filter--search svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   color: var(--al-muted, #64748b);
+}
+.alpine-activities-filter--search input[type="search"] {
+  width: 100%;
+  min-width: 0;
 }
 
 .alpine-activities-filter--sort {
@@ -10395,16 +10423,19 @@ button.alert-banner-positive-item {
 }
 
 .alpine-activities-filterbar-reset {
-  border: 1px solid var(--al-border, #dfe8f5);
-  background: var(--al-surface, #ffffff);
-  color: var(--al-text-soft, #2a3f6b);
-  font-size: 11px;
+  border: none;
+  background: transparent;
+  color: var(--al-primary, #1268f3);
+  font-size: 12px;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
   cursor: pointer;
-  height: 26px;
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  height: 32px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(18, 104, 243, 0.35);
+  transition: background 0.12s ease, color 0.12s ease;
 }
 .alpine-activities-filterbar-reset:hover {
   background: var(--al-primary-soft, #e8f1ff);
@@ -10416,15 +10447,15 @@ button.alert-banner-positive-item {
 .alpine-activities-filter-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 26px;
-  padding: 4px 10px;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
   border: 1px solid var(--al-border, #dfe8f5);
   background: var(--al-surface, #ffffff);
   color: var(--al-text-soft, #2a3f6b);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 999px;
   cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
@@ -10453,31 +10484,41 @@ button.alert-banner-positive-item {
 .alpine-activities-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 6px;
 }
 .alpine-activities-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 4px 3px 10px;
+  padding: 4px 6px 4px 12px;
   border-radius: 999px;
   background: var(--al-primary-soft, #e8f1ff);
   color: var(--al-primary-stronger, #0a4fbb);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
+  line-height: 1;
 }
 .alpine-activities-chip button {
   border: none;
-  background: transparent;
+  background: rgba(18, 104, 243, 0.12);
   color: inherit;
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
-  padding: 0 4px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border-radius: 999px;
+  transition: background 0.12s ease, color 0.12s ease;
 }
-.alpine-activities-chip button:hover { color: var(--al-alert, #ef4444); }
+.alpine-activities-chip button:hover {
+  background: var(--al-alert, #ef4444);
+  color: #fff;
+}
 
 /* --- Panneau filtres avancés --- */
 .alpine-activities-filter-panel {
@@ -10490,8 +10531,8 @@ button.alert-banner-positive-item {
 }
 
 .alpine-activities-filterbar-meta {
-  margin-top: 4px;
-  font-size: 10px;
+  margin-top: 6px;
+  font-size: 12px;
   color: var(--al-muted, #64748b);
 }
 
