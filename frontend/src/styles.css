@@ -9166,33 +9166,48 @@ button.alert-banner-positive-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
-  padding: 18px 0 22px;
+  padding: 10px 0 12px;
   border-bottom: none;
-  margin-bottom: 22px;
+  margin-bottom: 10px;
 }
 
-.alpine-topbar-text { flex: 1; min-width: 0; }
+.alpine-topbar-text { flex: 0 1 auto; min-width: 0; }
 
 .alpine-topbar-title {
   margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--al-text, #0f2147);
+  font-size: var(--title-page-size);
+  font-weight: var(--title-page-weight);
+  color: var(--title-color);
   line-height: 1.15;
 }
 
 .alpine-topbar-subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
+  margin: 2px 0 0;
+  font-size: var(--title-subtitle-size);
   color: var(--al-muted, #64748b);
 }
 
 .alpine-topbar-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+/* Si une barre de filtres est passée en actions, elle se déploie
+   pleinement à droite et n'affiche pas son fond carte (déjà dans le topbar) */
+.alpine-topbar-right .alpine-activities-filterbar {
+  margin: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  flex: 1 1 auto;
+  min-width: 360px;
 }
 
 /* WeatherBadge */

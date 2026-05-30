@@ -137,13 +137,7 @@ export default function ProgressionPage() {
       eyebrow="Progression"
       title="Progression"
       subtitle="Construction long terme : volume, cumul annuel, régularité et comparaisons."
-    >
-      {error ? <div className="alert alert-error section">{error}</div> : null}
-      {isLoading && !safeActivities.length ? (
-        <div className="card section">Chargement de la progression...</div>
-      ) : null}
-
-      <div className="progression-page">
+      actions={(
         <AnalyticsCompactFilters
           search={filters.search}
           sportGroup={filters.sportGroup}
@@ -157,7 +151,14 @@ export default function ProgressionPage() {
           onPresetChange={handleSharedPresetChange}
           onReset={handleResetSharedFilters}
         />
+      )}
+    >
+      {error ? <div className="alert alert-error section">{error}</div> : null}
+      {isLoading && !safeActivities.length ? (
+        <div className="card section">Chargement de la progression...</div>
+      ) : null}
 
+      <div className="progression-page">
         <SubTabs tabs={PROGRESSION_TABS} defaultTabId="overview" />
 
         {activeTabId === "overview" ? (

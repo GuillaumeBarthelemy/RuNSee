@@ -139,6 +139,28 @@ export default function ActivitiesPage() {
       eyebrow="Activités"
       title="Activités"
       subtitle="Toutes vos sorties et entraînements."
+      actions={(
+        <ActivitiesFilterBar
+          search={filters.search}
+          sportGroup={filters.sportGroup}
+          source={source}
+          intensity={intensity}
+          sort={sort}
+          preset={options.sharedPeriodPreset}
+          periodLabel={sharedRange.label}
+          availableSports={availableSports}
+          intensityAvailable={intensityAvailable}
+          filteredCount={sortedActivities.length}
+          totalCount={activityScopeActivities.length}
+          onSearchChange={(value) => setFilter("search", value)}
+          onSportChange={(value) => setFilter("sportGroup", value)}
+          onSourceChange={setSource}
+          onIntensityChange={setIntensity}
+          onSortChange={setSort}
+          onPresetChange={handleSharedPresetChange}
+          onReset={handleResetFilters}
+        />
+      )}
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {isLoading && !safeActivities.length ? (
@@ -147,28 +169,6 @@ export default function ActivitiesPage() {
 
       {/* === Bandeau 5 KPIs période === */}
       <ActivityPeriodKpis kpis={periodKpis} />
-
-      {/* === Barre filtres compacte Alpine === */}
-      <ActivitiesFilterBar
-        search={filters.search}
-        sportGroup={filters.sportGroup}
-        source={source}
-        intensity={intensity}
-        sort={sort}
-        preset={options.sharedPeriodPreset}
-        periodLabel={sharedRange.label}
-        availableSports={availableSports}
-        intensityAvailable={intensityAvailable}
-        filteredCount={sortedActivities.length}
-        totalCount={activityScopeActivities.length}
-        onSearchChange={(value) => setFilter("search", value)}
-        onSportChange={(value) => setFilter("sportGroup", value)}
-        onSourceChange={setSource}
-        onIntensityChange={setIntensity}
-        onSortChange={setSort}
-        onPresetChange={handleSharedPresetChange}
-        onReset={handleResetFilters}
-      />
 
       {/* === Toggle Cartes / Tableau (fallback) === */}
       <div className="alpine-activities-view-toggle" role="tablist" aria-label="Mode d'affichage">

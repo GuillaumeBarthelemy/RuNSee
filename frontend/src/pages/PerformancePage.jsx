@@ -308,14 +308,7 @@ export default function PerformancePage() {
       eyebrow="Performance"
       title="Performance"
       subtitle="Analyse tes performances et suis tes records."
-    >
-      {error ? <div className="alert alert-error section">{error}</div> : null}
-      {isLoading && !safeActivities.length ? (
-        <div className="card section">Chargement de la performance...</div>
-      ) : null}
-
-      <div className="performance-page">
-        {/* Topbar harmonisee avec page Analyse (sans meteo). */}
+      actions={(
         <AnalyticsCompactFilters
           search={filters.search}
           sportGroup={filters.sportGroup}
@@ -329,7 +322,14 @@ export default function PerformancePage() {
           onPresetChange={handleSharedPresetChange}
           onReset={handleResetSharedFilters}
         />
+      )}
+    >
+      {error ? <div className="alert alert-error section">{error}</div> : null}
+      {isLoading && !safeActivities.length ? (
+        <div className="card section">Chargement de la performance...</div>
+      ) : null}
 
+      <div className="performance-page">
         <SubTabs tabs={PERFORMANCE_TABS} defaultTabId="overview" />
 
         {activeTabId === "overview" ? (
