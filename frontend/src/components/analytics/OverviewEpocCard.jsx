@@ -25,10 +25,12 @@ import { enrichGarminActivities, getGarminConnectionStatus } from "../../service
  *  - Børsheim & Bahr (2003) Sports Med 33(14) — base EPOC originelle.
  */
 
-const COLOR_LIGHT = "#35a853";
-const COLOR_MODERATE = "#65a30d";
-const COLOR_HIGH = "#f59e0b";
-const COLOR_VERY_HIGH = "#ef4444";
+// Gradient feu tricolore (vert → jaune → orange → rouge) — chaque palier est
+// nettement distinguable, alors que les deux verts précédents se confondaient.
+const COLOR_LIGHT = "#22c55e";      // vert
+const COLOR_MODERATE = "#eab308";   // jaune
+const COLOR_HIGH = "#f97316";       // orange
+const COLOR_VERY_HIGH = "#ef4444";  // rouge
 
 function colorForLevel(level) {
   switch (level) {
@@ -157,7 +159,7 @@ function OverviewEpocCard({ summary = {}, linkTo = "/analytics#charges" }) {
                   />
                   <span className="alpine-overview-epoc-legend-label">{d.level}</span>
                   <span className="alpine-overview-epoc-legend-count">
-                    {d.count} <span className="alpine-overview-epoc-legend-pct">({d.pct} %)</span>
+                    {d.count} <span className="alpine-overview-epoc-legend-pct">({d.pct} % du temps)</span>
                   </span>
                 </li>
               ))}
