@@ -15856,6 +15856,17 @@ button.alert-banner-positive-item {
 .progression-overview-tab {
   display: flex; flex-direction: column; gap: 16px;
 }
+
+/* Densite "fit" : sur grands ecrans, reduit l'espacement et la hauteur des
+   gros graphes pour limiter le depassement (objectif tenir en 1 ecran).
+   Scroll preserve en repli si le contenu reel reste plus grand. */
+@media (min-height: 900px) and (min-width: 1100px) {
+  .progression-overview-tab { gap: 10px; }
+  .progression-overview-tab .progression-overview-row-2,
+  .progression-overview-tab .progression-overview-row-3 { gap: 10px; }
+  .progression-overview-tab .progression-monthly-card .recharts-responsive-container { min-height: 180px; }
+  .progression-overview-tab .progression-overview-annual-grid { gap: 8px; }
+}
 .progression-overview-row-title {
   margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #475569;
 }
