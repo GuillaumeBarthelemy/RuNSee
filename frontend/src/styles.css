@@ -15866,6 +15866,23 @@ button.alert-banner-positive-item {
   .progression-overview-tab .progression-overview-row-3 { gap: 10px; }
   .progression-overview-tab .progression-monthly-card .recharts-responsive-container { min-height: 180px; }
   .progression-overview-tab .progression-overview-annual-grid { gap: 8px; }
+
+  /* Analyse : Tendances + Récupération depassaient legerement (~50px).
+     Reduit gap et hauteur des graphes pour tenir en un ecran. */
+  .alpine-analytics-tab--trends,
+  .alpine-analytics-tab--recovery { gap: 10px; }
+  .alpine-analytics-tab--trends .recharts-responsive-container,
+  .alpine-analytics-tab--recovery .recharts-responsive-container { max-height: 200px; }
+
+  /* Progression : Regularite (~115px) + Comparaisons (~140px). */
+  .progression-regularity-tab,
+  .progression-comparisons-tab { gap: 10px; }
+  .progression-regularity-tab .recharts-responsive-container,
+  .progression-comparisons-tab .recharts-responsive-container { max-height: 180px; }
+
+  /* Progression Volume : 4 graphes empiles. Reduction agressive ;
+     un scroll residuel peut subsister, c'est volontaire (contenu long). */
+  .progression-volume-tab .recharts-responsive-container { max-height: 160px; }
 }
 .progression-overview-row-title {
   margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #475569;
