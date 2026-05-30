@@ -10287,35 +10287,35 @@ button.alert-banner-positive-item {
 .alpine-activities-filterbar {
   background: var(--al-surface, #ffffff);
   border: 1px solid var(--al-border, #dfe8f5);
-  border-radius: 12px;
-  padding: 8px 10px;
-  margin-bottom: 12px;
+  border-radius: 10px;
+  padding: 4px 8px;
+  margin-bottom: 8px;
   box-shadow: var(--al-shadow-card);
 }
 
 .alpine-activities-filterbar-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .alpine-activities-filter {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 12px;
   color: var(--al-text-soft, #2a3f6b);
   background: var(--al-surface-alt, #f5f8ff);
   border: 1px solid var(--al-border-soft, #eaf0fa);
-  border-radius: 8px;
-  padding: 4px 8px;
-  height: 32px;
+  border-radius: 6px;
+  padding: 2px 6px;
+  height: 26px;
 }
 
 .alpine-activities-filter-label {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 9px;
+  font-weight: 700;
   color: var(--al-muted, #64748b);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -10385,10 +10385,10 @@ button.alert-banner-positive-item {
   color: var(--al-text-soft, #2a3f6b);
   font-size: 11px;
   font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
   cursor: pointer;
-  height: 32px;
+  height: 26px;
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 .alpine-activities-filterbar-reset:hover {
@@ -10401,15 +10401,15 @@ button.alert-banner-positive-item {
 .alpine-activities-filter-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 6px 12px;
+  gap: 5px;
+  height: 26px;
+  padding: 4px 10px;
   border: 1px solid var(--al-border, #dfe8f5);
   background: var(--al-surface, #ffffff);
   color: var(--al-text-soft, #2a3f6b);
   font-size: 12px;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
@@ -10438,8 +10438,8 @@ button.alert-banner-positive-item {
 .alpine-activities-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 4px;
+  margin-top: 4px;
 }
 .alpine-activities-chip {
   display: inline-flex;
@@ -10468,17 +10468,15 @@ button.alert-banner-positive-item {
 .alpine-activities-filter-panel {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 10px;
-  padding-top: 10px;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px dashed var(--al-border-soft, #eaf0fa);
 }
 
 .alpine-activities-filterbar-meta {
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px dashed var(--al-border-soft, #eaf0fa);
-  font-size: 11px;
+  margin-top: 4px;
+  font-size: 10px;
   color: var(--al-muted, #64748b);
 }
 

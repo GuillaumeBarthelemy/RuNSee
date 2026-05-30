@@ -1,24 +1,16 @@
 import { memo } from "react";
 
 /**
- * AnalyticsCompactFilters — Alpine Light (Lot 04).
+ * AnalyticsCompactFilters — Alpine Light.
  *
- * Barre de filtres COMPACTE pour la page Analyse. Cohérente visuellement avec
- * ActivitiesFilterBar (mini-lot 14) : recherche + sport + période.
+ * Barre de filtres COMPACTE pour Analyse / Performance / Progression.
+ * Alignée visuellement avec ActivitiesFilterBar (mini-lot 14 + refonte) :
+ *   - recherche + Sport + Période sur une ligne
+ *   - chip retirable pour le filtre Sport actif
+ *   - bouton Réinitialiser conditionnel (visible uniquement si un filtre est actif)
  *
  * Pas de filtre Source / Intensité — non pertinents pour l'analyse globale
  * (ces filtres sont scope page Activités).
- *
- * Anti-régression :
- *  - Aucun calcul métier modifié.
- *  - Presets EXACTEMENT alignés avec analyticsPeriods.js (7d / 90d / 6m / 12m / all)
- *    pour que onPresetChange déclenche bien sharedRange.
- *
- * Props (mêmes signatures que ActivitiesFilterBar pour cohérence) :
- *  - search, sportGroup, preset, periodLabel, availableSports
- *  - filteredCount, totalCount
- *  - on*Change handlers
- *  - onReset
  */
 
 const PERIOD_OPTIONS = [
@@ -28,6 +20,17 @@ const PERIOD_OPTIONS = [
   { key: "12m", label: "12 mois" },
   { key: "all", label: "Tout" },
 ];
+
+function FilterChip({ label, onClear }) {
+  return (
+    <span className="alpine-activities-chip">
+      {label}
+      <button type="button" onClick={onClear} aria-label={`Retirer le filtre ${label}`}>
+        ×
+      </button>
+    </span>
+  );
+}
 
 function AnalyticsCompactFilters({
   search = "",
@@ -42,6 +45,9 @@ function AnalyticsCompactFilters({
   onPresetChange = () => {},
   onReset = () => {},
 }) {
+  const sportActive = sportGroup !== "all";
+  const hasActiveFilters = sportActive || Boolean(search?.trim()) || preset !== "90d";
+
   return (
     <section className="alpine-activities-filterbar" aria-label="Filtres analyse">
       <div className="alpine-activities-filterbar-row">
@@ -69,7 +75,7 @@ function AnalyticsCompactFilters({
           </select>
         </label>
 
-        <label className="alpine-activities-filter alpine-activities-filter--sort">
+        <label className="alpine-activities-filter alpine-activities-filter--period">
           <span className="alpine-activities-filter-label">Période</span>
           <select value={preset} onChange={(e) => onPresetChange(e.target.value)}>
             {PERIOD_OPTIONS.map((o) => (
@@ -78,15 +84,23 @@ function AnalyticsCompactFilters({
           </select>
         </label>
 
-        <button
-          type="button"
-          className="alpine-activities-filterbar-reset"
-          onClick={onReset}
-          title="Réinitialiser les filtres"
-        >
-          Réinitialiser
-        </button>
+        {hasActiveFilters ? (
+          <button
+            type="button"
+            className="alpine-activities-filterbar-reset"
+            onClick={onReset}
+            title="Réinitialiser les filtres"
+          >
+            Réinitialiser
+          </button>
+        ) : null}
       </div>
+
+      {sportActive ? (
+        <div className="alpine-activities-chips">
+          <FilterChip label={`Sport : ${sportGroup}`} onClear={() => onSportChange("all")} />
+        </div>
+      ) : null}
 
       <div className="alpine-activities-filterbar-meta">
         <span>
