@@ -84,6 +84,11 @@ function AnalyticsCompactFilters({
           </select>
         </label>
 
+        <span className="alpine-activities-filterbar-meta">
+          {filteredCount} sur {totalCount} {totalCount > 1 ? "sorties" : "sortie"}
+          {periodLabel ? ` · ${periodLabel}` : ""}
+        </span>
+
         {hasActiveFilters ? (
           <button
             type="button"
@@ -101,13 +106,6 @@ function AnalyticsCompactFilters({
           <FilterChip label={`Sport : ${sportGroup}`} onClear={() => onSportChange("all")} />
         </div>
       ) : null}
-
-      <div className="alpine-activities-filterbar-meta">
-        <span>
-          {filteredCount} sur {totalCount} {totalCount > 1 ? "sorties" : "sortie"}
-          {periodLabel ? ` · ${periodLabel}` : ""}
-        </span>
-      </div>
     </section>
   );
 }

@@ -308,26 +308,25 @@ export default function PerformancePage() {
       eyebrow="Performance"
       title="Performance"
       subtitle="Analyse tes performances et suis tes records."
-      actions={(
-        <AnalyticsCompactFilters
-          search={filters.search}
-          sportGroup={filters.sportGroup}
-          preset={options.sharedPeriodPreset}
-          periodLabel={sharedRange.label}
-          availableSports={availableSports}
-          filteredCount={canonicalPerformanceActivities.length}
-          totalCount={canonicalPerformanceScopeActivities.length}
-          onSearchChange={(value) => setFilter("search", value)}
-          onSportChange={(value) => setFilter("sportGroup", value)}
-          onPresetChange={handleSharedPresetChange}
-          onReset={handleResetSharedFilters}
-        />
-      )}
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {isLoading && !safeActivities.length ? (
         <div className="card section">Chargement de la performance...</div>
       ) : null}
+
+      <AnalyticsCompactFilters
+        search={filters.search}
+        sportGroup={filters.sportGroup}
+        preset={options.sharedPeriodPreset}
+        periodLabel={sharedRange.label}
+        availableSports={availableSports}
+        filteredCount={canonicalPerformanceActivities.length}
+        totalCount={canonicalPerformanceScopeActivities.length}
+        onSearchChange={(value) => setFilter("search", value)}
+        onSportChange={(value) => setFilter("sportGroup", value)}
+        onPresetChange={handleSharedPresetChange}
+        onReset={handleResetSharedFilters}
+      />
 
       <div className="performance-page">
         <SubTabs tabs={PERFORMANCE_TABS} defaultTabId="overview" />

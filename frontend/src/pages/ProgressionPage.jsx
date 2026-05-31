@@ -137,26 +137,25 @@ export default function ProgressionPage() {
       eyebrow="Progression"
       title="Progression"
       subtitle="Construction long terme : volume, cumul annuel, régularité et comparaisons."
-      actions={(
-        <AnalyticsCompactFilters
-          search={filters.search}
-          sportGroup={filters.sportGroup}
-          preset={options.sharedPeriodPreset}
-          periodLabel={sharedRange.label}
-          availableSports={availableSports}
-          filteredCount={periodActivitiesCount}
-          totalCount={scopeActivities.length}
-          onSearchChange={(value) => setFilter("search", value)}
-          onSportChange={(value) => setFilter("sportGroup", value)}
-          onPresetChange={handleSharedPresetChange}
-          onReset={handleResetSharedFilters}
-        />
-      )}
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {isLoading && !safeActivities.length ? (
         <div className="card section">Chargement de la progression...</div>
       ) : null}
+
+      <AnalyticsCompactFilters
+        search={filters.search}
+        sportGroup={filters.sportGroup}
+        preset={options.sharedPeriodPreset}
+        periodLabel={sharedRange.label}
+        availableSports={availableSports}
+        filteredCount={periodActivitiesCount}
+        totalCount={scopeActivities.length}
+        onSearchChange={(value) => setFilter("search", value)}
+        onSportChange={(value) => setFilter("sportGroup", value)}
+        onPresetChange={handleSharedPresetChange}
+        onReset={handleResetSharedFilters}
+      />
 
       <div className="progression-page">
         <SubTabs tabs={PROGRESSION_TABS} defaultTabId="overview" />

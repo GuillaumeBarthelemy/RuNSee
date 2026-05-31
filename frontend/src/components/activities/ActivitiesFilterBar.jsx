@@ -139,6 +139,11 @@ function ActivitiesFilterBar({
           </select>
         </label>
 
+        <span className="alpine-activities-filterbar-meta">
+          {filteredCount} sur {totalCount} {totalCount > 1 ? "sorties" : "sortie"}
+          {periodLabel ? ` · ${periodLabel}` : ""}
+        </span>
+
         {/* Reset — visible uniquement si filtre actif */}
         {hasActiveFilters ? (
           <button
@@ -209,13 +214,6 @@ function ActivitiesFilterBar({
         </div>
       ) : null}
 
-      {/* Footer info compteur + période active */}
-      <div className="alpine-activities-filterbar-meta">
-        <span>
-          {filteredCount} sur {totalCount} {totalCount > 1 ? "sorties" : "sortie"}
-          {periodLabel ? ` · ${periodLabel}` : ""}
-        </span>
-      </div>
     </section>
   );
 }

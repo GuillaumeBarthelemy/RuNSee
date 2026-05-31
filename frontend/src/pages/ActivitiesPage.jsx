@@ -139,33 +139,32 @@ export default function ActivitiesPage() {
       eyebrow="Activités"
       title="Activités"
       subtitle="Toutes vos sorties et entraînements."
-      actions={(
-        <ActivitiesFilterBar
-          search={filters.search}
-          sportGroup={filters.sportGroup}
-          source={source}
-          intensity={intensity}
-          sort={sort}
-          preset={options.sharedPeriodPreset}
-          periodLabel={sharedRange.label}
-          availableSports={availableSports}
-          intensityAvailable={intensityAvailable}
-          filteredCount={sortedActivities.length}
-          totalCount={activityScopeActivities.length}
-          onSearchChange={(value) => setFilter("search", value)}
-          onSportChange={(value) => setFilter("sportGroup", value)}
-          onSourceChange={setSource}
-          onIntensityChange={setIntensity}
-          onSortChange={setSort}
-          onPresetChange={handleSharedPresetChange}
-          onReset={handleResetFilters}
-        />
-      )}
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {isLoading && !safeActivities.length ? (
         <div className="card section">Chargement des activités…</div>
       ) : null}
+
+      <ActivitiesFilterBar
+        search={filters.search}
+        sportGroup={filters.sportGroup}
+        source={source}
+        intensity={intensity}
+        sort={sort}
+        preset={options.sharedPeriodPreset}
+        periodLabel={sharedRange.label}
+        availableSports={availableSports}
+        intensityAvailable={intensityAvailable}
+        filteredCount={sortedActivities.length}
+        totalCount={activityScopeActivities.length}
+        onSearchChange={(value) => setFilter("search", value)}
+        onSportChange={(value) => setFilter("sportGroup", value)}
+        onSourceChange={setSource}
+        onIntensityChange={setIntensity}
+        onSortChange={setSort}
+        onPresetChange={handleSharedPresetChange}
+        onReset={handleResetFilters}
+      />
 
       {/* === Bandeau 5 KPIs période === */}
       <ActivityPeriodKpis kpis={periodKpis} />

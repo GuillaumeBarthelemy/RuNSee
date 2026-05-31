@@ -232,26 +232,25 @@ export default function AnalyticsPage() {
       eyebrow="Analyse"
       title="Analyse"
       subtitle="Lecture détaillée de votre entraînement et de votre récupération."
-      actions={(
-        <AnalyticsCompactFilters
-          search={filters.search}
-          sportGroup={filters.sportGroup}
-          preset={options.sharedPeriodPreset}
-          periodLabel={sharedRange.label}
-          availableSports={availableSports}
-          filteredCount={analyticsActivities.length}
-          totalCount={analyticsScopeActivities.length}
-          onSearchChange={(value) => setFilter("search", value)}
-          onSportChange={(value) => setFilter("sportGroup", value)}
-          onPresetChange={handleSharedPresetChange}
-          onReset={handleResetSharedFilters}
-        />
-      )}
     >
       {error ? <div className="alert alert-error section">{error}</div> : null}
       {isLoading && !safeActivities.length ? (
         <div className="card section">Chargement des analyses…</div>
       ) : null}
+
+      <AnalyticsCompactFilters
+        search={filters.search}
+        sportGroup={filters.sportGroup}
+        preset={options.sharedPeriodPreset}
+        periodLabel={sharedRange.label}
+        availableSports={availableSports}
+        filteredCount={analyticsActivities.length}
+        totalCount={analyticsScopeActivities.length}
+        onSearchChange={(value) => setFilter("search", value)}
+        onSportChange={(value) => setFilter("sportGroup", value)}
+        onPresetChange={handleSharedPresetChange}
+        onReset={handleResetSharedFilters}
+      />
 
       <SubTabs tabs={ANALYTICS_TABS} defaultTabId="overview" />
 

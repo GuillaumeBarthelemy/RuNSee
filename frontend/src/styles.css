@@ -9198,28 +9198,6 @@ button.alert-banner-positive-item {
   min-width: 0;
 }
 
-/* Filtres passés en slot `actions` : la barre s'etale a droite, transparente,
-   et expose ses controles directement dans le bandeau de page. */
-.alpine-topbar-right .alpine-activities-filterbar {
-  margin: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  flex: 1 1 auto;
-  min-width: 460px;
-}
-.alpine-topbar-right .alpine-activities-filterbar-row {
-  justify-content: flex-end;
-}
-.alpine-topbar-right .alpine-activities-filterbar-meta,
-.alpine-topbar-right .alpine-activities-chips {
-  justify-content: flex-end;
-  display: flex;
-}
-.alpine-topbar-right .alpine-activities-filterbar-meta {
-  margin-top: 4px;
-}
 
 /* WeatherBadge */
 .alpine-weather-badge {
@@ -10311,15 +10289,17 @@ button.alert-banner-positive-item {
    ============================================================================ */
 
 /* --- Filter bar (Alpine Light) -----------------------------------------
-   UX cible : controles "pill", fonds blancs, accent bleu sur focus/hover,
-   tailles de texte lisibles (>=12px), labels discrets en surete d'usage. */
+   UX cible : controles "pill" sur fond clair Alpine, accent bleu sur focus,
+   tailles de texte lisibles (>=12px), barre dediee sous le titre de page
+   (separation visuelle nette du H1, pas de compromis de lisibilite). */
 .alpine-activities-filterbar {
   background: transparent;
   border: none;
   border-radius: 0;
-  padding: 0;
-  margin-bottom: 0;
+  padding: 0 0 8px;
+  margin: 0 0 10px;
   box-shadow: none;
+  border-bottom: 1px solid var(--al-border-soft, #eaf0fa);
 }
 
 .alpine-activities-filterbar-row {
@@ -10531,9 +10511,11 @@ button.alert-banner-positive-item {
 }
 
 .alpine-activities-filterbar-meta {
-  margin-top: 6px;
+  margin-left: auto;
   font-size: 12px;
   color: var(--al-muted, #64748b);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 760px) {
