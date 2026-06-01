@@ -153,9 +153,9 @@ export async function listFitnessV1(req, res, next) {
 export async function listObjectivesV1(req, res, next) {
   try {
     const { appUserId } = req.apiAuth;
-    const objectives = await listRaceObjectives(appUserId);
-    // Exclure champs internes
-    const data = objectives.map(({ appUserId: _uid, ...rest }) => rest);
-    res.json({ data });
+    // listRaceObjectives retourne { races, activeRace } déjà sérialisés
+    // (serializeRaceObjective n'expose pas les champs internes).
+    const { races, activeRace } = await listRaceObjectives(appUserId);
+    res.json({ data: races, meta: { activeRaceId: activeRace?.id ?? null, count: races.length } });
   } catch (err) { next(err); }
 }
