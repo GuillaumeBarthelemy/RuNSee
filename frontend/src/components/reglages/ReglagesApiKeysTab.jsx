@@ -8,7 +8,16 @@ const SCOPE_LABELS = {
   "objectives:read":  "Objectifs",
 };
 const ALL_SCOPES = Object.keys(SCOPE_LABELS);
-const API_BASE = typeof window !== "undefined" ? window.location.origin.replace("runnsee.net", "api.runnsee.net") : "https://api.runnsee.net";
+// URL publique de l'API. En prod : api.runnsee.net. En local on retombe
+// sur le même host que le backend dev (port 3003) si applicable.
+const API_BASE = (() => {
+  if (typeof window === "undefined") return "https://api.runnsee.net";
+  const { hostname } = window.location;
+  // Prod (toute variante *.runnsee.net) → domaine API dédié.
+  if (hostname.endsWith("runnsee.net")) return "https://api.runnsee.net";
+  // Dev local : backend sur localhost:3003.
+  return "http://localhost:3003";
+})();
 
 function formatDate(iso) {
   if (!iso) return "—";
