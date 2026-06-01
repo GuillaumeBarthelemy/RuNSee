@@ -23,7 +23,8 @@ const VALID_SCOPES = new Set([
   "fitness:read",
   "objectives:read",
 ]);
-const MAX_KEYS_PER_USER = 10;
+// Règle produit : une seule clé d'API vivante à la fois par compte.
+// Créer une nouvelle clé révoque automatiquement la précédente.
 
 export function hashApiKey(rawToken) {
   return createHash("sha256").update(String(rawToken)).digest("hex");
@@ -60,29 +61,27 @@ export async function createApiKey(appUserId, { name, scopes, expiresAt } = {}) 
   const scopesList = Array.isArray(scopes) ? scopes : [...VALID_SCOPES];
   validateScopes(scopesList);
 
-  const existingCount = await prisma.apiKey.count({
-    where: { appUserId, revokedAt: null },
-  });
-  if (existingCount >= MAX_KEYS_PER_USER) {
-    const err = new Error(`Maximum ${MAX_KEYS_PER_USER} clés actives par compte.`);
-    err.httpStatus = 422;
-    err.code = "API_KEY_LIMIT_REACHED";
-    throw err;
-  }
-
   const rawToken = TOKEN_PREFIX + randomBytes(36).toString("base64url");
   const keyHash = hashApiKey(rawToken);
   const keyPrefix = buildPrefixFromRaw(rawToken);
 
-  const apiKey = await prisma.apiKey.create({
-    data: {
-      appUserId,
-      name: String(name).trim(),
-      keyPrefix,
-      keyHash,
-      scopes: scopesList.join(","),
-      expiresAt: expiresAt ? new Date(expiresAt) : null,
-    },
+  // Une seule clé vivante à la fois : on révoque toutes les clés actives
+  // existantes puis on crée la nouvelle, dans une transaction atomique.
+  const apiKey = await prisma.$transaction(async (tx) => {
+    await tx.apiKey.updateMany({
+      where: { appUserId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    return tx.apiKey.create({
+      data: {
+        appUserId,
+        name: String(name).trim(),
+        keyPrefix,
+        keyHash,
+        scopes: scopesList.join(","),
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+      },
+    });
   });
 
   return { rawToken, apiKey };

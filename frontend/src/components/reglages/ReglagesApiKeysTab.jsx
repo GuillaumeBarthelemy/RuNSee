@@ -103,7 +103,7 @@ function ApiKeyRow({ apiKey, onRevoke }) {
   );
 }
 
-function CreateKeyForm({ onCreate }) {
+function CreateKeyForm({ onCreate, hasActiveKey }) {
   const [name, setName] = useState("");
   const [scopes, setScopes] = useState(new Set(ALL_SCOPES));
   const [error, setError] = useState("");
@@ -138,8 +138,11 @@ function CreateKeyForm({ onCreate }) {
   return (
     <form className="reglages-api-create-form" onSubmit={submit}>
       <div className="reglages-api-create-head">
-        <h3>Créer une nouvelle clé</h3>
-        <p className="card-subtitle">La clé sera affichée une seule fois après création.</p>
+        <h3>{hasActiveKey ? "Régénérer la clé" : "Créer une clé"}</h3>
+        <p className="card-subtitle">
+          La clé sera affichée une seule fois après création.
+          {hasActiveKey ? " ⚠️ Une seule clé peut être active : créer une nouvelle clé révoquera automatiquement l'actuelle." : ""}
+        </p>
       </div>
       <label className="reglages-field">
         <span>Nom de la clé <span aria-hidden="true">*</span></span>
@@ -162,7 +165,7 @@ function CreateKeyForm({ onCreate }) {
       </fieldset>
       {error && <p className="reglages-api-error">{error}</p>}
       <button type="submit" className="btn-primary" disabled={loading}>
-        {loading ? "Création…" : "Créer la clé"}
+        {loading ? "Création…" : hasActiveKey ? "Régénérer la clé" : "Créer la clé"}
       </button>
     </form>
   );
@@ -214,9 +217,19 @@ function ReglagesApiKeysTab() {
 
   useEffect(() => { loadKeys(); }, [loadKeys]);
 
+  const hasActiveKey = keys.some(
+    (k) => !k.revokedAt && (!k.expiresAt || new Date(k.expiresAt) > new Date()),
+  );
+
   const handleCreate = ({ rawToken: token, apiKey }) => {
     setRawToken(token);
-    setKeys((prev) => [apiKey, ...prev]);
+    // Le backend révoque automatiquement toute clé active préexistante
+    // (une seule clé vivante à la fois) : on reflète localement.
+    const now = new Date().toISOString();
+    setKeys((prev) => [
+      apiKey,
+      ...prev.map((k) => (k.revokedAt ? k : { ...k, revokedAt: now })),
+    ]);
   };
 
   const handleRevoke = async (id) => {
@@ -238,7 +251,7 @@ function ReglagesApiKeysTab() {
 
       <NewTokenBanner rawToken={rawToken} onClose={() => setRawToken("")} />
 
-      <CreateKeyForm onCreate={handleCreate} />
+      <CreateKeyForm onCreate={handleCreate} hasActiveKey={hasActiveKey} />
 
       <section className="reglages-api-keys-list">
         <h3>Mes clés {keys.length > 0 && `(${keys.length})`}</h3>
