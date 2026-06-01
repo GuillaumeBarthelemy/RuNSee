@@ -433,6 +433,15 @@ export function isRunLikeActivity(activity = {}) {
     || ["run", "trailrun", "virtualrun"].includes(rawSport);
 }
 
+// Détection trail — DOIT rester identique à performanceRecordsModel.isTrailActivity
+// pour que les records route de la Vue d'ensemble matchent ceux du sous-onglet
+// Records (mêmes activités exclues).
+export function isTrailActivity(activity = {}) {
+  const sport = String(activity?.sportType || activity?.type || "").toLowerCase();
+  const text = `${activity?.name || ""} ${activity?.description || ""}`.toLowerCase();
+  return sport.includes("trail") || text.includes("trail");
+}
+
 function getRunItems(items = [], options = {}) {
   const startDate = options.startDate ? startOfDay(options.startDate) : null;
   const endDate = options.endDate ? startOfDay(options.endDate) : null;
@@ -1886,7 +1895,11 @@ export function buildBestEfforts(activities = [], limit = 3) {
     .sort((left, right) => right.__elevationGain - left.__elevationGain)
     .slice(0, safeLimit)
     .map((activity) => formatEffortEntry(activity, roundValue(activity.__elevationGain, 0), "elevationGain"));
-  const records = buildBestEffortRecords(items);
+  // Records ROUTE : on exclut le trail (comme le sous-onglet Records via
+  // buildRouteRecords) pour que la Vue d'ensemble affiche EXACTEMENT les
+  // mêmes records 5k/10k/semi/marathon. Le trail a ses propres lignes.
+  const routeItems = items.filter((activity) => !isTrailActivity(activity));
+  const records = buildBestEffortRecords(routeItems);
 
   return { longest, fastest, climbing, records };
 }

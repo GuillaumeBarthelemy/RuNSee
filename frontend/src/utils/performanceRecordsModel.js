@@ -14,6 +14,7 @@
 import {
   buildBestEffortRecords,
   isRunLikeActivity,
+  isTrailActivity,
 } from "./activityInsights.js";
 import { getActivityRawPayload } from "./parsedRawCache.js";
 
@@ -62,11 +63,6 @@ function formatShortDate(dateStr) {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
 
-function isTrailActivity(activity = {}) {
-  const sport = String(activity?.sportType || activity?.type || "").toLowerCase();
-  const text = `${activity?.name || ""} ${activity?.description || ""}`.toLowerCase();
-  return sport.includes("trail") || text.includes("trail");
-}
 
 /**
  * Records ROUTE : 5k / 10k / Semi / Marathon depuis buildBestEffortRecords.
