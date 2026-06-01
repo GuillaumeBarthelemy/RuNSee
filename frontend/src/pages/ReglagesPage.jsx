@@ -7,6 +7,7 @@ import ReglagesEntrainementTab from "../components/reglages/ReglagesEntrainement
 import ReglagesObjectivesTab from "../components/reglages/ReglagesObjectivesTab.jsx";
 import ReglagesDonneesTab from "../components/reglages/ReglagesDonneesTab.jsx";
 import ReglagesAboutTab from "../components/reglages/ReglagesAboutTab.jsx";
+import ReglagesApiKeysTab from "../components/reglages/ReglagesApiKeysTab.jsx";
 import useAuth from "../hooks/useAuth.js";
 
 const REGLAGES_TABS = [
@@ -15,6 +16,7 @@ const REGLAGES_TABS = [
   { id: "entrainement", label: "Entraînement" },
   { id: "objectifs",    label: "Objectifs" },
   { id: "donnees",      label: "Données" },
+  { id: "api",          label: "API & Accès" },
   { id: "apropos",      label: "À propos" },
 ];
 
@@ -57,6 +59,8 @@ export default function ReglagesPage() {
           <ReglagesObjectivesTab />
         ) : activeTabId === "donnees" ? (
           <ReglagesDonneesTab />
+        ) : activeTabId === "api" ? (
+          <ReglagesApiKeysTab />
         ) : (
           <ReglagesAboutTab />
         )}

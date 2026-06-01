@@ -44,6 +44,24 @@ model AppUser {
   activityProviderLinks ActivityProviderLink[]
   providerBackfillCursors ProviderBackfillCursor[]
   providerBackfillWindowLogs ProviderBackfillWindowLog[]
+  apiKeys                    ApiKey[]
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  appUserId   String
+  appUser     AppUser   @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  name        String
+  keyPrefix   String
+  keyHash     String    @unique
+  scopes      String    @default("activities:read,recovery:read,fitness:read,objectives:read")
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([appUserId])
 }
 
 model UserRaceObjective {

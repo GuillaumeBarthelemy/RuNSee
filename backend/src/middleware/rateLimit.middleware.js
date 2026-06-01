@@ -59,3 +59,16 @@ export const garminConnectRateLimiter = buildLimiter({
   max: 5,
   message: "Trop de tentatives de connexion Garmin. Réessaie dans 15 minutes.",
 });
+
+// Rate limiter dédié à l'API publique (/api/v1).
+// Clé = hash de la clé d'API si présente, sinon IP.
+// 120 req / min par clé (usage raisonnable pour scripts/dashboards).
+export const publicApiRateLimiter = buildLimiter({
+  windowMs: 60 * 1000,
+  max: 120,
+  message: "Trop de requêtes API. Limite : 120 req/min.",
+  keyGenerator: (req) => {
+    const auth = String(req.headers?.authorization || "").slice(0, 64);
+    return auth || ipKeyGenerator(req.ip);
+  },
+});

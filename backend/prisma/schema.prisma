@@ -43,6 +43,27 @@ model AppUser {
   activityProviderLinks ActivityProviderLink[]
   providerBackfillCursors ProviderBackfillCursor[]
   providerBackfillWindowLogs ProviderBackfillWindowLog[]
+  apiKeys                    ApiKey[]
+}
+
+// Cle d'API personnelle pour exposer les donnees RunNSee via /api/v1.
+// Le token brut est affiche UNE SEULE FOIS a la creation ; seul keyHash
+// (sha256 hex) est stocke — jamais le token en clair (same pattern UserSession).
+model ApiKey {
+  id          String    @id @default(cuid())
+  appUserId   String
+  appUser     AppUser   @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  name        String
+  keyPrefix   String
+  keyHash     String    @unique
+  scopes      String    @default("activities:read,recovery:read,fitness:read,objectives:read")
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([appUserId])
 }
 
 // Course objectif planifiee par l'utilisateur, utilisee pour le countdown

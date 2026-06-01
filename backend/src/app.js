@@ -13,6 +13,8 @@ import trainingAnalyticsSettingsRoutes from "./routes/trainingAnalyticsSettings.
 import raceObjectiveRoutes from "./routes/raceObjective.routes.js";
 import providerRoutes from "./routes/provider.routes.js";
 import assistantRoutes from "./routes/assistant.routes.js";
+import apiKeyRoutes from "./routes/apiKey.routes.js";
+import publicApiRoutes from "./routes/publicApi.routes.js";
 import env from "./config/env.js";
 import { loadAuthSession } from "./middleware/auth.middleware.js";
 
@@ -127,6 +129,8 @@ app.use("/settings", trainingAnalyticsSettingsRoutes);
 app.use("/settings", raceObjectiveRoutes);
 app.use("/providers", providerRoutes);
 app.use("/assistant", assistantRoutes);
+app.use("/settings", apiKeyRoutes);
+app.use("/api/v1", publicApiRoutes);
 
 // Liste des champs sensibles a masquer dans les logs d'erreur.
 const SENSITIVE_LOG_FIELDS = new Set([
