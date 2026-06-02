@@ -1895,11 +1895,16 @@ export function buildBestEfforts(activities = [], limit = 3) {
     .sort((left, right) => right.__elevationGain - left.__elevationGain)
     .slice(0, safeLimit)
     .map((activity) => formatEffortEntry(activity, roundValue(activity.__elevationGain, 0), "elevationGain"));
-  // Records ROUTE : on exclut le trail (comme le sous-onglet Records via
-  // buildRouteRecords) pour que la Vue d'ensemble affiche EXACTEMENT les
-  // mêmes records 5k/10k/semi/marathon. Le trail a ses propres lignes.
-  const routeItems = items.filter((activity) => !isTrailActivity(activity));
-  const records = buildBestEffortRecords(routeItems);
+  // Records ROUTE : on passe les activités BRUTES route-only (exactement comme
+  // le sous-onglet Records via buildRouteRecords) — surtout PAS les items
+  // préparés. En effet isActivityNearRecordDistance lit `__distanceKm` (présent
+  // sur les items, absent des activités brutes) : avec des items, une sortie
+  // ~5 km bascule sur le temps d'activité entière au lieu du best-effort segment,
+  // d'où la désync (19:00 overview vs 18:49 records). En brut, comportement
+  // identique au sous-onglet → mêmes records.
+  const routeActivities = (Array.isArray(activities) ? activities : [])
+    .filter((activity) => isRunLikeActivity(activity) && !isTrailActivity(activity));
+  const records = buildBestEffortRecords(routeActivities);
 
   return { longest, fastest, climbing, records };
 }
