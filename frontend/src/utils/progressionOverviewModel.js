@@ -433,7 +433,45 @@ function buildMonthlyProgression(activities, refDate) {
       distanceKm: Number(monthsKm[i].toFixed(1)),
       elevationM: Math.round(monthsElev[i]),
     })),
+    // Vue hebdomadaire (semaines ISO de l'annee en cours, jusqu'a aujourd'hui).
+    weeklyPoints: buildWeeklyProgressionPoints(acts, refDate),
   };
+}
+
+// Debut de semaine ISO (lundi) pour une date donnee.
+function startOfIsoWeek(date) {
+  const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const offset = (day.getDay() + 6) % 7; // 0 = lundi
+  return new Date(day.getTime() - offset * MS_PER_DAY);
+}
+
+// Agrege distance + D+ par semaine ISO, avec remplissage des semaines vides
+// (continuite des barres) de la 1re semaine de l'annee jusqu'a la semaine courante.
+function buildWeeklyProgressionPoints(acts, refDate) {
+  const buckets = new Map();
+  acts.forEach((a) => {
+    const d = safeDate(a?.startDateLocal || a?.startDate);
+    if (!d) return;
+    const ws = startOfIsoWeek(d);
+    const key = ws.getTime();
+    const cur = buckets.get(key) || { ws, km: 0, elev: 0 };
+    cur.km += toFiniteNumber(a.distance) / 1000;
+    cur.elev += toFiniteNumber(a.totalElevationGain ?? a.elevationGain);
+    buckets.set(key, cur);
+  });
+
+  const firstWeek = startOfIsoWeek(startOfYear(refDate));
+  const lastWeek = startOfIsoWeek(refDate);
+  const points = [];
+  for (let cursor = new Date(firstWeek); cursor <= lastWeek; cursor = new Date(cursor.getTime() + 7 * MS_PER_DAY)) {
+    const found = buckets.get(cursor.getTime());
+    points.push({
+      label: cursor.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }),
+      distanceKm: found ? Number(found.km.toFixed(1)) : 0,
+      elevationM: found ? Math.round(found.elev) : 0,
+    });
+  }
+  return points;
 }
 
 /**

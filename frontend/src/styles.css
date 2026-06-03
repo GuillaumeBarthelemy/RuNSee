@@ -16031,6 +16031,39 @@ button.alert-banner-positive-item {
   flex: 1; min-height: 260px;
 }
 .progression-monthly-card { display: flex; flex-direction: column; }
+
+/* Toggle Mois / Semaine (Progression mensuelle) */
+.progression-monthly-head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.progression-granularity-toggle {
+  display: inline-flex;
+  background: var(--al-surface-soft, #f1f6ff);
+  border: 1px solid var(--al-border, #dfe8f5);
+  border-radius: 999px;
+  padding: 2px;
+}
+.progression-granularity-toggle button {
+  border: none;
+  background: transparent;
+  color: var(--al-muted, #64748b);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.progression-granularity-toggle button.is-active {
+  background: var(--al-primary, #1268f3);
+  color: #fff;
+}
+.progression-granularity-toggle button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 @media (max-width: 768px) {
   .progression-overview-row-3 { grid-template-columns: 1fr; }
 }
