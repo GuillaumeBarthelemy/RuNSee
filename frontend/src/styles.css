@@ -16038,6 +16038,17 @@ button.alert-banner-positive-item {
   align-items: center;
   gap: 10px;
 }
+.progression-avg-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--al-text-soft, #2a3f6b);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.progression-avg-toggle input { accent-color: var(--al-primary, #1268f3); cursor: pointer; }
 .progression-granularity-toggle {
   display: inline-flex;
   background: var(--al-surface-soft, #f1f6ff);

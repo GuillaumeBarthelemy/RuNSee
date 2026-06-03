@@ -445,16 +445,39 @@ function startOfIsoWeek(date) {
   return new Date(day.getTime() - offset * MS_PER_DAY);
 }
 
+// Clé jour locale stable (YYYY-MM-DD) — insensible aux fuseaux/DST,
+// contrairement à getTime() + ajout de ms fixes (qui dérive d'1 h après le
+// passage heure d'été fin mars → semaines vides à tort).
+function isoDayKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+// Avance d'une semaine en arithmétique de date locale (DST-safe).
+function addWeek(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 7);
+}
+
+// Moyenne glissante trailing sur `window` éléments (valeurs numériques).
+function trailingAverage(values, index, window = 4) {
+  const start = Math.max(0, index - window + 1);
+  const slice = values.slice(start, index + 1);
+  if (!slice.length) return 0;
+  return slice.reduce((s, v) => s + v, 0) / slice.length;
+}
+
 // Agrege distance + D+ par semaine ISO, avec remplissage des semaines vides
 // (continuite des barres) de la 1re semaine de l'annee jusqu'a la semaine courante.
+// Ajoute la moyenne glissante 4 semaines (distance + D+).
 function buildWeeklyProgressionPoints(acts, refDate) {
   const buckets = new Map();
   acts.forEach((a) => {
     const d = safeDate(a?.startDateLocal || a?.startDate);
     if (!d) return;
-    const ws = startOfIsoWeek(d);
-    const key = ws.getTime();
-    const cur = buckets.get(key) || { ws, km: 0, elev: 0 };
+    const key = isoDayKey(startOfIsoWeek(d));
+    const cur = buckets.get(key) || { km: 0, elev: 0 };
     cur.km += toFiniteNumber(a.distance) / 1000;
     cur.elev += toFiniteNumber(a.totalElevationGain ?? a.elevationGain);
     buckets.set(key, cur);
@@ -462,16 +485,23 @@ function buildWeeklyProgressionPoints(acts, refDate) {
 
   const firstWeek = startOfIsoWeek(startOfYear(refDate));
   const lastWeek = startOfIsoWeek(refDate);
-  const points = [];
-  for (let cursor = new Date(firstWeek); cursor <= lastWeek; cursor = new Date(cursor.getTime() + 7 * MS_PER_DAY)) {
-    const found = buckets.get(cursor.getTime());
-    points.push({
+  const raw = [];
+  for (let cursor = firstWeek; cursor <= lastWeek; cursor = addWeek(cursor)) {
+    const found = buckets.get(isoDayKey(cursor));
+    raw.push({
       label: cursor.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }),
       distanceKm: found ? Number(found.km.toFixed(1)) : 0,
       elevationM: found ? Math.round(found.elev) : 0,
     });
   }
-  return points;
+
+  const kmValues = raw.map((p) => p.distanceKm);
+  const elevValues = raw.map((p) => p.elevationM);
+  return raw.map((p, i) => ({
+    ...p,
+    distanceAvg4: Number(trailingAverage(kmValues, i).toFixed(1)),
+    elevationAvg4: Math.round(trailingAverage(elevValues, i)),
+  }));
 }
 
 /**
